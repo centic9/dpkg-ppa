@@ -1,3 +1,9 @@
+dpkg (1.15.8.10ubuntu2~ppa1) lucid; urgency=low
+
+  * Backport from Natty in order to build geany-plugins.
+
+ -- Dominik Stadler (Ubuntu key) <dominik.stadler@gmx.at>  Wed, 23 Feb 2011 00:05:44 +0100
+
 dpkg (1.15.8.10ubuntu1) natty; urgency=low
 
   * Resynchronise with Debian.  Remaining changes:
