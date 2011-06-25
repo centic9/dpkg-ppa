@@ -3,6 +3,9 @@
  * processarc.c - the huge function process_archive
  *
  * Copyright © 1995 Ian Jackson <ian@chiark.greenend.org.uk>
+ * Copyright © 2006-2011 Guillem Jover <guillem@debian.org>
+ * Copyright © 2011 Linaro Limited
+ * Copyright © 2011 Raphaël Hertzog <hertzog@debian.org>
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,6 +37,7 @@
 #include <fcntl.h>
 #include <dirent.h>
 #include <unistd.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -47,16 +51,12 @@
 #include <dpkg/tarfn.h>
 #include <dpkg/myopt.h>
 #include <dpkg/triglib.h>
+#include <dpkg/arch.h>
 
 #include "filesdb.h"
+#include "infodb.h"
 #include "main.h"
 #include "archives.h"
-
-struct rename_list {
-  struct rename_list *next;
-  char *src;
-  char *dst;
-};
 
 static const char *
 summarize_filename(const char *filename)
@@ -80,6 +80,252 @@ summarize_filename(const char *filename)
   return pfilename;
 }
 
+static bool
+deb_reassemble(const char **filename, const char **pfilename)
+{
+  static char *reasmbuf = NULL;
+  struct stat stab;
+  int status;
+  pid_t pid;
+
+  if (!reasmbuf)
+    reasmbuf = dpkg_db_get_path(REASSEMBLETMP);
+  if (unlink(reasmbuf) && errno != ENOENT)
+    ohshite(_("error ensuring `%.250s' doesn't exist"), reasmbuf);
+
+  push_cleanup(cu_pathname, ~0, NULL, 0, 1, (void *)reasmbuf);
+
+  pid = subproc_fork();
+  if (!pid) {
+    execlp(SPLITTER, SPLITTER, "-Qao", reasmbuf, *filename, NULL);
+    ohshite(_("unable to execute %s (%s)"),
+            _("split package reassembly"), SPLITTER);
+  }
+  status = subproc_wait(pid, SPLITTER);
+  switch (WIFEXITED(status) ? WEXITSTATUS(status) : -1) {
+  case 0:
+    /* It was a part - is it complete? */
+    if (!stat(reasmbuf, &stab)) {
+      /* Yes. */
+      *filename = reasmbuf;
+      *pfilename = _("reassembled package file");
+      break;
+    } else if (errno == ENOENT) {
+      /* No. That's it, we skip it. */
+      return false;
+    }
+  case 1:
+    /* No, it wasn't a part. */
+    break;
+  default:
+    subproc_check(status, SPLITTER, 0);
+  }
+
+  return true;
+}
+
+static void
+deb_verify(const char *filename)
+{
+  struct stat stab;
+  pid_t pid;
+
+  if (stat(DEBSIGVERIFY, &stab) < 0)
+    return;
+
+  printf(_("Authenticating %s ...\n"), filename);
+  fflush(stdout);
+  pid = subproc_fork();
+  if (!pid) {
+    execl(DEBSIGVERIFY, DEBSIGVERIFY, "-q", filename, NULL);
+    ohshite(_("unable to execute %s (%s)"),
+            _("package signature verification"), DEBSIGVERIFY);
+  } else {
+    int status;
+
+    status = subproc_wait(pid, "debsig-verify");
+    if (!(WIFEXITED(status) && WEXITSTATUS(status) == 0)) {
+      if (!fc_badverify)
+        ohshit(_("Verification on package %s failed!"), filename);
+      else
+        fprintf(stderr, _("Verification on package %s failed,\n"
+                          "but installing anyway as you requested.\n"),
+                filename);
+    } else {
+      printf(_("passed\n"));
+    }
+  }
+}
+
+#define MAXCONFLICTORS 20
+
+static struct pkginfo *conflictor[MAXCONFLICTORS];
+static int cflict_index = 0;
+
+void
+push_conflictor(struct pkginfo *pkg, struct pkginfo *pkg_fixbyrm)
+{
+  if (cflict_index >= MAXCONFLICTORS)
+    ohshit(_("package %s has too many Conflicts/Replaces pairs"),
+           pkg_describe(pkg, pdo_foreign));
+
+  conflictor[cflict_index++] = pkg_fixbyrm;
+}
+
+struct match_node {
+  struct match_node *next;
+  char *filetype;
+  char *filename;
+};
+
+static struct match_node *match_head = NULL;
+
+static struct match_node *
+match_node_new(const char *name, const char *type, struct match_node *next)
+{
+  struct match_node *node;
+
+  node = m_malloc(sizeof(*node));
+  node->next = next;
+  node->filename = m_strdup(name);
+  node->filetype = m_strdup(type);
+
+  return node;
+}
+
+static void
+match_node_free(struct match_node *node)
+{
+  free(node->filetype);
+  free(node->filename);
+  free(node);
+}
+
+static void
+pkg_infodb_update_file(const char *filename, const char *filetype)
+{
+  if (strlen(filetype) > MAXCONTROLFILENAME)
+    ohshit(_("old version of package has overly-long info file name starting `%.250s'"),
+           filename);
+
+  /* We do the list separately. */
+  if (strcmp(filetype, LISTFILE) == 0)
+    return;
+
+  /* We keep files to rename in a list as doing the rename immediately
+   * might influence the current readdir(), the just renamed file might
+   * be returned a second time as it's actually a new file from the
+   * point of view of the filesystem. */
+  match_head = match_node_new(filename, filetype, match_head);
+}
+
+static void
+pkg_infodb_remove_file(const char *filename, const char *filetype)
+{
+  if (unlink(filename))
+    ohshite(_("unable to delete control info file `%.250s'"), filename);
+
+  debug(dbg_scripts, "removal_bulk info unlinked %s", filename);
+}
+
+static void
+pkg_infodb_update(struct pkginfo *pkg, char *cidir, char *cidirrest)
+{
+  struct match_node *match_node;
+  DIR *dsd;
+  struct dirent *de;
+
+  /* Deallocate the match list in case we aborted previously. */
+  while ((match_node = match_head)) {
+    match_head = match_node->next;
+    match_node_free(match_node);
+  }
+
+  pkg_infodb_foreach(pkg, &pkg->available, pkg_infodb_update_file);
+
+  while ((match_node = match_head)) {
+    strcpy(cidirrest, match_node->filetype);
+
+    if (!rename(cidir, match_node->filename)) {
+      debug(dbg_scripts, "process_archive info installed %s as %s",
+            cidir, match_node->filename);
+    } else if (errno == ENOENT) {
+      /* Right, no new version. */
+      if (unlink(match_node->filename))
+        ohshite(_("unable to remove obsolete info file `%.250s'"),
+                match_node->filename);
+      debug(dbg_scripts, "process_archive info unlinked %s",
+            match_node->filename);
+    } else {
+      ohshite(_("unable to install (supposed) new info file `%.250s'"), cidir);
+    }
+    match_head = match_node->next;
+    match_node_free(match_node);
+  }
+
+  /* The control directory itself. */
+  cidirrest[0] = '\0';
+  dsd = opendir(cidir);
+  if (!dsd)
+    ohshite(_("unable to open temp control directory"));
+  push_cleanup(cu_closedir, ~0, NULL, 0, 1, (void *)dsd);
+  while ((de = readdir(dsd))) {
+    const char *newinfofilename;
+
+    if (strchr(de->d_name, '.')) {
+      debug(dbg_scripts,"process_archive tmp.ci script/file `%s' contains dot",
+            de->d_name);
+      continue;
+    }
+    if (strlen(de->d_name) > MAXCONTROLFILENAME)
+      ohshit(_("package contains overly-long control info file name (starting `%.50s')"),
+             de->d_name);
+
+    strcpy(cidirrest, de->d_name);
+
+    /* First we check it's not a directory. */
+    if (rmdir(cidir) == 0)
+      ohshit(_("package control info contained directory `%.250s'"), cidir);
+    else if (errno != ENOTDIR)
+      ohshite(_("package control info rmdir of `%.250s' didn't say not a dir"),
+              de->d_name);
+
+    /* Ignore the control file. */
+    if (strcmp(de->d_name, CONTROLFILE) == 0) {
+      debug(dbg_scripts, "process_archive tmp.ci script/file `%s' is control",
+            cidir);
+      continue;
+    }
+    if (strcmp(de->d_name, LISTFILE) == 0) {
+      warning(_("package %s contained list as info file"),
+              pkg_describe(pkg, pdo_foreign));
+      continue;
+    }
+
+    /* Right, install it */
+    newinfofilename = pkgadminfile(pkg, &pkg->available, de->d_name);
+    if (rename(cidir, newinfofilename))
+      ohshite(_("unable to install new info file `%.250s' as `%.250s'"),
+              cidir, newinfofilename);
+
+    debug(dbg_scripts,
+          "process_archive tmp.ci script/file `%s' installed as `%s'",
+          cidir, newinfofilename);
+  }
+  pop_cleanup(ehflag_normaltidy); /* closedir */
+
+  if (pkg->installed.multiarch != pkg->available.multiarch &&
+      (pkg->installed.multiarch == multiarch_same ||
+       pkg->available.multiarch == multiarch_same)) {
+    /* Both packages do not use the same layout for info files, get rid of
+     * the files using the old layout */
+    debug(dbg_scripts, "remove info files using the previous layout");
+    pkg_infodb_foreach(pkg, &pkg->installed, pkg_infodb_remove_file);
+  }
+
+  dir_sync_path(pkgadmindir());
+}
+
 void process_archive(const char *filename) {
   static const struct tar_operations tf = {
     .read = tarfileread,
@@ -93,22 +339,22 @@ void process_archive(const char *filename) {
   /* These need to be static so that we can pass their addresses to
    * push_cleanup as arguments to the cu_xxx routines; if an error occurs
    * we unwind the stack before processing the cleanup list, and these
-   * variables had better still exist ...
-   */
+   * variables had better still exist ... */
   static int p1[2];
-  static char *cidirbuf = NULL, *reasmbuf = NULL;
+  static char *cidir = NULL;
   static struct fileinlist *newconffiles, *newfileslist;
   static enum pkgstatus oldversionstatus;
-  static struct varbuf infofnvb, fnvb, depprobwhy;
+  static struct varbuf depprobwhy;
   static struct tarcontext tc;
-  
-  int c1, r, admindirlen, i, infodirlen, infodirbaseused;
+
+  int r, i;
+  pid_t pid;
   struct pkgiterator *it;
-  struct pkginfo *pkg, *otherpkg, *divpkg;
-  char *cidir, *cidirrest, *p;
+  struct pkginfo *pkg, *otherpkg;
+  char *cidirrest, *p;
   char conffilenamebuf[MAXCONFFILENAME];
   char *psize;
-  const char *pfilename, *newinfofilename;
+  const char *pfilename;
   struct fileinlist *newconff, **newconffileslastp;
   struct fileinlist *cfile;
   struct reversefilelistiter rlistit;
@@ -117,97 +363,48 @@ void process_archive(const char *filename) {
   struct dependency *newdep, *dep, *providecheck;
   struct deppossi *psearch, **newpossilastp, *possi, *newpossi, *pdep;
   FILE *conff;
-  DIR *dsd;
   struct filenamenode *namenode;
-  struct dirent *de;
   struct stat stab, oldfs;
   struct pkg_deconf_list *deconpil, *deconpiltemp;
-  struct rename_list *rename_head = NULL, *rename_node = NULL;
-  
+
   cleanup_pkg_failed= cleanup_conflictor_failed= 0;
-  admindirlen= strlen(admindir);
 
   pfilename = summarize_filename(filename);
 
   if (stat(filename,&stab)) ohshite(_("cannot access archive"));
 
+  /* We can't ‘tentatively-reassemble’ packages. */
   if (!f_noact) {
-    int status;
-
-    /* We can't `tentatively-reassemble' packages. */
-    if (!reasmbuf) {
-      reasmbuf= m_malloc(admindirlen+sizeof(REASSEMBLETMP)+5);
-      strcpy(reasmbuf,admindir);
-      strcat(reasmbuf,"/" REASSEMBLETMP);
-    }
-    if (unlink(reasmbuf) && errno != ENOENT)
-      ohshite(_("error ensuring `%.250s' doesn't exist"),reasmbuf);
-    push_cleanup(cu_pathname, ~0, NULL, 0, 1, (void *)reasmbuf);
-    c1 = subproc_fork();
-    if (!c1) {
-      execlp(SPLITTER, SPLITTER, "-Qao", reasmbuf, filename, NULL);
-      ohshite(_("failed to exec dpkg-split to see if it's part of a multiparter"));
-    }
-    status = subproc_wait(c1, SPLITTER);
-    switch (WIFEXITED(status) ? WEXITSTATUS(status) : -1) {
-    case 0:
-      /* It was a part - is it complete ? */
-      if (!stat(reasmbuf,&stab)) { /* Yes. */
-        filename= reasmbuf;
-        pfilename= _("reassembled package file");
-        break;
-      } else if (errno == ENOENT) { /* No.  That's it, we skip it. */
-        return;
-      }
-    case 1:
-      /* No, it wasn't a part. */
-      break;
-    default:
-      subproc_check(status, SPLITTER, 0);
-    }
+    if (!deb_reassemble(&filename, &pfilename))
+      return;
   }
-  
+
   /* Verify the package. */
-  if (!f_nodebsig && (stat(DEBSIGVERIFY, &stab)==0)) {
-    printf(_("Authenticating %s ...\n"), filename);
-    fflush(stdout);
-    c1 = subproc_fork();
-    if (!c1) {
-      execl(DEBSIGVERIFY, DEBSIGVERIFY, "-q", filename, NULL);
-      ohshite(_("failed to execl debsig-verify"));
-    } else {
-      int status;
-
-      status = subproc_wait(c1, "debsig-verify");
-      if (!(WIFEXITED(status) && WEXITSTATUS(status) == 0)) {
-	if (! fc_badverify) {
-	  ohshit(_("Verification on package %s failed!"), filename);
-	} else {
-	  fprintf(stderr, _("Verification on package %s failed,\nbut installing anyway as you requested.\n"), filename);
-	}
-      } else {
-	printf(_("passed\n"));
-      }
-    }
-  }
-    
+  if (!f_nodebsig)
+    deb_verify(filename);
 
   if (f_noact) {
-    if (!cidirbuf)
-      free(cidirbuf);
-    cidir = cidirbuf = mkdtemp(path_make_temp_template("dpkg"));
-    if (!cidir)
+    char *tmpdir;
+
+    tmpdir = mkdtemp(path_make_temp_template("dpkg"));
+    if (!tmpdir)
       ohshite(_("unable to create temporary directory"));
+
+    cidir = m_realloc(cidir, strlen(tmpdir) + MAXCONTROLFILENAME + 10);
+    strcpy(cidir, tmpdir);
     strcat(cidir,"/");
 
     cidirrest = cidir + strlen(cidir);
+
+    free(tmpdir);
   } else {
+    const char *admindir = dpkg_db_get_dir();
+
     /* We want it to be on the same filesystem so that we can
-     * use rename(2) to install the postinst &c.
-     */
-    if (!cidirbuf)
-      cidirbuf= m_malloc(admindirlen+sizeof(CONTROLDIRTMP)+MAXCONTROLFILENAME+10);
-    cidir= cidirbuf;
+     * use rename(2) to install the postinst &c. */
+    if (!cidir)
+      cidir = m_malloc(strlen(admindir) + sizeof(CONTROLDIRTMP) +
+                       MAXCONTROLFILENAME + 10);
     strcpy(cidir,admindir);
     strcat(cidir, "/" CONTROLDIRTMP);
 
@@ -218,15 +415,16 @@ void process_archive(const char *filename) {
     ensure_pathname_nonexisting(cidir);
     cidirrest[-1] = '/';
   }
-  
+
   push_cleanup(cu_cidir, ~0, NULL, 0, 2, (void *)cidir, (void *)cidirrest);
-  c1 = subproc_fork();
-  if (!c1) {
+  pid = subproc_fork();
+  if (pid == 0) {
     cidirrest[-1] = '\0';
     execlp(BACKEND, BACKEND, "--control", filename, cidir, NULL);
-    ohshite(_("failed to exec dpkg-deb to extract control information"));
+    ohshite(_("unable to execute %s (%s)"),
+            _("package control information extraction"), BACKEND);
   }
-  subproc_wait_check(c1, BACKEND " --control", 0);
+  subproc_wait_check(pid, BACKEND " --control", 0);
 
   /* We want to guarantee the extracted files are on the disk, so that the
    * subsequent renames to the info database do not end up with old or zero
@@ -238,29 +436,31 @@ void process_archive(const char *filename) {
   strcpy(cidirrest,CONTROLFILE);
 
   parsedb(cidir, pdb_recordavailable | pdb_rejectstatus | pdb_ignorefiles,
-          &pkg,NULL,NULL);
+          &pkg);
   if (!pkg->files) {
     pkg->files= nfmalloc(sizeof(struct filedetails));
     pkg->files->next = NULL;
     pkg->files->name = pkg->files->msdosname = pkg->files->md5sum = NULL;
   }
-  /* Always nfmalloc.  Otherwise, we may overwrite some other field(like md5sum). */
+  /* Always nfmalloc. Otherwise, we may overwrite some other field (like
+   * md5sum). */
   psize = nfmalloc(30);
-  sprintf(psize, "%lu", (unsigned long)stab.st_size);
+  sprintf(psize, "%jd", (intmax_t)stab.st_size);
   pkg->files->size = psize;
 
-  if (cipaction->arg == act_avail) {
-    printf(_("Recorded info about %s from %s.\n"),pkg->name,pfilename);
+  if (cipaction->arg_int == act_avail) {
+    printf(_("Recorded info about %s from %s.\n"),
+           pkg_describe(pkg, pdo_foreign | pdo_avail), pfilename);
     pop_cleanup(ehflag_normaltidy);
     return;
   }
 
-  if (pkg->available.architecture && *pkg->available.architecture &&
-      strcmp(pkg->available.architecture,"all") &&
-      strcmp(pkg->available.architecture,architecture))
+  if (pkg->available.arch->type != arch_all &&
+      pkg->available.arch->type != arch_native &&
+      pkg->available.arch->type != arch_foreign)
     forcibleerr(fc_architecture,
                 _("package architecture (%s) does not match system (%s)"),
-                pkg->available.architecture,architecture);
+                pkg->available.arch->name, dpkg_arch_get_native()->name);
 
   for (deconpil= deconfigure;
        deconpil;
@@ -271,14 +471,42 @@ void process_archive(const char *filename) {
   deconfigure = NULL;
   clear_istobes();
 
-  if (!wanttoinstall(pkg,&pkg->available.version,1)) {
+  if (!wanttoinstall(pkg)) {
       pop_cleanup(ehflag_normaltidy);
       return;
   }
 
   /* Check if anything is installed that we conflict with, or not installed
-   * that we need */
+   * that we need. */
   pkg->clientdata->istobe= itb_installnew;
+
+  for (otherpkg = &pkg->set->pkg; otherpkg; otherpkg = otherpkg->arch_next) {
+    if (otherpkg == pkg || otherpkg->status < stat_halfinstalled)
+      continue;
+    /* Look for other instances of the same package that can't coexist */
+    if (otherpkg->installed.multiarch != multiarch_same ||
+        pkg->available.multiarch != multiarch_same)
+      ohshit(_("%s %s (Multi-Arch: %s) is not co-installable with %s "
+               "%s (Multi-Arch: %s) which is currently installed"),
+             pkg_describe(pkg, pdo_always),
+             versiondescribe(&pkg->available.version, vdew_nonambig),
+             multiarchinfos[pkg->available.multiarch].name,
+             pkg_describe(otherpkg, pdo_always),
+             versiondescribe(&otherpkg->installed.version, vdew_nonambig),
+             multiarchinfos[otherpkg->installed.multiarch].name);
+    /* Deconfigure them if they are not in sync */
+    if (versioncompare(&pkg->available.version, &otherpkg->installed.version) &&
+        otherpkg->status > stat_halfconfigured) {
+      struct pkg_deconf_list *newdeconf;
+      ensure_package_clientdata(otherpkg);
+      otherpkg->clientdata->istobe = itb_deconfigure;
+      newdeconf = m_malloc(sizeof(struct pkg_deconf_list));
+      newdeconf->next = deconfigure;
+      newdeconf->pkg = otherpkg;
+      newdeconf->pkg_removal = NULL;
+      deconfigure = newdeconf;
+    }
+  }
 
   for (dsearch= pkg->available.depends; dsearch; dsearch= dsearch->next) {
     switch (dsearch->type) {
@@ -292,7 +520,7 @@ void process_archive(const char *filename) {
       break;
     case dep_provides:
       /* Look for things that conflict with what we provide. */
-      for (psearch = dsearch->list->ed->installed.depended;
+      for (psearch = dsearch->list->ed->depended.installed;
            psearch;
            psearch = psearch->rev_next) {
         if (psearch->up->type != dep_conflicts)
@@ -309,33 +537,35 @@ void process_archive(const char *filename) {
       break;
     case dep_predepends:
       if (!depisok(dsearch, &depprobwhy, NULL, true)) {
-        varbufaddc(&depprobwhy,0);
+        varbuf_end_str(&depprobwhy);
         fprintf(stderr, _("dpkg: regarding %s containing %s, pre-dependency problem:\n%s"),
-                pfilename, pkg->name, depprobwhy.buf);
+                pfilename, pkg_describe(pkg, pdo_foreign | pdo_avail), depprobwhy.buf);
         if (!force_depends(dsearch->list))
-          ohshit(_("pre-dependency problem - not installing %.250s"),pkg->name);
+          ohshit(_("pre-dependency problem - not installing %.250s"),
+                 pkg_describe(pkg, pdo_foreign | pdo_avail));
         warning(_("ignoring pre-dependency problem!"));
       }
     }
   }
   /* Look for things that conflict with us. */
-  for (psearch = pkg->installed.depended; psearch; psearch = psearch->rev_next) {
+  for (psearch = pkg->set->depended.installed; psearch; psearch = psearch->rev_next) {
     if (psearch->up->type != dep_conflicts) continue;
     check_conflict(psearch->up, pkg, pfilename);
   }
-  
+
   ensure_allinstfiles_available();
   filesdbinit();
   trig_file_interests_ensure();
 
   if (pkg->status != stat_notinstalled && pkg->status != stat_configfiles) {
     printf(_("Preparing to replace %s %s (using %s) ...\n"),
-           pkg->name,
+           pkg_describe(pkg, pdo_foreign),
            versiondescribe(&pkg->installed.version,vdew_nonambig),
            pfilename);
     log_action("upgrade", pkg);
   } else {
-    printf(_("Unpacking %s (from %s) ...\n"),pkg->name,pfilename);
+    printf(_("Unpacking %s (from %s) ...\n"),
+           pkg_describe(pkg, pdo_foreign | pdo_avail), pfilename);
     log_action("install", pkg);
   }
 
@@ -374,35 +604,35 @@ void process_archive(const char *filename) {
       namenode= findnamenode(conffilenamebuf, 0);
       namenode->oldhash= NEWCONFFILEFLAG;
       newconff= newconff_append(&newconffileslastp, namenode);
-      
-      /* Let's see if any packages have this file.  If they do we
+
+      /* Let's see if any packages have this file. If they do we
        * check to see if they listed it as a conffile, and if they did
-       * we copy the hash across.  Since (for plain file conffiles,
+       * we copy the hash across. Since (for plain file conffiles,
        * which is the only kind we are supposed to have) there will
-       * only be one package which `has' the file, this will usually
+       * only be one package which ‘has’ the file, this will usually
        * mean we only look in the package which we're installing now.
-       * The `conffiles' data in the status file is ignored when a
+       * The ‘conffiles’ data in the status file is ignored when a
        * package isn't also listed in the file ownership database as
-       * having that file.  If several packages are listed as owning
-       * the file we pick one at random.
-       */
+       * having that file. If several packages are listed as owning
+       * the file we pick one at random. */
       searchconff = NULL;
 
       iter = filepackages_iter_new(newconff->namenode);
       while ((otherpkg = filepackages_iter_next(iter))) {
         debug(dbg_conffdetail,
               "process_archive conffile `%s' in package %s - conff ?",
-              newconff->namenode->name, otherpkg->name);
+              newconff->namenode->name, pkg_describe(otherpkg, pdo_foreign));
         for (searchconff = otherpkg->installed.conffiles;
              searchconff && strcmp(newconff->namenode->name, searchconff->name);
              searchconff = searchconff->next)
           debug(dbg_conffdetail,
                 "process_archive conffile `%s' in package %s - conff ? not `%s'",
-                newconff->namenode->name, otherpkg->name, searchconff->name);
+                newconff->namenode->name, pkg_describe(otherpkg, pdo_foreign),
+                searchconff->name);
         if (searchconff) {
           debug(dbg_conff,
                 "process_archive conffile `%s' package=%s %s hash=%s",
-                newconff->namenode->name, otherpkg->name,
+                newconff->namenode->name, pkg_describe(otherpkg, pdo_foreign),
                 otherpkg == pkg ? "same" : "different!",
                 searchconff->hash);
           if (otherpkg == pkg)
@@ -413,7 +643,7 @@ void process_archive(const char *filename) {
 
       if (searchconff) {
         newconff->namenode->oldhash= searchconff->hash;
-	/* we don't copy `obsolete'; it's not obsolete in the new package */
+	/* We don't copy ‘obsolete’; it's not obsolete in the new package. */
       } else {
         debug(dbg_conff,"process_archive conffile `%s' no package, no hash",
               newconff->namenode->name);
@@ -421,26 +651,25 @@ void process_archive(const char *filename) {
       newconff->namenode->flags |= fnnf_new_conff;
     }
     if (ferror(conff)) ohshite(_("read error in %.250s"),cidir);
-    pop_cleanup(ehflag_normaltidy); /* conff= fopen() */
+    pop_cleanup(ehflag_normaltidy); /* conff = fopen() */
     if (fclose(conff)) ohshite(_("error closing %.250s"),cidir);
   } else {
     if (errno != ENOENT) ohshite(_("error trying to open %.250s"),cidir);
   }
 
   /* All the old conffiles are marked with a flag, so that we don't delete
-   * them if they seem to disappear completely.
-   */
+   * them if they seem to disappear completely. */
   oldconffsetflags(pkg->installed.conffiles);
   for (i = 0 ; i < cflict_index ; i++) {
     oldconffsetflags(conflictor[i]->installed.conffiles);
   }
-  
+
   oldversionstatus= pkg->status;
 
   assert(oldversionstatus <= stat_installed);
   debug(dbg_general,"process_archive oldversionstatus=%s",
         statusstrings[oldversionstatus]);
-  
+
   if (oldversionstatus == stat_halfconfigured ||
       oldversionstatus == stat_triggersawaited ||
       oldversionstatus == stat_triggerspending ||
@@ -461,9 +690,11 @@ void process_archive(const char *filename) {
 
     if (removing)
       printf(_("De-configuring %s, to allow removal of %s ...\n"),
-             deconpil->pkg->name, removing->name);
+             pkg_describe(deconpil->pkg, pdo_foreign),
+             pkg_describe(removing, pdo_foreign));
     else
-      printf(_("De-configuring %s ...\n"), deconpil->pkg->name);
+      printf(_("De-configuring %s ...\n"),
+             pkg_describe(deconpil->pkg, pdo_foreign));
 
     trig_activate_packageprocessing(deconpil->pkg);
     deconpil->pkg->status= stat_halfconfigured;
@@ -471,24 +702,26 @@ void process_archive(const char *filename) {
 
     /* This means that we *either* go and run postinst abort-deconfigure,
      * *or* queue the package for later configure processing, depending
-     * on which error cleanup route gets taken.
-     */
+     * on which error cleanup route gets taken. */
     push_cleanup(cu_prermdeconfigure, ~ehflag_normaltidy,
                  ok_prermdeconfigure, ehflag_normaltidy,
                  3, (void*)deconpil->pkg, (void*)removing, (void*)pkg);
 
     if (removing) {
       maintainer_script_installed(deconpil->pkg, PRERMFILE, "pre-removal",
-                                  "deconfigure", "in-favour", pkg->name,
+                                  "deconfigure", "in-favour",
+                                  pkg_describe(pkg, pdo_foreign | pdo_avail),
                                   versiondescribe(&pkg->available.version,
                                                   vdew_nonambig),
-                                  "removing", removing->name,
+                                  "removing",
+                                  pkg_describe(removing, pdo_foreign),
                                   versiondescribe(&removing->installed.version,
                                                   vdew_nonambig),
                                   NULL);
     } else {
       maintainer_script_installed(deconpil->pkg, PRERMFILE, "pre-removal",
-                                  "deconfigure", "in-favour", pkg->name,
+                                  "deconfigure", "in-favour",
+                                  pkg_describe(pkg, pdo_foreign | pdo_avail),
                                   versiondescribe(&pkg->available.version,
                                                   vdew_nonambig),
                                   NULL);
@@ -506,7 +739,8 @@ void process_archive(const char *filename) {
     push_cleanup(cu_prerminfavour, ~ehflag_normaltidy, NULL, 0,
                  2,(void*)conflictor[i],(void*)pkg);
     maintainer_script_installed(conflictor[i], PRERMFILE, "pre-removal",
-                                "remove", "in-favour", pkg->name,
+                                "remove", "in-favour",
+                                pkg_describe(pkg, pdo_foreign | pdo_avail),
                                 versiondescribe(&pkg->available.version,
                                                 vdew_nonambig),
                                 NULL);
@@ -538,34 +772,36 @@ void process_archive(const char *filename) {
                           "upgrade", versiondescribe(&pkg->installed.version,
                                                      vdew_nonambig),
                           NULL);
-    printf(_("Unpacking replacement %.250s ...\n"),pkg->name);
+    printf(_("Unpacking replacement %.250s ...\n"),
+           pkg_describe(pkg, pdo_foreign));
   }
-  
+
   /*
    * Now we unpack the archive, backing things up as we go.
    * For each file, we check to see if it already exists.
    * There are several possibilities:
+   *
    * + We are trying to install a non-directory ...
-   *  - It doesn't exist.  In this case we simply extract it.
-   *  - It is a plain file, device, symlink, &c.  We do an `atomic
-   *    overwrite' using link() and rename(), but leave a backup copy.
+   *  - It doesn't exist. In this case we simply extract it.
+   *  - It is a plain file, device, symlink, &c. We do an ‘atomic
+   *    overwrite’ using link() and rename(), but leave a backup copy.
    *    Later, when we delete the backup, we remove it from any other
    *    packages' lists.
    *  - It is a directory. In this case it depends on whether we're
    *    trying to install a symlink or something else.
    *   = If we're not trying to install a symlink we move the directory
-   *     aside and extract the node.  Later, when we recursively remove
+   *     aside and extract the node. Later, when we recursively remove
    *     the backed-up directory, we remove it from any other packages'
    *     lists.
    *   = If we are trying to install a symlink we do nothing - ie,
-   *     dpkg will never replace a directory tree with a symlink.  This
+   *     dpkg will never replace a directory tree with a symlink. This
    *     is to avoid embarrassing effects such as replacing a directory
    *     tree with a link to a link to the original directory tree.
    * + We are trying to install a directory ...
-   *  - It doesn't exist.  We create it with the appropriate modes.
-   *  - It exists as a directory or a symlink to one.  We do nothing.
+   *  - It doesn't exist. We create it with the appropriate modes.
+   *  - It exists as a directory or a symlink to one. We do nothing.
    *  - It is a plain file or a symlink (other than to a directory).
-   *    We move it aside and create the directory.  Later, when we
+   *    We move it aside and create the directory. Later, when we
    *    delete the backup, we remove it from any other packages' lists.
    *
    *                   Install non-dir   Install symlink   Install dir
@@ -578,16 +814,17 @@ void process_archive(const char *filename) {
    *    B: ordinary backup
    *    R: later remove from other packages' lists
    *    -: do nothing
-   * 
+   *
    * After we've done this we go through the remaining things in the
    * lists of packages we're trying to remove (including the old
-   * version of the current package).  This happens in reverse order,
+   * version of the current package). This happens in reverse order,
    * so that we process files before the directories (or symlinks-to-
    * directories) containing them.
+   *
    * + If the thing is a conffile then we leave it alone for the purge
    *   operation.
    * + Otherwise, there are several possibilities too:
-   *  - The listed thing does not exist.  We ignore it.
+   *  - The listed thing does not exist. We ignore it.
    *  - The listed thing is a directory or a symlink to a directory.
    *    We delete it only if it isn't listed in any other package.
    *  - The listed thing is not a directory, but was part of the package
@@ -595,31 +832,33 @@ void process_archive(const char *filename) {
    *    same ones from the old package by checking dev/inode
    *  - The listed thing is not a directory or a symlink to one (ie,
    *    it's a plain file, device, pipe, &c, or a symlink to one, or a
-   *    dangling symlink).  We delete it.
+   *    dangling symlink). We delete it.
+   *
    * The removed packages' list becomes empty (of course, the new
    * version of the package we're installing will have a new list,
    * which replaces the old version's list).
    *
    * If at any stage we remove a file from a package's list, and the
    * package isn't one we're already processing, and the package's
-   * list becomes empty as a result, we `vanish' the package.  This
-   * means that we run its postrm with the `disappear' argument, and
-   * put the package in the `not-installed' state.  If it had any
+   * list becomes empty as a result, we ‘vanish’ the package. This
+   * means that we run its postrm with the ‘disappear’ argument, and
+   * put the package in the ‘not-installed’ state. If it had any
    * conffiles, their hashes and ownership will have been transferred
    * already, so we just ignore those and forget about them from the
    * point of view of the disappearing package.
    *
    * NOTE THAT THE OLD POSTRM IS RUN AFTER THE NEW PREINST, since the
-   * files get replaced `as we go'.
+   * files get replaced ‘as we go’.
    */
 
   m_pipe(p1);
   push_cleanup(cu_closepipe, ehflag_bombout, NULL, 0, 1, (void *)&p1[0]);
-  c1 = subproc_fork();
-  if (!c1) {
+  pid = subproc_fork();
+  if (pid == 0) {
     m_dup2(p1[1],1); close(p1[0]); close(p1[1]);
     execlp(BACKEND, BACKEND, "--fsys-tarfile", filename, NULL);
-    ohshite(_("unable to exec dpkg-deb to get filesystem archive"));
+    ohshite(_("unable to execute %s (%s)"),
+            _("package filesystem archive extraction"), BACKEND);
   }
   close(p1[1]);
   p1[1] = -1;
@@ -629,6 +868,18 @@ void process_archive(const char *filename) {
   push_cleanup(cu_fileslist, ~0, NULL, 0, 0);
   tc.pkg= pkg;
   tc.backendpipe= p1[0];
+  /* Verify if all instances of a Multi-Arch: same package are going to be
+   * synchronized, if yes the extraction is going to ensure consistency of
+   * shared files */
+  tc.pkg_in_sync = true;
+  for (otherpkg = &pkg->set->pkg; otherpkg; otherpkg = otherpkg->arch_next) {
+    if (otherpkg->status <= stat_configfiles || otherpkg == pkg)
+      continue;
+    if (versioncompare(&pkg->available.version, &otherpkg->installed.version)) {
+      tc.pkg_in_sync = false;
+      break;
+    }
+  }
 
   r = tar_extractor(&tc, &tf);
   if (r) {
@@ -641,14 +892,13 @@ void process_archive(const char *filename) {
   fd_null_copy(p1[0], -1, _("dpkg-deb: zap possible trailing zeros"));
   close(p1[0]);
   p1[0] = -1;
-  subproc_wait_check(c1, BACKEND " --fsys-tarfile", PROCPIPE);
+  subproc_wait_check(pid, BACKEND " --fsys-tarfile", PROCPIPE);
 
   tar_deferred_extract(newfileslist, pkg);
 
   if (oldversionstatus == stat_halfinstalled || oldversionstatus == stat_unpacked) {
-    /* Packages that were in `installed' and `postinstfailed' have been reduced
-     * to `unpacked' by now, by the running of the prerm script.
-     */
+    /* Packages that were in ‘installed’ and ‘postinstfailed’ have been
+     * reduced to ‘unpacked’ by now, by the running of the prerm script. */
     pkg->status= stat_halfinstalled;
     modstatdb_note(pkg);
     push_cleanup(cu_postrmupgrade, ~ehflag_normaltidy, NULL, 0, 1, (void *)pkg);
@@ -657,26 +907,24 @@ void process_archive(const char *filename) {
   }
 
   /* If anything goes wrong while tidying up it's a bit late to do
-   * anything about it.  However, we don't install the new status
+   * anything about it. However, we don't install the new status
    * info yet, so that a future dpkg installation will put everything
    * right (we hope).
    *
-   * If something does go wrong later the `conflictor' package will be
-   * left in the `removal_failed' state.  Removing or installing it
+   * If something does go wrong later the ‘conflictor’ package will be
+   * left in the ‘removal_failed’ state. Removing or installing it
    * will be impossible if it was required because of the conflict with
    * the package we're installing now and (presumably) the dependency
-   * by other packages.  This means that the files it contains in
+   * by other packages. This means that the files it contains in
    * common with this package will hang around until we successfully
    * get this package installed, after which point we can trust the
    * conflicting package's file list, which will have been updated to
-   * remove any files in this package.
-   */
+   * remove any files in this package. */
   push_checkpoint(~ehflag_bombout, ehflag_normaltidy);
-  
+
   /* Now we delete all the files that were in the old version of
    * the package only, except (old or new) conffiles, which we leave
-   * alone.
-   */
+   * alone. */
   reversefilelist_init(&rlistit,pkg->clientdata->files);
   while ((namenode= reversefilelist_next(&rlistit))) {
     struct filenamenode *usenode;
@@ -689,8 +937,8 @@ void process_archive(const char *filename) {
     trig_file_activate(usenode, pkg);
 
     varbuf_trunc(&fnamevb, fnameidlu);
-    varbufaddstr(&fnamevb, usenode->name);
-    varbufaddc(&fnamevb,0);
+    varbuf_add_str(&fnamevb, usenode->name);
+    varbuf_end_str(&fnamevb);
 
     if (!stat(namenode->name,&stab) && S_ISDIR(stab.st_mode)) {
       debug(dbg_eachfiledetail, "process_archive: %s is a directory",
@@ -713,7 +961,12 @@ void process_archive(const char *filename) {
 	          "(and has now been deleted)"), namenode->name);
       }
     } else {
-      /* Ok, it's an old file, but is it really not in the new package?
+      struct fileinlist *sameas = NULL;
+      static struct stat empty_stat;
+      struct varbuf cfilename = VARBUF_INIT;
+
+      /*
+       * Ok, it's an old file, but is it really not in the new package?
        * It might be known by a different name because of symlinks.
        *
        * We need to check to make sure, so we stat the file, then compare
@@ -726,13 +979,9 @@ void process_archive(const char *filename) {
        * the process a little leaner. We are only worried about new ones
        * since ones that stayed the same don't really apply here.
        */
-      struct fileinlist *sameas = NULL;
-      static struct stat empty_stat;
-      struct varbuf cfilename = VARBUF_INIT;
 
       /* If we can't stat the old or new file, or it's a directory,
-       * we leave it up to the normal code
-       */
+       * we leave it up to the normal code. */
       debug(dbg_eachfile, "process_archive: checking %s for same files on "
 	    "upgrade/downgrade", fnamevb.buf);
 
@@ -744,11 +993,11 @@ void process_archive(const char *filename) {
 	if (!cfile->namenode->filestat) {
 	  struct stat tmp_stat;
 
-	  varbufreset(&cfilename);
-	  varbufaddstr(&cfilename, instdir);
-	  varbufaddc(&cfilename, '/');
-	  varbufaddstr(&cfilename, cfile->namenode->name);
-	  varbufaddc(&cfilename, '\0');
+	  varbuf_reset(&cfilename);
+	  varbuf_add_str(&cfilename, instdir);
+	  varbuf_add_char(&cfilename, '/');
+	  varbuf_add_str(&cfilename, cfile->namenode->name);
+	  varbuf_end_str(&cfilename);
 
 	  if (lstat(cfilename.buf, &tmp_stat) == 0) {
 	    cfile->namenode->filestat = nfmalloc(sizeof(struct stat));
@@ -800,7 +1049,7 @@ void process_archive(const char *filename) {
 	}
 	continue;
       }
-      
+
       if (sameas)
 	continue;
 
@@ -813,127 +1062,31 @@ void process_archive(const char *filename) {
   }
 
   /* OK, now we can write the updated files-in-this package list,
-   * since we've done away (hopefully) with all the old junk.
-   */
-  write_filelist_except(pkg,newfileslist,0);
+   * since we've done away (hopefully) with all the old junk. */
+  write_filelist_except(pkg, &pkg->available, newfileslist, 0);
 
   /* Trigger interests may have changed.
    * Firstly we go through the old list of interests deleting them.
-   * Then we go through the new list adding them.
-   */
+   * Then we go through the new list adding them. */
   strcpy(cidirrest, TRIGGERSCIFILE);
-  trig_parse_ci(pkgadminfile(pkg, TRIGGERSCIFILE),
+  trig_parse_ci(pkgadminfile(pkg, &pkg->installed, TRIGGERSCIFILE),
                 trig_cicb_interest_delete, NULL, pkg);
   trig_parse_ci(cidir, trig_cicb_interest_add, NULL, pkg);
   trig_file_interests_save();
 
   /* We also install the new maintainer scripts, and any other
-   * cruft that may have come along with the package.  First
+   * cruft that may have come along with the package. First
    * we go through the existing scripts replacing or removing
    * them as appropriate; then we go through the new scripts
-   * (any that are left) and install them.
-   */
+   * (any that are left) and install them. */
   debug(dbg_general, "process_archive updating info directory");
-  varbufreset(&infofnvb);
-  varbufaddstr(&infofnvb, pkgadmindir());
-  infodirlen= infofnvb.used;
-  varbufaddc(&infofnvb,0);
-  dsd= opendir(infofnvb.buf);
-  if (!dsd) ohshite(_("cannot read info directory"));
-  push_cleanup(cu_closedir, ~0, NULL, 0, 1, (void *)dsd);
-  while ((de = readdir(dsd)) != NULL) {
-    debug(dbg_veryverbose, "process_archive info file `%s'", de->d_name);
-    if (de->d_name[0] == '.') continue; /* ignore dotfiles, including `.' and `..' */
-    p= strrchr(de->d_name,'.'); if (!p) continue; /* ignore anything odd */
-    if (strlen(pkg->name) != (size_t)(p-de->d_name) ||
-        strncmp(de->d_name,pkg->name,p-de->d_name)) continue;
-    debug(dbg_stupidlyverbose, "process_archive info this pkg");
-    /* Right do we have one ? */
-    p++; /* skip past the full stop */
-    if (!strcmp(p,LISTFILE)) continue; /* We do the list separately */
-    if (strlen(p) > MAXCONTROLFILENAME)
-      ohshit(_("old version of package has overly-long info file name starting `%.250s'"),
-             de->d_name);
-    varbuf_trunc(&infofnvb, infodirlen);
-    varbufaddstr(&infofnvb,de->d_name);
-    varbufaddc(&infofnvb,0);
-    strcpy(cidirrest,p);
-    /* We keep files to rename in a list as doing the rename immediately
-     * might influence the current readdir(), the just renamed file might
-     * be returned a second time as it's actually a new file from the
-     * point of view of the filesystem. */
-    rename_node = m_malloc(sizeof(*rename_node));
-    rename_node->next = rename_head;
-    rename_node->src = m_strdup(cidir);
-    rename_node->dst = m_strdup(infofnvb.buf);
-    rename_head = rename_node;
-  }
-  pop_cleanup(ehflag_normaltidy); /* closedir */
+  pkg_infodb_update(pkg, cidir, cidirrest);
 
-  while ((rename_node = rename_head)) {
-    if (!rename(rename_node->src, rename_node->dst)) {
-      debug(dbg_scripts, "process_archive info installed %s as %s",
-            rename_node->src, rename_node->dst);
-    } else if (errno == ENOENT) {
-      /* Right, no new version. */
-      if (unlink(rename_node->dst))
-        ohshite(_("unable to remove obsolete info file `%.250s'"),
-                rename_node->dst);
-      debug(dbg_scripts, "process_archive info unlinked %s", rename_node->dst);
-    } else {
-      ohshite(_("unable to install (supposed) new info file `%.250s'"),
-              rename_node->src);
-    }
-    rename_head = rename_node->next;
-    free(rename_node->src);
-    free(rename_node->dst);
-    free(rename_node);
-  }
-  
-  *cidirrest = '\0'; /* the directory itself */
-  dsd= opendir(cidir);
-  if (!dsd) ohshite(_("unable to open temp control directory"));
-  push_cleanup(cu_closedir, ~0, NULL, 0, 1, (void *)dsd);
-  while ((de= readdir(dsd))) {
-    if (strchr(de->d_name,'.')) {
-      debug(dbg_scripts,"process_archive tmp.ci script/file `%s' contains dot",
-            de->d_name);
-      continue;
-    }
-    if (strlen(de->d_name) > MAXCONTROLFILENAME)
-      ohshit(_("package contains overly-long control info file name (starting `%.50s')"),
-             de->d_name);
-    strcpy(cidirrest,de->d_name);
-    /* First we check it's not a directory. */
-    if (!rmdir(cidir))
-      ohshit(_("package control info contained directory `%.250s'"),cidir);
-    else if (errno != ENOTDIR)
-      ohshite(_("package control info rmdir of `%.250s' didn't say not a dir"),de->d_name);
-    if (!strcmp(de->d_name,CONTROLFILE)) {
-      debug(dbg_scripts,"process_archive tmp.ci script/file `%s' is control",cidir);
-      continue; /* ignore the control file */
-    }
-    if (!strcmp(de->d_name,LISTFILE)) {
-      warning(_("package %s contained list as info file"), pkg->name);
-      continue;
-    }
-    /* Right, install it */
-    newinfofilename= pkgadminfile(pkg,de->d_name);
-    if (rename(cidir,newinfofilename))
-      ohshite(_("unable to install new info file `%.250s' as `%.250s'"),
-              cidir,newinfofilename);
-    debug(dbg_scripts,"process_archive tmp.ci script/file `%s' installed as `%s'",
-          cidir, newinfofilename);
-  }
-
-  /* Sync the info database directory. */
-  dir_sync(dsd, cidir);
-
-  pop_cleanup(ehflag_normaltidy); /* closedir */
-
-  /* Update the status database.
-   * This involves copying each field across from the `available'
-   * to the `installed' half of the pkg structure.
+  /*
+   * Update the status database.
+   *
+   * This involves copying each field across from the ‘available’
+   * to the ‘installed’ half of the pkg structure.
    * For some of the fields we have to do a complicated construction
    * operation; for others we can just copy the value.
    * We tackle the fields in the order they appear, so that
@@ -942,11 +1095,10 @@ void process_archive(const char *filename) {
    * to, because these are never modified and never freed.
    */
 
-  /* The dependencies are the most difficult.  We have to build
-   * a whole new forward dependency tree.  At least the reverse
+  /* The dependencies are the most difficult. We have to build
+   * a whole new forward dependency tree. At least the reverse
    * links (linking our deppossi's into the reverse chains)
-   * can be done by copy_dependency_links.
-   */
+   * can be done by copy_dependency_links. */
   newdeplist = NULL;
   newdeplistlastp = &newdeplist;
   for (dep= pkg->available.depends; dep; dep= dep->next) {
@@ -967,6 +1119,8 @@ void process_archive(const char *filename) {
       else
         blankversion(&newpossi->version);
       newpossi->cyclebreak = false;
+      newpossi->arch = possi->arch;
+      newpossi->arch_is_implicit = possi->arch_is_implicit;
       *newpossilastp= newpossi;
       newpossilastp= &newpossi->next;
     }
@@ -977,25 +1131,21 @@ void process_archive(const char *filename) {
   /* Right, now we've replicated the forward tree, we
    * get copy_dependency_links to remove all the old dependency
    * structures from the reverse links and add the new dependency
-   * structures in instead.  It also copies the new dependency
-   * structure pointer for this package into the right field.
-   */
+   * structures in instead. It also copies the new dependency
+   * structure pointer for this package into the right field. */
   copy_dependency_links(pkg,&pkg->installed.depends,newdeplist,0);
 
-  /* The `depended' pointer in the structure doesn't represent anything
-   * that is actually specified by this package - it's there so we
-   * can find out what other packages refer to this one.  So,
-   * we don't copy it.  We go straight on to copy the text fields.
-   */
+  /* We copy the text fields. */
   pkg->installed.essential= pkg->available.essential;
+  pkg->installed.multiarch = pkg->available.multiarch;
   pkg->installed.description= pkg->available.description;
   pkg->installed.maintainer= pkg->available.maintainer;
   pkg->installed.source= pkg->available.source;
-  pkg->installed.architecture= pkg->available.architecture;
+  pkg->installed.arch = pkg->available.arch;
   pkg->installed.installedsize= pkg->available.installedsize;
   pkg->installed.version= pkg->available.version;
-  pkg->installed.origin = pkg->available.origin;                               
-  pkg->installed.bugs = pkg->available.bugs;                                   
+  pkg->installed.origin = pkg->available.origin;
+  pkg->installed.bugs = pkg->available.bugs;
 
   /* We have to generate our own conffiles structure. */
   pkg->installed.conffiles = NULL;
@@ -1011,8 +1161,7 @@ void process_archive(const char *filename) {
   }
 
   /* We can just copy the arbitrary fields list, because it is
-   * never even rearranged. Phew!
-   */
+   * never even rearranged. Phew! */
   pkg->installed.arbs= pkg->available.arbs;
 
   /* Check for disappearing packages:
@@ -1020,20 +1169,20 @@ void process_archive(const char *filename) {
    * whose files are entirely part of the one we've just unpacked
    * (and which actually *have* some files!).
    *
-   * Any that we find are removed - we run the postrm with `disappear'
+   * Any that we find are removed - we run the postrm with ‘disappear’
    * as an argument, and remove their info/... files and status info.
    * Conffiles are ignored (the new package had better do something
-   * with them !).
-   */
-  it= iterpkgstart();
-  while ((otherpkg = iterpkgnext(it)) != NULL) {
+   * with them!). */
+  it = pkg_db_iter_new();
+  while ((otherpkg = pkg_db_iter_next_pkg(it)) != NULL) {
     ensure_package_clientdata(otherpkg);
     if (otherpkg == pkg ||
         otherpkg->status == stat_notinstalled ||
         otherpkg->status == stat_configfiles ||
 	otherpkg->clientdata->istobe == itb_remove ||
         !otherpkg->clientdata->files) continue;
-    debug(dbg_veryverbose, "process_archive checking disappearance %s",otherpkg->name);
+    debug(dbg_veryverbose, "process_archive checking disappearance %s",
+          pkg_describe(otherpkg, pdo_foreign));
     assert(otherpkg->clientdata->istobe == itb_normal ||
            otherpkg->clientdata->istobe == itb_deconfigure);
     for (cfile= otherpkg->clientdata->files;
@@ -1049,16 +1198,16 @@ void process_archive(const char *filename) {
     if (cfile) continue;
 
     /* So dependency things will give right answers ... */
-    otherpkg->clientdata->istobe= itb_remove; 
+    otherpkg->clientdata->istobe= itb_remove;
     debug(dbg_veryverbose, "process_archive disappear checking dependencies");
-    for (pdep= otherpkg->installed.depended;
+    for (pdep = otherpkg->set->depended.installed;
          pdep;
          pdep = pdep->rev_next) {
       if (pdep->up->type != dep_depends && pdep->up->type != dep_predepends &&
           pdep->up->type != dep_recommends) continue;
       if (depisok(pdep->up, &depprobwhy, NULL, false))
         continue;
-      varbufaddc(&depprobwhy,0);
+      varbuf_end_str(&depprobwhy);
       debug(dbg_veryverbose,"process_archive cannot disappear: %s",depprobwhy.buf);
       break;
     }
@@ -1068,7 +1217,7 @@ void process_archive(const char *filename) {
            providecheck;
            providecheck= providecheck->next) {
         if (providecheck->type != dep_provides) continue;
-        for (pdep= providecheck->list->ed->installed.depended;
+        for (pdep = providecheck->list->ed->depended.installed;
              pdep;
              pdep = pdep->rev_next) {
           if (pdep->up->type != dep_depends && pdep->up->type != dep_predepends &&
@@ -1076,7 +1225,7 @@ void process_archive(const char *filename) {
             continue;
           if (depisok(pdep->up, &depprobwhy, NULL, false))
             continue;
-          varbufaddc(&depprobwhy,0);
+          varbuf_end_str(&depprobwhy);
           debug(dbg_veryverbose,"process_archive cannot disappear (provides %s): %s",
                 providecheck->list->ed->name, depprobwhy.buf);
           goto break_from_both_loops_at_once;
@@ -1088,80 +1237,56 @@ void process_archive(const char *filename) {
     if (pdep) continue;
 
     printf(_("(Noting disappearance of %s, which has been completely replaced.)\n"),
-           otherpkg->name);
+           pkg_describe(otherpkg, pdo_foreign));
     log_action("disappear", otherpkg);
-    debug(dbg_general, "process_archive disappearing %s",otherpkg->name);
-    /* No, we're disappearing it.  This is the wrong time to go and
-     * run maintainer scripts and things, as we can't back out.  But
-     * what can we do ?  It has to be run this late.
-     */
+    debug(dbg_general, "process_archive disappearing %s",
+          pkg_describe(otherpkg, pdo_foreign));
+    /* No, we're disappearing it. This is the wrong time to go and
+     * run maintainer scripts and things, as we can't back out. But
+     * what can we do ?  It has to be run this late. */
     trig_activate_packageprocessing(otherpkg);
     maintainer_script_installed(otherpkg, POSTRMFILE,
                                 "post-removal script (for disappearance)",
-                                "disappear", pkg->name, 
+                                "disappear",
+                                pkg_describe(pkg, pdo_foreign | pdo_avail),
                                 versiondescribe(&pkg->available.version,
                                                 vdew_nonambig),
                                 NULL);
 
-    /* OK, now we delete all the stuff in the `info' directory .. */
-    varbufreset(&fnvb);
-    varbufaddstr(&fnvb, pkgadmindir());
-    infodirbaseused= fnvb.used;
-    varbufaddc(&fnvb,0);
-    dsd= opendir(fnvb.buf); if (!dsd) ohshite(_("cannot read info directory"));
-    push_cleanup(cu_closedir, ~0, NULL, 0, 1, (void *)dsd);
-
+    /* OK, now we delete all the stuff in the ‘info’ directory .. */
     debug(dbg_general, "process_archive disappear cleaning info directory");
-      
-    while ((de = readdir(dsd)) != NULL) {
-      debug(dbg_veryverbose, "process_archive info file `%s'", de->d_name);
-      if (de->d_name[0] == '.') continue;
-      p= strrchr(de->d_name,'.'); if (!p) continue;
-      if (strlen(otherpkg->name) != (size_t)(p-de->d_name) ||
-          strncmp(de->d_name,otherpkg->name,p-de->d_name)) continue;
-      debug(dbg_stupidlyverbose, "process_archive info this pkg");
-      varbuf_trunc(&fnvb, infodirbaseused);
-      varbufaddstr(&fnvb,de->d_name);
-      varbufaddc(&fnvb,0);
-      if (unlink(fnvb.buf))
-        ohshite(_("unable to delete disappearing control info file `%.250s'"),fnvb.buf);
-      debug(dbg_scripts, "process_archive info unlinked %s",fnvb.buf);
-    }
+    pkg_infodb_foreach(otherpkg, &otherpkg->installed, pkg_infodb_remove_file);
+    dir_sync_path(pkgadmindir());
 
-    /* Sync the info database directory. */
-    dir_sync(dsd, fnvb.buf);
-
-    pop_cleanup(ehflag_normaltidy); /* closedir */
-    
     otherpkg->status= stat_notinstalled;
     otherpkg->want = want_unknown;
     otherpkg->eflag = eflag_ok;
 
     blankversion(&otherpkg->configversion);
-    blankpackageperfile(&otherpkg->installed);
+    pkgbin_blank(&otherpkg->installed, true);
 
     otherpkg->clientdata->fileslistvalid = false;
 
     modstatdb_note(otherpkg);
 
   } /* while (otherpkg= ... */
-  iterpkgend(it);
-  
+  pkg_db_iter_free(it);
+
   /* Delete files from any other packages' lists.
    * We have to do this before we claim this package is in any
    * sane kind of state, as otherwise we might delete by mistake
    * a file that we overwrote, when we remove the package which
-   * had the version we overwrote.  To prevent this we make
+   * had the version we overwrote. To prevent this we make
    * sure that we don't claim this package is OK until we
-   * have claimed `ownership' of all its files.
-   */
+   * have claimed ‘ownership’ of all its files. */
   for (cfile= newfileslist; cfile; cfile= cfile->next) {
     struct filepackages_iterator *iter;
+    struct pkgset *divpkgset;
 
     if (!(cfile->namenode->flags & fnnf_elide_other_lists)) continue;
     if (cfile->namenode->divert && cfile->namenode->divert->useinstead) {
-      divpkg= cfile->namenode->divert->pkg;
-      if (divpkg == pkg) {
+      divpkgset = cfile->namenode->divert->pkgset;
+      if (divpkgset == pkg->set) {
         debug(dbg_eachfile,
               "process_archive not overwriting any `%s' (overriding, `%s')",
               cfile->namenode->name, cfile->namenode->divert->useinstead->name);
@@ -1169,31 +1294,39 @@ void process_archive(const char *filename) {
       } else {
         debug(dbg_eachfile,
               "process_archive looking for overwriting `%s' (overridden by %s)",
-              cfile->namenode->name, divpkg ? divpkg->name : "<local>");
-      }        
+              cfile->namenode->name, divpkgset ? divpkgset->name : "<local>");
+      }
     } else {
-      divpkg = NULL;
+      divpkgset = NULL;
       debug(dbg_eachfile, "process_archive looking for overwriting `%s'",
             cfile->namenode->name);
     }
     iter = filepackages_iter_new(cfile->namenode);
     while ((otherpkg = filepackages_iter_next(iter))) {
-      debug(dbg_eachfiledetail, "process_archive ... found in %s", otherpkg->name);
+      debug(dbg_eachfiledetail, "process_archive ... found in %s",
+            pkg_describe(otherpkg, pdo_foreign));
       /* If !fileslistvalid then it's one of the disappeared packages above
        * and we don't bother with it here, clearly. */
       if (otherpkg == pkg || !otherpkg->clientdata->fileslistvalid)
         continue;
-      if (otherpkg == divpkg) {
+      if (otherpkg->set == divpkgset) {
         debug(dbg_eachfiledetail, "process_archive ... diverted, skipping");
         continue;
       }
+      /* Multi-Arch: same packages can share files */
+      if (otherpkg->set == pkg->set &&
+          otherpkg->installed.multiarch == multiarch_same &&
+          pkg->installed.multiarch == multiarch_same)
+        continue;
 
       /* Found one. We delete remove the list entry for this file,
        * (and any others in the same package) and then mark the package
        * as requiring a reread. */
-      write_filelist_except(otherpkg, otherpkg->clientdata->files, 1);
+      write_filelist_except(otherpkg, &otherpkg->installed,
+                            otherpkg->clientdata->files, 1);
       ensure_package_clientdata(otherpkg);
-      debug(dbg_veryverbose, "process_archive overwrote from %s", otherpkg->name);
+      debug(dbg_veryverbose, "process_archive overwrote from %s",
+            pkg_describe(otherpkg, pdo_foreign));
     }
     filepackages_iter_free(iter);
   }
@@ -1201,11 +1334,10 @@ void process_archive(const char *filename) {
   /* Right, the package we've unpacked is now in a reasonable state.
    * The only thing that we have left to do with it is remove
    * backup files, and we can leave the user to fix that if and when
-   * it happens (we leave the reinstall required flag, of course).
-   */
+   * it happens (we leave the reinstall required flag, of course). */
   pkg->status= stat_unpacked;
   modstatdb_note(pkg);
-  
+
   /* Now we delete all the backup files that we made when
    * extracting the archive - except for files listed as conffiles
    * in the new package.
@@ -1214,20 +1346,18 @@ void process_archive(const char *filename) {
    * Note that we don't ever delete things that were in the old
    * package as a conffile and don't appear at all in the new.
    * They stay recorded as obsolete conffiles and will eventually
-   * (if not taken over by another package) be forgotten.
-   */
+   * (if not taken over by another package) be forgotten. */
   for (cfile= newfileslist; cfile; cfile= cfile->next) {
     if (cfile->namenode->flags & fnnf_new_conff) continue;
     varbuf_trunc(&fnametmpvb, fnameidlu);
-    varbufaddstr(&fnametmpvb,namenodetouse(cfile->namenode,pkg)->name);
-    varbufaddstr(&fnametmpvb,DPKGTEMPEXT);
-    varbufaddc(&fnametmpvb,0);
+    varbuf_add_str(&fnametmpvb, namenodetouse(cfile->namenode, pkg)->name);
+    varbuf_add_str(&fnametmpvb, DPKGTEMPEXT);
+    varbuf_end_str(&fnametmpvb);
     ensure_pathname_nonexisting(fnametmpvb.buf);
   }
 
   /* OK, we're now fully done with the main package.
-   * This is quite a nice state, so we don't unwind past here.
-   */
+   * This is quite a nice state, so we don't unwind past here. */
   pkg->eflag = eflag_ok;
   modstatdb_note(pkg);
   push_checkpoint(~ehflag_bombout, ehflag_normaltidy);
@@ -1235,13 +1365,14 @@ void process_archive(const char *filename) {
   /* Only the removal of the conflictor left to do.
    * The files list for the conflictor is still a little inconsistent in-core,
    * as we have not yet updated the filename->packages mappings; however,
-   * the package->filenames mapping is 
-   */
+   * the package->filenames mapping is. */
   for (i = 0 ; i < cflict_index ; i++) {
-    /* We need to have the most up-to-date info about which files are what ... */
+    /* We need to have the most up-to-date info about which files are
+     * what ... */
     ensure_allinstfiles_available();
     removal_bulk(conflictor[i]);
   }
 
-  if (cipaction->arg == act_install) add_to_queue(pkg);
+  if (cipaction->arg_int == act_install)
+    add_to_queue(pkg);
 }

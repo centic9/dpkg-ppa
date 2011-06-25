@@ -21,6 +21,8 @@
 #ifndef LIBDPKG_AR_H
 #define LIBDPKG_AR_H
 
+#include <sys/types.h>
+
 #include <ar.h>
 
 #include <dpkg/macros.h>
@@ -33,11 +35,12 @@ void dpkg_ar_normalize_name(struct ar_hdr *arh);
 
 void dpkg_ar_put_magic(const char *ar_name, int ar_fd);
 void dpkg_ar_member_put_header(const char *ar_name, int ar_fd,
-                               const char *name, size_t size);
+                               const char *name, off_t size);
 void dpkg_ar_member_put_file(const char *ar_name, int ar_fd, const char *name,
-                             int fd);
+                             int fd, off_t size);
 void dpkg_ar_member_put_mem(const char *ar_name, int ar_fd, const char *name,
                             const void *data, size_t size);
+off_t dpkg_ar_member_get_size(const char *ar_name, struct ar_hdr *arh);
 
 DPKG_END_DECLS
 

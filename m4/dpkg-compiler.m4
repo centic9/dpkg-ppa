@@ -8,11 +8,12 @@ AC_DEFUN([DPKG_COMPILER_WARNINGS],
 [AC_ARG_ENABLE(compiler-warnings,
 	AS_HELP_STRING([--disable-compiler-warnings],
 	               [Disable additional compiler warnings]),
-	[enable_compiler_warnings=$enableval],
+	[],
 	[enable_compiler_warnings=yes])
 
 WFLAGS="-Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers \
 	 -Wmissing-declarations -Wmissing-format-attribute \
+	 -Wformat-security -Wpointer-arith \
 	 -Wvla -Winit-self -Wwrite-strings -Wcast-align -Wshadow"
 WCFLAGS="-Wdeclaration-after-statement -Wnested-externs -Wbad-function-cast \
 	 -Wstrict-prototypes -Wmissing-prototypes -Wold-style-definition"
@@ -35,9 +36,12 @@ AC_DEFUN([DPKG_COMPILER_OPTIMISATIONS],
 [AC_ARG_ENABLE(compiler-optimisations,
 	AS_HELP_STRING([--disable-compiler-optimisations],
 		       [Disable compiler optimisations]),
-[if test "x$enable_compiler_optimisations" = "xno"; then
-	[CFLAGS=$(echo "$CFLAGS" | sed -e "s/ -O[1-9]*\b/ -O0/g")]
-fi])dnl
+	[],
+	[enable_compiler_optimisations=yes])
+
+  AS_IF([test "x$enable_compiler_optimisations" = "xno"], [
+    CFLAGS=$(echo "$CFLAGS" | sed -e "s/ -O[[1-9]]*\b/ -O0/g")
+  ])
 ])
 
 # DPKG_TRY_C99([ACTION-IF-FOUND], [ACTION-IF-NOT-FOUND])
@@ -49,23 +53,35 @@ AC_DEFUN([DPKG_TRY_C99],
 #include <stdbool.h>
 #include <stdio.h>
 
-/* Variadic macro arguments */
+/* Variadic macro arguments. */
 #define variadic_macro(foo, ...) printf(foo, __VA_ARGS__)
 ]],
 [[
-	/* Compound initialisers */
+	int rc;
+
+	/* Compound initializers. */
 	struct { int a, b; } foo = { .a = 1, .b = 2 };
 
-	/* Trailing comma in enum */
+	/* Trailing comma in enum. */
 	enum { first, second, } quux;
 
-	/* Boolean type */
+	/* Boolean type. */
 	bool bar = false;
 
-	/* Specific size type */
+	/* Specific size type. */
 	uint32_t baz = 0;
+	size_t size = SIZE_MAX;
+	intmax_t imax = INTMAX_MAX;
 
-	/* Magic __func__ variable */
+	/* Format modifiers. */
+	rc = printf("%jd", imax);
+	if (rc == 3)
+		return 1;
+	rc = printf("%zu", size);
+	if (rc == 3)
+		return 1;
+
+	/* Magic __func__ variable. */
 	printf("%s", __func__);
 ]])], [$1], [$2])dnl
 ])# DPKG_TRY_C99
@@ -96,4 +112,3 @@ AS_IF([test "x$dpkg_cv_c99" = "xyes"],
 		AC_DEFINE([HAVE_C99], 1)],
 	       [AC_MSG_ERROR([unsupported required C99 extensions])])])[]dnl
 ])# DPKG_C_C99
-

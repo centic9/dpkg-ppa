@@ -2,7 +2,7 @@
  * libdpkg - Debian packaging suite library routines
  * file.h - file handling routines
  *
- * Copyright © 2008 Guillem Jover <guillem@debian.org>
+ * Copyright © 2008-2010 Guillem Jover <guillem@debian.org>
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,23 +21,33 @@
 #ifndef LIBDPKG_FILE_H
 #define LIBDPKG_FILE_H
 
+#include <sys/types.h>
+
 #include <stdbool.h>
 
 #include <dpkg/macros.h>
 
 DPKG_BEGIN_DECLS
 
-/*
- * Copy file ownership and permissions from one file to another.
- */
+struct file_stat {
+	uid_t uid;
+	gid_t gid;
+	mode_t mode;
+	time_t mtime;
+};
+
 void file_copy_perms(const char *src, const char *dst);
 
+enum file_lock_flags {
+	FILE_LOCK_NOWAIT,
+	FILE_LOCK_WAIT,
+};
+
 bool file_is_locked(int lockfd, const char *filename);
-void file_lock(int *lockfd, const char *filename,
-               const char *emsg, const char *emsg_eagain);
-void file_unlock(void);
+void file_lock(int *lockfd, enum file_lock_flags flags, const char *filename,
+               const char *desc);
+void file_unlock(int fd, const char *desc);
 
 DPKG_END_DECLS
 
 #endif /* LIBDPKG_FILE_H */
-

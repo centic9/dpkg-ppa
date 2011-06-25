@@ -35,12 +35,14 @@ build_triplet = @build@
 host_triplet = @host@
 check_PROGRAMS = t-test$(EXEEXT) t-macros$(EXEEXT) t-string$(EXEEXT) \
 	t-buffer$(EXEEXT) t-path$(EXEEXT) t-command$(EXEEXT) \
-	t-varbuf$(EXEEXT) t-ar$(EXEEXT) t-version$(EXEEXT) \
-	t-pkginfo$(EXEEXT) t-pkg-list$(EXEEXT) t-pkg-queue$(EXEEXT)
+	t-varbuf$(EXEEXT) t-ar$(EXEEXT) t-arch$(EXEEXT) \
+	t-version$(EXEEXT) t-pkginfo$(EXEEXT) t-pkg-list$(EXEEXT) \
+	t-pkg-queue$(EXEEXT)
 subdir = lib/dpkg/test
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/dpkg-arch.m4 \
+	$(top_srcdir)/m4/dpkg-build.m4 \
 	$(top_srcdir)/m4/dpkg-compiler.m4 \
 	$(top_srcdir)/m4/dpkg-coverage.m4 \
 	$(top_srcdir)/m4/dpkg-funcs.m4 $(top_srcdir)/m4/dpkg-libs.m4 \
@@ -60,40 +62,56 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 t_ar_SOURCES = t-ar.c
 t_ar_OBJECTS = t-ar.$(OBJEXT)
-t_ar_DEPENDENCIES = $(CHECK_LDADD)
+t_ar_LDADD = $(LDADD)
+t_ar_DEPENDENCIES = ../libdpkg.a
+t_arch_SOURCES = t-arch.c
+t_arch_OBJECTS = t-arch.$(OBJEXT)
+t_arch_LDADD = $(LDADD)
+t_arch_DEPENDENCIES = ../libdpkg.a
 t_buffer_SOURCES = t-buffer.c
 t_buffer_OBJECTS = t-buffer.$(OBJEXT)
-t_buffer_DEPENDENCIES = $(CHECK_LDADD)
+t_buffer_LDADD = $(LDADD)
+t_buffer_DEPENDENCIES = ../libdpkg.a
 t_command_SOURCES = t-command.c
 t_command_OBJECTS = t-command.$(OBJEXT)
-t_command_DEPENDENCIES = $(CHECK_LDADD)
+t_command_LDADD = $(LDADD)
+t_command_DEPENDENCIES = ../libdpkg.a
 t_macros_SOURCES = t-macros.c
 t_macros_OBJECTS = t-macros.$(OBJEXT)
-t_macros_DEPENDENCIES = $(CHECK_LDADD)
+t_macros_LDADD = $(LDADD)
+t_macros_DEPENDENCIES = ../libdpkg.a
 t_path_SOURCES = t-path.c
 t_path_OBJECTS = t-path.$(OBJEXT)
-t_path_DEPENDENCIES = $(CHECK_LDADD)
+t_path_LDADD = $(LDADD)
+t_path_DEPENDENCIES = ../libdpkg.a
 t_pkg_list_SOURCES = t-pkg-list.c
 t_pkg_list_OBJECTS = t-pkg-list.$(OBJEXT)
-t_pkg_list_DEPENDENCIES = $(CHECK_LDADD)
+t_pkg_list_LDADD = $(LDADD)
+t_pkg_list_DEPENDENCIES = ../libdpkg.a
 t_pkg_queue_SOURCES = t-pkg-queue.c
 t_pkg_queue_OBJECTS = t-pkg-queue.$(OBJEXT)
-t_pkg_queue_DEPENDENCIES = $(CHECK_LDADD)
+t_pkg_queue_LDADD = $(LDADD)
+t_pkg_queue_DEPENDENCIES = ../libdpkg.a
 t_pkginfo_SOURCES = t-pkginfo.c
 t_pkginfo_OBJECTS = t-pkginfo.$(OBJEXT)
-t_pkginfo_DEPENDENCIES = $(CHECK_LDADD)
+t_pkginfo_LDADD = $(LDADD)
+t_pkginfo_DEPENDENCIES = ../libdpkg.a
 t_string_SOURCES = t-string.c
 t_string_OBJECTS = t-string.$(OBJEXT)
-t_string_DEPENDENCIES = $(CHECK_LDADD)
+t_string_LDADD = $(LDADD)
+t_string_DEPENDENCIES = ../libdpkg.a
 t_test_SOURCES = t-test.c
 t_test_OBJECTS = t-test.$(OBJEXT)
-t_test_DEPENDENCIES = $(CHECK_LDADD)
+t_test_LDADD = $(LDADD)
+t_test_DEPENDENCIES = ../libdpkg.a
 t_varbuf_SOURCES = t-varbuf.c
 t_varbuf_OBJECTS = t-varbuf.$(OBJEXT)
-t_varbuf_DEPENDENCIES = $(CHECK_LDADD)
+t_varbuf_LDADD = $(LDADD)
+t_varbuf_DEPENDENCIES = ../libdpkg.a
 t_version_SOURCES = t-version.c
 t_version_OBJECTS = t-version.$(OBJEXT)
-t_version_DEPENDENCIES = $(CHECK_LDADD)
+t_version_LDADD = $(LDADD)
+t_version_DEPENDENCIES = ../libdpkg.a
 DEFAULT_INCLUDES = 
 depcomp = $(SHELL) $(top_srcdir)/build-aux/depcomp
 am__depfiles_maybe = depfiles
@@ -114,12 +132,12 @@ am__v_CCLD_0 = @echo "  CCLD  " $@;
 AM_V_GEN = $(am__v_GEN_$(V))
 am__v_GEN_ = $(am__v_GEN_$(AM_DEFAULT_VERBOSITY))
 am__v_GEN_0 = @echo "  GEN   " $@;
-SOURCES = t-ar.c t-buffer.c t-command.c t-macros.c t-path.c \
+SOURCES = t-ar.c t-arch.c t-buffer.c t-command.c t-macros.c t-path.c \
 	t-pkg-list.c t-pkg-queue.c t-pkginfo.c t-string.c t-test.c \
 	t-varbuf.c t-version.c
-DIST_SOURCES = t-ar.c t-buffer.c t-command.c t-macros.c t-path.c \
-	t-pkg-list.c t-pkg-queue.c t-pkginfo.c t-string.c t-test.c \
-	t-varbuf.c t-version.c
+DIST_SOURCES = t-ar.c t-arch.c t-buffer.c t-command.c t-macros.c \
+	t-path.c t-pkg-list.c t-pkg-queue.c t-pkginfo.c t-string.c \
+	t-test.c t-varbuf.c t-version.c
 ETAGS = etags
 CTAGS = ctags
 am__tty_colors = \
@@ -273,19 +291,7 @@ AM_CPPFLAGS = \
 	-I$(top_builddir) \
 	-I$(top_srcdir)/lib
 
-CHECK_LDADD = ../libdpkg.a
-t_ar_LDADD = $(CHECK_LDADD)
-t_command_LDADD = $(CHECK_LDADD)
-t_macros_LDADD = $(CHECK_LDADD)
-t_path_LDADD = $(CHECK_LDADD)
-t_pkginfo_LDADD = $(CHECK_LDADD)
-t_pkg_list_LDADD = $(CHECK_LDADD)
-t_pkg_queue_LDADD = $(CHECK_LDADD)
-t_string_LDADD = $(CHECK_LDADD)
-t_buffer_LDADD = $(CHECK_LDADD)
-t_test_LDADD = $(CHECK_LDADD)
-t_varbuf_LDADD = $(CHECK_LDADD)
-t_version_LDADD = $(CHECK_LDADD)
+LDADD = ../libdpkg.a
 TESTS = $(check_PROGRAMS)
 all: all-am
 
@@ -300,9 +306,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu lib/dpkg/test/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign lib/dpkg/test/Makefile'; \
 	$(am__cd) $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu lib/dpkg/test/Makefile
+	  $(AUTOMAKE) --foreign lib/dpkg/test/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -327,6 +333,9 @@ clean-checkPROGRAMS:
 t-ar$(EXEEXT): $(t_ar_OBJECTS) $(t_ar_DEPENDENCIES) 
 	@rm -f t-ar$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(t_ar_OBJECTS) $(t_ar_LDADD) $(LIBS)
+t-arch$(EXEEXT): $(t_arch_OBJECTS) $(t_arch_DEPENDENCIES) 
+	@rm -f t-arch$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(t_arch_OBJECTS) $(t_arch_LDADD) $(LIBS)
 t-buffer$(EXEEXT): $(t_buffer_OBJECTS) $(t_buffer_DEPENDENCIES) 
 	@rm -f t-buffer$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(t_buffer_OBJECTS) $(t_buffer_LDADD) $(LIBS)
@@ -368,6 +377,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/t-ar.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/t-arch.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/t-buffer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/t-command.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/t-macros.Po@am__quote@

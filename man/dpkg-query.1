@@ -12,7 +12,7 @@ the \fBdpkg\fP database.
 .
 .SH COMMANDS
 .TP
-.BR \-l ", " \-\-list " \fIpackage-name-pattern\fP..."
+.BR \-l ", " \-\-list " [\fIpackage-name-pattern\fP...]"
 List packages matching given pattern. If no \fIpackage-name-pattern\fP
 is given, list all packages in \fI/var/lib/dpkg/status\fP, excluding
 the ones marked as not-installed (i.e. those which have been previously
@@ -65,12 +65,14 @@ automatically to fit the terminal width. It is intended for human
 readers, and is not easily machine-readable. See \fB\-W\fP (\fB\-\-show\fP)
 and \fB\-\-showformat\fP for a way to configure the output format.
 .TP
-.BR \-W ", " \-\-show " \fIpackage-name-pattern\fP..."
+.BR \-W ", " \-\-show " [\fIpackage-name-pattern\fP...]"
 Just like the \fB\-\-list\fP option this will list all packages matching
 the given pattern. However the output can be customized using the
 \fB\-\-showformat\fP option.
 The default output format gives one line per matching package, each line
-having the name and installed version of the package, separated by a tab.
+having the name (extended with the architecture qualifier for
+foreign architecture packages) and installed version of the package,
+separated by a tab.
 .TP
 .BR \-s ", " \-\-status " \fIpackage-name\fP..."
 Report status of specified package. This just displays the entry in
@@ -158,6 +160,7 @@ fields or fields stored in the binary package end up in it):
     \fBMaintainer\fP
     \fBOrigin\fP
     \fBPackage\fP
+    \fBPackageSpec\fP (virtual field)
     \fBPre\-Depends\fP
     \fBPriority\fP
     \fBProvides\fP
@@ -175,15 +178,18 @@ fields or fields stored in the binary package end up in it):
     \fBVersion\fP
 .fi
 
-The default format string is \(lq\fB${Package}\et${Version}\en\fP\(rq.
+The default format string is \(lq\fB${PackageSpec}\et${Version}\en\fP\(rq.
 Actually, all other fields found in the status file (i.e. user defined
 fields) can be requested, too. They will be printed as-is, though, no
-conversion nor error checking is done on them.
+conversion nor error checking is done on them. \fBPackageSpec\fP is a
+special field that will print the package name with an architecture
+qualifier (like "libc6:amd64") if the package is of a foreign architecture
+(an architecture that doesn't match dpkg's architecture).
 To get the name of the dpkg maintainer and the installed version, you could
 run:
 
 .nf
-  \fBdpkg\-query \-W \-f=\(aq${Package} ${Version}\\t${Maintainer}\\n\(aq dpkg\fP
+  \fBdpkg\-query \-W \-f=\(aq${PackageSpec} ${Version}\\t${Maintainer}\\n\(aq dpkg\fP
 .fi
 .
 .SH "EXIT STATUS"
@@ -194,6 +200,10 @@ Problems were encountered while parsing the command line or performing the
 query, including no file or package being found (except for \-\-control\-path).
 .
 .SH ENVIRONMENT
+.TP
+.B DPKG_ADMINDIR
+If set and the \fB\-\-admindir\fP option has not been specified, it will
+be used as the dpkg data directory.
 .TP
 \fBCOLUMNS\fP
 This setting influences the output of the \fB\-\-list\fP option by changing

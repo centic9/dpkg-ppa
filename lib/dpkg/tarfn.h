@@ -3,6 +3,7 @@
  * tarfn.h - tar archive extraction functions
  *
  * Copyright © 1995 Bruce Perens
+ * Copyright © 2009-2010 Guillem Jover <guillem@debian.org>
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,6 +26,8 @@
 
 #include <unistd.h>
 #include <stdlib.h>
+
+#include <dpkg/file.h>
 
 #define TARBLKSZ	512
 
@@ -53,25 +56,23 @@ struct tar_entry {
 	enum tar_filetype type;	/* Regular, Directory, Special, Link */
 	char *name;		/* File name */
 	char *linkname;		/* Name for symbolic and hard links */
-	size_t size;		/* Size of file */
-	time_t mtime;		/* Last-modified time */
-	mode_t mode;		/* Unix mode, including device bits. */
-	uid_t uid;		/* Numeric UID */
-	gid_t gid;		/* Numeric GID */
+	off_t size;		/* Size of file */
 	dev_t dev;		/* Special device for mknod() */
+
+	struct file_stat stat;
 };
 
-typedef int (*tar_read_func)(void *ctx, char *buffer, int length);
-typedef int (*tar_func)(void *ctx, struct tar_entry *h);
+typedef int tar_read_func(void *ctx, char *buffer, int length);
+typedef int tar_make_func(void *ctx, struct tar_entry *h);
 
 struct tar_operations {
-	tar_read_func read;
+	tar_read_func *read;
 
-	tar_func extract_file;
-	tar_func link;
-	tar_func symlink;
-	tar_func mkdir;
-	tar_func mknod;
+	tar_make_func *extract_file;
+	tar_make_func *link;
+	tar_make_func *symlink;
+	tar_make_func *mkdir;
+	tar_make_func *mknod;
 };
 
 int tar_extractor(void *ctx, const struct tar_operations *ops);

@@ -149,6 +149,9 @@
 /* Define to 1 if you have the `strsignal' function. */
 #undef HAVE_STRSIGNAL
 
+/* Define to 1 if you have the `strtoimax' function. */
+#undef HAVE_STRTOIMAX
+
 /* Define to 1 if you have the `strtoul' function. */
 #undef HAVE_STRTOUL
 
@@ -218,9 +221,6 @@
 /* Use unreliable mmap support */
 #undef USE_MMAP
 
-/* Define to 1 if sync(2) is synchronous */
-#undef USE_SYNC_SYNC
-
 /* Enable extensions on AIX 3, Interix.  */
 #ifndef _ALL_SOURCE
 # undef _ALL_SOURCE
@@ -249,11 +249,20 @@
 /* Define to 1 to use bz2 rather than console tool */
 #undef WITH_BZ2
 
+/* Define to 1 if dselect is compiled. */
+#undef WITH_DSELECT
+
+/* Define to 1 if install-info is compiled. */
+#undef WITH_INSTALL_INFO
+
 /* Define to 1 to compile in SELinux support */
 #undef WITH_SELINUX
 
 /* Define to 1 if start-stop-daemon is compiled. */
 #undef WITH_START_STOP_DAEMON
+
+/* Define to 1 if update-alternatives is compiled. */
+#undef WITH_UPDATE_ALTERNATIVES
 
 /* Define to 1 to use zlib rather than console tool */
 #undef WITH_ZLIB

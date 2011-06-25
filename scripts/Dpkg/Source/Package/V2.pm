@@ -29,7 +29,7 @@ use Dpkg::Compression;
 use Dpkg::Source::Archive;
 use Dpkg::Source::Patch;
 use Dpkg::Exit;
-use Dpkg::Source::Functions qw(erasedir is_binary);
+use Dpkg::Source::Functions qw(erasedir is_binary fs_time);
 
 use POSIX;
 use File::Basename;
@@ -206,9 +206,9 @@ sub apply_patches {
     $opts{"skip_auto"} = 0 unless defined($opts{"skip_auto"});
     my @patches = $self->get_patches($dir, %opts);
     return unless scalar(@patches);
-    my $timestamp = time();
     my $applied = File::Spec->catfile($dir, "debian", "patches", ".dpkg-source-applied");
     open(APPLIED, '>', $applied) || syserr(_g("cannot write %s"), $applied);
+    my $timestamp = fs_time($applied);
     foreach my $patch ($self->get_patches($dir, %opts)) {
         my $path = File::Spec->catfile($dir, "debian", "patches", $patch);
         info(_g("applying %s"), $patch) unless $opts{"skip_auto"};
@@ -225,13 +225,13 @@ sub unapply_patches {
     my ($self, $dir, %opts) = @_;
     my @patches = reverse($self->get_patches($dir, %opts));
     return unless scalar(@patches);
-    my $timestamp = time();
     my $applied = File::Spec->catfile($dir, "debian", "patches", ".dpkg-source-applied");
+    my $timestamp = fs_time($applied);
     foreach my $patch (@patches) {
         my $path = File::Spec->catfile($dir, "debian", "patches", $patch);
         info(_g("unapplying %s"), $patch) unless $opts{"quiet"};
         my $patch_obj = Dpkg::Source::Patch->new(filename => $path);
-        $patch_obj->apply($dir, force_timestamp => 1,
+        $patch_obj->apply($dir, force_timestamp => 1, verbose => 0,
                           timestamp => $timestamp,
                           add_options => [ '-E', '-R' ]);
     }
@@ -437,7 +437,8 @@ sub do_build {
     $diff->create();
     $diff->set_header($self->get_patch_header($dir, $autopatch));
     $diff->add_diff_directory($tmp, $dir, basedirname => $basedirname,
-            %{$self->{'diff_options'}}, handle_binary_func => $handle_binary);
+            %{$self->{'diff_options'}}, handle_binary_func => $handle_binary,
+            order_from => $autopatch);
     error(_g("unrepresentable changes to source")) if not $diff->finish();
     # The previous auto-patch must be removed, it has not been used and it
     # will be recreated if it's still needed
@@ -450,7 +451,7 @@ sub do_build {
     } else {
         mkpath(File::Spec->catdir($dir, "debian", "patches"));
         info(_g("local changes stored in %s, the modified files are:"), $autopatch);
-        my $analysis = $diff->analyze($dir);
+        my $analysis = $diff->analyze($dir, verbose => 0);
         foreach my $fn (sort keys %{$analysis->{'filepatched'}}) {
             print " $fn\n";
         }

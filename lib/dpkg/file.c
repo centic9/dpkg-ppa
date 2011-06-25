@@ -34,6 +34,12 @@
 #include <dpkg/i18n.h>
 #include <dpkg/file.h>
 
+/**
+ * Copy file ownership and permissions from one file to another.
+ *
+ * @param src The source filename.
+ * @param dst The destination filename.
+ */
 void
 file_copy_perms(const char *src, const char *dst)
 {
@@ -63,10 +69,12 @@ file_lock_setup(struct flock *fl, short type)
 	fl->l_pid = 0;
 }
 
-static void
-file_unlock_cleanup(int argc, void **argv)
+/**
+ * Unlock a previously locked file.
+ */
+void
+file_unlock(int lockfd, const char *lock_desc)
 {
-	int lockfd = *(int*)argv[0];
 	struct flock fl;
 
 	assert(lockfd >= 0);
@@ -74,13 +82,16 @@ file_unlock_cleanup(int argc, void **argv)
 	file_lock_setup(&fl, F_UNLCK);
 
 	if (fcntl(lockfd, F_SETLK, &fl) == -1)
-		ohshite(_("unable to unlock dpkg status database"));
+		ohshite(_("unable to unlock %s"), lock_desc);
 }
 
-void
-file_unlock(void)
+static void
+file_unlock_cleanup(int argc, void **argv)
 {
-	pop_cleanup(ehflag_normaltidy); /* Calls file_unlock_cleanup. */
+	int lockfd = *(int *)argv[0];
+	const char *lock_desc = argv[1];
+
+	file_unlock(lockfd, lock_desc);
 }
 
 /**
@@ -105,24 +116,37 @@ file_is_locked(int lockfd, const char *filename)
 		return false;
 }
 
-/* lockfd must be allocated statically as its addresses is passed to
- * a cleanup handler. */
+/**
+ * Lock a file.
+ *
+ * @param lockfd The pointer to the lock file descriptor. It must be allocated
+ *        statically as its addresses is passed to a cleanup handler.
+ * @param flags The lock flags specifiying what type of locking to perform.
+ * @param filename The name of the file to lock.
+ * @param desc The description of the file to lock.
+ */
 void
-file_lock(int *lockfd, const char *filename,
-          const char *emsg, const char *emsg_eagain)
+file_lock(int *lockfd, enum file_lock_flags flags, const char *filename,
+          const char *desc)
 {
 	struct flock fl;
+	int lock_cmd;
 
 	setcloexec(*lockfd, filename);
 
 	file_lock_setup(&fl, F_WRLCK);
 
-	if (fcntl(*lockfd, emsg_eagain ? F_SETLK : F_SETLKW, &fl) == -1) {
-		if (emsg_eagain && (errno == EACCES || errno == EAGAIN))
-			ohshit(emsg_eagain);
-		ohshite(emsg);
+	if (flags == FILE_LOCK_WAIT)
+		lock_cmd = F_SETLKW;
+	else
+		lock_cmd = F_SETLK;
+
+	if (fcntl(*lockfd, lock_cmd, &fl) == -1) {
+		if (errno == EACCES || errno == EAGAIN)
+			ohshit(_("%s is locked by another process"), desc);
+		else
+			ohshite(_("unable to lock %s"), desc);
 	}
 
-	push_cleanup(file_unlock_cleanup, ~0, NULL, 0, 1, lockfd);
+	push_cleanup(file_unlock_cleanup, ~0, NULL, 0, 2, lockfd, desc);
 }
-

@@ -795,7 +795,6 @@ with_zlib
 with_bz2
 with_selinux
 enable_unicode
-enable_sync_sync
 enable_mmap
 enable_compiler_warnings
 enable_compiler_optimisations
@@ -1452,7 +1451,6 @@ Optional Features:
   --enable-coverage       whether to enable code coverage
   --disable-largefile     omit support for large files
   --disable-unicode       do not use Unicode (wide chars) support
-  --enable-sync-sync      enable usage of synchronous sync(2) if available
   --enable-mmap           enable usage of unrealiable mmap if available
   --disable-compiler-warnings
                           Disable additional compiler warnings
@@ -1469,14 +1467,14 @@ Optional Packages:
   --without-libiconv-prefix     don't search for libiconv in includedir and libdir
   --with-libintl-prefix[=DIR]  search for libintl in DIR/include and DIR/lib
   --without-libintl-prefix     don't search for libintl in includedir and libdir
-  --without-dselect       do not build dselect package-management frontend
+  --without-dselect       do not build or use dselect
   --without-start-stop-daemon
                           do not build or use start-stop-daemon
   --without-update-alternatives
                           do not build or use update-alternatives
   --without-install-info  do not build or use install-info
-  --with-admindir=DIR     dpkg database directory [[LOCALSTATEDIR/lib/dpkg]]
-  --with-logdir=DIR       system logging directory [[LOCALSTATEDIR/log]]
+  --with-admindir=DIR     dpkg database directory [LOCALSTATEDIR/lib/dpkg]
+  --with-logdir=DIR       system logging directory [LOCALSTATEDIR/log]
   --with-zlib             use zlib library for compression and decompression
   --with-bz2              use bz2 library for compression and decompression
   --with-selinux          use selinux library to set security contexts
@@ -6719,16 +6717,18 @@ $as_echo "#define HAVE_DCGETTEXT 1" >>confdefs.h
 
 
 
-# Allow compilation without dselect
+# Allow compilation without optional programs
+
 
 # Check whether --with-dselect was given.
 if test "${with_dselect+set}" = set; then :
   withval=$with_dselect; build_dselect=$with_dselect
 else
   build_dselect=yes
+
 fi
 
- if test "x$build_dselect" = "xyes"; then
+   if test "x$build_dselect" = "xyes"; then
   WITH_DSELECT_TRUE=
   WITH_DSELECT_FALSE='#'
 else
@@ -6736,17 +6736,30 @@ else
   WITH_DSELECT_FALSE=
 fi
 
+  if test "x$build_dselect" = "xyes"; then :
 
-# Allow compilation without start-stop-daemon
+
+$as_echo "#define WITH_DSELECT 1" >>confdefs.h
+
+
+else
+
+    $as_echo "#define WITH_DSELECT 0" >>confdefs.h
+
+
+fi
+
+
 
 # Check whether --with-start-stop-daemon was given.
 if test "${with_start_stop_daemon+set}" = set; then :
   withval=$with_start_stop_daemon; build_start_stop_daemon=$with_start_stop_daemon
 else
   build_start_stop_daemon=yes
+
 fi
 
- if test "x$build_start_stop_daemon" = "xyes"; then
+   if test "x$build_start_stop_daemon" = "xyes"; then
   WITH_START_STOP_DAEMON_TRUE=
   WITH_START_STOP_DAEMON_FALSE='#'
 else
@@ -6754,25 +6767,30 @@ else
   WITH_START_STOP_DAEMON_FALSE=
 fi
 
-if test "x$build_start_stop_daemon" = "xyes"; then
+  if test "x$build_start_stop_daemon" = "xyes"; then :
+
 
 $as_echo "#define WITH_START_STOP_DAEMON 1" >>confdefs.h
 
+
 else
-   $as_echo "#define WITH_START_STOP_DAEMON 0" >>confdefs.h
+
+    $as_echo "#define WITH_START_STOP_DAEMON 0" >>confdefs.h
+
 
 fi
 
-# Allow compilation without update-alternatives
+
 
 # Check whether --with-update-alternatives was given.
 if test "${with_update_alternatives+set}" = set; then :
   withval=$with_update_alternatives; build_update_alternatives=$with_update_alternatives
 else
   build_update_alternatives=yes
+
 fi
 
- if test "x$build_update_alternatives" = "xyes"; then
+   if test "x$build_update_alternatives" = "xyes"; then
   WITH_UPDATE_ALTERNATIVES_TRUE=
   WITH_UPDATE_ALTERNATIVES_FALSE='#'
 else
@@ -6780,17 +6798,30 @@ else
   WITH_UPDATE_ALTERNATIVES_FALSE=
 fi
 
+  if test "x$build_update_alternatives" = "xyes"; then :
 
-# Allow compilation without install-info
+
+$as_echo "#define WITH_UPDATE_ALTERNATIVES 1" >>confdefs.h
+
+
+else
+
+    $as_echo "#define WITH_UPDATE_ALTERNATIVES 0" >>confdefs.h
+
+
+fi
+
+
 
 # Check whether --with-install-info was given.
 if test "${with_install_info+set}" = set; then :
   withval=$with_install_info; build_install_info=$with_install_info
 else
   build_install_info=yes
+
 fi
 
- if test "x$build_install_info" = "xyes"; then
+   if test "x$build_install_info" = "xyes"; then
   WITH_INSTALL_INFO_TRUE=
   WITH_INSTALL_INFO_FALSE='#'
 else
@@ -6798,29 +6829,49 @@ else
   WITH_INSTALL_INFO_FALSE=
 fi
 
+  if test "x$build_install_info" = "xyes"; then :
 
-# Allow alternate admin directory
-admindir="${localstatedir}/lib/${PACKAGE_NAME}"
+
+$as_echo "#define WITH_INSTALL_INFO 1" >>confdefs.h
+
+
+else
+
+    $as_echo "#define WITH_INSTALL_INFO 0" >>confdefs.h
+
+
+fi
+
+
+# Allow alternate directories
+
+  admindir="${localstatedir}/lib/${PACKAGE_NAME}"
 
 # Check whether --with-admindir was given.
 if test "${with_admindir+set}" = set; then :
-  withval=$with_admindir; case "$with_admindir" in
-      "") as_fn_error $? "invalid admindir specified" "$LINENO" 5  ;;
-      *) admindir="$with_admindir" ;;
+  withval=$with_admindir; case $with_admindir in #(
+  "") :
+    as_fn_error $? "invalid admindir specified" "$LINENO" 5  ;; #(
+  *) :
+    admindir="$with_admindir" ;;
 esac
+
 fi
 
 
 
-# Allow alternate log directory
-logdir="${localstatedir}/log"
+
+  logdir="${localstatedir}/log"
 
 # Check whether --with-logdir was given.
 if test "${with_logdir+set}" = set; then :
-  withval=$with_logdir; case "$with_logdir" in
-      "") as_fn_error $? "invalid logdir specified" "$LINENO" 5  ;;
-      *) logdir="$with_logdir" ;;
+  withval=$with_logdir; case $with_logdir in #(
+  "") :
+    as_fn_error $? "invalid logdir specified" "$LINENO" 5  ;; #(
+  *) :
+    logdir="$with_logdir" ;;
 esac
+
 fi
 
 
@@ -9068,7 +9119,7 @@ if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
   cat >>confdefs.h <<_ACEOF
 #define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
 _ACEOF
-
+ have_curses_header=yes
 fi
 
 done
@@ -9082,7 +9133,7 @@ if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
   cat >>confdefs.h <<_ACEOF
 #define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
 _ACEOF
-
+ have_curses_header=yes
 fi
 
 done
@@ -9205,8 +9256,7 @@ $as_echo "$ac_cv_lib_curses_initscr" >&6; }
 if test "x$ac_cv_lib_curses_initscr" = x""yes; then :
   CURSES_LIBS="${CURSES_LIBS:+$CURSES_LIBS }-lcurses"
 else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: no curses library found" >&5
-$as_echo "$as_me: WARNING: no curses library found" >&2;}
+  as_fn_error $? "no curses library found" "$LINENO" 5
 fi
 
 fi
@@ -9293,12 +9343,17 @@ $as_echo "$ac_cv_lib_curses_initscr" >&6; }
 if test "x$ac_cv_lib_curses_initscr" = x""yes; then :
   CURSES_LIBS="${CURSES_LIBS:+$CURSES_LIBS }-lcurses"
 else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: no curses library found" >&5
-$as_echo "$as_me: WARNING: no curses library found" >&2;}
+  as_fn_error $? "no curses library found" "$LINENO" 5
 fi
 
 fi
 
+fi
+if test "x$have_curses_header" != "xyes"; then
+  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "curses header not found
+See \`config.log' for more details" "$LINENO" 5 ; }
 fi
 
 fi
@@ -9987,26 +10042,38 @@ else
 #include <stdbool.h>
 #include <stdio.h>
 
-/* Variadic macro arguments */
+/* Variadic macro arguments. */
 #define variadic_macro(foo, ...) printf(foo, __VA_ARGS__)
 
 int
 main ()
 {
 
-	/* Compound initialisers */
+	int rc;
+
+	/* Compound initializers. */
 	struct { int a, b; } foo = { .a = 1, .b = 2 };
 
-	/* Trailing comma in enum */
+	/* Trailing comma in enum. */
 	enum { first, second, } quux;
 
-	/* Boolean type */
+	/* Boolean type. */
 	bool bar = false;
 
-	/* Specific size type */
+	/* Specific size type. */
 	uint32_t baz = 0;
+	size_t size = SIZE_MAX;
+	intmax_t imax = INTMAX_MAX;
 
-	/* Magic __func__ variable */
+	/* Format modifiers. */
+	rc = printf("%jd", imax);
+	if (rc == 3)
+		return 1;
+	rc = printf("%zu", size);
+	if (rc == 3)
+		return 1;
+
+	/* Magic __func__ variable. */
 	printf("%s", __func__);
 
   ;
@@ -10044,26 +10111,38 @@ else
 #include <stdbool.h>
 #include <stdio.h>
 
-/* Variadic macro arguments */
+/* Variadic macro arguments. */
 #define variadic_macro(foo, ...) printf(foo, __VA_ARGS__)
 
 int
 main ()
 {
 
-	/* Compound initialisers */
+	int rc;
+
+	/* Compound initializers. */
 	struct { int a, b; } foo = { .a = 1, .b = 2 };
 
-	/* Trailing comma in enum */
+	/* Trailing comma in enum. */
 	enum { first, second, } quux;
 
-	/* Boolean type */
+	/* Boolean type. */
 	bool bar = false;
 
-	/* Specific size type */
+	/* Specific size type. */
 	uint32_t baz = 0;
+	size_t size = SIZE_MAX;
+	intmax_t imax = INTMAX_MAX;
 
-	/* Magic __func__ variable */
+	/* Format modifiers. */
+	rc = printf("%jd", imax);
+	if (rc == 3)
+		return 1;
+	rc = printf("%zu", size);
+	if (rc == 3)
+		return 1;
+
+	/* Magic __func__ variable. */
 	printf("%s", __func__);
 
   ;
@@ -10339,40 +10418,6 @@ fi
 
 
 
-
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether sync is synchronous" >&5
-$as_echo_n "checking whether sync is synchronous... " >&6; }
-  case $host_os in #(
-  linux-*) :
-    dpkg_cv_sync_sync=yes ;; #(
-  *) :
-    dpkg_cv_sync_sync=no ;;
-esac
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $dpkg_cv_sync_sync" >&5
-$as_echo "$dpkg_cv_sync_sync" >&6; }
-
-  # Check whether --enable-sync-sync was given.
-if test "${enable_sync_sync+set}" = set; then :
-  enableval=$enable_sync_sync;
-else
-  enable_sync_sync=no
-fi
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to use synchronous sync" >&5
-$as_echo_n "checking whether to use synchronous sync... " >&6; }
-  if test "x$dpkg_cv_sync_sync" = "xyes" &&
-         test "x$enable_sync_sync" = "xyes"; then :
-
-$as_echo "#define USE_SYNC_SYNC 1" >>confdefs.h
-
-else
-  enable_sync_sync=no
-fi
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $enable_sync_sync" >&5
-$as_echo "$enable_sync_sync" >&6; }
-
-
   ac_fn_c_check_decl "$LINENO" "offsetof" "ac_cv_have_decl_offsetof" "#include <stddef.h>
 "
 if test "x$ac_cv_have_decl_offsetof" = x""yes; then :
@@ -10509,7 +10554,7 @@ fi
 
 
 
-for ac_func in strtoul isascii bcopy memcpy setsid getdtablesize \
+for ac_func in strtoul strtoimax isascii bcopy memcpy setsid getdtablesize \
                 posix_fadvise
 do :
   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
@@ -10527,7 +10572,14 @@ done
   # Check whether --enable-mmap was given.
 if test "${enable_mmap+set}" = set; then :
   enableval=$enable_mmap;
-      for ac_func in mmap
+else
+  enable_mmap=no
+fi
+
+
+  if test "x$enable_mmap" = "xyes"; then :
+
+    for ac_func in mmap
 do :
   ac_fn_c_check_func "$LINENO" "mmap" "ac_cv_func_mmap"
 if test "x$ac_cv_func_mmap" = x""yes; then :
@@ -10546,12 +10598,11 @@ fi
 
 
 
-
 $as_echo "#define LIBDPKG_VOLATILE_API 1" >>confdefs.h
 
 # Check whether --enable-compiler-warnings was given.
 if test "${enable_compiler_warnings+set}" = set; then :
-  enableval=$enable_compiler_warnings; enable_compiler_warnings=$enableval
+  enableval=$enable_compiler_warnings;
 else
   enable_compiler_warnings=yes
 fi
@@ -10559,6 +10610,7 @@ fi
 
 WFLAGS="-Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers \
 	 -Wmissing-declarations -Wmissing-format-attribute \
+	 -Wformat-security -Wpointer-arith \
 	 -Wvla -Winit-self -Wwrite-strings -Wcast-align -Wshadow"
 WCFLAGS="-Wdeclaration-after-statement -Wnested-externs -Wbad-function-cast \
 	 -Wstrict-prototypes -Wmissing-prototypes -Wold-style-definition"
@@ -10575,20 +10627,34 @@ fi
 
 # Check whether --enable-compiler-optimisations was given.
 if test "${enable_compiler_optimisations+set}" = set; then :
-  enableval=$enable_compiler_optimisations; if test "x$enable_compiler_optimisations" = "xno"; then
-	CFLAGS=$(echo "$CFLAGS" | sed -e "s/ -O[1-9]*\b/ -O0/g")
+  enableval=$enable_compiler_optimisations;
+else
+  enable_compiler_optimisations=yes
 fi
+
+
+  if test "x$enable_compiler_optimisations" = "xno"; then :
+
+    CFLAGS=$(echo "$CFLAGS" | sed -e "s/ -O[1-9]*\b/ -O0/g")
+
 fi
 
 # Check whether --enable-linker-optimisations was given.
 if test "${enable_linker_optimisations+set}" = set; then :
-  enableval=$enable_linker_optimisations; if test "x$enable_linker_optimisations" = "xno"; then
-	LDFLAGS=$(echo "$LDFLAGS" | sed -e "s/ -Wl,-O[0-9]*\b//g")
+  enableval=$enable_linker_optimisations;
 else
-	LDFLAGS="$LDFLAGS -Wl,-O1"
+  enable_linker_optimisations=yes
 fi
+
+
+  if test "x$enable_linker_optimisations" = "xno"; then :
+
+    LDFLAGS=$(echo "$LDFLAGS" | sed -e "s/ -Wl,-O[0-9]*\b//g")
+
 else
-  LDFLAGS="$LDFLAGS -Wl,-O1"
+
+    LDFLAGS="$LDFLAGS -Wl,-O1"
+
 fi
 
 

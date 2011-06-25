@@ -21,7 +21,7 @@
 
 # Create the database files if they don't already exist
 create_database() {
-    admindir=/var/lib/dpkg
+    admindir=${DPKG_ADMINDIR:-/var/lib/dpkg}
 
     for file in diversions statoverride status; do
 	if [ ! -f "$admindir/$file" ]; then
@@ -64,6 +64,17 @@ create_logfile() {
     chown root:root $logfile 2>/dev/null || chown 0:0 $logfile
 }
 
+delete_multiarch_transitional_symlink() {
+    if dpkg --compare-versions "$2" lt 1.16.0~ubuntu4 \
+       && dpkg --compare-versions "$2" ge 1.16.0~ubuntu1; then
+	# Remove the multiarch per-architecture symlink, which is
+	# no longer used.
+	infodir="/var/lib/dpkg/info/$(dpkg --print-architecture)"
+	if [ -L "$infodir" ]; then
+	    rm "$infodir"
+	fi
+    fi
+}
 
 case "$1" in
     configure)
@@ -72,9 +83,15 @@ case "$1" in
 
 	move_info_directory
 	remove_info_symlink
+
+	delete_multiarch_transitional_symlink "$@"
 	;;
 
-    abort-upgrade|abort-deconfigure|abort-remove)
+    abort-upgrade)
+	delete_multiarch_transitional_symlink "$@"
+	;;
+
+   abort-deconfigure|abort-remove)
 	;;
 
     *)

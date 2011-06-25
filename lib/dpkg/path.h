@@ -27,7 +27,7 @@
 
 DPKG_BEGIN_DECLS
 
-size_t path_rtrim_slash_slashdot(char *path);
+size_t path_trim_slash_slashdot(char *path);
 const char *path_skip_slash_dotslash(const char *path);
 char *path_quote_filename(char *dst, const char *src, size_t size);
 
@@ -36,4 +36,3 @@ char *path_make_temp_template(const char *suffix);
 DPKG_END_DECLS
 
 #endif /* LIBDPKG_PATH_H */
-

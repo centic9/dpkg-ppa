@@ -32,10 +32,15 @@
 
 #include <dpkg/dpkg.h>
 #include <dpkg/i18n.h>
-#include <dpkg/varbuf.h>
 #include <dpkg/dir.h>
 
-void
+/**
+ * Sync a directory to disk from a DIR structure.
+ *
+ * @param dir The directory to sync.
+ * @param path The name of the directory to sync (for error messages).
+ */
+static void
 dir_sync(DIR *dir, const char *path)
 {
 	int fd;
@@ -49,6 +54,11 @@ dir_sync(DIR *dir, const char *path)
 		ohshite(_("unable to sync directory '%s'"), path);
 }
 
+/**
+ * Sync a directory to disk from a pathname.
+ *
+ * @param path The name of the directory to sync.
+ */
 void
 dir_sync_path(const char *path)
 {
@@ -63,6 +73,11 @@ dir_sync_path(const char *path)
 	closedir(dir);
 }
 
+/**
+ * Sync to disk the parent directory of a pathname.
+ *
+ * @param path The child pathname of the directory to sync.
+ */
 void
 dir_sync_path_parent(const char *path)
 {
@@ -84,22 +99,27 @@ dir_sync_path_parent(const char *path)
 static void
 dir_file_sync(const char *dir, const char *filename)
 {
-	struct varbuf path = VARBUF_INIT;
+	char *path;
 	int fd;
 
-	varbufprintf(&path, "%s/%s", dir, filename);
+	m_asprintf(&path, "%s/%s", dir, filename);
 
-	fd = open(path.buf, O_WRONLY);
+	fd = open(path, O_WRONLY);
 	if (fd < 0)
-		ohshite(_("unable to open file '%s'"), path.buf);
+		ohshite(_("unable to open file '%s'"), path);
 	if (fsync(fd))
-		ohshite(_("unable to sync file '%s'"), path.buf);
+		ohshite(_("unable to sync file '%s'"), path);
 	if (close(fd))
-		ohshite(_("unable to close file '%s'"), path.buf);
+		ohshite(_("unable to close file '%s'"), path);
 
-	varbuf_destroy(&path);
+	free(path);
 }
 
+/**
+ * Sync to disk the contents and the directory specified.
+ *
+ * @param path The pathname to sync.
+ */
 void
 dir_sync_contents(const char *path)
 {

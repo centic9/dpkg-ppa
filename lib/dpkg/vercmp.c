@@ -3,6 +3,7 @@
  * vercmp.c - comparison of version numbers
  *
  * Copyright © 1995 Ian Jackson <ian@chiark.greenend.org.uk>
+ * Copyright © 2009 Canonical Ltd.
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,6 +27,7 @@
 
 #include <dpkg/dpkg.h>
 #include <dpkg/dpkg-db.h>
+#include <dpkg/arch.h>
 #include <dpkg/parsedump.h>
 
 bool
@@ -35,12 +37,25 @@ epochsdiffer(const struct versionrevision *a,
   return a->epoch != b->epoch;
 }
 
-/* assume ascii; warning: evaluates x multiple times! */
-#define order(x) ((x) == '~' ? -1 \
-		: cisdigit((x)) ? 0 \
-		: !(x) ? 0 \
-		: cisalpha((x)) ? (x) \
-		: (x) + 256)
+/**
+ * Give a weight to the character to order in the version comparison.
+ *
+ * @param c An ASCII character.
+ */
+static int
+order(int c)
+{
+  if (cisdigit(c))
+    return 0;
+  else if (cisalpha(c))
+    return c;
+  else if (c == '~')
+    return -1;
+  else if (c)
+    return c + 256;
+  else
+    return 0;
+}
 
 static int verrevcmp(const char *val, const char *ref) {
   if (!val) val= "";
@@ -100,7 +115,48 @@ versionsatisfied3(const struct versionrevision *it,
 }
 
 bool
-versionsatisfied(struct pkginfoperfile *it, struct deppossi *against)
+versionsatisfied(struct pkgbin *it, struct deppossi *against)
 {
   return versionsatisfied3(&it->version,&against->version,against->verrel);
+}
+
+bool
+archsatisfied(struct pkgbin *it, struct deppossi *against)
+{
+  const struct dpkg_arch *dep_arch, *pkg_arch;
+
+  /* The rules are supposed to be:
+   * - unqualified Depends/Pre-Depends/Recommends/Suggests are only
+   *   satisfied by a package of a different architecture if the target
+   *   package is Multi-Arch: foreign
+   * - Depends/Pre-Depends/Recommends/Suggests on pkg:any are satisfied by
+   *   a package of a different architecture if the target package is
+   *   Multi-Arch: allowed
+   * - all other Depends/Pre-Depends/Recommends/Suggests are only
+   *   satisfied by packages of the same architecture
+   * - Architecture: all packages are treated the same as packages of the
+   *   native architecture
+   * - Conflicts/Replaces/Breaks are assumed to apply to packages of any
+   *   arch
+   */
+
+  if (it->multiarch == multiarch_foreign)
+    return true;
+
+  dep_arch = against->arch;
+  if (dep_arch->type == arch_wildcard &&
+      (it->multiarch == multiarch_allowed ||
+       against->up->type == dep_conflicts ||
+       against->up->type == dep_replaces ||
+       against->up->type == dep_breaks))
+    return true;
+
+  if (dep_arch->type == arch_none || dep_arch->type == arch_all)
+    dep_arch = dpkg_arch_get_native();
+
+  pkg_arch = it->arch;
+  if (pkg_arch->type == arch_none || pkg_arch->type == arch_all)
+    pkg_arch = dpkg_arch_get_native();
+
+  return (dep_arch == pkg_arch);
 }

@@ -25,18 +25,26 @@
 
 DPKG_BEGIN_DECLS
 
-typedef void (*voidfnp)(void);
+typedef void void_func(void);
 
 struct cmdinfo {
   const char *olong;
   char oshort;
-  int takesvalue; /* 0 = normal   1 = standard value   2 = option string cont */
+
+  /*
+   * 0 = Normal				(-o, --option)
+   * 1 = Standard value			(-o=value, --option=value or
+   *					 -o value, --option value)
+   * 2 = Option string continued	(--option-value)
+   */
+  int takesvalue;
   int *iassignto;
   const char **sassignto;
   void (*call)(const struct cmdinfo*, const char *value);
-  int arg;
-  void *parg;
-  voidfnp farg;
+
+  int arg_int;
+  void *arg_ptr;
+  void_func *arg_func;
 };
 
 extern const char printforhelp[];
@@ -48,6 +56,19 @@ void badusage(const char *fmt, ...) DPKG_ATTR_NORET DPKG_ATTR_PRINTF(1);
 void myfileopt(const char* fn, const struct cmdinfo* cmdinfos);
 void myopt(const char *const **argvp, const struct cmdinfo *cmdinfos);
 void loadcfgfile(const char *prog, const struct cmdinfo *cmdinfos);
+
+/**
+ * Current cmdinfo action.
+ */
+extern const struct cmdinfo *cipaction;
+
+void setaction(const struct cmdinfo *cip, const char *value);
+void setobsolete(const struct cmdinfo *cip, const char *value);
+
+#define ACTION(longopt, shortopt, code, func) \
+ { longopt, shortopt, 0, NULL, NULL, setaction, code, NULL, (void_func *)func }
+#define OBSOLETE(longopt, shortopt) \
+ { longopt, shortopt, 0, NULL, NULL, setobsolete, 0, NULL, NULL }
 
 DPKG_END_DECLS
 

@@ -28,35 +28,40 @@ struct parsedb_state {
 	enum parsedbflags flags;
 	const char *filename;
 	int lno;
-	FILE *warnto;
-	int warncount;
 };
 
-#define PKGIFPOFF(f) (offsetof(struct pkginfoperfile, f))
+#define PKGIFPOFF(f) (offsetof(struct pkgbin, f))
 #define PKGPFIELD(pifp,of,type) (*(type*)((char*)(pifp)+(of)))
 
 #define FILEFOFF(f) (offsetof(struct filedetails, f))
 #define FILEFFIELD(filedetail,of,type) (*(type*)((char*)(filedetail)+(of)))
 
-typedef void freadfunction(struct pkginfo *pigp, struct pkginfoperfile *pifp,
+typedef void freadfunction(struct pkginfo *pigp, struct pkgbin *pifp,
                            struct parsedb_state *ps,
                            const char *value, const struct fieldinfo *fip);
 freadfunction f_name, f_charfield, f_priority, f_section, f_status, f_filecharf;
 freadfunction f_boolean, f_dependency, f_conffiles, f_version, f_revision;
 freadfunction f_configversion;
+freadfunction f_multiarch;
+freadfunction f_architecture;
 freadfunction f_trigpend, f_trigaw;
+freadfunction f_forbidden;
 
 enum fwriteflags {
-	fw_printheader	= 001	/* print field header and trailing newline */
+	/* Print field header and trailing newline. */
+	fw_printheader = 001,
 };
 
 typedef void fwritefunction(struct varbuf*,
-			    const struct pkginfo*, const struct pkginfoperfile*,
+                            const struct pkginfo *, const struct pkgbin *,
 			    enum fwriteflags flags, const struct fieldinfo*);
 fwritefunction w_name, w_charfield, w_priority, w_section, w_status, w_configversion;
 fwritefunction w_version, w_null, w_booleandefno, w_dependency, w_conffiles;
+fwritefunction w_multiarch;
+fwritefunction w_architecture;
 fwritefunction w_filecharf;
 fwritefunction w_trigpend, w_trigaw;
+fwritefunction w_packagespec;
 
 struct fieldinfo {
   const char *name;

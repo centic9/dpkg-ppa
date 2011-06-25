@@ -51,7 +51,7 @@
 #define PROGNAME "update-alternatives"
 
 static const char *altdir = SYSCONFDIR "/alternatives";
-static const char *admdir = ADMINDIR "/alternatives";
+static const char *admdir;
 
 static const char *prog_path = "update-alternatives";
 
@@ -95,7 +95,9 @@ usage(void)
 {
 	printf(_(
 "Usage: %s [<option> ...] <command>\n"
-"\n"
+"\n"), PROGNAME);
+
+	printf(_(
 "Commands:\n"
 "  --install <link> <name> <path> <priority>\n"
 "    [--slave <link> <name> <path>] ...\n"
@@ -106,11 +108,15 @@ usage(void)
 "  --display <name>         display information about the <name> group.\n"
 "  --query <name>           machine parseable version of --display <name>.\n"
 "  --list <name>            display all targets of the <name> group.\n"
+"  --get-selections         list master alternative names and their status.\n"
+"  --set-selections         read alternative status from standard input.\n"
 "  --config <name>          show alternatives for the <name> group and ask the\n"
 "                           user to select which one to use.\n"
 "  --set <name> <path>      set <path> as alternative for <name>.\n"
 "  --all                    call --config on all alternatives.\n"
-"\n"
+"\n"));
+
+	printf(_(
 "<link> is the symlink pointing to %s/<name>.\n"
 "  (e.g. /usr/bin/pager)\n"
 "<name> is the master name for this link group.\n"
@@ -119,17 +125,21 @@ usage(void)
 "  (e.g. /usr/bin/less)\n"
 "<priority> is an integer; options with higher numbers have higher priority in\n"
 "  automatic mode.\n"
-"\n"
+"\n"), altdir);
+
+	printf(_(
 "Options:\n"
 "  --altdir <directory>     change the alternatives directory.\n"
 "  --admindir <directory>   change the administrative directory.\n"
+"  --log <file>             change the log file.\n"
+"  --force                  allow replacing files with alternative links.\n"
 "  --skip-auto              skip prompt for alternatives correctly configured\n"
 "                           in automatic mode (relevant for --config only)\n"
 "  --verbose                verbose operation, more output.\n"
 "  --quiet                  quiet operation, minimal output.\n"
 "  --help                   show this help message.\n"
 "  --version                show the version.\n"
-), PROGNAME, altdir);
+));
 }
 
 static void DPKG_ATTR_NORET DPKG_ATTR_PRINTF(1)
@@ -137,7 +147,7 @@ error(char const *fmt, ...)
 {
 	va_list args;
 
-	fprintf(stderr, PROGNAME ": %s: ", _("error"));
+	fprintf(stderr, "%s: %s: ", PROGNAME, _("error"));
 	va_start(args, fmt);
 	vfprintf(stderr, fmt, args);
 	va_end(args);
@@ -150,7 +160,7 @@ badusage(char const *fmt, ...)
 {
 	va_list args;
 
-	fprintf(stderr, PROGNAME ": ");
+	fprintf(stderr, "%s: ", PROGNAME);
 	va_start(args, fmt);
 	vfprintf(stderr, fmt, args);
 	va_end(args);
@@ -167,7 +177,7 @@ warning(char const *fmt, ...)
 	if (opt_verbose < 0)
 		return;
 
-	fprintf(stderr, PROGNAME ": %s: ", _("warning"));
+	fprintf(stderr, "%s: %s: ", PROGNAME, _("warning"));
 	va_start(args, fmt);
 	vfprintf(stderr, fmt, args);
 	va_end(args);
@@ -196,7 +206,7 @@ verbose(char const *fmt, ...)
 	if (opt_verbose < 1)
 		return;
 
-	printf(PROGNAME ": ");
+	printf("%s: ", PROGNAME);
 	va_start(args, fmt);
 	vprintf(fmt, args);
 	va_end(args);
@@ -211,7 +221,7 @@ info(char const *fmt, ...)
 	if (opt_verbose < 0)
 		return;
 
-	printf(PROGNAME ": ");
+	printf("%s: ", PROGNAME);
 	va_start(args, fmt);
 	vprintf(fmt, args);
 	va_end(args);
@@ -236,7 +246,7 @@ xmalloc(size_t size)
 
 	r = malloc(size);
 	if (!r)
-		error(_("malloc failed (%ld bytes)"), (long)size);
+		error(_("malloc failed (%zu bytes)"), size);
 
 	return r;
 }
@@ -285,6 +295,18 @@ xreadlink(const char *linkname, bool error_out)
 	return buf;
 }
 
+static int DPKG_ATTR_VPRINTF(2)
+xvasprintf(char **strp, const char *fmt, va_list args)
+{
+	int ret;
+
+	ret = vasprintf(strp, fmt, args);
+	if (ret < 0)
+		error(_("failed to allocate memory"));
+
+	return ret;
+}
+
 static int DPKG_ATTR_PRINTF(2)
 xasprintf(char **strp, const char *fmt, ...)
 {
@@ -292,10 +314,8 @@ xasprintf(char **strp, const char *fmt, ...)
 	int ret;
 
 	va_start(args, fmt);
-	ret = vasprintf(strp, fmt, args);
+	ret = xvasprintf(strp, fmt, args);
 	va_end(args);
-	if (ret < 0)
-		error(_("failed to allocate memory"));
 
 	return ret;
 }
@@ -306,6 +326,23 @@ set_action(const char *new_action)
     if (action)
 	badusage(_("two commands specified: --%s and --%s"), action, new_action);
     action = new_action;
+}
+
+static const char *
+admindir_init(void)
+{
+	const char *basedir, *dpkg_basedir;
+	char *admindir;
+
+	dpkg_basedir = getenv("DPKG_ADMINDIR");
+	if (dpkg_basedir)
+		basedir = dpkg_basedir;
+	else
+		basedir = ADMINDIR;
+
+	xasprintf(&admindir, "%s/%s", basedir, "alternatives");
+
+	return admindir;
 }
 
 static FILE *fh_log = NULL;
@@ -328,7 +365,7 @@ log_msg(const char *fmt, ...)
 		time(&now);
 		strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S",
 			 localtime(&now));
-		fprintf(fh_log, "%s " PROGNAME ": ", timestamp);
+		fprintf(fh_log, "%s %s: ", PROGNAME, timestamp);
 		va_start(args, fmt);
 		vfprintf(fh_log, fmt, args);
 		va_end(args);
@@ -434,7 +471,9 @@ config_all(void)
 	for (i = 0; i < count; i++) {
 		subcall(prog_path, "--config", table[i]->d_name, NULL);
 		printf("\n");
+		free(table[i]);
 	}
+	free(table);
 }
 
 static bool
@@ -480,6 +519,20 @@ checked_rm(const char *f)
 
 	if (errno != ENOENT)
 		error(_("unable to remove %s: %s"), f, strerror(errno));
+}
+
+static void DPKG_ATTR_PRINTF(1)
+checked_rm_args(const char *fmt, ...)
+{
+	va_list args;
+	char *path;
+
+	va_start(args, fmt);
+	xvasprintf(&path, fmt, args);
+	va_end(args);
+
+	checked_rm(path);
+	free(path);
 }
 
 /*
@@ -684,10 +737,21 @@ alternative_choices_free(struct alternative *a)
 }
 
 static void
+alternative_commit_operations_free(struct alternative *a)
+{
+	struct commit_operation *op;
+
+	while (a->commit_ops) {
+		op = a->commit_ops;
+		a->commit_ops = op->next;
+		commit_operation_free(op);
+	}
+}
+
+static void
 alternative_reset(struct alternative *alt)
 {
 	struct slave_link *slave;
-	struct commit_operation *commit_op;
 
 	free(alt->master_link);
 	alt->master_link = NULL;
@@ -697,11 +761,7 @@ alternative_reset(struct alternative *alt)
 		slave_link_free(slave);
 	}
 	alternative_choices_free(alt);
-	while (alt->commit_ops) {
-		commit_op = alt->commit_ops;
-		alt->commit_ops = commit_op->next;
-		commit_operation_free(commit_op);
-	}
+	alternative_commit_operations_free(alt);
 	alt->modified = false;
 }
 
@@ -864,7 +924,9 @@ alternative_add_choice(struct alternative *a, struct fileset *fs)
 				prev->next = fs;
 			else
 				a->choices = fs;
-			a->modified = true; /* XXX: be smarter in detecting change? */
+
+			/* XXX: Be smarter in detecting change? */
+			a->modified = true;
 			return;
 		}
 		prev = cur;
@@ -1016,13 +1078,10 @@ altdb_parse_error(struct altdb_context *ctx, const char *format, ...)
 {
 	char *msg;
 	va_list args;
-	int ret;
 
 	va_start(args, format);
-	ret = vasprintf(&msg, format, args);
+	xvasprintf(&msg, format, args);
 	va_end(args);
-	if (ret < 0)
-		error(_("failed to allocate memory"));
 
 	error(_("%s corrupt: %s"), ctx->filename, msg);
 }
@@ -1058,7 +1117,7 @@ alternative_parse_slave(struct alternative *a, struct altdb_context *ctx)
 	if (alternative_has_slave(a, name)) {
 		sl = alternative_get_slave(a, name);
 		free(name);
-		ctx->bad_format(ctx, _("duplicate slave %s"), sl->name);
+		ctx->bad_format(ctx, _("duplicate slave name %s"), sl->name);
 	}
 
 	linkname = altdb_get_line(ctx, _("slave link"));
@@ -1172,7 +1231,7 @@ alternative_load(struct alternative *a, bool must_not_die)
 		if (errno == ENOENT)
 			return false;
 		else
-			error(_("unable to stat %s: %s"), ctx.filename,
+			error(_("cannot stat %s: %s"), ctx.filename,
 			      strerror(errno));
 	}
 	if (st.st_size == 0) {
@@ -1215,11 +1274,12 @@ alternative_load(struct alternative *a, bool must_not_die)
 }
 
 static void
-alternative_save(struct alternative *a, const char *file)
+alternative_save(struct alternative *a)
 {
 	struct altdb_context ctx;
 	struct slave_link *sl, *sl_prev;
 	struct fileset *fs;
+	char *filenew, *file;
 
 	/* Cleanup unused slaves before writing admin file. */
 	sl_prev = NULL;
@@ -1246,7 +1306,7 @@ alternative_save(struct alternative *a, const char *file)
 			sl = sl_prev ? sl_prev : a->slaves;
 			slave_link_free(sl_rm);
 			if (!sl)
-				break; /* no other slave left */
+				break; /* No other slave left. */
 		}
 	}
 
@@ -1255,10 +1315,13 @@ alternative_save(struct alternative *a, const char *file)
 	alternative_sort_choices(a);
 
 	/* Write admin file. */
-	ctx.filename = xstrdup(file);
-	ctx.fh = fopen(file, "w");
+	xasprintf(&file, "%s/%s", admdir, a->master_name);
+	xasprintf(&filenew, "%s" DPKG_TMP_EXT, file);
+
+	ctx.filename = filenew;
+	ctx.fh = fopen(ctx.filename, "w");
 	if (ctx.fh == NULL)
-		error(_("cannot write %s: %s"), file, strerror(errno));
+		error(_("cannot write %s: %s"), ctx.filename, strerror(errno));
 
 	altdb_print_line(&ctx, alternative_status_string(a->status));
 	altdb_print_line(&ctx, a->master_link);
@@ -1290,6 +1353,12 @@ alternative_save(struct alternative *a, const char *file)
 	/* Close database file */
 	if (fclose(ctx.fh))
 		error(_("unable to close %s: %s"), ctx.filename, strerror(errno));
+
+	/* Put in place atomically. */
+	checked_mv(filenew, file);
+
+	free(filenew);
+	free(file);
 }
 
 static struct fileset *
@@ -1351,12 +1420,8 @@ alternative_display_query(struct alternative *a)
 	if (best)
 		pr("Best: %s", best->master_file);
 	current = alternative_get_current(a);
-	if (current) {
-		pr("Value: %s", current);
-		free(current);
-	} else {
-		pr("Value: none");
-	}
+	pr("Value: %s", current ? current : "none");
+	free(current);
 
 	for (fs = a->choices; fs; fs = fs->next) {
 		printf("\n");
@@ -1542,11 +1607,7 @@ alternative_commit(struct alternative *a)
 		}
 	}
 
-	while (a->commit_ops) {
-		op = a->commit_ops;
-		a->commit_ops = op->next;
-		commit_operation_free(op);
-	}
+	alternative_commit_operations_free(a);
 }
 
 static void
@@ -1629,39 +1690,26 @@ alternative_prepare_install(struct alternative *a, const char *choice)
 static void
 alternative_remove(struct alternative *a)
 {
-	char *fn;
 	struct stat st;
 	struct slave_link *sl;
 
-	xasprintf(&fn, "%s" DPKG_TMP_EXT, a->master_link);
-	checked_rm(fn);
-	free(fn);
+	checked_rm_args("%s" DPKG_TMP_EXT, a->master_link);
 	if (lstat(a->master_link, &st) == 0 && S_ISLNK(st.st_mode))
 		checked_rm(a->master_link);
-	xasprintf(&fn, "%s/%s" DPKG_TMP_EXT, altdir, a->master_name);
-	checked_rm(fn);
-	free(fn);
-	xasprintf(&fn, "%s/%s", altdir, a->master_name);
-	checked_rm(fn);
-	free(fn);
+
+	checked_rm_args("%s/%s" DPKG_TMP_EXT, altdir, a->master_name);
+	checked_rm_args("%s/%s", altdir, a->master_name);
 
 	for (sl = a->slaves; sl; sl = sl->next) {
-		xasprintf(&fn, "%s" DPKG_TMP_EXT, sl->link);
-		checked_rm(fn);
-		free(fn);
+		checked_rm_args("%s" DPKG_TMP_EXT, sl->link);
 		if (lstat(sl->link, &st) == 0 && S_ISLNK(st.st_mode))
 			checked_rm(sl->link);
-		xasprintf(&fn, "%s/%s" DPKG_TMP_EXT, altdir, sl->name);
-		checked_rm(fn);
-		free(fn);
-		xasprintf(&fn, "%s/%s", altdir, sl->name);
-		checked_rm(fn);
-		free(fn);
+
+		checked_rm_args("%s/%s" DPKG_TMP_EXT, altdir, sl->name);
+		checked_rm_args("%s/%s", altdir, sl->name);
 	}
 	/* Drop admin file */
-	xasprintf(&fn, "%s/%s", admdir, a->master_name);
-	checked_rm(fn);
-	free(fn);
+	checked_rm_args("%s/%s", admdir, a->master_name);
 }
 
 static bool
@@ -1822,12 +1870,12 @@ alternative_set_selection(struct alternative_map *all, const char *name,
 		char *cmd;
 
 		if (strcmp(status, "auto") == 0) {
-			xasprintf(&cmd, PROGNAME " --auto %s", name);
+			xasprintf(&cmd, "%s --auto %s", PROGNAME, name);
 			pr(_("Call %s."), cmd);
 			free(cmd);
 			subcall(prog_path, "--auto", name, NULL);
 		} else if (alternative_has_choice(a, choice)) {
-			xasprintf(&cmd, PROGNAME " --set %s %s",
+			xasprintf(&cmd, "%s --set %s %s", PROGNAME,
 			          name, choice);
 			pr(_("Call %s."), cmd);
 			free(cmd);
@@ -1844,8 +1892,6 @@ alternative_set_selection(struct alternative_map *all, const char *name,
 static void
 alternative_set_selections(struct alternative_map *all, FILE* input, const char *desc)
 {
-	const char *prefix = "[" PROGNAME "--set-selections] ";
-
 	for (;;) {
 		char line[1024], *res, *name, *status, *choice;
 		size_t len, i;
@@ -1853,7 +1899,6 @@ alternative_set_selections(struct alternative_map *all, FILE* input, const char 
 		errno = 0;
 		/* Can't use scanf("%s %s %s") because choice can
 		 * contain a space */
-		name = status = choice = NULL;
 		res = fgets(line, sizeof(line), input);
 		if (res == NULL && errno) {
 			error(_("while reading %s: %s"), desc, strerror(errno));
@@ -1874,7 +1919,7 @@ alternative_set_selections(struct alternative_map *all, FILE* input, const char 
 		while (i < len && !isblank(line[i]))
 			i++;
 		if (i >= len) {
-			printf("%s", prefix);
+			printf("[%s %s] ", PROGNAME, "--set-selections");
 			pr(_("Skip invalid line: %s"), line);
 			continue;
 		}
@@ -1887,7 +1932,7 @@ alternative_set_selections(struct alternative_map *all, FILE* input, const char 
 		while (i < len && !isblank(line[i]))
 			i++;
 		if (i >= len) {
-			printf("%s", prefix);
+			printf("[%s %s] ", PROGNAME, "--set-selections");
 			pr(_("Skip invalid line: %s"), line);
 			continue;
 		}
@@ -1897,13 +1942,13 @@ alternative_set_selections(struct alternative_map *all, FILE* input, const char 
 
 		/* Delimit choice string in the line */
 		if (i >= len) {
-			printf("%s", prefix);
+			printf("[%s %s] ", PROGNAME, "--set-selections");
 			pr(_("Skip invalid line: %s"), line);
 			continue;
 		}
 		choice = line + i;
 
-		printf("%s", prefix);
+		printf("[%s %s] ", PROGNAME, "--set-selections");
 		alternative_set_selection(all, name, status, choice);
 	}
 }
@@ -1986,6 +2031,8 @@ main(int argc, char **argv)
 	setlocale(LC_ALL, "");
 	bindtextdomain("dpkg", LOCALEDIR);
 	textdomain("dpkg");
+
+	admdir = admindir_init();
 
 	if (setvbuf(stdout, NULL, _IONBF, 0))
 		error("setvbuf failed: %s", strerror(errno));
@@ -2075,14 +2122,14 @@ main(int argc, char **argv)
 				badusage(_("link %s is both primary and slave"),
 				         slink);
 			if (alternative_has_slave(inst_alt, sname))
-				badusage(_("slave name %s duplicated"), sname);
+				badusage(_("duplicate slave name %s"), sname);
 
 			for (sl = inst_alt->slaves; sl; sl = sl->next) {
 				const char *linkname = sl->link;
 				if (linkname == NULL)
 					linkname = "";
 				if (strcmp(linkname, slink) == 0)
-					badusage(_("slave link %s duplicated"),
+					badusage(_("duplicate slave link %s"),
 					          slink);
 			}
 
@@ -2151,6 +2198,7 @@ main(int argc, char **argv)
 
 		free(table[i]);
 	}
+	free(table);
 
 	/* Check that caller don't mix links between alternatives and don't mix
 	 * alternatives between slave/master, and that the various parameters
@@ -2164,12 +2212,9 @@ main(int argc, char **argv)
 		                             inst_alt->master_name);
 		if (found && strcmp(found->master_name,
 		                    inst_alt->master_name) != 0) {
-			char *msg;
-
-			xasprintf(&msg, _("it is a slave of %s"),
-			          found->master_name);
-			error(_("alternative %s can't be master: %s"),
-			      inst_alt->master_name, msg);
+			error(_("alternative %s can't be master: "
+			        "it is a slave of %s"),
+			      inst_alt->master_name, found->master_name);
 		}
 
 		found = alternative_map_find(alt_map_links,
@@ -2207,8 +2252,7 @@ main(int argc, char **argv)
 				char *msg;
 
 				if (strcmp(found->master_name, sl->name) == 0)
-					xasprintf(&msg, "%s",
-					          _("it is a master alternative."));
+					msg = _("it is a master alternative.");
 				else
 					xasprintf(&msg, _("it is a slave of %s"),
 					          found->master_name);
@@ -2245,9 +2289,10 @@ main(int argc, char **argv)
 		exit(0);
 	} else if (strcmp(action, "get-selections") == 0) {
 		struct alternative_map *am;
-		char *current;
 
 		for (am = alt_map_obj; am && am->item; am = am->next) {
+			char *current;
+
 			current = alternative_get_current(am->item);
 			printf("%-30s %-8s %s\n", am->key,
 			       alternative_status_string(am->item->status),
@@ -2291,21 +2336,18 @@ main(int argc, char **argv)
 		/* Detect manually modified alternative, switch to manual. */
 		if (!alternative_has_choice(a, current_choice)) {
 			struct stat st;
-			char *altlink;
 
-			xasprintf(&altlink, "%s/%s", altdir, a->master_name);
 			if (stat(current_choice, &st) == -1 &&
 			    errno == ENOENT) {
-				warning(_("%s is dangling, it will be updated "
-				          "with best choice."), altlink);
+				warning(_("%s/%s is dangling, it will be updated "
+				          "with best choice."), altdir, a->master_name);
 				alternative_set_status(a, ALT_ST_AUTO);
 			} else if (a->status != ALT_ST_MANUAL) {
-				warning(_("%s has been changed (manually or by "
+				warning(_("%s/%s has been changed (manually or by "
 				          "a script). Switching to manual "
-				          "updates only."), altlink);
+				          "updates only."), altdir, a->master_name);
 				alternative_set_status(a, ALT_ST_MANUAL);
 			}
-			free(altlink);
 		}
 	} else {
 		/* Lack of alternative link => automatic mode. */
@@ -2384,15 +2426,10 @@ main(int argc, char **argv)
 		if (a->status == ALT_ST_AUTO) {
 			new_choice = alternative_get_best(a)->master_file;
 		} else {
-			char *fn;
-
-			xasprintf(&fn, "%s/%s", altdir, a->master_name);
-			verbose(_("automatic updates of %s are disabled, "
-			          "leaving it alone."), fn);
+			verbose(_("automatic updates of %s/%s are disabled, "
+			          "leaving it alone."), altdir, a->master_name);
 			verbose(_("to return to automatic updates use "
-			          "`update-alternatives --auto %s'."),
-			        a->master_name);
-			free(fn);
+			          "'%s --auto %s'."), PROGNAME, a->master_name);
 		}
 	}
 
@@ -2437,17 +2474,8 @@ main(int argc, char **argv)
 
 	/* Save administrative file if needed. */
 	if (a->modified) {
-		char *fntmp, *fn;
-
-		xasprintf(&fntmp, "%s/%s" DPKG_TMP_EXT, admdir, a->master_name);
-		xasprintf(&fn, "%s/%s", admdir, a->master_name);
-
 		debug("%s is modified and will be saved", a->master_name);
-		alternative_save(a, fntmp);
-		checked_mv(fntmp, fn);
-
-		free(fntmp);
-		free(fn);
+		alternative_save(a);
 	}
 
 	/* Replace all symlinks in one pass. */

@@ -25,7 +25,7 @@
 #include <string.h>
 
 #ifndef TEST_MAIN_PROVIDED
-#include <dpkg/dpkg.h>
+#include <dpkg/ehandle.h>
 #endif
 
 /* XXX: Using assert is problematic with NDEBUG. */
@@ -43,24 +43,14 @@ const char thisname[] = "test";
 int
 main(int argc, char **argv)
 {
-	jmp_buf ejbuf;
-
-	/* Initialize environment. */
-	if (setjmp(ejbuf)) {
-		error_unwind(ehflag_bombout);
-		return 2;
-	}
-	push_error_handler(&ejbuf, print_error_fatal, NULL);
+	push_error_context();
 
 	test();
 
-	/* Shutdown. */
-	set_error_display(NULL, NULL);
-	error_unwind(ehflag_normaltidy);
+	pop_error_context(ehflag_normaltidy);
 
 	return 0;
 }
 #endif
 
 #endif
-

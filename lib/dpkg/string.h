@@ -25,10 +25,9 @@
 
 DPKG_BEGIN_DECLS
 
-char *str_escape_fmt(char *dest, const char *src);
+char *str_escape_fmt(char *dest, const char *src, size_t n);
 char *str_strip_quotes(char *str);
 
 DPKG_END_DECLS
 
 #endif /* LIBDPKG_STRING_H */
-

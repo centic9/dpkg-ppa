@@ -4,6 +4,8 @@
  *
  * Copyright © 1995 Ian Jackson <ian@chiark.greenend.org.uk>
  * Copyright © 1999, 2002 Wichert Akkerman <wichert@deephackmode.org>
+ * Copyright © 2011 Linaro Limited
+ * Copyright © 2011 Raphaël Hertzog <hertzog@debian.org>
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -45,6 +47,7 @@
 #include <dpkg/buffer.h>
 #include <dpkg/file.h>
 #include <dpkg/subproc.h>
+#include <dpkg/command.h>
 #include <dpkg/triglib.h>
 
 #include "filesdb.h"
@@ -56,7 +59,6 @@ static int conffoptcells[2][2] = {
 	{ cfo_keep,		cfo_prompt_keep },	/* User edited. */
 };
 
-static void md5hash(struct pkginfo *pkg, char *hashbuf, const char *fn);
 static void showdiff(const char *old, const char *new);
 static enum conffopt promptconfaction(struct pkginfo *pkg, const char *cfgfile,
                                       const char *realold, const char *realnew,
@@ -83,11 +85,11 @@ deferred_configure_conffile(struct pkginfo *pkg, struct conffile *conff)
 		conff->hash = EMPTY_HASH;
 		return;
 	}
-	md5hash(pkg, currenthash, cdr.buf);
+	md5hash(pkg, currenthash, cdr.buf, -1);
 
-	varbufreset(&cdr2);
-	varbufaddstr(&cdr2, cdr.buf);
-	varbufaddc(&cdr2, 0);
+	varbuf_reset(&cdr2);
+	varbuf_add_str(&cdr2, cdr.buf);
+	varbuf_end_str(&cdr2);
 	/* XXX: Make sure there's enough room for extensions. */
 	varbuf_grow(&cdr2, 50);
 	cdr2rest = cdr2.buf + strlen(cdr.buf);
@@ -101,7 +103,7 @@ deferred_configure_conffile(struct pkginfo *pkg, struct conffile *conff)
 		ohshite(_("unable to stat new distributed conffile '%.250s'"),
 		        cdr2.buf);
 	}
-	md5hash(pkg, newdisthash, cdr2.buf);
+	md5hash(pkg, newdisthash, cdr2.buf, -1);
 
 	/* Copy the permissions from the installed version to the new
 	 * distributed version. */
@@ -163,35 +165,41 @@ deferred_configure_conffile(struct pkginfo *pkg, struct conffile *conff)
 		strcpy(cdr2rest, DPKGOLDEXT);
 		if (unlink(cdr2.buf) && errno != ENOENT)
 			warning(_("%s: failed to remove old backup '%.250s': %s"),
-			        pkg->name, cdr2.buf, strerror(errno));
-		cdr.used--;
-		varbufaddstr(&cdr, DPKGDISTEXT);
-		varbufaddc(&cdr, 0);
+			        pkg_describe(pkg, pdo_foreign), cdr2.buf,
+			        strerror(errno));
+
+		varbuf_add_str(&cdr, DPKGDISTEXT);
+		varbuf_end_str(&cdr);
 		strcpy(cdr2rest, DPKGNEWEXT);
 		trig_file_activate(usenode, pkg);
 		if (rename(cdr2.buf, cdr.buf))
 			warning(_("%s: failed to rename '%.250s' to '%.250s': %s"),
-			        pkg->name, cdr2.buf, cdr.buf, strerror(errno));
+			        pkg_describe(pkg, pdo_foreign), cdr2.buf,
+			        cdr.buf, strerror(errno));
 		break;
 	case cfo_keep:
 		strcpy(cdr2rest, DPKGNEWEXT);
 		if (unlink(cdr2.buf))
 			warning(_("%s: failed to remove '%.250s': %s"),
-			        pkg->name, cdr2.buf, strerror(errno));
+			        pkg_describe(pkg, pdo_foreign), cdr2.buf,
+			        strerror(errno));
 		break;
 	case cfo_install | cfof_backup:
 		strcpy(cdr2rest, DPKGDISTEXT);
 		if (unlink(cdr2.buf) && errno != ENOENT)
 			warning(_("%s: failed to remove old distributed version '%.250s': %s"),
-			        pkg->name, cdr2.buf, strerror(errno));
+			        pkg_describe(pkg, pdo_foreign), cdr2.buf,
+			        strerror(errno));
 		strcpy(cdr2rest, DPKGOLDEXT);
 		if (unlink(cdr2.buf) && errno != ENOENT)
 			warning(_("%s: failed to remove '%.250s' (before overwrite): %s"),
-			        pkg->name, cdr2.buf, strerror(errno));
+			        pkg_describe(pkg, pdo_foreign), cdr2.buf,
+			        strerror(errno));
 		if (!(what & cfof_userrmd))
 			if (link(cdr.buf, cdr2.buf))
 				warning(_("%s: failed to link '%.250s' to '%.250s': %s"),
-				        pkg->name, cdr.buf, cdr2.buf, strerror(errno));
+				        pkg_describe(pkg, pdo_foreign), cdr.buf,
+				        cdr2.buf, strerror(errno));
 		/* Fall through. */
 	case cfo_install:
 		printf(_("Installing new version of config file %s ...\n"),
@@ -248,18 +256,42 @@ deferred_configure(struct pkginfo *pkg)
 {
 	struct varbuf aemsgs = VARBUF_INIT;
 	struct conffile *conff;
+	struct pkginfo *otherpkg;
 	int ok;
 
 	if (pkg->status == stat_notinstalled)
 		ohshit(_("no package named `%s' is installed, cannot configure"),
-		       pkg->name);
+		       pkg_describe(pkg, pdo_foreign));
 	if (pkg->status == stat_installed)
 		ohshit(_("package %.250s is already installed and configured"),
-		       pkg->name);
+		       pkg_describe(pkg, pdo_foreign));
 	if (pkg->status != stat_unpacked && pkg->status != stat_halfconfigured)
 		ohshit(_("package %.250s is not ready for configuration\n"
 		         " cannot configure (current status `%.250s')"),
-		       pkg->name, statusinfos[pkg->status].name);
+		       pkg_describe(pkg, pdo_foreign),
+		       statusinfos[pkg->status].name);
+
+	for (otherpkg = &pkg->set->pkg; otherpkg; otherpkg = otherpkg->arch_next) {
+		if (otherpkg == pkg || otherpkg->status < stat_halfinstalled)
+			continue;
+		if(versioncompare(&pkg->installed.version,
+		                  &otherpkg->installed.version))
+			ohshit(_("%s %s cannot be configured because %s "
+			         "is in a different version (%s)"),
+			       pkg_describe(pkg, pdo_always),
+			       versiondescribe(&pkg->installed.version,
+			                       vdew_nonambig),
+			       pkg_describe(otherpkg, pdo_always),
+			       versiondescribe(&otherpkg->installed.version,
+			                       vdew_nonambig));
+		if (otherpkg->status < stat_unpacked)
+			ohshit(_("%s cannot be configured because %s "
+			         "is not ready for configuration "
+			         "(current status '%s')"),
+			       pkg_describe(pkg, pdo_always),
+			       pkg_describe(otherpkg, pdo_always),
+			       statusinfos[otherpkg->status].name);
+	}
 
 	if (dependtry > 1)
 		if (findbreakcycle(pkg))
@@ -275,26 +307,28 @@ deferred_configure(struct pkginfo *pkg)
 
 	trigproc_reset_cycle();
 
-	/* At this point removal from the queue is confirmed. This
+	/*
+	 * At this point removal from the queue is confirmed. This
 	 * represents irreversible progress wrt trigger cycles. Only
 	 * packages in stat_unpacked are automatically added to the
 	 * configuration queue, and during configuration and trigger
-	 * processing new packages can't enter into unpacked. */
+	 * processing new packages can't enter into unpacked.
+	 */
 
 	ok = breakses_ok(pkg, &aemsgs) ? ok : 0;
 	if (ok == 0) {
 		sincenothing = 0;
-		varbufaddc(&aemsgs, 0);
+		varbuf_end_str(&aemsgs);
 		fprintf(stderr,
 		        _("dpkg: dependency problems prevent configuration of %s:\n%s"),
-		        pkg->name, aemsgs.buf);
+		        pkg_describe(pkg, pdo_foreign), aemsgs.buf);
 		varbuf_destroy(&aemsgs);
 		ohshit(_("dependency problems - leaving unconfigured"));
 	} else if (aemsgs.used) {
-		varbufaddc(&aemsgs, 0);
+		varbuf_end_str(&aemsgs);
 		fprintf(stderr,
 		        _("dpkg: %s: dependency problems, but configuring anyway as you requested:\n%s"),
-		        pkg->name, aemsgs.buf);
+		        pkg_describe(pkg, pdo_foreign), aemsgs.buf);
 	}
 	varbuf_destroy(&aemsgs);
 	sincenothing = 0;
@@ -304,7 +338,7 @@ deferred_configure(struct pkginfo *pkg)
 		            _("Package is in a very bad inconsistent state - you should\n"
 		              " reinstall it before attempting configuration."));
 
-	printf(_("Setting up %s (%s) ...\n"), pkg->name,
+	printf(_("Setting up %s (%s) ...\n"), pkg_describe(pkg, pdo_foreign),
 	       versiondescribe(&pkg->installed.version, vdew_nonambig));
 	log_action("configure", pkg);
 
@@ -373,12 +407,12 @@ conffderef(struct pkginfo *pkg, struct varbuf *result, const char *in)
 	int r;
 	int loopprotect;
 
-	varbufreset(result);
-	varbufaddstr(result, instdir);
+	varbuf_reset(result);
+	varbuf_add_str(result, instdir);
 	if (*in != '/')
-		varbufaddc(result, '/');
-	varbufaddstr(result, in);
-	varbufaddc(result, 0);
+		varbuf_add_char(result, '/');
+	varbuf_add_str(result, in);
+	varbuf_end_str(result);
 
 	loopprotect = 0;
 
@@ -389,7 +423,8 @@ conffderef(struct pkginfo *pkg, struct varbuf *result, const char *in)
 			if (errno != ENOENT)
 				warning(_("%s: unable to stat config file '%s'\n"
 				          " (= '%s'): %s"),
-				        pkg->name, in, result->buf, strerror(errno));
+				        pkg_describe(pkg, pdo_foreign), in,
+				        result->buf, strerror(errno));
 			debug(dbg_conffdetail, "conffderef nonexistent");
 			return 0;
 		} else if (S_ISREG(stab.st_mode)) {
@@ -401,40 +436,43 @@ conffderef(struct pkginfo *pkg, struct varbuf *result, const char *in)
 			      loopprotect);
 			if (loopprotect++ >= 25) {
 				warning(_("%s: config file '%s' is a circular link\n"
-				          " (= '%s')"), pkg->name, in, result->buf);
+				          " (= '%s')"),
+				        pkg_describe(pkg, pdo_foreign), in,
+				        result->buf);
 				return -1;
 			}
 
-			varbufreset(&target);
+			varbuf_reset(&target);
 			varbuf_grow(&target, stab.st_size + 1);
 			r = readlink(result->buf, target.buf, target.size);
 			if (r < 0) {
 				warning(_("%s: unable to readlink conffile '%s'\n"
 				          " (= '%s'): %s"),
-				        pkg->name, in, result->buf, strerror(errno));
+				        pkg_describe(pkg, pdo_foreign), in,
+				        result->buf, strerror(errno));
 				return -1;
 			}
 			assert(r == stab.st_size); /* XXX: debug */
 			varbuf_trunc(&target, r);
-			varbufaddc(&target, '\0');
+			varbuf_end_str(&target);
 
 			debug(dbg_conffdetail,
 			      "conffderef readlink gave %d, '%s'",
 			      r, target.buf);
 
 			if (target.buf[0] == '/') {
-				varbufreset(result);
-				varbufaddstr(result, instdir);
+				varbuf_reset(result);
+				varbuf_add_str(result, instdir);
 				debug(dbg_conffdetail,
 				      "conffderef readlink absolute");
 			} else {
-				for (r = result->used - 2; r > 0 && result->buf[r] != '/'; r--)
+				for (r = result->used - 1; r > 0 && result->buf[r] != '/'; r--)
 					;
 				if (r < 0) {
 					warning(_("%s: conffile '%.250s' resolves to degenerate filename\n"
 					          " ('%s' is a symlink to '%s')"),
-					        pkg->name, in, result->buf,
-					        target.buf);
+					        pkg_describe(pkg, pdo_foreign),
+					        in, result->buf, target.buf);
 					return -1;
 				}
 				if (result->buf[r] == '/')
@@ -444,11 +482,11 @@ conffderef(struct pkginfo *pkg, struct varbuf *result, const char *in)
 				      "conffderef readlink relative to '%.*s'",
 				      (int)result->used, result->buf);
 			}
-			varbufaddbuf(result, target.buf, target.used);
-			varbufaddc(result, 0);
+			varbuf_add_buf(result, target.buf, target.used);
+			varbuf_end_str(result);
 		} else {
 			warning(_("%s: conffile '%.250s' is not a plain file or symlink (= '%s')"),
-			        pkg->name, in, result->buf);
+			        pkg_describe(pkg, pdo_foreign), in, result->buf);
 			return -1;
 		}
 	}
@@ -463,24 +501,29 @@ conffderef(struct pkginfo *pkg, struct varbuf *result, const char *in)
  * @param[in] pkg The package to act on.
  * @param[out] hashbuf The buffer to store the generated hash.
  * @param[in] fn The filename.
+ * @param[in] fd A file descriptor ready to use, or -1.
  */
-static void
-md5hash(struct pkginfo *pkg, char *hashbuf, const char *fn)
+void
+md5hash(struct pkginfo *pkg, char *hashbuf, const char *fn, int fd)
 {
-	static int fd;
+	bool close_fd = false;
 
-	fd = open(fn, O_RDONLY);
+	if (fd < 0) {
+		fd = open(fn, O_RDONLY);
+		close_fd = true;
+	}
 
 	if (fd >= 0) {
 		push_cleanup(cu_closefd, ehflag_bombout, NULL, 0, 1, &fd);
 		fd_md5(fd, hashbuf, -1, _("md5hash"));
 		pop_cleanup(ehflag_normaltidy); /* fd = open(cdr.buf) */
-		close(fd);
+		if (close_fd && close(fd))
+			ohshite(_("error closing %.250s"), fn);
 	} else if (errno == ENOENT) {
 		strcpy(hashbuf, NONEXISTENTFLAG);
 	} else {
-		warning(_("%s: unable to open conffile %s for hash: %s"),
-		        pkg->name, fn, strerror(errno));
+		warning(_("%s: unable to open %s for hash: %s"),
+		        pkg_describe(pkg, pdo_foreign), fn, strerror(errno));
 		strcpy(hashbuf, "-");
 	}
 }
@@ -500,26 +543,20 @@ showdiff(const char *old, const char *new)
 	if (!pid) {
 		/* Child process. */
 		const char *pager;
-		const char *shell;
-		char cmdbuf[1024];	/* command to run */
+		char cmdbuf[1024];
 
-		pager = getenv(PAGERENV);
+		pager = getenv("PAGER");
 		if (!pager || !*pager)
 			pager = DEFAULTPAGER;
 
 		sprintf(cmdbuf, DIFF " -Nu %.250s %.250s | %.250s",
 		        old, new, pager);
 
-		shell = getenv(SHELLENV);
-		if (!shell || !*shell)
-			shell = DEFAULTSHELL;
-
-		execlp(shell, shell, "-c", cmdbuf, NULL);
-		ohshite(_("failed to run %s (%.250s)"), DIFF, cmdbuf);
+		command_shell(cmdbuf, _("conffile difference visualizer"));
 	}
 
 	/* Parent process. */
-	subproc_wait(pid, "shell");
+	subproc_wait(pid, _("conffile difference visualizer"));
 }
 
 /**
@@ -540,24 +577,16 @@ spawn_shell(const char *confold, const char *confnew)
 
 	pid = subproc_fork();
 	if (!pid) {
-		/* Child process */
-		const char *shell;
-
-		shell = getenv(SHELLENV);
-		if (!shell || !*shell)
-			shell = DEFAULTSHELL;
-
 		/* Set useful variables for the user. */
 		setenv("DPKG_SHELL_REASON", "conffile-prompt", 1);
 		setenv("DPKG_CONFFILE_OLD", confold, 1);
 		setenv("DPKG_CONFFILE_NEW", confnew, 1);
 
-		execlp(shell, shell, "-i", NULL);
-		ohshite(_("failed to exec shell (%.250s)"), shell);
+		command_shell(NULL, _("conffile shell"));
 	}
 
 	/* Parent process. */
-	subproc_wait(pid, "shell");
+	subproc_wait(pid, _("conffile shell"));
 }
 
 /**

@@ -26,7 +26,6 @@
 #include <sys/wait.h>
 
 #include <assert.h>
-#include <errno.h>
 #include <limits.h>
 #if HAVE_LOCALE_H
 #include <locale.h>
@@ -134,11 +133,6 @@ const char printforhelp[]=
 int debugflag=0, nocheckflag=0, oldformatflag=BUILDOLDPKGFORMAT;
 struct compressor *compressor = &compressor_gzip;
 int compress_level = -1;
-const struct cmdinfo *cipaction = NULL;
-dofunction *action = NULL;
-
-static void setaction(const struct cmdinfo *cip, const char *value);
-static void setcompresstype(const struct cmdinfo *cip, const char *value);
 
 static void
 set_compress_level(const struct cmdinfo *cip, const char *value)
@@ -156,31 +150,25 @@ set_compress_level(const struct cmdinfo *cip, const char *value)
   compress_level = level;
 }
 
-static dofunction *const dofunctions[]= {
-  do_build,
-  do_contents,
-  do_control,
-  do_info,
-  do_field,
-  do_extract,
-  do_vextract,
-  do_fsystarfile,
-  do_showinfo
-};
+static void
+setcompresstype(const struct cmdinfo *cip, const char *value)
+{
+  compressor = compressor_find_by_name(value);
+  if (compressor == NULL)
+    ohshit(_("unknown compression type `%s'!"), value);
+}
 
-/* NB: the entries using setaction must appear first and be in the
- * same order as dofunctions:
- */
 static const struct cmdinfo cmdinfos[]= {
-  { "build",         'b', 0, NULL,           NULL,         setaction        },
-  { "contents",      'c', 0, NULL,           NULL,         setaction        },
-  { "control",       'e', 0, NULL,           NULL,         setaction        },
-  { "info",          'I', 0, NULL,           NULL,         setaction        },
-  { "field",         'f', 0, NULL,           NULL,         setaction        },
-  { "extract",       'x', 0, NULL,           NULL,         setaction        },
-  { "vextract",      'X', 0, NULL,           NULL,         setaction        },
-  { "fsys-tarfile",  0,   0, NULL,           NULL,         setaction        },
-  { "show",          'W', 0, NULL,           NULL,         setaction        },
+  ACTION("build",         'b', 0, do_build),
+  ACTION("contents",      'c', 0, do_contents),
+  ACTION("control",       'e', 0, do_control),
+  ACTION("info",          'I', 0, do_info),
+  ACTION("field",         'f', 0, do_field),
+  ACTION("extract",       'x', 0, do_extract),
+  ACTION("vextract",      'X', 0, do_vextract),
+  ACTION("fsys-tarfile",  0,   0, do_fsystarfile),
+  ACTION("show",          'W', 0, do_showinfo),
+
   { "new",           0,   0, &oldformatflag, NULL,         NULL,          0 },
   { "old",           0,   0, &oldformatflag, NULL,         NULL,          1 },
   { "debug",         'D', 0, &debugflag,     NULL,         NULL,          1 },
@@ -193,35 +181,21 @@ static const struct cmdinfo cmdinfos[]= {
   {  NULL,           0,   0, NULL,           NULL,         NULL             }
 };
 
-static void setaction(const struct cmdinfo *cip, const char *value) {
-  if (cipaction)
-    badusage(_("conflicting actions -%c (--%s) and -%c (--%s)"),
-             cip->oshort, cip->olong, cipaction->oshort, cipaction->olong);
-  cipaction= cip;
-  assert((int)(cip - cmdinfos) < (int)(array_count(dofunctions)));
-  action= dofunctions[cip-cmdinfos];
-}
-
-static void setcompresstype(const struct cmdinfo *cip, const char *value) {
-  compressor = compressor_find_by_name(value);
-  if (compressor == NULL)
-    ohshit(_("unknown compression type `%s'!"), value);
-}
-
 int main(int argc, const char *const *argv) {
-  jmp_buf ejbuf;
+  dofunction *action;
 
   setlocale(LC_NUMERIC, "POSIX");
   setlocale(LC_ALL, "");
   bindtextdomain(PACKAGE, LOCALEDIR);
   textdomain(PACKAGE);
 
-  standard_startup(&ejbuf);
+  standard_startup();
   myopt(&argv, cmdinfos);
 
   if (!cipaction) badusage(_("need an action option"));
 
   unsetenv("GZIP");
+  action = (dofunction *)cipaction->arg_func;
   action(argv);
   standard_shutdown();
   exit(0);

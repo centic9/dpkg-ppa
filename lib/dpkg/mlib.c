@@ -1,6 +1,6 @@
 /*
  * libdpkg - Debian packaging suite library routines
- * mlib.c - `must' library: routines will succeed or longjmp
+ * mlib.c - ‘must’ library: routines will succeed or longjmp
  *
  * Copyright © 1994,1995 Ian Jackson <ian@chiark.greenend.org.uk>
  *
@@ -23,7 +23,6 @@
 
 #include <sys/types.h>
 
-#include <errno.h>
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -38,12 +37,13 @@ void *m_malloc(size_t amount) {
   unsigned short *r2, x;
 #endif
   void *r;
-  
+
   onerr_abort++;
   r= malloc(amount);
-  if (!r) ohshite(_("malloc failed (%ld bytes)"),(long)amount);
+  if (r == NULL)
+    ohshite(_("malloc failed (%zu bytes)"), amount);
   onerr_abort--;
-  
+
 #ifdef MDEBUG
   r2= r; x= (unsigned short)amount ^ 0xf000;
   while (amount >= 2) { *r2++= x; amount -= 2; }
@@ -54,7 +54,8 @@ void *m_malloc(size_t amount) {
 void *m_realloc(void *r, size_t amount) {
   onerr_abort++;
   r= realloc(r,amount);
-  if (!r) ohshite(_("realloc failed (%ld bytes)"),(long)amount);
+  if (r == NULL)
+    ohshite(_("realloc failed (%zu bytes)"), amount);
   onerr_abort--;
 
   return r;
@@ -74,9 +75,27 @@ m_strdup(const char *str)
   return new_str;
 }
 
+int
+m_asprintf(char **strp, const char *fmt, ...)
+{
+  va_list args;
+  int n;
+
+  va_start(args, fmt);
+  n = vasprintf(strp, fmt, args);
+  va_end(args);
+
+  onerr_abort++;
+  if (n < 0)
+    ohshite(_("failed to allocate memory"));
+  onerr_abort--;
+
+  return n;
+}
+
 void m_dup2(int oldfd, int newfd) {
   const char *const stdstrings[]= { "in", "out", "err" };
-  
+
   if (dup2(oldfd,newfd) == newfd) return;
 
   onerr_abort++;
@@ -106,4 +125,3 @@ void setcloexec(int fd, const char* fn) {
   if (fcntl(fd, F_SETFD, (f|FD_CLOEXEC))==-1)
     ohshite(_("unable to set close-on-exec flag for %.250s"),fn);
 }
-

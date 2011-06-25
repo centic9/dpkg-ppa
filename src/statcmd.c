@@ -2,7 +2,7 @@
  * dpkg-statoverride - override ownership and mode of files
  *
  * Copyright © 2000, 2001 Wichert Akkerman <wakkerma@debian.org>
- * Copyright © 2006-2009 Guillem Jover <guillem@debian.org>
+ * Copyright © 2006-2010 Guillem Jover <guillem@debian.org>
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -42,10 +42,10 @@
 #include <dpkg/dpkg-db.h>
 #include <dpkg/path.h>
 #include <dpkg/dir.h>
+#include <dpkg/glob.h>
 #include <dpkg/myopt.h>
 
 #include "main.h"
-#include "glob.h"
 #include "filesdb.h"
 
 const char thisname[] = "dpkg-statoverride";
@@ -99,39 +99,28 @@ usage(const struct cmdinfo *cip, const char *value)
 	exit(0);
 }
 
-const struct cmdinfo *cipaction = NULL;
-const char *admindir = ADMINDIR;
+static const char *admindir;
 
 static int opt_verbose = 1;
 static int opt_force = 0;
 static int opt_update = 0;
-
-static void
-setaction(const struct cmdinfo *cip, const char *value)
-{
-	if (cipaction)
-		badusage(_("conflicting actions -%c (--%s) and -%c (--%s)"),
-		         cip->oshort, cip->olong,
-		         cipaction->oshort, cipaction->olong);
-	cipaction = cip;
-}
 
 static char *
 path_cleanup(const char *path)
 {
 	char *new_path = m_strdup(path);
 
-	path_rtrim_slash_slashdot(new_path);
+	path_trim_slash_slashdot(new_path);
 	if (opt_verbose && strcmp(path, new_path) != 0)
 		warning(_("stripping trailing /"));
 
 	return new_path;
 }
 
-static struct filestatoverride *
+static struct file_stat *
 statdb_node_new(const char *user, const char *group, const char *mode)
 {
-	struct filestatoverride *filestat;
+	struct file_stat *filestat;
 
 	filestat = nfmalloc(sizeof(*filestat));
 
@@ -142,7 +131,7 @@ statdb_node_new(const char *user, const char *group, const char *mode)
 	return filestat;
 }
 
-static struct filestatoverride **
+static struct file_stat **
 statdb_node_find(const char *filename)
 {
 	struct filenamenode *file;
@@ -167,7 +156,7 @@ statdb_node_remove(const char *filename)
 }
 
 static void
-statdb_node_apply(const char *filename, struct filestatoverride *filestat)
+statdb_node_apply(const char *filename, struct file_stat *filestat)
 {
 	if (chown(filename, filestat->uid, filestat->gid) < 0)
 		ohshite(_("error setting ownership of `%.255s'"), filename);
@@ -178,7 +167,7 @@ statdb_node_apply(const char *filename, struct filestatoverride *filestat)
 static void
 statdb_node_print(FILE *out, struct filenamenode *file)
 {
-	struct filestatoverride *filestat = file->statoverride;
+	struct file_stat *filestat = file->statoverride;
 	struct passwd *pw;
 	struct group *gr;
 
@@ -203,26 +192,16 @@ statdb_node_print(FILE *out, struct filenamenode *file)
 static void
 statdb_write(void)
 {
+	char *dbname, *dbname_new, *dbname_old;
 	FILE *dbfile;
 	struct fileiterator *i;
 	struct filenamenode *file;
-	struct varbuf dbname = VARBUF_INIT;
-	struct varbuf dbname_new = VARBUF_INIT;
-	struct varbuf dbname_old = VARBUF_INIT;
 
-	varbufaddstr(&dbname, admindir);
-	varbufaddstr(&dbname, "/" STATOVERRIDEFILE);
-	varbufaddc(&dbname, '\0');
+	dbname = dpkg_db_get_path(STATOVERRIDEFILE);
+	m_asprintf(&dbname_new, "%s%s", dbname, NEWDBEXT);
+	m_asprintf(&dbname_old, "%s%s", dbname, OLDDBEXT);
 
-	varbufaddstr(&dbname_new, dbname.buf);
-	varbufaddstr(&dbname_new, NEWDBEXT);
-	varbufaddc(&dbname_new, '\0');
-
-	varbufaddstr(&dbname_old, dbname.buf);
-	varbufaddstr(&dbname_old, OLDDBEXT);
-	varbufaddc(&dbname_old, '\0');
-
-	dbfile = fopen(dbname_new.buf, "w");
+	dbfile = fopen(dbname_new, "w");
 	if (!dbfile)
 		ohshite(_("cannot open new statoverride file"));
 
@@ -232,24 +211,24 @@ statdb_write(void)
 	iterfileend(i);
 
 	if (fflush(dbfile))
-		ohshite(_("unable to flush file '%s'"), dbname_new.buf);
+		ohshite(_("unable to flush file '%s'"), dbname_new);
 	if (fsync(fileno(dbfile)))
-		ohshite(_("unable to sync file '%s'"), dbname_new.buf);
+		ohshite(_("unable to sync file '%s'"), dbname_new);
 	fclose(dbfile);
 
-	chmod(dbname_new.buf, 0644);
-	if (unlink(dbname_old.buf) && errno != ENOENT)
+	chmod(dbname_new, 0644);
+	if (unlink(dbname_old) && errno != ENOENT)
 		ohshite(_("error removing statoverride-old"));
-	if (link(dbname.buf, dbname_old.buf) && errno != ENOENT)
+	if (link(dbname, dbname_old) && errno != ENOENT)
 		ohshite(_("error creating new statoverride-old"));
-	if (rename(dbname_new.buf, dbname.buf))
+	if (rename(dbname_new, dbname))
 		ohshite(_("error installing new statoverride"));
 
-	dir_sync_path(admindir);
+	dir_sync_path(dpkg_db_get_dir());
 
-	varbuf_destroy(&dbname);
-	varbuf_destroy(&dbname_new);
-	varbuf_destroy(&dbname_old);
+	free(dbname);
+	free(dbname_new);
+	free(dbname_old);
 }
 
 static int
@@ -260,7 +239,7 @@ statoverride_add(const char *const *argv)
 	const char *mode = argv[2];
 	const char *path = argv[3];
 	char *filename;
-	struct filestatoverride **filestat;
+	struct file_stat **filestat;
 
 	if (!user || !group || !mode || !path || argv[4])
 		badusage(_("--add needs four arguments"));
@@ -366,9 +345,6 @@ statoverride_list(const char *const *argv)
 	return ret;
 }
 
-#define ACTION(longopt, shortopt, code, function) \
- { longopt, shortopt, 0, 0, 0, setaction, code, 0, (voidfnp)function }
-
 static const struct cmdinfo cmdinfos[] = {
 	ACTION("add",    0, act_install,   statoverride_add),
 	ACTION("remove", 0, act_remove,    statoverride_remove),
@@ -386,7 +362,6 @@ static const struct cmdinfo cmdinfos[] = {
 int
 main(int argc, const char *const *argv)
 {
-	jmp_buf ejbuf;
 	int (*actionfunction)(const char *const *argv);
 	int ret;
 
@@ -394,8 +369,10 @@ main(int argc, const char *const *argv)
 	bindtextdomain(PACKAGE, LOCALEDIR);
 	textdomain(PACKAGE);
 
-	standard_startup(&ejbuf);
+	standard_startup();
 	myopt(&argv, cmdinfos);
+
+	admindir = dpkg_db_set_dir(admindir);
 
 	if (!cipaction)
 		badusage(_("need an action option"));
@@ -405,11 +382,10 @@ main(int argc, const char *const *argv)
 	filesdbinit();
 	ensure_statoverrides();
 
-	actionfunction = (int (*)(const char *const *))cipaction->farg;
+	actionfunction = (int (*)(const char *const *))cipaction->arg_func;
 	ret = actionfunction(argv);
 
 	standard_shutdown();
 
 	return ret;
 }
-

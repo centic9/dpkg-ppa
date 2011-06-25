@@ -31,6 +31,7 @@
 #include <dpkg/i18n.h>
 #include <dpkg/dpkg.h>
 #include <dpkg/dpkg-db.h>
+#include <dpkg/fdio.h>
 
 const char *log_file = NULL;
 
@@ -59,9 +60,8 @@ log_message(const char *fmt, ...)
 	}
 
 	va_start(args, fmt);
-	varbufreset(&log);
-	varbufvprintf(&log, fmt, args);
-	varbufaddc(&log, 0);
+	varbuf_reset(&log);
+	varbuf_vprintf(&log, fmt, args);
 	va_end(args);
 
 	time(&now);
@@ -70,37 +70,48 @@ log_message(const char *fmt, ...)
 	fprintf(logfd, "%s %s\n", time_str, log.buf);
 }
 
-struct pipef *status_pipes = NULL;
+struct pipef {
+	struct pipef *next;
+	int fd;
+};
+
+static struct pipef *status_pipes = NULL;
+
+void
+statusfd_add(int fd)
+{
+	struct pipef *pipe_new;
+
+	setcloexec(fd, _("<package status and progress file descriptor>"));
+
+	pipe_new = nfmalloc(sizeof(struct pipef));
+	pipe_new->fd = fd;
+	pipe_new->next = status_pipes;
+	status_pipes = pipe_new;
+}
 
 void
 statusfd_send(const char *fmt, ...)
 {
 	static struct varbuf vb;
 	struct pipef *pipef;
-	const char *p;
-	int r, l;
 	va_list args;
 
 	if (!status_pipes)
 		return;
 
 	va_start(args, fmt);
-	varbufreset(&vb);
-	varbufvprintf(&vb, fmt, args);
+	varbuf_reset(&vb);
+	varbuf_vprintf(&vb, fmt, args);
 	/* Sanitize string to not include new lines, as front-ends should be
 	 * doing their own word-wrapping. */
-	varbufsubstc(&vb, '\n', ' ');
-	varbufaddc(&vb, '\n');
+	varbuf_map_char(&vb, '\n', ' ');
+	varbuf_add_char(&vb, '\n');
 	va_end(args);
 
 	for (pipef = status_pipes; pipef; pipef = pipef->next) {
-		for (p = vb.buf, l = vb.used; l;  p += r, l -= r) {
-			r = write(pipef->fd, p, l);
-			if (r < 0)
-				ohshite(_("unable to write to status fd %d"),
-				        pipef->fd);
-			assert(r && r <= l);
-		}
+		if (fd_write(pipef->fd, vb.buf, vb.used) < 0)
+			ohshite(_("unable to write to status fd %d"),
+			        pipef->fd);
 	}
 }
-

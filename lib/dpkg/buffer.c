@@ -4,7 +4,7 @@
  *
  * Copyright © 1999, 2000 Wichert Akkerman <wakkerma@debian.org>
  * Copyright © 2000-2003 Adam Heath <doogie@debian.org>
- * Copyright © 2008, 2009 Guillem Jover <guillem@debian.org>
+ * Copyright © 2008-2011 Guillem Jover <guillem@debian.org>
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,16 +25,15 @@
 
 #include <sys/types.h>
 
-#include <errno.h>
 #include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
-#include <stdio.h>
 
 #include <dpkg/i18n.h>
 #include <dpkg/dpkg.h>
 #include <dpkg/varbuf.h>
 #include <dpkg/md5.h>
+#include <dpkg/fdio.h>
 #include <dpkg/buffer.h>
 
 struct buffer_write_md5ctx {
@@ -53,7 +52,7 @@ buffer_md5_init(struct buffer_data *data)
 	MD5Init(&ctx->ctx);
 }
 
-off_t
+static off_t
 buffer_init(struct buffer_data *read_data, struct buffer_data *write_data)
 {
 	switch (write_data->type) {
@@ -83,7 +82,7 @@ buffer_md5_done(struct buffer_data *data)
 	free(ctx);
 }
 
-off_t
+static off_t
 buffer_done(struct buffer_data *read_data, struct buffer_data *write_data)
 {
 	switch (write_data->type) {
@@ -94,30 +93,19 @@ buffer_done(struct buffer_data *read_data, struct buffer_data *write_data)
 	return 0;
 }
 
-off_t
+static off_t
 buffer_write(struct buffer_data *data, const void *buf, off_t length)
 {
 	off_t ret = length;
 
 	switch (data->type) {
-	case BUFFER_WRITE_BUF:
-		memcpy(data->arg.ptr, buf, length);
-		data->arg.ptr += length;
-		break;
 	case BUFFER_WRITE_VBUF:
-		varbufaddbuf((struct varbuf *)data->arg.ptr, buf, length);
+		varbuf_add_buf((struct varbuf *)data->arg.ptr, buf, length);
 		break;
 	case BUFFER_WRITE_FD:
-		ret = write(data->arg.i, buf, length);
+		ret = fd_write(data->arg.i, buf, length);
 		break;
 	case BUFFER_WRITE_NULL:
-		break;
-	case BUFFER_WRITE_STREAM:
-		ret = fwrite(buf, 1, length, (FILE *)data->arg.ptr);
-		if (feof((FILE *)data->arg.ptr))
-			return -1;
-		if (ferror((FILE *)data->arg.ptr))
-			return -1;
 		break;
 	case BUFFER_WRITE_MD5:
 		MD5Update(&(((struct buffer_write_md5ctx *)data->arg.ptr)->ctx), buf, length);
@@ -130,21 +118,14 @@ buffer_write(struct buffer_data *data, const void *buf, off_t length)
 	return ret;
 }
 
-off_t
+static off_t
 buffer_read(struct buffer_data *data, void *buf, off_t length)
 {
 	off_t ret;
 
 	switch (data->type) {
 	case BUFFER_READ_FD:
-		ret = read(data->arg.i, buf, length);
-		break;
-	case BUFFER_READ_STREAM:
-		ret = fread(buf, 1, length, (FILE *)data->arg.ptr);
-		if (feof((FILE *)data->arg.ptr))
-			return ret;
-		if (ferror((FILE *)data->arg.ptr))
-			return -1;
+		ret = fd_read(data->arg.i, buf, length);
 		break;
 	default:
 		internerr("unknown data type '%i' in buffer_read\n",
@@ -153,40 +134,6 @@ buffer_read(struct buffer_data *data, void *buf, off_t length)
 
 	return ret;
 }
-
-#define buffer_copy_TYPE(name, type1, name1, type2, name2) \
-off_t \
-buffer_copy_##name(type1 n1, int typeIn, \
-                   type2 n2, int typeOut, \
-                   off_t limit, const char *desc, ...) \
-{ \
-	va_list args; \
-	struct buffer_data read_data, write_data; \
-	struct varbuf v = VARBUF_INIT; \
-	off_t ret; \
-\
-	read_data.arg.name1 = n1; \
-	read_data.type = typeIn; \
-	write_data.arg.name2 = n2; \
-	write_data.type = typeOut; \
-\
-	va_start(args, desc); \
-	varbufvprintf(&v, desc, args); \
-	va_end(args); \
-\
-	buffer_init(&read_data, &write_data); \
-	ret = buffer_copy(&read_data, &write_data, limit, v.buf); \
-	buffer_done(&read_data, &write_data); \
-\
-	varbuf_destroy(&v); \
-\
-	return ret; \
-}
-
-buffer_copy_TYPE(IntInt, int, i, int, i);
-buffer_copy_TYPE(IntPtr, int, i, void *, ptr);
-buffer_copy_TYPE(PtrInt, void *, ptr, int, i);
-buffer_copy_TYPE(PtrPtr, void *, ptr, void *, ptr);
 
 off_t
 buffer_hash(const void *input, void *output, int type, off_t limit)
@@ -201,13 +148,13 @@ buffer_hash(const void *input, void *output, int type, off_t limit)
 	return ret;
 }
 
-off_t
+static off_t
 buffer_copy(struct buffer_data *read_data, struct buffer_data *write_data,
             off_t limit, const char *desc)
 {
-	char *buf, *writebuf;
+	char *buf;
 	int bufsize = 32768;
-	long bytesread = 0, byteswritten = 0;
+	off_t bytesread = 0, byteswritten = 0;
 	off_t totalread = 0, totalwritten = 0;
 
 	if ((limit != -1) && (limit < bufsize))
@@ -217,37 +164,30 @@ buffer_copy(struct buffer_data *read_data, struct buffer_data *write_data,
 
 	buf = m_malloc(bufsize);
 
+	buffer_init(read_data, write_data);
+
 	while (bytesread >= 0 && byteswritten >= 0 && bufsize > 0) {
 		bytesread = buffer_read(read_data, buf, bufsize);
-		if (bytesread < 0) {
-			if (errno == EINTR || errno == EAGAIN)
-				continue;
+		if (bytesread < 0)
 			break;
-		}
 		if (bytesread == 0)
 			break;
 
 		totalread += bytesread;
+
 		if (limit != -1) {
 			limit -= bytesread;
 			if (limit < bufsize)
 				bufsize = limit;
 		}
-		writebuf = buf;
-		while (bytesread) {
-			byteswritten = buffer_write(write_data, writebuf, bytesread);
-			if (byteswritten == -1) {
-				if (errno == EINTR || errno == EAGAIN)
-					continue;
-				break;
-			}
-			if (byteswritten == 0)
-				break;
 
-			bytesread -= byteswritten;
-			totalwritten += byteswritten;
-			writebuf += byteswritten;
-		}
+		byteswritten = buffer_write(write_data, buf, bytesread);
+		if (byteswritten < 0)
+			break;
+		if (byteswritten == 0)
+			break;
+
+		totalwritten += byteswritten;
 	}
 
 	if (bytesread < 0)
@@ -257,8 +197,35 @@ buffer_copy(struct buffer_data *read_data, struct buffer_data *write_data,
 	if (limit > 0)
 		ohshit(_("short read on buffer copy for %s"), desc);
 
+	buffer_done(read_data, write_data);
+
 	free(buf);
 
 	return totalread;
 }
 
+#define buffer_copy_TYPE(name, type1, name1, type2, name2) \
+off_t \
+buffer_copy_##name(type1 n1, int typeIn, \
+                   type2 n2, int typeOut, \
+                   off_t limit, const char *desc, ...) \
+{ \
+	va_list args; \
+	struct buffer_data read_data = { .arg.name1 = n1, .type = typeIn }; \
+	struct buffer_data write_data = { .arg.name2 = n2, .type = typeOut }; \
+	struct varbuf v = VARBUF_INIT; \
+	off_t ret; \
+\
+	va_start(args, desc); \
+	varbuf_vprintf(&v, desc, args); \
+	va_end(args); \
+\
+	ret = buffer_copy(&read_data, &write_data, limit, v.buf); \
+\
+	varbuf_destroy(&v); \
+\
+	return ret; \
+}
+
+buffer_copy_TYPE(IntInt, int, i, int, i);
+buffer_copy_TYPE(IntPtr, int, i, void *, ptr);

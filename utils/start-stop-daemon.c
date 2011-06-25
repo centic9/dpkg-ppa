@@ -116,7 +116,7 @@
 #endif
 
 #if defined(OSLinux)
-/* This comes from TASK_COMM_LEN defined in linux's include/linux/sched.h. */
+/* This comes from TASK_COMM_LEN defined in Linux's include/linux/sched.h. */
 #define PROCESS_NAME_SIZE 15
 #endif
 
@@ -193,9 +193,11 @@ struct schedule_item {
 		sched_timeout,
 		sched_signal,
 		sched_goto,
-		sched_forever /* Only seen within parse_schedule and callees */
+		/* Only seen within parse_schedule and callees. */
+		sched_forever,
 	} type;
-	int value; /* Seconds, signal no., or index into array. */
+	/* Seconds, signal no., or index into array. */
+	int value;
 };
 
 static struct res_schedule *proc_sched = NULL;
@@ -203,20 +205,6 @@ static struct res_schedule *io_sched = NULL;
 
 static int schedule_length;
 static struct schedule_item *schedule = NULL;
-
-static void *xmalloc(int size);
-static void push(struct pid_list **list, pid_t pid);
-static void do_help(void);
-static void parse_options(int argc, char * const *argv);
-static bool pid_is_user(pid_t pid, uid_t uid);
-static bool pid_is_cmd(pid_t pid, const char *name);
-static void check(pid_t pid);
-static void do_pidfile(const char *name);
-static void do_stop(int sig_num, int quiet,
-                    int *n_killed, int *n_notkilled, int retry_nr);
-#if defined(OSLinux) || defined(OShpux)
-static bool pid_is_exec(pid_t pid, const struct stat *esb);
-#endif
 
 
 static void DPKG_ATTR_PRINTF(1)
@@ -350,7 +338,7 @@ daemonize(void)
 }
 
 static void
-push(struct pid_list **list, pid_t pid)
+pid_list_push(struct pid_list **list, pid_t pid)
 {
 	struct pid_list *p;
 
@@ -361,7 +349,7 @@ push(struct pid_list **list, pid_t pid)
 }
 
 static void
-clear(struct pid_list **list)
+pid_list_free(struct pid_list **list)
 {
 	struct pid_list *here, *next;
 
@@ -374,7 +362,7 @@ clear(struct pid_list **list)
 }
 
 static void
-do_help(void)
+usage(void)
 {
 	printf(
 "Usage: start-stop-daemon [<option> ...] <command>\n"
@@ -766,7 +754,7 @@ parse_options(int argc, char * const *argv)
 			break;
 		switch (c) {
 		case 'H':  /* --help */
-			do_help();
+			usage();
 			exit(0);
 		case 'K':  /* --stop */
 			stop = 1;
@@ -808,7 +796,7 @@ parse_options(int argc, char * const *argv)
 			execname = optarg;
 			break;
 		case 'c':  /* --chuid <username>|<uid> */
-			/* we copy the string just in case we need the
+			/* We copy the string just in case we need the
 			 * argument later. */
 			changeuser = xstrdup(optarg);
 			changeuser = strtok(changeuser, ":");
@@ -1070,7 +1058,7 @@ pid_is_cmd(pid_t pid, const char *name)
 		fclose(f);
 		return false;
 	}
-	/* This hopefully handles command names containing ')'. */
+	/* This hopefully handles command names containing ‘)’. */
 	while ((c = getc(f)) != EOF && c == *name)
 		name++;
 	fclose(f);
@@ -1116,8 +1104,8 @@ pid_is_cmd(pid_t pid, const char *name)
 	if (pid_argv_p == NULL)
 		errx(1, "%s", kvm_geterr(kd));
 
-	start_argv_0_p = *pid_argv_p;
 	/* Find and compare string. */
+	start_argv_0_p = *pid_argv_p;
 
 	/* Find end of argv[0] then copy and cut of str there. */
 	end_argv_0_p = strchr(*pid_argv_p, ' ');
@@ -1160,7 +1148,7 @@ pid_is_running(pid_t pid)
 #endif
 
 static void
-check(pid_t pid)
+pid_check(pid_t pid)
 {
 #if defined(OSLinux) || defined(OShpux)
 	if (execname && !pid_is_exec(pid, &exec_stat))
@@ -1179,7 +1167,7 @@ check(pid_t pid)
 		return;
 	if (start && !pid_is_running(pid))
 		return;
-	push(&found, pid);
+	pid_list_push(&found, pid);
 }
 
 static void
@@ -1189,14 +1177,14 @@ do_pidfile(const char *name)
 	static pid_t pid = 0;
 
 	if (pid) {
-		check(pid);
+		pid_check(pid);
 		return;
 	}
 
 	f = fopen(name, "r");
 	if (f) {
 		if (fscanf(f, "%d", &pid) == 1)
-			check(pid);
+			pid_check(pid);
 		fclose(f);
 	} else if (errno != ENOENT)
 		fatal("unable to open pidfile %s", name);
@@ -1220,7 +1208,7 @@ do_procinit(void)
 		if (sscanf(entry->d_name, "%d", &pid) != 1)
 			continue;
 		foundany++;
-		check(pid);
+		pid_check(pid);
 	}
 	closedir(procdir);
 	if (!foundany)
@@ -1230,7 +1218,7 @@ do_procinit(void)
 static int
 check_proc_stat(struct proc_stat *ps)
 {
-	check(ps->pid);
+	pid_check(ps->pid);
 	return 0;
 }
 
@@ -1252,7 +1240,7 @@ do_procinit(void)
 
 	while ((count = pstat_getproc(pst, sizeof(pst[0]), 10, idx)) > 0) {
 		for (i = 0; i < count; i++)
-			check(pst[i].pst_pid);
+			pid_check(pst[i].pst_pid);
 		idx = pst[count - 1].pst_idx + 1;
 	}
 }
@@ -1267,7 +1255,7 @@ do_procinit(void)
 static void
 do_findprocs(void)
 {
-	clear(&found);
+	pid_list_free(&found);
 
 	if (pidfile)
 		do_pidfile(pidfile);
@@ -1288,7 +1276,7 @@ do_stop(int sig_num, int quiet, int *n_killed, int *n_notkilled, int retry_nr)
 	if (!found)
 		return;
 
-	clear(&killed);
+	pid_list_free(&killed);
 
 	for (p = found; p; p = p->next) {
 		if (testmode) {
@@ -1297,7 +1285,7 @@ do_stop(int sig_num, int quiet, int *n_killed, int *n_notkilled, int retry_nr)
 				       sig_num, p->pid);
 			(*n_killed)++;
 		} else if (kill(p->pid, sig_num) == 0) {
-			push(&killed, p->pid);
+			pid_list_push(&killed, p->pid);
 			(*n_killed)++;
 		} else {
 			if (sig_num)
@@ -1324,12 +1312,89 @@ set_what_stop(const char *str)
 	what_stop[sizeof(what_stop) - 1] = '\0';
 }
 
+/*
+ * We want to keep polling for the processes, to see if they've exited, or
+ * until the timeout expires.
+ *
+ * This is a somewhat complicated algorithm to try to ensure that we notice
+ * reasonably quickly when all the processes have exited, but don't spend
+ * too much CPU time polling. In particular, on a fast machine with
+ * quick-exiting daemons we don't want to delay system shutdown too much,
+ * whereas on a slow one, or where processes are taking some time to exit,
+ * we want to increase the polling interval.
+ *
+ * The algorithm is as follows: we measure the elapsed time it takes to do
+ * one poll(), and wait a multiple of this time for the next poll. However,
+ * if that would put us past the end of the timeout period we wait only as
+ * long as the timeout period, but in any case we always wait at least
+ * MIN_POLL_INTERVAL (20ms). The multiple (‘ratio’) starts out as 2, and
+ * increases by 1 for each poll to a maximum of 10; so we use up to between
+ * 30% and 10% of the machine's resources (assuming a few reasonable things
+ * about system performance).
+ */
+static bool
+do_stop_timeout(int timeout, int *n_killed, int *n_notkilled)
+{
+	struct timeval stopat, before, after, interval, maxinterval;
+	int r, ratio;
+
+	xgettimeofday(&stopat);
+	stopat.tv_sec += timeout;
+	ratio = 1;
+	for (;;) {
+		xgettimeofday(&before);
+		if (timercmp(&before, &stopat, >))
+			return false;
+
+		do_stop(0, 1, n_killed, n_notkilled, 0);
+		if (!*n_killed)
+			return true;
+
+		xgettimeofday(&after);
+
+		if (!timercmp(&after, &stopat, <))
+			return false;
+
+		if (ratio < 10)
+			ratio++;
+
+		timersub(&stopat, &after, &maxinterval);
+		timersub(&after, &before, &interval);
+		tmul(&interval, ratio);
+
+		if (interval.tv_sec < 0 || interval.tv_usec < 0)
+			interval.tv_sec = interval.tv_usec = 0;
+
+		if (timercmp(&interval, &maxinterval, >))
+			interval = maxinterval;
+
+		if (interval.tv_sec == 0 &&
+		    interval.tv_usec <= MIN_POLL_INTERVAL)
+			interval.tv_usec = MIN_POLL_INTERVAL;
+
+		r = select(0, NULL, NULL, NULL, &interval);
+		if (r < 0 && errno != EINTR)
+			fatal("select() failed for pause");
+	}
+}
+
+static int
+finish_stop_schedule(bool anykilled)
+{
+	if (anykilled)
+		return 0;
+
+	if (quietmode <= 0)
+		printf("No %s found running; none killed.\n", what_stop);
+
+	return exitnodo;
+}
+
 static int
 run_stop_schedule(void)
 {
-	int r, position, n_killed, n_notkilled, value, ratio, retry_nr;
+	int position, n_killed, n_notkilled, value, retry_nr;
 	bool anykilled;
-	struct timeval stopat, before, after, interval, maxinterval;
 
 	if (testmode) {
 		if (schedule != NULL) {
@@ -1359,90 +1424,33 @@ run_stop_schedule(void)
 			printf("%d pids were not killed\n", n_notkilled);
 		if (n_killed)
 			anykilled = true;
-		goto x_finished;
+		return finish_stop_schedule(anykilled);
 	}
 
-	for (position = 0; position < schedule_length; ) {
+	for (position = 0; position < schedule_length; position++) {
+	reposition:
 		value = schedule[position].value;
 		n_notkilled = 0;
 
 		switch (schedule[position].type) {
 		case sched_goto:
 			position = value;
-			continue;
+			goto reposition;
 		case sched_signal:
 			do_stop(value, quietmode, &n_killed, &n_notkilled, retry_nr++);
 			if (!n_killed)
-				goto x_finished;
+				return finish_stop_schedule(anykilled);
 			else
 				anykilled = true;
-			goto next_item;
+			continue;
 		case sched_timeout:
- /* We want to keep polling for the processes, to see if they've exited,
-  * or until the timeout expires.
-  *
-  * This is a somewhat complicated algorithm to try to ensure that we
-  * notice reasonably quickly when all the processes have exited, but
-  * don't spend too much CPU time polling.  In particular, on a fast
-  * machine with quick-exiting daemons we don't want to delay system
-  * shutdown too much, whereas on a slow one, or where processes are
-  * taking some time to exit, we want to increase the polling
-  * interval.
-  *
-  * The algorithm is as follows: we measure the elapsed time it takes
-  * to do one poll(), and wait a multiple of this time for the next
-  * poll.  However, if that would put us past the end of the timeout
-  * period we wait only as long as the timeout period, but in any case
-  * we always wait at least MIN_POLL_INTERVAL (20ms).  The multiple
-  * (‘ratio’) starts out as 2, and increases by 1 for each poll to a
-  * maximum of 10; so we use up to between 30% and 10% of the
-  * machine's resources (assuming a few reasonable things about system
-  * performance).
-  */
-			xgettimeofday(&stopat);
-			stopat.tv_sec += value;
-			ratio = 1;
-			for (;;) {
-				xgettimeofday(&before);
-				if (timercmp(&before, &stopat, >))
-					goto next_item;
-
-				do_stop(0, 1, &n_killed, &n_notkilled, 0);
-				if (!n_killed)
-					goto x_finished;
-
-				xgettimeofday(&after);
-
-				if (!timercmp(&after, &stopat, <))
-					goto next_item;
-
-				if (ratio < 10)
-					ratio++;
-
-				timersub(&stopat, &after, &maxinterval);
-				timersub(&after, &before, &interval);
-				tmul(&interval, ratio);
-
-				if (interval.tv_sec < 0 || interval.tv_usec < 0)
-					interval.tv_sec = interval.tv_usec = 0;
-
-				if (timercmp(&interval, &maxinterval, >))
-					interval = maxinterval;
-
-				if (interval.tv_sec == 0 &&
-				    interval.tv_usec <= MIN_POLL_INTERVAL)
-					interval.tv_usec = MIN_POLL_INTERVAL;
-
-				r = select(0, NULL, NULL, NULL, &interval);
-				if (r < 0 && errno != EINTR)
-					fatal("select() failed for pause");
-			}
+			if (do_stop_timeout(value, &n_killed, &n_notkilled))
+				return finish_stop_schedule(anykilled);
+			else
+				continue;
 		default:
 			assert(!"schedule[].type value must be valid");
 		}
-
-	next_item:
-		position++;
 	}
 
 	if (quietmode <= 0)
@@ -1450,15 +1458,6 @@ run_stop_schedule(void)
 		       what_stop, n_killed);
 
 	return 2;
-
-x_finished:
-	if (!anykilled) {
-		if (quietmode <= 0)
-			printf("No %s found running; none killed.\n", what_stop);
-		return exitnodo;
-	} else {
-		return 0;
-	}
 }
 
 int
@@ -1589,18 +1588,15 @@ main(int argc, char **argv)
 	if (umask_value >= 0)
 		umask(umask_value);
 	if (mpidfile && pidfile != NULL) {
-		/* User wants _us_ to make the pidfile. :) */
+		/* User wants _us_ to make the pidfile. */
 		FILE *pidf = fopen(pidfile, "w");
 		pid_t pidt = getpid();
 		if (pidf == NULL)
 			fatal("unable to open pidfile '%s' for writing",
 			      pidfile);
 		fprintf(pidf, "%d\n", pidt);
-		if (fflush(pidf))
-			fatal("unable to flush pidfile '%s'", pidfile);
-		if (fsync(fileno(pidf)))
-			fatal("unable to sync pidfile '%s'", pidfile);
-		fclose(pidf);
+		if (fclose(pidf))
+			fatal("unable to close pidfile '%s'", pidfile);
 	}
 	if (changeroot != NULL) {
 		if (chdir(changeroot) < 0)
@@ -1633,11 +1629,12 @@ main(int argc, char **argv)
 	}
 
 	if (background) {
-		/* Continue background setup. */
 		int i;
 
+		/* Set a default umask for dumb programs. */
 		if (umask_value < 0)
-			umask(022); /* Set a default for dumb programs. */
+			umask(022);
+
 		dup2(devnull_fd, 0); /* stdin */
 		dup2(devnull_fd, 1); /* stdout */
 		dup2(devnull_fd, 2); /* stderr */
@@ -1649,4 +1646,3 @@ main(int argc, char **argv)
 	execv(startas, argv);
 	fatal("unable to start %s", startas);
 }
-

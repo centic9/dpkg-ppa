@@ -525,6 +525,10 @@ sub parse_string {
             /^\s*                           # skip leading whitespace
               ([a-zA-Z0-9][a-zA-Z0-9+.-]*)  # package name
               (?:                           # start of optional part
+                :                           # colon for architecture
+                (any)                       # architecture name
+              )?                            # end of optional part
+              (?:                           # start of optional part
                 \s* \(                      # open parenthesis for version part
                 \s* (<<|<=|=|>=|>>|<|>)     # relation part
                 \s* (.*?)                   # do not attempt to parse version
@@ -538,18 +542,22 @@ sub parse_string {
 	      \s*$			    # trailing spaces at end
             /x;
     $self->{package} = $1;
-    $self->{relation} = version_normalize_relation($2) if defined($2);
-    if (defined($3)) {
-        $self->{version} = Dpkg::Version->new($3);
-    }
+    $self->{arch} = $2 if defined($2);
+    $self->{relation} = version_normalize_relation($3) if defined($3);
     if (defined($4)) {
-	$self->{arches} = [ split(/\s+/, $4) ];
+        $self->{version} = Dpkg::Version->new($4);
+    }
+    if (defined($5)) {
+	$self->{arches} = [ split(/\s+/, $5) ];
     }
 }
 
 sub output {
     my ($self, $fh) = @_;
     my $res = $self->{package};
+    if (defined($self->{arch})) {
+	$res .= ":" . $self->{arch};
+    }
     if (defined($self->{relation})) {
 	$res .= " (" . $self->{relation} . " " . $self->{version} .  ")";
     }

@@ -92,9 +92,9 @@ void packagelist::severalinfoblurb()
 void packagelist::itd_relations() {
   whatinfovb(_("Interrelationships"));
 
-  if (table[cursorline]->pkg->name) {
-    if (debug) fprintf(debug,"packagelist[%p]::idt_relations(); `%s'\n",
-                       this,table[cursorline]->relations.string());
+  if (table[cursorline]->pkg->set->name) {
+    debug(dbg_general, "packagelist[%p]::idt_relations(); '%s'",
+          this, table[cursorline]->relations.string());
     waddstr(infopad,table[cursorline]->relations.string());
   } else {
     severalinfoblurb();
@@ -104,7 +104,7 @@ void packagelist::itd_relations() {
 void packagelist::itd_description() {
   whatinfovb(_("Description"));
 
-  if (table[cursorline]->pkg->name) {
+  if (table[cursorline]->pkg->set->name) {
     const char *m= table[cursorline]->pkg->available.description;
     if (!m || !*m)
       m = table[cursorline]->pkg->installed.description;
@@ -113,7 +113,7 @@ void packagelist::itd_description() {
     const char *p= strchr(m,'\n');
     int l= p ? (int)(p-m) : strlen(m);
     wattrset(infopad,info_headattr);
-    waddstr(infopad, table[cursorline]->pkg->name);
+    waddstr(infopad, pkg_describe(table[cursorline]->pkg, pdo_foreign));
     waddstr(infopad," - ");
     waddnstr(infopad,m,l);
     wattrset(infopad,info_attr);
@@ -130,14 +130,14 @@ void packagelist::itd_statuscontrol() {
   whatinfovb(_("Installed control file information"));
 
   werase(infopad);
-  if (!table[cursorline]->pkg->name) {
+  if (!table[cursorline]->pkg->set->name) {
     severalinfoblurb();
   } else {
     varbuf vb;
     varbufrecord(&vb,table[cursorline]->pkg,&table[cursorline]->pkg->installed);
     vb.terminate();
-    if (debug)
-      fprintf(debug,"packagelist[%p]::idt_statuscontrol(); `%s'\n",this,vb.string());
+    debug(dbg_general, "packagelist[%p]::idt_statuscontrol(); '%s'",
+          this, vb.string());
     waddstr(infopad,vb.string());
   }
 }
@@ -146,14 +146,14 @@ void packagelist::itd_availablecontrol() {
   whatinfovb(_("Available control file information"));
 
   werase(infopad);
-  if (!table[cursorline]->pkg->name) {
+  if (!table[cursorline]->pkg->set->name) {
     severalinfoblurb();
   } else {
     varbuf vb;
     varbufrecord(&vb,table[cursorline]->pkg,&table[cursorline]->pkg->available);
     vb.terminate();
-    if (debug)
-      fprintf(debug,"packagelist[%p]::idt_availablecontrol(); `%s'\n",this,vb.string());
+    debug(dbg_general, "packagelist[%p]::idt_availablecontrol(); '%s'",
+          this, vb.string());
     waddstr(infopad,vb.string());
   }
 }
@@ -168,11 +168,10 @@ void packagelist::redrawinfo() {
   if (!info_height) return;
   whatinfovb.reset();
   werase(infopad); wmove(infopad,0,0);
-  
-  if (debug)
-    fprintf(debug,"packagelist[%p]::redrawinfo(); #=%d\n", this,
-            (int)(currentinfo - baseinfo));
-  
+
+  debug(dbg_general, "packagelist[%p]::redrawinfo(); #=%d",
+        this, (int)(currentinfo - baseinfo));
+
   (this->*currentinfo->display)();
   whatinfovb.terminate();
   int y,x;

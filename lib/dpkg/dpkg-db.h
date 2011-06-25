@@ -29,6 +29,7 @@
 
 #include <dpkg/macros.h>
 #include <dpkg/varbuf.h>
+#include <dpkg/arch.h>
 
 DPKG_BEGIN_DECLS
 
@@ -36,7 +37,7 @@ struct versionrevision {
   unsigned long epoch;
   const char *version;
   const char *revision;
-};  
+};
 
 enum deptype {
   dep_suggests,
@@ -73,10 +74,12 @@ struct dependency {
 
 struct deppossi {
   struct dependency *up;
-  struct pkginfo *ed;
+  struct pkgset *ed;
   struct deppossi *next, *rev_next, *rev_prev;
   struct versionrevision version;
   enum depverrel verrel;
+  const struct dpkg_arch *arch;
+  bool arch_is_implicit;
   bool cyclebreak;
 };
 
@@ -101,14 +104,27 @@ struct filedetails {
   const char *md5sum;
 };
 
-struct pkginfoperfile { /* pif */
+/**
+ * Node describing a binary package file.
+ *
+ * This structure holds information contained on each binary package.
+ *
+ * Note: Usually referred in the code as ‘pif’ for historical reasons.
+ */
+struct pkgbin {
   struct dependency *depends;
-  struct deppossi *depended;
-  bool essential; /* The ‘essential’ flag, true = yes, false = no (absent). */
+  /* The ‘essential’ flag, true = yes, false = no (absent). */
+  bool essential;
+  enum pkgmultiarch {
+    multiarch_no,
+    multiarch_same,
+    multiarch_allowed,
+    multiarch_foreign,
+  } multiarch;
+  const struct dpkg_arch *arch;
   const char *description;
   const char *maintainer;
   const char *source;
-  const char *architecture;
   const char *installedsize;
   const char *origin;
   const char *bugs;
@@ -117,18 +133,22 @@ struct pkginfoperfile { /* pif */
   struct arbitraryfield *arbs;
 };
 
+/**
+ * Node indicates that parent's Triggers-Pending mentions name.
+ *
+ * Note: These nodes do double duty: after they're removed from a package's
+ * trigpend list, references may be preserved by the trigger cycle checker
+ * (see trigproc.c).
+ */
 struct trigpend {
-  /* Node indicates that parent's Triggers-Pending mentions name. */
-  /* NB that these nodes do double duty: after they're removed from
-   * a package's trigpend list, references may be preserved by the
-   * trigger cycle checker (see trigproc.c).
-   */
   struct trigpend *next;
   const char *name;
 };
 
+/**
+ * Node indicates that aw's Triggers-Awaited mentions pend.
+ */
 struct trigaw {
-  /* Node indicates that aw's Triggers-Awaited mentions pend. */
   struct pkginfo *aw, *pend;
   struct trigaw *samepend_next;
   struct {
@@ -136,20 +156,30 @@ struct trigaw {
   } sameaw;
 };
 
-struct perpackagestate; /* dselect and dpkg have different versions of this */
+/* Note: dselect and dpkg have different versions of this. */
+struct perpackagestate;
 
-struct pkginfo { /* pig */
-  struct pkginfo *next;
-  const char *name;
+/**
+ * Node describing an architecture package instance.
+ *
+ * This structure holds state information.
+ *
+ * Note: Usually referred in the code as pig.
+ */
+struct pkginfo {
+  struct pkgset *set;
+  struct pkginfo *arch_next;
+
   enum pkgwant {
     want_unknown, want_install, want_hold, want_deinstall, want_purge,
-    want_sentinel /* Not allowed except as special sentinel value
-                     in some places */
+    /* Not allowed except as special sentinel value in some places. */
+    want_sentinel,
   } want;
+  /* The error flag bitmask. */
   enum pkgeflag {
     eflag_ok		= 0,
     eflag_reinstreq	= 1,
-  } eflag; /* Bitmask. */
+  } eflag;
   enum pkgstatus {
     stat_notinstalled,
     stat_configfiles,
@@ -172,8 +202,8 @@ struct pkginfo { /* pig */
   const char *section;
   struct versionrevision configversion;
   struct filedetails *files;
-  struct pkginfoperfile installed;
-  struct pkginfoperfile available;
+  struct pkgbin installed;
+  struct pkgbin available;
   struct perpackagestate *clientdata;
 
   struct {
@@ -184,7 +214,27 @@ struct pkginfo { /* pig */
   /* ->pend == this, non-NULL for us when Triggers-Pending. */
   struct trigaw *othertrigaw_head;
   struct trigpend *trigpend_head;
+
 };
+
+/**
+ * Node describing a package set sharing the same package name.
+ */
+struct pkgset {
+  struct pkgset *next;
+  const char *name;
+  struct pkginfo pkg;
+  struct {
+    struct deppossi *available;
+    struct deppossi *installed;
+  } depended;
+};
+
+/*** from dbdir.c ***/
+
+const char *dpkg_db_set_dir(const char *dir);
+const char *dpkg_db_get_dir(void);
+char *dpkg_db_get_path(const char *pathpart);
 
 /*** from dbmodify.c ***/
 
@@ -193,56 +243,66 @@ enum modstatdb_rw {
   msdbrw_readonly/*s*/, msdbrw_needsuperuserlockonly/*s*/,
   msdbrw_writeifposs,
   msdbrw_write/*s*/, msdbrw_needsuperuser,
+
   /* Now some optional flags: */
-  msdbrw_flagsmask= ~077,
-  /* flags start at 0100 */
-  msdbrw_noavail= 0100,
+  msdbrw_available_mask= ~077,
+  /* Flags start at 0100. */
+  msdbrw_available_readonly = 0100,
+  msdbrw_available_write = 0200,
 };
 
-bool modstatdb_is_locked(const char *admindir);
-void modstatdb_lock(const char *admindir);
+void modstatdb_init(void);
+void modstatdb_done(void);
+bool modstatdb_is_locked(void);
+bool modstatdb_can_lock(void);
+void modstatdb_lock(void);
 void modstatdb_unlock(void);
-enum modstatdb_rw modstatdb_init(const char *admindir, enum modstatdb_rw reqrwflags);
+enum modstatdb_rw modstatdb_open(enum modstatdb_rw reqrwflags);
 void modstatdb_note(struct pkginfo *pkg);
 void modstatdb_note_ifwrite(struct pkginfo *pkg);
 void modstatdb_checkpoint(void);
 void modstatdb_shutdown(void);
 
-const char *pkgadmindir(void);
-const char *pkgadminfile(struct pkginfo *pkg, const char *whichfile);
-
 /*** from database.c ***/
 
-struct pkginfo *findpackage(const char *name);
-void blankpackage(struct pkginfo *pp);
-void blankpackageperfile(struct pkginfoperfile *pifp);
+void pkgset_blank(struct pkgset *set);
+void pkg_blank(struct pkginfo *pp);
+void pkgbin_blank(struct pkgbin *pifp, bool keep_arch);
 void blankversion(struct versionrevision*);
-bool informative(struct pkginfo *pkg, struct pkginfoperfile *info);
-int countpackages(void);
-void resetpackages(void);
+bool pkg_is_informative(struct pkginfo *pkg, struct pkgbin *info);
 
-struct pkgiterator *iterpkgstart(void);
-struct pkginfo *iterpkgnext(struct pkgiterator*);
-void iterpkgend(struct pkgiterator*);
+struct pkginfo *pkg_db_find_pkg(const char *name, const struct dpkg_arch *arch);
+struct pkgset *pkg_db_find_set(const char *name);
+int pkg_db_count_set(void);
+int pkg_db_count_pkg(void);
+void pkg_db_reset(void);
 
-void hashreport(FILE*);
+struct pkgiterator *pkg_db_iter_new(void);
+struct pkginfo *pkg_db_iter_next_pkg(struct pkgiterator *iter);
+struct pkgset *pkg_db_iter_next_set(struct pkgiterator *iter);
+void pkg_db_iter_free(struct pkgiterator *iter);
+
+void pkg_db_report(FILE *);
 
 /*** from parse.c ***/
 
 enum parsedbflags {
-  pdb_recordavailable   =001, /* Store in `available' in-core structures, not `status' */
-  pdb_rejectstatus      =002, /* Throw up an error if `Status' encountered             */
-  pdb_weakclassification=004, /* Ignore priority/section info if we already have any   */
-  pdb_ignorefiles       =010, /* Ignore files info if we already have them             */
+  /* Store in ‘available’ in-core structures, not ‘status’. */
+  pdb_recordavailable = 001,
+  /* Throw up an error if ‘Status’ encountered. */
+  pdb_rejectstatus = 002,
+  /* Ignore priority/section info if we already have any. */
+  pdb_weakclassification = 004,
+  /* Ignore files info if we already have them. */
+  pdb_ignorefiles = 010,
   /* Ignore packages with older versions already read. */
-  pdb_ignoreolder       =020,
+  pdb_ignoreolder = 020,
   /* Perform laxer parsing, used to transition to stricter parsing. */
-  pdb_lax_parser        =040,
+  pdb_lax_parser = 040,
 };
 
-const char *illegal_packagename(const char *p, const char **ep);
-int parsedb(const char *filename, enum parsedbflags, struct pkginfo **donep,
-            FILE *warnto, int *warncount);
+const char *pkg_name_is_illegal(const char *p, const char **ep);
+int parsedb(const char *filename, enum parsedbflags, struct pkginfo **donep);
 void copy_dependency_links(struct pkginfo *pkg,
                            struct dependency **updateme,
                            struct dependency *newdepends,
@@ -250,12 +310,10 @@ void copy_dependency_links(struct pkginfo *pkg,
 
 /*** from parsehelp.c ***/
 
-struct namevalue {
-  const char *name;
-  int value, length;
-};
+#include <dpkg/namevalue.h>
 
 extern const struct namevalue booleaninfos[];
+extern const struct namevalue multiarchinfos[];
 extern const struct namevalue priorityinfos[];
 extern const struct namevalue statusinfos[];
 extern const struct namevalue eflaginfos[];
@@ -270,20 +328,37 @@ const char *parseversion(struct versionrevision *rversion, const char*);
 const char *versiondescribe(const struct versionrevision*,
                             enum versiondisplayepochwhen);
 
+enum pkg_describe_opts {
+  pdo_never   = 000, /* Never display arch */
+  pdo_foreign = 001, /* Display arch when it's a foreign one */
+  pdo_ma_same = 002, /* Display arch when it's multi-arch same */
+  pdo_always  = 004, /* Always display arch */
+
+  /* Options that can be combined */
+  pdo_when    = 007, /* Mask to get the main options only */
+  pdo_avail   = 010, /* Use pkg->available instead of pkg->installed */
+};
+void varbuf_pkg(struct varbuf *vb, const struct pkginfo *pkg,
+                enum pkg_describe_opts pdo);
+const char *pkg_describe(const struct pkginfo *pkg, enum pkg_describe_opts pdo);
+
 /*** from dump.c ***/
 
 void writerecord(FILE*, const char*,
-                 const struct pkginfo*, const struct pkginfoperfile*);
+                 const struct pkginfo *, const struct pkgbin *);
 
 void writedb(const char *filename, bool available, bool mustsync);
 
-void varbufrecord(struct varbuf*, const struct pkginfo*, const struct pkginfoperfile*);
+/* Note: The varbufs must have been initialized and will not be
+ * NUL-terminated. */
+void varbufrecord(struct varbuf *, const struct pkginfo *,
+                  const struct pkgbin *);
 void varbufdependency(struct varbuf *vb, struct dependency *dep);
-  /* NB THE VARBUF MUST HAVE BEEN INITIALISED AND WILL NOT BE NULL-TERMINATED */
 
 /*** from vercmp.c ***/
 
-bool versionsatisfied(struct pkginfoperfile *it, struct deppossi *against);
+bool archsatisfied(struct pkgbin *it, struct deppossi *against);
+bool versionsatisfied(struct pkgbin *it, struct deppossi *against);
 bool versionsatisfied3(const struct versionrevision *it,
                        const struct versionrevision *ref,
                        enum depverrel verrel);

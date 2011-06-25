@@ -24,9 +24,7 @@
 
 #include <sys/types.h>
 
-#include <setjmp.h>
 #include <stddef.h>
-#include <stdarg.h>
 #include <stdio.h>
 
 #include <dpkg/macros.h>
@@ -78,14 +76,7 @@ DPKG_BEGIN_DECLS
 #define IMPORTANTFMT      "%04d"
 #define MAXUPDATES         250
 
-#define MAINTSCRIPTPKGENVVAR "DPKG_MAINTSCRIPT_PACKAGE"
-#define MAINTSCRIPTARCHENVVAR "DPKG_MAINTSCRIPT_ARCH"
-#define MAINTSCRIPTNAMEENVVAR "DPKG_MAINTSCRIPT_NAME"
-#define MAINTSCRIPTDPKGENVVAR "DPKG_RUNNING_VERSION"
-
-#define SHELLENV            "SHELL"
 #define DEFAULTSHELL        "sh"
-#define PAGERENV            "PAGER"
 #define DEFAULTPAGER        "pager"
 
 #define MD5HASHLEN           32
@@ -104,64 +95,26 @@ DPKG_BEGIN_DECLS
 
 #define FIND_EXPRSTARTCHARS "-(),!"
 
-extern const char thisname[]; /* defined separately in each program */
+#include <dpkg/ehandle.h>
 
 /*** from startup.c ***/
 
-#define standard_startup(ejbuf) do {\
-  if (setjmp(*ejbuf)) { /* expect warning about possible clobbering of argv */\
-    error_unwind(ehflag_bombout); exit(2);\
-  }\
-  push_error_handler(ejbuf, print_error_fatal, NULL); \
-  umask(022); /* Make sure all our status databases are readable. */\
+#define standard_startup() do { \
+  push_error_context(); \
+  /* Make sure all our status databases are readable. */ \
+  umask(022); \
 } while (0)
 
 #define standard_shutdown() do { \
-  set_error_display(NULL, NULL); \
-  error_unwind(ehflag_normaltidy);\
+  pop_error_context(ehflag_normaltidy); \
 } while (0)
-
-/*** from ehandle.c ***/
-
-extern volatile int onerr_abort;
-
-typedef void error_printer(const char *emsg, const char *contextstring);
-
-void push_error_handler(jmp_buf *jbufp, error_printer *printerror,
-                        const char *contextstring);
-void set_error_display(error_printer *printerror, const char *contextstring);
-void print_error_fatal(const char *emsg, const char *contextstring);
-void error_unwind(int flagset);
-void push_cleanup(void (*f1)(int argc, void **argv), int flagmask1,
-                  void (*f2)(int argc, void **argv), int flagmask2,
-                  unsigned int nargs, ...);
-void push_checkpoint(int mask, int value);
-void pop_cleanup(int flagset);
-enum { ehflag_normaltidy=01, ehflag_bombout=02, ehflag_recursiveerror=04 };
-
-void do_internerr(const char *file, int line, const char *fmt, ...)
-	DPKG_ATTR_NORET DPKG_ATTR_PRINTF(3);
-#define internerr(...) do_internerr(__FILE__, __LINE__, __VA_ARGS__)
-
-void ohshit(const char *fmt, ...) DPKG_ATTR_NORET DPKG_ATTR_PRINTF(1);
-void ohshitv(const char *fmt, va_list args)
-	DPKG_ATTR_NORET DPKG_ATTR_VPRINTF(1);
-void ohshite(const char *fmt, ...) DPKG_ATTR_NORET DPKG_ATTR_PRINTF(1);
-void werr(const char *what) DPKG_ATTR_NORET;
-void warning(const char *fmt, ...) DPKG_ATTR_PRINTF(1);
 
 /*** log.c ***/
 
 extern const char *log_file;
 void log_message(const char *fmt, ...) DPKG_ATTR_PRINTF(1);
 
-/* FIXME: pipef and status_pipes should not be publicly exposed. */
-struct pipef {
-  int fd;
-  struct pipef *next;
-};
-extern struct pipef *status_pipes;
-
+void statusfd_add(int fd);
 void statusfd_send(const char *fmt, ...) DPKG_ATTR_PRINTF(1);
 
 /*** cleanup.c ***/
@@ -177,6 +130,7 @@ void setcloexec(int fd, const char* fn);
 void *m_malloc(size_t);
 void *m_realloc(void*, size_t);
 char *m_strdup(const char *str);
+int m_asprintf(char **strp, const char *fmt, ...) DPKG_ATTR_PRINTF(2);
 void m_dup2(int oldfd, int newfd);
 void m_pipe(int fds[2]);
 void m_output(FILE *f, const char *name);

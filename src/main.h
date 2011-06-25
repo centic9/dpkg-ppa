@@ -21,9 +21,11 @@
 #ifndef MAIN_H
 #define MAIN_H
 
+#include <dpkg/debug.h>
 #include <dpkg/pkg-list.h>
 
-struct fileinlist; /* these two are defined in filesdb.h */
+/* These two are defined in filesdb.h. */
+struct fileinlist;
 struct filenamenode;
 
 struct perpackagestate {
@@ -38,13 +40,14 @@ struct perpackagestate {
     black,
   } color;
 
-  /*   filelistvalid   files         meaning
-   *       0             0           not read yet, must do so if want them
-   *       0            !=0          read, but rewritten and now out of
-   *                               date.  If want info must throw away old
-   *                               and reread file.
-   *       1            !=0          read, all is OK
-   *       1             0           read OK, but, there were no files
+  /*
+   * filelistvalid  files  Meaning
+   * -------------  -----  -------
+   * false          NULL   Not read yet, must do so if want them.
+   * false          !NULL  Read, but rewritten and now out of date. If want
+   *                         info must throw away old and reread file.
+   * true           !NULL  Read, all is OK.
+   * true           NULL   Read OK, but, there were no files.
    */
   bool fileslistvalid;
   struct fileinlist *files;
@@ -77,11 +80,13 @@ enum action {
 
 	act_printarch,
 	act_printinstarch,
+	act_foreignarchs,
 
 	act_assertpredep,
 	act_assertepoch,
 	act_assertlongfilenames,
 	act_assertmulticonrep,
+	act_assertmultiarch,
 
 	act_audit,
 	act_unpackchk,
@@ -119,11 +124,9 @@ enum conffopt {
 
 extern const char *const statusstrings[];
 
-extern const struct cmdinfo *cipaction;
 extern int f_pending, f_recursive, f_alsoselect, f_skipsame, f_noact;
 extern int f_autodeconf, f_nodebsig;
 extern int f_triggers;
-extern unsigned long f_debug;
 extern int fc_downgrade, fc_configureany, fc_hold, fc_removereinstreq, fc_overwrite;
 extern int fc_removeessential, fc_conflicts, fc_depends, fc_dependsversion;
 extern int fc_breaks, fc_badpath, fc_overwritediverted, fc_architecture;
@@ -135,10 +138,8 @@ extern int fc_unsafe_io;
 
 extern bool abort_processing;
 extern int errabort;
-extern const char *admindir;
 extern const char *instdir;
 extern struct pkg_list *ignoredependss;
-extern const char architecture[];
 
 struct invoke_hook {
 	struct invoke_hook *next;
@@ -149,8 +150,7 @@ struct invoke_hook {
 
 void archivefiles(const char *const *argv);
 void process_archive(const char *filename);
-int wanttoinstall(struct pkginfo *pkg, const struct versionrevision *ver,
-                  bool saywhy);
+bool wanttoinstall(struct pkginfo *pkg);
 struct fileinlist *newconff_append(struct fileinlist ***newconffileslastp_io,
 				   struct filenamenode *namenode);
 
@@ -167,9 +167,11 @@ void assertepoch(const char *const *argv);
 void assertpredep(const char *const *argv);
 void assertlongfilenames(const char *const *argv);
 void assertmulticonrep(const char *const *argv);
+void assertmultiarch(const char *const *argv);
 void predeppackage(const char *const *argv);
 void printarch(const char *const *argv);
 void printinstarch(const char *const *argv);
+void print_foreign_archs(const char *const *argv);
 void cmpversions(const char *const *argv) DPKG_ATTR_NORET;
 
 /* from select.c */
@@ -180,14 +182,22 @@ void clearselections(const char *const *argv);
 
 /* from packages.c, remove.c and configure.c */
 
+void md5hash(struct pkginfo *pkg, char *hashbuf, const char *fn, int fd);
 void add_to_queue(struct pkginfo *pkg);
 void process_queue(void);
 void packages(const char *const *argv);
 void removal_bulk(struct pkginfo *pkg);
 int conffderef(struct pkginfo *pkg, struct varbuf *result, const char *in);
-int dependencies_ok(struct pkginfo *pkg, struct pkginfo *removing,
-                    struct varbuf *aemsgs); /* checks [Pre]-Depends only */
-int breakses_ok(struct pkginfo *pkg, struct varbuf *aemsgs);
+
+enum dep_check {
+  dep_check_halt = 0,
+  dep_check_defer = 1,
+  dep_check_ok = 2,
+};
+
+enum dep_check dependencies_ok(struct pkginfo *pkg, struct pkginfo *removing,
+                               struct varbuf *aemsgs);
+enum dep_check breakses_ok(struct pkginfo *pkg, struct varbuf *aemsgs);
 
 void deferred_remove(struct pkginfo *pkg);
 void deferred_configure(struct pkginfo *pkg);
@@ -223,7 +233,6 @@ void checkpath(void);
 
 struct filenamenode *namenodetouse(struct filenamenode*, struct pkginfo*);
 
-/* all ...'s are const char*'s ... */
 int maintainer_script_installed(struct pkginfo *pkg, const char *scriptname,
                                 const char *desc, ...) DPKG_ATTR_SENTINEL;
 int maintainer_script_new(struct pkginfo *pkg,
@@ -247,23 +256,6 @@ void clear_istobes(void);
 bool isdirectoryinuse(struct filenamenode *namenode, struct pkginfo *pkg);
 bool hasdirectoryconffiles(struct filenamenode *namenode, struct pkginfo *pkg);
 
-enum debugflags {
-  dbg_general=           00001,
-  dbg_scripts=           00002,
-  dbg_eachfile=          00010,
-  dbg_eachfiledetail=    00100,
-  dbg_conff=             00020,
-  dbg_conffdetail=       00200,
-  dbg_depcon=            00040,
-  dbg_depcondetail=      00400,
-  dbg_veryverbose=       01000,
-  dbg_stupidlyverbose=   02000,
-  dbg_triggers =        010000,
-  dbg_triggersdetail =  020000,
-  dbg_triggersstupid =  040000,
-};
-  
-void debug(int which, const char *fmt, ...) DPKG_ATTR_PRINTF(2);
 void log_action(const char *action, struct pkginfo *pkg);
 
 /* from trigproc.c */
@@ -272,19 +264,24 @@ void trigproc_install_hooks(void);
 void trigproc_run_deferred(void);
 void trigproc_reset_cycle(void);
 
-/* Does cycle checking. Doesn't mind if pkg has no triggers
- * pending - in that case does nothing but fix up any stale awaiters. */
 void trigproc(struct pkginfo *pkg);
 
-/* Called by modstatdb_note. */
 void trig_activate_packageprocessing(struct pkginfo *pkg);
 
 /* from depcon.c */
+
+enum what_pkgbin {
+  wpb_installed,
+  wpb_available,
+  wpb_by_status,
+};
 
 bool depisok(struct dependency *dep, struct varbuf *whynot,
              struct pkginfo **fixbyrm, bool allowunconfigd);
 struct cyclesofarlink;
 bool findbreakcycle(struct pkginfo *pkg);
 void describedepcon(struct varbuf *addto, struct dependency *dep);
+struct pkginfo *deppossi_get_pkg(struct deppossi *possi, enum what_pkgbin wpb,
+                                 struct pkginfo *startpkg);
 
 #endif /* MAIN_H */

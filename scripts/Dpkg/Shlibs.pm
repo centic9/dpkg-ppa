@@ -29,7 +29,8 @@ use Dpkg::Gettext;
 use Dpkg::ErrorHandling;
 use Dpkg::Shlibs::Objdump;
 use Dpkg::Path qw(resolve_symlink canonpath);
-use Dpkg::Arch qw(debarch_to_gnutriplet get_build_arch get_host_arch);
+use Dpkg::Arch qw(debarch_to_gnutriplet debarch_to_multiarch
+                  get_build_arch get_host_arch);
 
 use constant DEFAULT_LIBRARY_PATH =>
     qw(/lib /usr/lib /lib32 /usr/lib32 /lib64 /usr/lib64
@@ -39,6 +40,9 @@ use constant DEFAULT_LIBRARY_PATH =>
 # cross-build or a build of a cross-compiler
 my @crosslibrarypaths;
 my $crossprefix;
+# And when we're not cross-compiling, be sure to pick up the multiarch paths
+my @multiarchpaths;
+my $multiarch;
 # Detect cross compiler builds
 if ($ENV{GCC_TARGET}) {
     $crossprefix = debarch_to_gnutriplet($ENV{GCC_TARGET});
@@ -51,6 +55,7 @@ if ($ENV{DEB_TARGET_GNU_TYPE} and
 # host for normal cross builds.
 if (get_build_arch() ne get_host_arch()) {
     $crossprefix = debarch_to_gnutriplet(get_host_arch());
+    $multiarch = debarch_to_multiarch(get_host_arch());
 }
 # Define list of directories containing crossbuilt libraries
 if ($crossprefix) {
@@ -58,8 +63,11 @@ if ($crossprefix) {
             "/$crossprefix/lib32", "/usr/$crossprefix/lib32",
             "/$crossprefix/lib64", "/usr/$crossprefix/lib64";
 }
+if ($multiarch) {
+    push @multiarchpaths, "/lib/$multiarch", "/usr/lib/$multiarch";
+}
 
-our @librarypaths = (DEFAULT_LIBRARY_PATH, @crosslibrarypaths);
+our @librarypaths = (@multiarchpaths, DEFAULT_LIBRARY_PATH, @crosslibrarypaths);
 
 # Update library paths with LD_LIBRARY_PATH
 if ($ENV{LD_LIBRARY_PATH}) {

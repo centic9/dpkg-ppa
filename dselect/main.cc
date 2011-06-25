@@ -61,9 +61,9 @@ const char thisname[]= DSELECT;
 const char printforhelp[]= N_("Type dselect --help for help.");
 
 modstatdb_rw readwrite;
-const char *admindir= ADMINDIR;
-FILE *debug;
 int expertmode= 0;
+
+static const char *admindir = ADMINDIR;
 
 static keybindings packagelistbindings(packagelist_kinterps,packagelist_korgbindings);
 
@@ -167,7 +167,7 @@ static void DPKG_ATTR_NORET
 printversion(const struct cmdinfo *ci, const char *value)
 {
   printf(gettext(programdesc), DSELECT, DPKG_VERSION_ARCH);
-  printf(gettext(copyrightstring));
+  printf("%s", gettext(copyrightstring));
   printf(gettext(licensestring), DSELECT);
 
   m_output(stdout, _("<standard output>"));
@@ -227,9 +227,15 @@ usage(const struct cmdinfo *ci, const char *value)
 extern "C" {
 
   static void setdebug(const struct cmdinfo*, const char *v) {
-    debug= fopen(v,"a");
-    if (!debug) ohshite(_("couldn't open debug file `%.255s'\n"),v);
-    setvbuf(debug,0,_IONBF,0);
+    FILE *fp;
+
+    fp = fopen(v, "a");
+    if (!fp)
+      ohshite(_("couldn't open debug file `%.255s'\n"), v);
+    setvbuf(fp, 0, _IONBF, 0);
+
+    debug_set_output(fp);
+    debug_set_mask(dbg_general | dbg_depcon);
   }
 
   static void setexpert(const struct cmdinfo*, const char *v) {
@@ -355,7 +361,8 @@ extern void operator delete(void *p) {
 }
 
 urqresult urq_list(void) {
-  readwrite= modstatdb_init(admindir,msdbrw_writeifposs);
+  readwrite = modstatdb_open((modstatdb_rw)(msdbrw_writeifposs |
+                                            msdbrw_available_readonly));
 
   curseson();
 
@@ -365,7 +372,7 @@ urqresult urq_list(void) {
   delete l;
 
   modstatdb_shutdown();
-  resetpackages();
+  pkg_db_reset();
   return urqr_normal;
 }
 
@@ -378,7 +385,7 @@ dme(int i, int so)
           so ? '*' : ' ', i,
           gettext(me->option),
           gettext(me->menuent));
-  
+
   int y,x;
   getmaxyx(stdscr,y,x);
 
@@ -391,8 +398,6 @@ static int
 refreshmenu(void)
 {
   char buf[2048];
-  static int l,lockfd;
-  static char *lockfile;
 
   curseson(); cbreak(); noecho(); nonl(); keypad(stdscr,TRUE);
 
@@ -419,14 +424,11 @@ refreshmenu(void)
   sprintf(buf, gettext(licensestring), DSELECT);
   addstr(buf);
 
-  l= strlen(admindir);
-  lockfile= new char[l+sizeof(LOCKFILE)+2];
-  strcpy(lockfile,admindir);
-  strcpy(lockfile+l, "/" LOCKFILE);
-  lockfd= open(lockfile, O_RDWR|O_CREAT|O_TRUNC, 0660);
-  if (errno == EACCES || errno == EPERM)
+  modstatdb_init();
+  if (!modstatdb_can_lock())
     addstr(_("\n\n"
              "Read-only access: only preview of selections is available!"));
+  modstatdb_done();
 
   return i;
 }
@@ -446,7 +448,7 @@ urqresult urq_menu(void) {
       if(errno != 0)
         ohshite(_("failed to getch in main menu"));
       else {
-        clearok(stdscr,TRUE); clear(); refreshmenu(); dme(cursor,1); 
+        clearok(stdscr,TRUE); clear(); refreshmenu(); dme(cursor,1);
       }
     }
 
@@ -498,21 +500,26 @@ urqresult urq_quit(void) {
   return urqr_quitmenu;
 }
 
-int main(int, const char *const *argv) {
-  jmp_buf ejbuf;
+static void
+dselect_catch_fatal_error()
+{
+  cursesoff();
+  catch_fatal_error();
+}
 
+int
+main(int, const char *const *argv)
+{
   setlocale(LC_ALL, "");
   bindtextdomain(DSELECT, LOCALEDIR);
   textdomain(DSELECT);
 
-  if (setjmp(ejbuf)) { /* expect warning about possible clobbering of argv */
-    cursesoff();
-    error_unwind(ehflag_bombout); exit(2);
-  }
-  push_error_handler(&ejbuf,print_error_fatal,0);
+  push_error_context_func(dselect_catch_fatal_error, print_fatal_error, 0);
 
   loadcfgfile(DSELECT, cmdinfos);
   myopt(&argv,cmdinfos);
+
+  admindir = dpkg_db_set_dir(admindir);
 
   if (*argv) {
     const char *a;
@@ -531,4 +538,3 @@ int main(int, const char *const *argv) {
   standard_shutdown();
   return(0);
 }
-

@@ -41,50 +41,49 @@
  * Trigger processing algorithms:
  *
  *
- * There is a separate queue (`deferred trigproc list') for triggers
- * `relevant' to what we just did; when we find something triggered `now'
+ * There is a separate queue (‘deferred trigproc list’) for triggers
+ * ‘relevant’ to what we just did; when we find something triggered ‘now’
  * we add it to that queue (unless --no-triggers).
  *
  *
  * We want to prefer configuring packages where possible to doing
  * trigger processing, but we want to prefer trigger processing to
- * cycle-breaking and dependency forcing.  This is achieved as
+ * cycle-breaking and dependency forcing. This is achieved as
  * follows:
  *
  * Each time during configure processing where a package D is blocked by
  * only (ie Depends unsatisfied but would be satisfied by) a t-awaiter W
- * we make a note of (one of) W's t-pending, T.  (Only the last such T.)
+ * we make a note of (one of) W's t-pending, T. (Only the last such T.)
  * (If --no-triggers and nonempty argument list and package isn't in
  * argument list then we don't do this.)
  *
  * Each time in packages.c where we increment dependtry, we instead see
- * if we have encountered such a t-pending T.  If we do, we trigproc T
+ * if we have encountered such a t-pending T. If we do, we trigproc T
  * instead of incrementing dependtry and this counts as having done
  * something so we reset sincenothing.
  *
  *
  * For --triggers-only and --configure, we go through each thing in the
  * argument queue (the add_to_queue queue) and check what its state is
- * and if appropriate we trigproc it.  If we didn't have a queue (or had
+ * and if appropriate we trigproc it. If we didn't have a queue (or had
  * just --pending) we search all triggers-pending packages and add them
  * to the deferred trigproc list.
  *
  *
  * Before quitting from most operations, we trigproc each package in the
- * deferred trigproc list.  This may (if not --no-triggers) of course add
+ * deferred trigproc list. This may (if not --no-triggers) of course add
  * new things to the deferred trigproc list.
  *
  *
- * Note that `we trigproc T' must involve trigger cycle detection and
- * also automatic setting of t-awaiters to t-pending or installed.  In
+ * Note that ‘we trigproc T’ must involve trigger cycle detection and
+ * also automatic setting of t-awaiters to t-pending or installed. In
  * particular, we do cycle detection even for trigger processing in the
  * configure dependtry loop (and it is OK to do it for explicitly
  * specified packages from the command line arguments; duplicates are
  * removed by packages.c:process_queue).
- *
  */
 
-/*========== deferred trigger queue ==========*/
+/*========== Deferred trigger queue. ==========*/
 
 static struct pkg_queue deferred = PKG_QUEUE_INIT;
 
@@ -97,13 +96,15 @@ trigproc_enqueue_deferred(struct pkginfo *pend)
 	if (pend->clientdata->trigprocdeferred)
 		return;
 	pend->clientdata->trigprocdeferred = pkg_queue_push(&deferred, pend);
-	debug(dbg_triggers, "trigproc_enqueue_deferred pend=%s", pend->name);
+	debug(dbg_triggers, "trigproc_enqueue_deferred pend=%s",
+	      pkg_describe(pend, pdo_foreign));
 }
 
 void
 trigproc_run_deferred(void)
 {
 	jmp_buf ejbuf;
+	char *pkgname;
 
 	debug(dbg_triggers, "trigproc_run_deferred");
 	while (!pkg_queue_is_empty(&deferred)) {
@@ -113,31 +114,37 @@ trigproc_run_deferred(void)
 		if (!pkg)
 			continue;
 
+		pkgname = m_strdup(pkg_describe(pkg, pdo_foreign));
 		if (setjmp(ejbuf)) {
-			error_unwind(ehflag_bombout);
+			pop_error_context(ehflag_bombout);
+			free(pkgname);
 			continue;
 		}
-		push_error_handler(&ejbuf, print_error_perpackage, pkg->name);
+		push_error_context_jump(&ejbuf, print_error_perpackage,
+		                        pkgname);
 
 		pkg->clientdata->trigprocdeferred = NULL;
 		trigproc(pkg);
 
-		set_error_display(NULL, NULL);
-		error_unwind(ehflag_normaltidy);
+		pop_error_context(ehflag_normaltidy);
+		free(pkgname);
 	}
 }
 
+/*
+ * Called by modstatdb_note.
+ */
 void
 trig_activate_packageprocessing(struct pkginfo *pkg)
 {
 	debug(dbg_triggersdetail, "trigproc_activate_packageprocessing pkg=%s",
-	      pkg->name);
+	      pkg_describe(pkg, pdo_foreign));
 
-	trig_parse_ci(pkgadminfile(pkg, TRIGGERSCIFILE), NULL,
+	trig_parse_ci(pkgadminfile(pkg, &pkg->installed, TRIGGERSCIFILE), NULL,
 	              trig_cicb_statuschange_activate, pkg);
 }
 
-/*========== actual trigger processing ==========*/
+/*========== Actual trigger processing. ==========*/
 
 struct trigcyclenode {
 	struct trigcyclenode *next;
@@ -161,7 +168,9 @@ trigproc_reset_cycle(void)
 	tortoise = hare = NULL;
 }
 
-/* Returns package we're to give up on. */
+/*
+ * Returns package we're to give up on.
+ */
 static struct pkginfo *
 check_trigger_cycle(struct pkginfo *processing_now)
 {
@@ -172,14 +181,15 @@ check_trigger_cycle(struct pkginfo *processing_now)
 	struct pkginfo *pkg, *giveup;
 	const char *sep;
 
-	debug(dbg_triggers, "check_triggers_cycle pnow=%s", processing_now->name);
+	debug(dbg_triggers, "check_triggers_cycle pnow=%s",
+	      pkg_describe(processing_now, pdo_foreign));
 
 	tcn = nfmalloc(sizeof(*tcn));
 	tcn->pkgs = NULL;
 	tcn->then_processed = processing_now;
 
-	it = iterpkgstart();
-	while ((pkg = iterpkgnext(it))) {
+	it = pkg_db_iter_new();
+	while ((pkg = pkg_db_iter_next_pkg(it))) {
 		if (!pkg->trigpend_head)
 			continue;
 		tcpp = nfmalloc(sizeof(*tcpp));
@@ -188,10 +198,10 @@ check_trigger_cycle(struct pkginfo *processing_now)
 		tcpp->next = tcn->pkgs;
 		tcn->pkgs = tcpp;
 	}
-	iterpkgend(it);
+	pkg_db_iter_free(it);
 	if (!hare) {
 		debug(dbg_triggersdetail, "check_triggers_cycle pnow=%s first",
-		      processing_now->name);
+		      pkg_describe(processing_now, pdo_foreign));
 		tcn->next = NULL;
 		hare = tortoise = tcn;
 		return NULL;
@@ -207,20 +217,22 @@ check_trigger_cycle(struct pkginfo *processing_now)
 	/* Now we compare hare to tortoise.
 	 * We want to find a trigger pending in tortoise which is not in hare
 	 * if we find such a thing we have proved that hare isn't a superset
-	 * of tortoise and so that we haven't found a loop (yet).
-	 */
+	 * of tortoise and so that we haven't found a loop (yet). */
 	for (tortoise_pkg = tortoise->pkgs;
 	     tortoise_pkg;
 	     tortoise_pkg = tortoise_pkg->next) {
+		const char *pnow_name, *tortoise_name;
+		pnow_name = pkg_describe(processing_now, pdo_foreign);
+		tortoise_name = pkg_describe(tortoise_pkg->pkg, pdo_foreign);
 		debug(dbg_triggersdetail, "check_triggers_cycle pnow=%s tortoise=%s",
-		      processing_now->name, tortoise_pkg->pkg->name);
+		      pnow_name, tortoise_name);
 		for (tortoise_trig = tortoise_pkg->then_trigs;
 		     tortoise_trig;
 		     tortoise_trig = tortoise_trig->next) {
 			debug(dbg_triggersdetail,
 			      "check_triggers_cycle pnow=%s tortoise=%s"
-			      " tortoisetrig=%s", processing_now->name,
-			      tortoise_pkg->pkg->name, tortoise_trig->name);
+			      " tortoisetrig=%s", pnow_name, tortoise_name,
+			      tortoise_trig->name);
 			/* hare is now so we can just look up in the actual
 			 * data. */
 			for (hare_trig = tortoise_pkg->pkg->trigpend_head;
@@ -229,7 +241,7 @@ check_trigger_cycle(struct pkginfo *processing_now)
 				debug(dbg_triggersstupid,
 				      "check_triggers_cycle pnow=%s tortoise=%s"
 				      " tortoisetrig=%s haretrig=%s",
-				      processing_now->name, tortoise_pkg->pkg->name,
+				      pnow_name, tortoise_name,
 				      tortoise_trig->name, hare_trig->name);
 				if (!strcmp(hare_trig->name, tortoise_trig->name))
 					goto found_in_hare;
@@ -237,18 +249,20 @@ check_trigger_cycle(struct pkginfo *processing_now)
 			/* Not found in hare, yay! */
 			debug(dbg_triggersdetail,
 			      "check_triggers_cycle pnow=%s tortoise=%s OK",
-			      processing_now->name, tortoise_pkg->pkg->name);
+			      pnow_name, tortoise_name);
 			return NULL;
 			found_in_hare:;
 		}
 	}
-	/* Oh dear. hare is a superset of tortoise. We are making no progress. */
+	/* Oh dear. hare is a superset of tortoise. We are making no
+	 * progress. */
 	fprintf(stderr, _("%s: cycle found while processing triggers:\n chain of"
 	        " packages whose triggers are or may be responsible:\n"),
-	        DPKG);
+	        thisname);
 	sep = "  ";
 	for (tcn = tortoise; tcn; tcn = tcn->next) {
-		fprintf(stderr, "%s%s", sep, tcn->then_processed->name);
+		fprintf(stderr, "%s%s", sep,
+		        pkg_describe(tcn->then_processed, pdo_foreign));
 		sep = " -> ";
 	}
 	fprintf(stderr, _("\n" " packages' pending triggers which are"
@@ -256,7 +270,8 @@ check_trigger_cycle(struct pkginfo *processing_now)
 	for (tortoise_pkg = tortoise->pkgs;
 	     tortoise_pkg;
 	     tortoise_pkg = tortoise_pkg->next) {
-		fprintf(stderr, "  %s", tortoise_pkg->pkg->name);
+		fprintf(stderr, "  %s",
+		        pkg_describe(tortoise_pkg->pkg, pdo_foreign));
 		sep = ": ";
 		for (tortoise_trig = tortoise_pkg->then_trigs;
 		     tortoise_trig;
@@ -269,16 +284,22 @@ check_trigger_cycle(struct pkginfo *processing_now)
 	/* We give up on the _earliest_ package involved. */
 	giveup = tortoise->pkgs->pkg;
 	debug(dbg_triggers, "check_triggers_cycle pnow=%s giveup=%p",
-	      processing_now->name, giveup->name);
+	      pkg_describe(processing_now, pdo_foreign),
+	      pkg_describe(giveup, pdo_foreign));
 	assert(giveup->status == stat_triggersawaited ||
 	       giveup->status == stat_triggerspending);
 	giveup->status = stat_halfconfigured;
 	modstatdb_note(giveup);
-	print_error_perpackage(_("triggers looping, abandoned"), giveup->name);
+	print_error_perpackage(_("triggers looping, abandoned"),
+	                       pkg_describe(giveup, pdo_foreign));
 
 	return giveup;
 }
 
+/*
+ * Does cycle checking. Doesn't mind if pkg has no triggers pending - in
+ * that case does nothing but fix up any stale awaiters.
+ */
 void
 trigproc(struct pkginfo *pkg)
 {
@@ -287,7 +308,7 @@ trigproc(struct pkginfo *pkg)
 	struct trigpend *tp;
 	struct pkginfo *gaveup;
 
-	debug(dbg_triggers, "trigproc %s", pkg->name);
+	debug(dbg_triggers, "trigproc %s", pkg_describe(pkg, pdo_foreign));
 
 	if (pkg->clientdata->trigprocdeferred)
 		pkg->clientdata->trigprocdeferred->pkg = NULL;
@@ -301,19 +322,19 @@ trigproc(struct pkginfo *pkg)
 		if (gaveup == pkg)
 			return;
 
-		printf(_("Processing triggers for %s ...\n"), pkg->name);
+		printf(_("Processing triggers for %s ...\n"),
+		       pkg_describe(pkg, pdo_foreign));
 		log_action("trigproc", pkg);
 
-		varbufreset(&namesarg);
+		varbuf_reset(&namesarg);
 		for (tp = pkg->trigpend_head; tp; tp = tp->next) {
-			varbufaddc(&namesarg, ' ');
-			varbufaddstr(&namesarg, tp->name);
+			varbuf_add_char(&namesarg, ' ');
+			varbuf_add_str(&namesarg, tp->name);
 		}
-		varbufaddc(&namesarg, 0);
+		varbuf_end_str(&namesarg);
 
-		/* Setting the status to halfconfigured
-		 * causes modstatdb_note to clear pending triggers.
-		 */
+		/* Setting the status to half-configured
+		 * causes modstatdb_note to clear pending triggers. */
 		pkg->status = stat_halfconfigured;
 		modstatdb_note(pkg);
 
@@ -335,7 +356,7 @@ trigproc(struct pkginfo *pkg)
 	}
 }
 
-/*========== transitional global activation ==========*/
+/*========== Transitional global activation. ==========*/
 
 static void
 transitional_interest_callback_ro(const char *trig, void *user)
@@ -344,7 +365,7 @@ transitional_interest_callback_ro(const char *trig, void *user)
 
 	debug(dbg_triggersdetail,
 	      "trig_transitional_interest_callback trig=%s pend=%s",
-	      trig, pend->name);
+	      trig, pkg_describe(pend, pdo_foreign));
 	if (pend->status >= stat_triggersawaited)
 		trig_note_pend(pend, nfstrsave(trig));
 }
@@ -358,37 +379,39 @@ transitional_interest_callback(const char *trig, void *user)
 	transitional_interest_callback_ro(trig, user);
 }
 
+/*
+ * cstatus might be msdbrw_readonly if we're in --no-act mode, in which
+ * case we don't write out all of the interest files etc. but we do
+ * invent all of the activations for our own benefit.
+ */
 static void
 trig_transitional_activate(enum modstatdb_rw cstatus)
 {
-	/* cstatus might be _read if we're in --no-act mode, in which
-	 * case we don't write out all of the interest files etc.
-	 * but we do invent all of the activations for our own benefit.
-	 */
 	struct pkgiterator *it;
 	struct pkginfo *pkg;
 
-	it = iterpkgstart();
-
-	while ((pkg = iterpkgnext(it))) {
+	it = pkg_db_iter_new();
+	while ((pkg = pkg_db_iter_next_pkg(it))) {
 		if (pkg->status <= stat_halfinstalled)
 			continue;
 		debug(dbg_triggersdetail, "trig_transitional_activate %s %s",
-		      pkg->name, statusinfos[pkg->status].name);
+		      pkg_describe(pkg, pdo_foreign),
+		      statusinfos[pkg->status].name);
 		pkg->trigpend_head = NULL;
-		trig_parse_ci(pkgadminfile(pkg, TRIGGERSCIFILE),
+		trig_parse_ci(pkgadminfile(pkg, &pkg->installed, TRIGGERSCIFILE),
 		              cstatus >= msdbrw_write ?
 		              transitional_interest_callback :
 		              transitional_interest_callback_ro, NULL, pkg);
 	}
-	iterpkgend(it);
+	pkg_db_iter_free(it);
+
 	if (cstatus >= msdbrw_write) {
 		modstatdb_checkpoint();
 		trig_file_interests_save();
 	}
 }
 
-/*========== hook setup ==========*/
+/*========== Hook setup. ==========*/
 
 static struct filenamenode *
 th_proper_nn_find(const char *name, bool nonew)
@@ -411,4 +434,3 @@ trigproc_install_hooks(void)
 {
 	trig_override_hooks(&trig_our_hooks);
 }
-

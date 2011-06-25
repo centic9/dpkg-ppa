@@ -67,7 +67,7 @@ static const struct trigdefmeths *trigdef;
 	}
 
 <midline>[ \t]	/* whitespace */
-<midline>[-0-9a-z][-+.0-9a-z]*	{
+<midline>[-0-9a-z][-:+.0-9a-z]*	{
 	if (trigdef_yytext[0] == '-' && trigdef_yytext[1])
 		ohshit(_("invalid package name `%.250s' in triggers deferred "
 		         "file `%.250s'"), trigdef_yytext, fn.buf);
@@ -91,7 +91,7 @@ static const struct trigdefmeths *trigdef;
 
 /*---------- Deferred file handling ----------*/
 
-static const char *triggersdir;
+static char *triggersdir;
 static int lock_fd = -1;
 static FILE *old_deferred;
 static FILE *trig_new_deferred;
@@ -99,19 +99,30 @@ static FILE *trig_new_deferred;
 static void
 constructfn(struct varbuf *vb, const char *dir, const char *tail)
 {
-	varbufreset(vb);
-	varbufaddstr(vb, dir);
-	varbufaddstr(vb, tail);
-	varbufaddc(vb, 0);
+	varbuf_reset(vb);
+	varbuf_add_str(vb, dir);
+	varbuf_add_str(vb, tail);
+	varbuf_end_str(vb);
 }
 
-int
-trigdef_update_start(enum trigdef_updateflags uf, const char *admindir)
+/**
+ * Start processing of the triggers deferred file.
+ *
+ * @retval -1 Lock ENOENT with O_CREAT (directory does not exist).
+ * @retval -2 Unincorp empty, tduf_writeifempty unset.
+ * @retval -3 Unincorp ENOENT, tduf_writeifenoent unset.
+ * @retval  1 Unincorp ENOENT, tduf_writeifenoent set.
+ * @retval  2 Ok.
+ *
+ * For positive return values the caller must call trigdef_update_done!
+ */
+enum trigdef_update_status
+trigdef_update_start(enum trigdef_updateflags uf)
 {
 	struct stat stab;
 	int r;
 
-	triggersdir = trig_get_triggersdir(admindir);
+	triggersdir = dpkg_db_get_path(TRIGGERSDIR);
 
 	if (uf & tduf_write) {
 		constructfn(&fn, triggersdir, TRIGGERSLOCKFILE);
@@ -122,12 +133,11 @@ trigdef_update_start(enum trigdef_updateflags uf, const char *admindir)
 					ohshite(_("unable to open/create "
 					          "triggers lockfile `%.250s'"),
 					        fn.buf);
-				return -1;
+				return tdus_error_no_dir;
 			}
 		}
 
-		file_lock(&lock_fd, fn.buf, _("unable to lock triggers area"),
-		          NULL);
+		file_lock(&lock_fd, FILE_LOCK_WAIT, fn.buf, _("triggers area"));
 	} else {
 		/* Dummy for pop_cleanups. */
 		push_cleanup(NULL, 0, NULL, 0, 0);
@@ -142,7 +152,7 @@ trigdef_update_start(enum trigdef_updateflags uf, const char *admindir)
 	} else if (!stab.st_size) {
 		if (!(uf & tduf_writeifempty)) {
 			pop_cleanup(ehflag_normaltidy);
-			return -2;
+			return tdus_error_empty_deferred;
 		}
 	}
 
@@ -155,7 +165,7 @@ trigdef_update_start(enum trigdef_updateflags uf, const char *admindir)
 			        fn.buf);
 		if (!(uf & tduf_writeifenoent)) {
 			pop_cleanup(ehflag_normaltidy);
-			return -3;
+			return tdus_error_no_deferred;
 		}
 	}
 
@@ -170,12 +180,12 @@ trigdef_update_start(enum trigdef_updateflags uf, const char *admindir)
 	}
 
 	if (!old_deferred)
-		return 1;
+		return tdus_no_deferred;
 
 	trigdef_yyrestart(old_deferred);
 	BEGIN(0);
 
-	return 2;
+	return tdus_ok;
 }
 
 void
@@ -224,7 +234,9 @@ trigdef_process_done(void)
 		dir_sync_path(triggersdir);
 	}
 
+	free(triggersdir);
+	triggersdir = NULL;
+
 	/* Unlock. */
 	pop_cleanup(ehflag_normaltidy);
 }
-

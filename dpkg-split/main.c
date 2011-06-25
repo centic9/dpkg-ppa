@@ -25,6 +25,7 @@
 
 #include <assert.h>
 #include <limits.h>
+#include <inttypes.h>
 #if HAVE_LOCALE_H
 #include <locale.h>
 #endif
@@ -96,32 +97,24 @@ usage(const struct cmdinfo *cip, const char *value)
 const char thisname[]= SPLITTER;
 const char printforhelp[]= N_("Type dpkg-split --help for help.");
 
-dofunction *action=NULL;
-const struct cmdinfo *cipaction=NULL;
 struct partqueue *queue= NULL;
 
-long opt_maxpartsize = SPLITPARTDEFMAX;
+off_t opt_maxpartsize = SPLITPARTDEFMAX;
 const char *opt_depotdir = ADMINDIR "/" PARTSDIR;
 const char *opt_outputfile = NULL;
 int opt_npquiet = 0;
 int opt_msdos = 0;
-
-void rerr(const char *fn) {
-  ohshite(_("error reading %.250s"), fn);
-}
 
 void rerreof(FILE *f, const char *fn) {
   if (ferror(f)) ohshite(_("error reading %.250s"),fn);
   ohshit(_("unexpected end of file in %.250s"),fn);
 }
 
-static void setaction(const struct cmdinfo *cip, const char *value);
-
 static void setpartsize(const struct cmdinfo *cip, const char *value) {
-  long newpartsize;
+  off_t newpartsize;
   char *endp;
 
-  newpartsize= strtol(value,&endp,10);
+  newpartsize = strtoimax(value, &endp, 10);
   if (value == endp || *endp)
     badusage(_("invalid integer for --%s: `%.250s'"), cip->olong, value);
   if (newpartsize <= 0 || newpartsize > (INT_MAX >> 10))
@@ -133,25 +126,14 @@ static void setpartsize(const struct cmdinfo *cip, const char *value) {
              (HEADERALLOWANCE >> 10) + 1);
 }
 
-static dofunction *const dofunctions[]= {
-  do_split,
-  do_join,
-  do_info,
-  do_auto,
-  do_queue,
-  do_discard,
-};
-
-/* NB: the entries using setaction must appear first and be in the
- * same order as dofunctions:
- */
 static const struct cmdinfo cmdinfos[]= {
-  { "split",        's',  0,  NULL, NULL,             setaction           },
-  { "join",         'j',  0,  NULL, NULL,             setaction           },
-  { "info",         'I',  0,  NULL, NULL,             setaction           },
-  { "auto",         'a',  0,  NULL, NULL,             setaction           },
-  { "listq",        'l',  0,  NULL, NULL,             setaction           },
-  { "discard",      'd',  0,  NULL, NULL,             setaction           },
+  ACTION("split",   's',  0,  do_split),
+  ACTION("join",    'j',  0,  do_join),
+  ACTION("info",    'I',  0,  do_info),
+  ACTION("auto",    'a',  0,  do_auto),
+  ACTION("listq",   'l',  0,  do_queue),
+  ACTION("discard", 'd',  0,  do_discard),
+
   { "help",         'h',  0,  NULL, NULL,             usage               },
   { "version",       0,   0,  NULL, NULL,             printversion        },
   { "depotdir",      0,   1,  NULL, &opt_depotdir,    NULL                },
@@ -162,25 +144,16 @@ static const struct cmdinfo cmdinfos[]= {
   {  NULL,              0                                              }
 };
 
-static void setaction(const struct cmdinfo *cip, const char *value) {
-  if (cipaction)
-    badusage(_("conflicting actions -%c (--%s) and -%c (--%s)"),
-             cip->oshort, cip->olong, cipaction->oshort, cipaction->olong);
-  cipaction= cip;
-  assert((int)(cip - cmdinfos) < (int)(array_count(dofunctions)));
-  action= dofunctions[cip-cmdinfos];
-}
-
 int main(int argc, const char *const *argv) {
-  jmp_buf ejbuf;
   int l;
   char *p;
+  dofunction *action;
 
   setlocale(LC_ALL, "");
   bindtextdomain(PACKAGE, LOCALEDIR);
   textdomain(PACKAGE);
 
-  standard_startup(&ejbuf);
+  standard_startup();
   myopt(&argv, cmdinfos);
 
   if (!cipaction) badusage(_("need an action option"));
@@ -194,10 +167,11 @@ int main(int argc, const char *const *argv) {
   }
 
   setvbuf(stdout,NULL,_IONBF,0);
+  action = (dofunction *)cipaction->arg_func;
   action(argv);
 
   m_output(stderr, _("<standard error>"));
-  
+
   standard_shutdown();
   exit(0);
 }

@@ -26,7 +26,7 @@ use Dpkg;
 use Dpkg::Gettext;
 use Dpkg::ErrorHandling;
 use Dpkg::Path qw(relative_to_pkg_root guess_pkg_root_dir
-		  check_files_are_the_same);
+		  check_files_are_the_same get_control_path);
 use Dpkg::Version;
 use Dpkg::Shlibs qw(find_library @librarypaths);
 use Dpkg::Shlibs::Objdump;
@@ -91,6 +91,7 @@ foreach (@ARGV) {
 	$admindir = $1;
 	-d $admindir ||
 	    error(_g("administrative directory '%s' does not exist"), $admindir);
+	$ENV{'DPKG_ADMINDIR'} = $admindir;
     } elsif (m/^-d(.*)$/) {
 	$dependencyfield = field_capitalize($1);
 	defined($depstrength{$dependencyfield}) ||
@@ -150,6 +151,9 @@ my %symfile_cache;
 my %objdump_cache;
 my %symfile_has_soname_cache;
 
+# Used to count errors due to missing libraries
+my $error_count = 0;
+
 my $cur_field;
 foreach my $file (keys %exec) {
     $cur_field = $exec{$file};
@@ -168,12 +172,11 @@ foreach my $file (keys %exec) {
 	unless (defined $lib) {
 	    $soname_notfound{$soname} = 1;
 	    $global_soname_notfound{$soname} = 1;
-	    my $msg = _g("couldn't find library %s needed by %s (ELF format: '%s'; RPATH: '%s').\n" .
-			 "Note: libraries are not searched in other binary packages " .
-			 "that do not have any shlibs or symbols file.\nTo help dpkg-shlibdeps " .
-			 "find private libraries, you might need to set LD_LIBRARY_PATH.");
+	    my $msg = _g("couldn't find library %s needed by %s (ELF " .
+			 "format: '%s'; RPATH: '%s').");
 	    if (scalar(split_soname($soname))) {
-		error($msg, $soname, $file, $obj->{format}, join(":", @{$obj->{RPATH}}));
+		errormsg($msg, $soname, $file, $obj->{format}, join(":", @{$obj->{RPATH}}));
+		$error_count++;
 	    } else {
 		warning($msg, $soname, $file, $obj->{format}, join(":", @{$obj->{RPATH}}));
 	    }
@@ -423,6 +426,16 @@ foreach my $soname (keys %global_soname_needed) {
     }
 }
 
+# Quit now if any missing libraries
+if ($error_count >= 1) {
+    my $note = _g("Note: libraries are not searched in other binary packages " .
+	"that do not have any shlibs or symbols file.\nTo help dpkg-shlibdeps " .
+	"find private libraries, you might need to set LD_LIBRARY_PATH.");
+    error(P_("Cannot continue due to the error above.",
+             "Cannot continue due to the errors listed above.",
+             $error_count) . "\n" . $note);
+}
+
 # Open substvars file
 my $fh;
 if ($stdout) {
@@ -623,7 +636,8 @@ sub add_shlibs_dep {
 	# Fallback to other shlibs files but it shouldn't be necessary
 	push @shlibs, @pkg_shlibs;
     } else {
-	push @shlibs, "$admindir/info/$pkg.shlibs";
+	my $control_file = get_control_path($pkg, "shlibs");
+	push @shlibs, $control_file if defined $control_file;
     }
     push @shlibs, $shlibsdefault;
     print " Looking up shlibs dependency of $soname provided by '$pkg'\n" if $debug;
@@ -711,8 +725,9 @@ sub find_symbols_file {
 	push @files, @pkg_symbols;
     } else {
 	push @files, "/etc/dpkg/symbols/$pkg.symbols.$host_arch",
-	    "/etc/dpkg/symbols/$pkg.symbols",
-	    "$admindir/info/$pkg.symbols";
+	    "/etc/dpkg/symbols/$pkg.symbols";
+	my $control_file = get_control_path($pkg, "symbols");
+	push @files, $control_file if defined $control_file;
     }
 
     foreach my $file (@files) {
@@ -825,7 +840,7 @@ sub find_packages {
 	open STDERR, ">", "/dev/null";
 	$ENV{LC_ALL} = "C";
 	exec("dpkg", "--search", "--", @files)
-	    || syserr(_g("cannot exec dpkg"));
+	    || syserr(_g("unable to execute %s"), "dpkg");
     }
     while(defined($_ = <DPKG>)) {
 	chomp($_);
@@ -833,7 +848,7 @@ sub find_packages {
 	    warning(_g("diversions involved - output may be incorrect"));
 	    print(STDERR " $_\n")
 		|| syserr(_g("write diversion info to stderr"));
-	} elsif (m/^([^:]+): (\S+)$/) {
+	} elsif (m/^([-a-z0-9+.:, ]+): (\/.*)$/) {
 	    $cached_pkgmatch{$2} = $pkgmatch->{$2} = [ split(/, /, $1) ];
 	} else {
 	    warning(_g("unknown output from dpkg --search: '%s'"), $_);
@@ -842,4 +857,3 @@ sub find_packages {
     close(DPKG);
     return $pkgmatch;
 }
-

@@ -2,7 +2,7 @@
  * libdpkg - Debian packaging suite library routines
  * t-version.c - test version handling
  *
- * Copyright © 2009 Guillem Jover <guillem@debian.org>
+ * Copyright © 2009-2010 Guillem Jover <guillem@debian.org>
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,10 @@
 #include <config.h>
 #include <compat.h>
 
+#include <stdlib.h>
+
 #include <dpkg/test.h>
+#include <dpkg/dpkg.h>
 #include <dpkg/dpkg-db.h>
 
 #define version(epoch, version, revision) \
@@ -64,6 +67,8 @@ static void
 test_version_parse(void)
 {
 	struct versionrevision a, b;
+	const char *p;
+	char *verstr;
 
 	/* Test 0 versions. */
 	blankversion(&a);
@@ -123,8 +128,8 @@ test_version_parse(void)
 	test_pass(versioncompare(&a, &b) == 0);
 
 	/* Test valid characters in upstream version. */
-	b = version(0, "azAZ09.-+~:", "0");
-	test_pass(parseversion(&a, "0:azAZ09.-+~:-0") == NULL);
+	b = version(0, "09azAZ.-+~:", "0");
+	test_pass(parseversion(&a, "0:09azAZ.-+~:-0") == NULL);
 	test_pass(versioncompare(&a, &b) == 0);
 
 	/* Test valid characters in revision. */
@@ -137,11 +142,22 @@ test_version_parse(void)
 	test_fail(parseversion(&a, "A:0-0") == NULL);
 
 	/* Test invalid characters in upstream version. */
-	test_fail(parseversion(&a, "0:!#@$%&/|\\<>()[]{};,=*^'-0") == NULL);
+	verstr = m_strdup("0:0-0");
+	for (p = "!#@$%&/|\\<>()[]{};,_=*^'"; *p; p++) {
+		verstr[2] = *p;
+		test_fail(parseversion(&a, verstr) == NULL);
+	}
+	free(verstr);
 
 	/* Test invalid characters in revision. */
 	test_fail(parseversion(&a, "0:0-0:0") == NULL);
-	test_fail(parseversion(&a, "0:0-!#@$%&/|\\<>()[]{}:;,=*^'") == NULL);
+
+	verstr = m_strdup("0:0-0");
+	for (p = "!#@$%&/|\\<>()[]{}:;,_=*^'"; *p; p++) {
+		verstr[4] = *p;
+		test_fail(parseversion(&a, verstr) == NULL);
+	}
+	free(verstr);
 
 	/* FIXME: Complete. */
 }
@@ -152,4 +168,3 @@ test(void)
 	test_version_compare();
 	test_version_parse();
 }
-

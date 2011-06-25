@@ -24,6 +24,7 @@ use Dpkg;
 use Dpkg::Gettext;
 use Dpkg::IPC;
 use Dpkg::ErrorHandling;
+use Dpkg::Source::Functions qw(fs_time);
 
 use POSIX;
 use File::Find;
@@ -113,7 +114,7 @@ sub add_diff_file {
             last;
         } elsif (m/^[-+\@ ]/) {
             $difflinefound++;
-        } elsif (m/^\\ No newline at end of file$/) {
+        } elsif (m/^\\ /) {
             warning(_g("file %s has no final newline (either " .
                        "original or modified version)"), $new);
         } else {
@@ -154,6 +155,7 @@ sub add_diff_directory {
         $diff_ignore = sub { return 0 };
     }
 
+    my @diff_files;
     my %files_in_new;
     my $scan_new = sub {
         my $fn = (length > length($new)) ? substr($_, length($new) + 1) : '.';
@@ -189,27 +191,8 @@ sub add_diff_directory {
             if ($opts{'use_dev_null'}) {
                 $label_old = $old_file if $old_file eq '/dev/null';
             }
-            my $success = $self->add_diff_file($old_file, "$new/$fn",
-                label_old => $label_old,
-                label_new => "$basedir/$fn",
-                %opts);
-
-            if ($success and ($old_file eq "/dev/null")) {
-                if (not $size) {
-                    warning(_g("newly created empty file '%s' will not " .
-                               "be represented in diff"), $fn);
-                } else {
-                    if ($mode & (S_IXUSR | S_IXGRP | S_IXOTH)) {
-                        warning(_g("executable mode %04o of '%s' will " .
-                                   "not be represented in diff"), $mode, $fn)
-                            unless $fn eq 'debian/rules';
-                    }
-                    if ($mode & (S_ISUID | S_ISGID | S_ISVTX)) {
-                        warning(_g("special mode %04o of '%s' will not " .
-                                   "be represented in diff"), $mode, $fn);
-                    }
-                }
-            }
+            push @diff_files, [$fn, $mode, $size, $old_file, "$new/$fn",
+                               $label_old, "$basedir/$fn"];
         } elsif (-p _) {
             unless (-p "$old/$fn") {
                 $self->_fail_not_same_type("$old/$fn", "$new/$fn");
@@ -235,10 +218,8 @@ sub add_diff_directory {
         lstat("$old/$fn") || syserr(_g("cannot stat file %s"), "$old/$fn");
         if (-f _) {
             if ($inc_removal) {
-                $self->add_diff_file("$old/$fn", "/dev/null",
-                    label_old => "$basedir.orig/$fn",
-                    label_new => "/dev/null",
-                    %opts);
+                push @diff_files, [$fn, 0, 0, "$old/$fn", "/dev/null",
+                                   "$basedir.orig/$fn", "/dev/null"];
             } else {
                 warning(_g("ignoring deletion of file %s"), $fn);
             }
@@ -253,6 +234,55 @@ sub add_diff_directory {
 
     find({ wanted => $scan_new, no_chdir => 1 }, $new);
     find({ wanted => $scan_old, no_chdir => 1 }, $old);
+
+    if ($opts{"order_from"} and -e $opts{"order_from"}) {
+        my $order_from = Dpkg::Source::Patch->new(
+            filename => $opts{"order_from"});
+        my $analysis = $order_from->analyze($basedir, verbose => 0);
+        my %patchorder;
+        my $i = 0;
+        foreach my $fn (@{$analysis->{"patchorder"}}) {
+            $fn =~ s{^[^/]+/}{};
+            $patchorder{$fn} = $i++;
+        }
+        # 'quilt refresh' sorts files as follows:
+        #   - Any files in the existing patch come first, in the order in
+        #     which they appear in the existing patch.
+        #   - New files follow, sorted lexicographically.
+        # This seems a reasonable policy to follow, and avoids autopatches
+        # being shuffled when they are regenerated.
+        foreach my $diff_file (sort { $a->[0] cmp $b->[0] } @diff_files) {
+            my $fn = $diff_file->[0];
+            $patchorder{$fn} = $i++ unless exists $patchorder{$fn};
+        }
+        @diff_files = sort { $patchorder{$a->[0]} <=> $patchorder{$b->[0]} }
+                      @diff_files;
+    }
+
+    foreach my $diff_file (@diff_files) {
+        my ($fn, $mode, $size,
+            $old_file, $new_file, $label_old, $label_new) = @$diff_file;
+        my $success = $self->add_diff_file($old_file, $new_file,
+                                           label_old => $label_old,
+                                           label_new => $label_new, %opts);
+        if ($success and
+            $old_file eq "/dev/null" and $new_file ne "/dev/null") {
+            if (not $size) {
+                warning(_g("newly created empty file '%s' will not " .
+                           "be represented in diff"), $fn);
+            } else {
+                if ($mode & (S_IXUSR | S_IXGRP | S_IXOTH)) {
+                    warning(_g("executable mode %04o of '%s' will " .
+                               "not be represented in diff"), $mode, $fn)
+                        unless $fn eq 'debian/rules';
+                }
+                if ($mode & (S_ISUID | S_ISGID | S_ISVTX)) {
+                    warning(_g("special mode %04o of '%s' will not " .
+                               "be represented in diff"), $mode, $fn);
+                }
+            }
+        }
+    }
 }
 
 sub finish {
@@ -284,9 +314,11 @@ sub _fail_not_same_type {
 sub analyze {
     my ($self, $destdir, %opts) = @_;
 
+    $opts{"verbose"} = 1 if not defined $opts{"verbose"};
     my $diff = $self->get_filename();
     my %filepatched;
     my %dirtocreate;
+    my @patchorder;
     my $diff_count = 0;
 
     sub getline {
@@ -394,8 +426,10 @@ sub analyze {
         } elsif ($path{'new'} eq '/dev/null') {
             error(_g("file removal without proper filename in diff `%s' (line %d)"),
                   $diff, $. - 1) unless defined $fn{'old'};
-            warning(_g("diff %s removes a non-existing file %s (line %d)"),
-                    $diff, $fn{'old'}, $.) unless -e $fn{'old'};
+            if ($opts{"verbose"}) {
+                warning(_g("diff %s removes a non-existing file %s (line %d)"),
+                        $diff, $fn{'old'}, $.) unless -e $fn{'old'};
+            }
         }
 	my $fn = intuit_file_patched($fn{'old'}, $fn{'new'});
 
@@ -409,28 +443,32 @@ sub analyze {
 	}
 
 	if ($filepatched{$fn}) {
-	    error(_g("diff `%s' patches file %s twice"), $diff, $fn);
+	    warning(_g("diff `%s' patches file %s twice"), $diff, $fn)
+		if $opts{"verbose"};
+	} else {
+	    $filepatched{$fn} = 1;
+	    push @patchorder, $fn;
 	}
-	$filepatched{$fn} = 1;
 
 	# read hunks
 	my $hunk = 0;
 	while (defined($_ = getline($self))) {
 	    # read hunk header (@@)
-	    next if /^\\ No newline/;
+	    next if /^\\ /;
 	    last unless (/^@@ -\d+(,(\d+))? \+\d+(,(\d+))? @\@( .*)?$/);
 	    my ($olines, $nlines) = ($1 ? $2 : 1, $3 ? $4 : 1);
 	    # read hunk
 	    while ($olines || $nlines) {
 		unless (defined($_ = getline($self))) {
                     if (($olines == $nlines) and ($olines < 3)) {
-                        warning(_g("unexpected end of diff `%s'"), $diff);
+                        warning(_g("unexpected end of diff `%s'"), $diff)
+                            if $opts{"verbose"};
                         last;
                     } else {
                         error(_g("unexpected end of diff `%s'"), $diff);
                     }
 		}
-		next if /^\\ No newline/;
+		next if /^\\ /;
 		# Check stats
 		if    (/^ / || /^$/)  { --$olines; --$nlines; }
 		elsif (/^-/)  { --$olines; }
@@ -448,10 +486,12 @@ sub analyze {
     }
     close($self);
     unless ($diff_count) {
-	warning(_g("diff `%s' doesn't contain any patch"), $diff);
+	warning(_g("diff `%s' doesn't contain any patch"), $diff)
+	    if $opts{"verbose"};
     }
     *$self->{'analysis'}{$destdir}{"dirtocreate"} = \%dirtocreate;
     *$self->{'analysis'}{$destdir}{"filepatched"} = \%filepatched;
+    *$self->{'analysis'}{$destdir}{"patchorder"} = \@patchorder;
     return *$self->{'analysis'}{$destdir};
 }
 
@@ -501,8 +541,10 @@ sub apply {
     $self->close();
     # Reset the timestamp of all the patched files
     # and remove .dpkg-orig files
-    my $now = $opts{"timestamp"} || time;
-    foreach my $fn (keys %{$analysis->{'filepatched'}}) {
+    my @files = keys %{$analysis->{'filepatched'}};
+    my $now = $opts{"timestamp"};
+    $now ||= fs_time($files[0]) if $opts{"force_timestamp"} and scalar @files;
+    foreach my $fn (@files) {
 	if ($opts{"force_timestamp"}) {
 	    utime($now, $now, $fn) || $! == ENOENT ||
 		syserr(_g("cannot change timestamp for %s"), $fn);

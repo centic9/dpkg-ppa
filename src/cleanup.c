@@ -46,42 +46,44 @@
 
 int cleanup_pkg_failed=0, cleanup_conflictor_failed=0;
 
+/**
+ * Something went wrong and we're undoing.
+ *
+ * We have the following possible situations for non-conffiles:
+ *   <foo>.dpkg-tmp exists - in this case we want to remove
+ *    <foo> if it exists and replace it with <foo>.dpkg-tmp.
+ *    This undoes the backup operation.
+ *   <foo>.dpkg-tmp does not exist - <foo> may be on the disk,
+ *    as a new file which didn't fail, remove it if it is.
+ *
+ * In both cases, we also make sure we delete <foo>.dpkg-new in
+ * case that's still hanging around.
+ *
+ * For conffiles, we simply delete <foo>.dpkg-new. For these,
+ * <foo>.dpkg-tmp shouldn't exist, as we don't make a backup
+ * at this stage. Just to be on the safe side, though, we don't
+ * look for it.
+ */
 void cu_installnew(int argc, void **argv) {
-  /* Something went wrong and we're undoing.
-   * We have the following possible situations for non-conffiles:
-   *   <foo>.dpkg-tmp exists - in this case we want to remove
-   *    <foo> if it exists and replace it with <foo>.dpkg-tmp.
-   *    This undoes the backup operation.
-   *   <foo>.dpkg-tmp does not exist - <foo> may be on the disk,
-   *    as a new file which didn't fail, remove it if it is.
-   * In both cases, we also make sure we delete <foo>.dpkg-new in
-   * case that's still hanging around.
-   * For conffiles, we simply delete <foo>.dpkg-new.  For these,
-   * <foo>.dpkg-tmp shouldn't exist, as we don't make a backup
-   * at this stage.  Just to be on the safe side, though, we don't
-   * look for it.
-   */
   struct fileinlist *nifd= (struct fileinlist*)argv[0];
   struct filenamenode *namenode;
   struct stat stab;
 
   cleanup_pkg_failed++; cleanup_conflictor_failed++;
-  
+
   namenode= nifd->namenode;
   debug(dbg_eachfile,"cu_installnew `%s' flags=%o",namenode->name,namenode->flags);
-        
+
   setupfnamevbs(namenode->name);
-  
+
   if (!(namenode->flags & fnnf_new_conff) && !lstat(fnametmpvb.buf,&stab)) {
-    /* OK, <foo>.dpkg-tmp exists.  Remove <foo> and
-     * restore <foo>.dpkg-tmp ...
-     */
+    /* OK, <foo>.dpkg-tmp exists. Remove <foo> and
+     * restore <foo>.dpkg-tmp ... */
     if (namenode->flags & fnnf_no_atomic_overwrite) {
       /* If we can't do an atomic overwrite we have to delete first any
-       * link to the new version we may have created.
-       */
+       * link to the new version we may have created. */
       debug(dbg_eachfiledetail,"cu_installnew restoring nonatomic");
-      if (unlinkorrmdir(fnamevb.buf) && errno != ENOENT && errno != ENOTDIR)
+      if (secure_remove(fnamevb.buf) && errno != ENOENT && errno != ENOTDIR)
         ohshite(_("unable to remove newly-installed version of `%.250s' to allow"
                 " reinstallation of backup copy"),namenode->name);
     } else {
@@ -96,15 +98,46 @@ void cu_installnew(int argc, void **argv) {
       ohshite(_("unable to remove backup copy of '%.250s'"), namenode->name);
   } else if (namenode->flags & fnnf_placed_on_disk) {
     debug(dbg_eachfiledetail,"cu_installnew removing new file");
-    if (unlinkorrmdir(fnamevb.buf) && errno != ENOENT && errno != ENOTDIR)
+    if (secure_remove(fnamevb.buf) && errno != ENOENT && errno != ENOTDIR)
       ohshite(_("unable to remove newly-installed version of `%.250s'"),
 	      namenode->name);
   } else {
     debug(dbg_eachfiledetail,"cu_installnew not restoring");
   }
   /* Whatever, we delete <foo>.dpkg-new now, if it still exists. */
-  if (unlinkorrmdir(fnamenewvb.buf) && errno != ENOENT && errno != ENOTDIR)
+  if (secure_remove(fnamenewvb.buf) && errno != ENOENT && errno != ENOTDIR)
     ohshite(_("unable to remove newly-extracted version of `%.250s'"),namenode->name);
+
+  cleanup_pkg_failed--; cleanup_conflictor_failed--;
+}
+
+void
+cu_installsharedconf(int argc, void **argv) {
+  struct fileinlist *nifd = (struct fileinlist*)argv[0];
+  struct filenamenode *namenode;
+  struct stat stab;
+
+  cleanup_pkg_failed++; cleanup_conflictor_failed++;
+
+  namenode = nifd->namenode;
+  debug(dbg_eachfile, "cu_installsharedconf `%s' flags=%o", namenode->name,
+        namenode->flags);
+
+  setupfnamevbs(namenode->name);
+
+  if ((namenode->flags & fnnf_new_conff) && !lstat(fnametmpvb.buf, &stab)) {
+    /* OK, <foo>.dpkg-tmp exists. Restore it to <foo>.dpkg-new as it was a
+     * previously unpacked (but not configured) configuration file. */
+    if (secure_remove(fnamenewvb.buf) && errno != ENOENT && errno != ENOTDIR)
+      ohshite(_("unable to remove newly-installed version of `%.250s' to allow"
+              " reinstallation of backup copy"), fnamenewvb.buf);
+    /* Either we can do an atomic restore, or we've made room: */
+    if (rename(fnametmpvb.buf, fnamenewvb.buf))
+      ohshite(_("unable to restore backup version of `%.250s'"),
+              fnamenewvb.buf);
+  } else {
+    debug(dbg_eachfiledetail,"cu_installsharedconf not restoring");
+  }
 
   cleanup_pkg_failed--; cleanup_conflictor_failed--;
 }
@@ -122,32 +155,38 @@ void cu_prermupgrade(int argc, void **argv) {
   cleanup_pkg_failed--;
 }
 
+/*
+ * Also has conflictor in argv[1] and infavour in argv[2].
+ * conflictor may be NULL if deconfigure was due to Breaks.
+ */
 void ok_prermdeconfigure(int argc, void **argv) {
   struct pkginfo *deconf= (struct pkginfo*)argv[0];
-  /* also has conflictor in argv[1] and infavour in argv[2].
-   * conflictor may be 0 if deconfigure was due to Breaks */
-  
-  if (cipaction->arg == act_install)
+
+  if (cipaction->arg_int == act_install)
     add_to_queue(deconf);
 }
 
+/*
+ * conflictor may be NULL.
+ */
 void cu_prermdeconfigure(int argc, void **argv) {
   struct pkginfo *deconf= (struct pkginfo*)argv[0];
-  struct pkginfo *conflictor= (struct pkginfo*)argv[1]; /* may be 0 */
+  struct pkginfo *conflictor = (struct pkginfo *)argv[1];
   struct pkginfo *infavour= (struct pkginfo*)argv[2];
 
   if (conflictor) {
     maintainer_script_postinst(deconf, "abort-deconfigure",
-                               "in-favour", infavour->name,
+                               "in-favour", pkg_describe(infavour, pdo_foreign),
                                versiondescribe(&infavour->available.version,
                                                vdew_nonambig),
-                               "removing", conflictor->name,
+                               "removing",
+                               pkg_describe(conflictor, pdo_foreign),
                                versiondescribe(&conflictor->installed.version,
                                                vdew_nonambig),
                                NULL);
   } else {
     maintainer_script_postinst(deconf, "abort-deconfigure",
-                               "in-favour", infavour->name,
+                               "in-favour", pkg_describe(infavour, pdo_foreign),
                                versiondescribe(&infavour->available.version,
                                                vdew_nonambig),
                                NULL);
@@ -162,7 +201,7 @@ void cu_prerminfavour(int argc, void **argv) {
 
   if (cleanup_conflictor_failed++) return;
   maintainer_script_postinst(conflictor, "abort-remove",
-                             "in-favour", infavour->name,
+                             "in-favour", pkg_describe(infavour, pdo_foreign),
                              versiondescribe(&infavour->available.version,
                                              vdew_nonambig),
                              NULL);
@@ -181,7 +220,7 @@ void cu_preinstverynew(int argc, void **argv) {
                         "abort-install", NULL);
   pkg->status= stat_notinstalled;
   pkg->eflag &= ~eflag_reinstreq;
-  blankpackageperfile(&pkg->installed);
+  pkgbin_blank(&pkg->installed, true);
   modstatdb_note(pkg);
   cleanup_pkg_failed--;
 }

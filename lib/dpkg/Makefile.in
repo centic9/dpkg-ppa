@@ -41,6 +41,7 @@ DIST_COMMON = $(pkginclude_HEADERS) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(srcdir)/libdpkg.pc.in trigdeferred.c
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/dpkg-arch.m4 \
+	$(top_srcdir)/m4/dpkg-build.m4 \
 	$(top_srcdir)/m4/dpkg-compiler.m4 \
 	$(top_srcdir)/m4/dpkg-coverage.m4 \
 	$(top_srcdir)/m4/dpkg-funcs.m4 $(top_srcdir)/m4/dpkg-libs.m4 \
@@ -92,18 +93,20 @@ am__v_at_ = $(am__v_at_$(AM_DEFAULT_VERBOSITY))
 am__v_at_0 = @
 libdpkg_a_AR = $(AR) $(ARFLAGS)
 libdpkg_a_LIBADD =
-am_libdpkg_a_OBJECTS = ar.$(OBJEXT) buffer.$(OBJEXT) cleanup.$(OBJEXT) \
-	command.$(OBJEXT) compress.$(OBJEXT) database.$(OBJEXT) \
-	dbmodify.$(OBJEXT) dir.$(OBJEXT) dump.$(OBJEXT) \
-	ehandle.$(OBJEXT) file.$(OBJEXT) fields.$(OBJEXT) \
-	log.$(OBJEXT) md5.$(OBJEXT) mlib.$(OBJEXT) myopt.$(OBJEXT) \
-	nfmalloc.$(OBJEXT) parse.$(OBJEXT) parsehelp.$(OBJEXT) \
-	path.$(OBJEXT) pkg.$(OBJEXT) pkg-array.$(OBJEXT) \
-	pkg-format.$(OBJEXT) pkg-list.$(OBJEXT) pkg-queue.$(OBJEXT) \
-	pkg-show.$(OBJEXT) progress.$(OBJEXT) string.$(OBJEXT) \
+am_libdpkg_a_OBJECTS = ar.$(OBJEXT) arch.$(OBJEXT) buffer.$(OBJEXT) \
+	cleanup.$(OBJEXT) command.$(OBJEXT) compress.$(OBJEXT) \
+	dbdir.$(OBJEXT) dbmodify.$(OBJEXT) debug.$(OBJEXT) \
+	dir.$(OBJEXT) dump.$(OBJEXT) ehandle.$(OBJEXT) fdio.$(OBJEXT) \
+	file.$(OBJEXT) fields.$(OBJEXT) glob.$(OBJEXT) log.$(OBJEXT) \
+	md5.$(OBJEXT) mlib.$(OBJEXT) myopt.$(OBJEXT) \
+	namevalue.$(OBJEXT) nfmalloc.$(OBJEXT) parse.$(OBJEXT) \
+	parsehelp.$(OBJEXT) path.$(OBJEXT) pkg.$(OBJEXT) \
+	pkg-db.$(OBJEXT) pkg-array.$(OBJEXT) pkg-format.$(OBJEXT) \
+	pkg-list.$(OBJEXT) pkg-queue.$(OBJEXT) pkg-show.$(OBJEXT) \
+	pkg-spec.$(OBJEXT) progress.$(OBJEXT) string.$(OBJEXT) \
 	subproc.$(OBJEXT) tarfn.$(OBJEXT) triglib.$(OBJEXT) \
 	trigdeferred.$(OBJEXT) utils.$(OBJEXT) varbuf.$(OBJEXT) \
-	vercmp.$(OBJEXT)
+	vercmp.$(OBJEXT) version.$(OBJEXT)
 libdpkg_a_OBJECTS = $(am_libdpkg_a_OBJECTS)
 DEFAULT_INCLUDES = 
 depcomp = $(SHELL) $(top_srcdir)/build-aux/depcomp
@@ -320,6 +323,7 @@ pkgconfdir = $(sysconfdir)/@PACKAGE@
 AM_CPPFLAGS = \
 	-DLOCALEDIR=\"$(localedir)\" \
 	-DCONFIGDIR=\"$(pkgconfdir)\" \
+	-DADMINDIR=\"$(admindir)\" \
 	-idirafter $(top_srcdir)/lib/compat \
 	-I$(top_builddir) \
 	-I$(top_srcdir)/lib
@@ -334,32 +338,39 @@ lib_LIBRARIES = libdpkg.a
 libdpkg_a_SOURCES = \
 	dlist.h \
 	ar.c \
+	arch.c \
 	buffer.c \
 	cleanup.c \
 	command.c \
 	compress.c \
-	database.c \
+	dbdir.c \
 	dbmodify.c \
+	debug.c \
 	dir.c \
 	dump.c \
 	ehandle.c \
+	fdio.c \
 	file.c \
 	fields.c \
+	glob.c \
 	i18n.h \
 	log.c \
 	md5.c md5.h \
 	mlib.c \
 	myopt.c \
+	namevalue.c \
 	nfmalloc.c \
 	parse.c \
 	parsehelp.c \
 	path.c \
 	pkg.c \
+	pkg-db.c \
 	pkg-array.c \
 	pkg-format.c \
 	pkg-list.c \
 	pkg-queue.c \
 	pkg-show.c \
+	pkg-spec.c \
 	progress.c \
 	string.c \
 	subproc.c \
@@ -369,19 +380,26 @@ libdpkg_a_SOURCES = \
 	trigdeferred.l \
 	utils.c \
 	varbuf.c \
-	vercmp.c
+	vercmp.c \
+	version.c
 
 pkginclude_HEADERS = \
 	ar.h \
+	arch.h \
 	buffer.h \
 	command.h \
 	compress.h \
+	debug.h \
 	dir.h \
 	dpkg.h \
 	dpkg-db.h \
+	ehandle.h \
+	fdio.h \
 	file.h \
+	glob.h \
 	macros.h \
 	myopt.h \
+	namevalue.h \
 	parsedump.h \
 	path.h \
 	pkg.h \
@@ -390,6 +408,7 @@ pkginclude_HEADERS = \
 	pkg-list.h \
 	pkg-queue.h \
 	pkg-show.h \
+	pkg-spec.h \
 	progress.h \
 	string.h \
 	subproc.h \
@@ -411,9 +430,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu lib/dpkg/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign lib/dpkg/Makefile'; \
 	$(am__cd) $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu lib/dpkg/Makefile
+	  $(AUTOMAKE) --foreign lib/dpkg/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -478,30 +497,37 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ar.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/arch.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/buffer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cleanup.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/command.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/compress.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/database.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dbdir.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dbmodify.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/debug.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dir.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dump.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ehandle.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fdio.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fields.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/file.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/glob.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/log.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/md5.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mlib.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/myopt.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/namevalue.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nfmalloc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/parse.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/parsehelp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/path.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pkg-array.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pkg-db.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pkg-format.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pkg-list.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pkg-queue.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pkg-show.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pkg-spec.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pkg.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/progress.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/string.Po@am__quote@
@@ -512,6 +538,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/utils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/varbuf.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vercmp.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/version.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

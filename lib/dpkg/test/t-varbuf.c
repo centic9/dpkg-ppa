@@ -2,7 +2,7 @@
  * libdpkg - Debian packaging suite library routines
  * t-verbuf.c - test varbuf implementation
  *
- * Copyright © 2009 Guillem Jover <guillem@debian.org>
+ * Copyright © 2009-2011 Guillem Jover <guillem@debian.org>
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@
 #include <dpkg/test.h>
 #include <dpkg/varbuf.h>
 
+#include <string.h>
 #include <stdlib.h>
 
 static void
@@ -31,7 +32,7 @@ test_varbuf_init(void)
 {
 	struct varbuf vb;
 
-	varbufinit(&vb, 0);
+	varbuf_init(&vb, 0);
 	test_pass(vb.used == 0);
 	test_pass(vb.size == 0);
 	test_pass(vb.buf == NULL);
@@ -47,7 +48,7 @@ test_varbuf_prealloc(void)
 {
 	struct varbuf vb;
 
-	varbufinit(&vb, 10);
+	varbuf_init(&vb, 10);
 	test_pass(vb.used == 0);
 	test_pass(vb.size >= 10);
 	test_pass(vb.buf != NULL);
@@ -65,7 +66,7 @@ test_varbuf_grow(void)
 	size_t old_size;
 	int i;
 
-	varbufinit(&vb, 10);
+	varbuf_init(&vb, 10);
 
 	/* Test that we grow when needed. */
 	varbuf_grow(&vb, 100);
@@ -96,7 +97,7 @@ test_varbuf_trunc(void)
 {
 	struct varbuf vb;
 
-	varbufinit(&vb, 50);
+	varbuf_init(&vb, 50);
 
 	/* Test that we truncate (grow). */
 	varbuf_trunc(&vb, 20);
@@ -116,14 +117,14 @@ test_varbuf_addbuf(void)
 {
 	struct varbuf vb;
 
-	varbufinit(&vb, 5);
+	varbuf_init(&vb, 5);
 
-	varbufaddbuf(&vb, "1234567890", 10);
+	varbuf_add_buf(&vb, "1234567890", 10);
 	test_pass(vb.used == 10);
 	test_pass(vb.size >= vb.used);
 	test_mem(vb.buf, ==, "1234567890", 10);
 
-	varbufaddbuf(&vb, "abcde", 5);
+	varbuf_add_buf(&vb, "abcde", 5);
 	test_pass(vb.used == 15);
 	test_pass(vb.size >= vb.used);
 	test_mem(vb.buf, ==, "1234567890abcde", 15);
@@ -136,24 +137,24 @@ test_varbuf_addc(void)
 {
 	struct varbuf vb;
 
-	varbufinit(&vb, 1);
+	varbuf_init(&vb, 1);
 
-	varbufaddc(&vb, 'a');
+	varbuf_add_char(&vb, 'a');
 	test_pass(vb.used == 1);
 	test_pass(vb.size >= vb.used);
 	test_pass(vb.buf[0] == 'a');
 
-	varbufaddc(&vb, 'b');
+	varbuf_add_char(&vb, 'b');
 	test_pass(vb.used == 2);
 	test_pass(vb.size >= vb.used);
 	test_mem(vb.buf, ==, "ab", 2);
 
-	varbufaddc(&vb, 'c');
+	varbuf_add_char(&vb, 'c');
 	test_pass(vb.used == 3);
 	test_pass(vb.size >= vb.used);
 	test_mem(vb.buf, ==, "abc", 3);
 
-	varbufaddc(&vb, 'd');
+	varbuf_add_char(&vb, 'd');
 	test_pass(vb.used == 4);
 	test_pass(vb.size >= vb.used);
 	test_mem(vb.buf, ==, "abcd", 4);
@@ -162,18 +163,18 @@ test_varbuf_addc(void)
 }
 
 static void
-test_varbuf_dupc(void)
+test_varbuf_dup_char(void)
 {
 	struct varbuf vb;
 
-	varbufinit(&vb, 5);
+	varbuf_init(&vb, 5);
 
-	varbufdupc(&vb, 'z', 10);
+	varbuf_dup_char(&vb, 'z', 10);
 	test_pass(vb.used == 10);
 	test_pass(vb.size >= vb.used);
 	test_mem(vb.buf, ==, "zzzzzzzzzz", 10);
 
-	varbufdupc(&vb, 'y', 5);
+	varbuf_dup_char(&vb, 'y', 5);
 	test_pass(vb.used == 15);
 	test_pass(vb.size >= vb.used);
 	test_mem(vb.buf, ==, "zzzzzzzzzzyyyyy", 15);
@@ -182,15 +183,15 @@ test_varbuf_dupc(void)
 }
 
 static void
-test_varbuf_substc(void)
+test_varbuf_map_char(void)
 {
 	struct varbuf vb;
 
-	varbufinit(&vb, 5);
+	varbuf_init(&vb, 5);
 
-	varbufaddbuf(&vb, "1234a5678a9012a", 15);
+	varbuf_add_buf(&vb, "1234a5678a9012a", 15);
 
-	varbufsubstc(&vb, 'a', 'z');
+	varbuf_map_char(&vb, 'a', 'z');
 	test_pass(vb.used == 15);
 	test_pass(vb.size >= vb.used);
 	test_mem(vb.buf, ==, "1234z5678z9012z", 15);
@@ -203,22 +204,20 @@ test_varbuf_printf(void)
 {
 	struct varbuf vb;
 
-	varbufinit(&vb, 5);
+	varbuf_init(&vb, 5);
 
 	/* Test normal format printing. */
-	varbufprintf(&vb, "format %s number %d", "string", 10);
-	varbufaddc(&vb, '\0');
-	test_pass(vb.used == sizeof("format string number 10"));
+	varbuf_printf(&vb, "format %s number %d", "string", 10);
+	test_pass(vb.used == strlen("format string number 10"));
 	test_pass(vb.size >= vb.used);
 	test_str(vb.buf, ==, "format string number 10");
 
-	varbufreset(&vb);
+	varbuf_reset(&vb);
 
 	/* Test concatenated format printing. */
-	varbufprintf(&vb, "format %s number %d", "string", 10);
-	varbufprintf(&vb, " extra %s", "string");
-	varbufaddc(&vb, '\0');
-	test_pass(vb.used == sizeof("format string number 10 extra string"));
+	varbuf_printf(&vb, "format %s number %d", "string", 10);
+	varbuf_printf(&vb, " extra %s", "string");
+	test_pass(vb.used == strlen("format string number 10 extra string"));
 	test_pass(vb.size >= vb.used);
 	test_str(vb.buf, ==, "format string number 10 extra string");
 
@@ -230,15 +229,15 @@ test_varbuf_reset(void)
 {
 	struct varbuf vb;
 
-	varbufinit(&vb, 10);
+	varbuf_init(&vb, 10);
 
-	varbufaddbuf(&vb, "1234567890", 10);
+	varbuf_add_buf(&vb, "1234567890", 10);
 
-	varbufreset(&vb);
+	varbuf_reset(&vb);
 	test_pass(vb.used == 0);
 	test_pass(vb.size >= vb.used);
 
-	varbufaddbuf(&vb, "abcdefghijklmno", 15);
+	varbuf_add_buf(&vb, "abcdefghijklmno", 15);
 	test_pass(vb.used == 15);
 	test_pass(vb.size >= vb.used);
 	test_mem(vb.buf, ==, "abcdefghijklmno", 15);
@@ -252,9 +251,9 @@ test_varbuf_detach(void)
 	struct varbuf vb;
 	char *str;
 
-	varbufinit(&vb, 0);
+	varbuf_init(&vb, 0);
 
-	varbufaddbuf(&vb, "1234567890", 10);
+	varbuf_add_buf(&vb, "1234567890", 10);
 
 	str = varbuf_detach(&vb);
 
@@ -275,12 +274,11 @@ test(void)
 	test_varbuf_trunc();
 	test_varbuf_addbuf();
 	test_varbuf_addc();
-	test_varbuf_dupc();
-	test_varbuf_substc();
+	test_varbuf_dup_char();
+	test_varbuf_map_char();
 	test_varbuf_printf();
 	test_varbuf_reset();
 	test_varbuf_detach();
 
 	/* FIXME: Complete. */
 }
-

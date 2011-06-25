@@ -54,7 +54,7 @@ extern "C" {
 #include <stdarg.h>
 
 int snprintf(char *str, size_t n, char const *fmt, ...);
-int vsnprintf(char *buf, size_t maxsize, const char *fmt, va_list args)
+int vsnprintf(char *buf, size_t maxsize, const char *fmt, va_list args);
 #endif
 
 #ifndef HAVE_ASPRINTF
@@ -92,4 +92,3 @@ int unsetenv(const char *x);
 #endif
 
 #endif /* COMPAT_H */
-

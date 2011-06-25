@@ -3,7 +3,7 @@
  * path.c - path handling functions
  *
  * Copyright © 1995 Ian Jackson <ian@chiark.greenend.org.uk>
- * Copyright © 2008, 2009 Guillem Jover <guillem@debian.org>
+ * Copyright © 2008-2010 Guillem Jover <guillem@debian.org>
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,16 +22,24 @@
 #include <config.h>
 #include <compat.h>
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 
-#include <dpkg/varbuf.h>
+#include <dpkg/dpkg.h>
 #include <dpkg/path.h>
 
+/**
+ * Trim ‘/’ and ‘/.’ from the end of a pathname.
+ *
+ * The given string will get NUL-terminatd.
+ *
+ * @param path The pathname to trim.
+ *
+ * @return The size of the trimmed pathname.
+ */
 size_t
-path_rtrim_slash_slashdot(char *path)
+path_trim_slash_slashdot(char *path)
 {
 	char *end;
 
@@ -48,6 +56,13 @@ path_rtrim_slash_slashdot(char *path)
 	return end - path + 1;
 }
 
+/**
+ * Skip ‘/’ and ‘./’ from the beginning of a pathname.
+ *
+ * @param path The pathname to skip.
+ *
+ * @return The new beginning of the pathname.
+ */
 const char *
 path_skip_slash_dotslash(const char *path)
 {
@@ -68,7 +83,7 @@ char *
 path_make_temp_template(const char *suffix)
 {
 	const char *tmpdir;
-	struct varbuf template = VARBUF_INIT;
+	char *template;
 
 	tmpdir = getenv("TMPDIR");
 #ifdef P_tmpdir
@@ -78,31 +93,27 @@ path_make_temp_template(const char *suffix)
 	if (!tmpdir)
 		tmpdir = "/tmp";
 
-	varbufprintf(&template, "%s/%s.XXXXXX", tmpdir, suffix);
+	m_asprintf(&template, "%s/%s.XXXXXX", tmpdir, suffix);
 
-	return varbuf_detach(&template);
+	return template;
 }
 
-/*
- * snprintf(3) doesn't work if format contains %.<nnn>s and an argument has
- * invalid char for locale, then it returns -1.
- * ohshite() is ok, but fd_fd_copy(), which is used in tarobject(), is not
- * ok, because:
+/**
+ * Escape characters in a pathname for safe locale printing.
  *
- * - fd_fd_copy() == buffer_copy_TYPE() ‘lib/dpkg/buffer.h’.
- * - buffer_copy_TYPE() uses varbufvprintf(&v, desc, al); ‘lib/dpkg/buffer.c’.
- * - varbufvprintf() fails, because it calls with:
- *     fmt = "backend dpkg-deb during '%.255s'"
- *   arg may contain some invalid char, for example,
- *   «/usr/share/doc/console-tools/examples/unicode/\342\231\252\342\231\254»
- *   in console-tools.
+ * We need to quote paths so that they do not cause problems when printing
+ * them, for example with snprintf(3) which does not work if the format
+ * string contains %s and an argument has invalid characters for the
+ * current locale, it will then return -1.
  *
- * In this case, if the user uses some locale which doesn't support
- * “\342\231...”, vsnprintf() always returns -1 and varbufextend() fails.
+ * To simplify things, we just escape all 8 bit characters, instead of
+ * just invalid characters.
  *
- * So, we need to escape invalid char, probably as in
- * ‘tar-1.13.19/lib/quotearg.c: quotearg_buffer_restyled()’
- * but here we escape all 8 bit chars, in order make it simple.
+ * @param dst The escaped destination string.
+ * @param src The source string to escape.
+ * @param n The size of the destination buffer.
+ *
+ * @return The destination string.
  */
 char *
 path_quote_filename(char *dst, const char *src, size_t n)
@@ -113,44 +124,34 @@ path_quote_filename(char *dst, const char *src, size_t n)
 	if (size == 0)
 		return r;
 
-	while (size > 0) {
-		switch (*src) {
-		case '\0':
-			*dst = '\0';
-			return r;
-		case '\\':
-			if (size <= 2) {
-				/* Buffer full. */
-				*dst = '\0';
-				return r;
-			}
+	while (*src) {
+		if (*src == '\\') {
+			size -= 2;
+			if (size <= 0)
+				break;
+
 			*dst++ = '\\';
 			*dst++ = '\\';
 			src++;
-			size -= 2;
-			break;
-		default:
-			if (((*src) & 0x80) == '\0') {
-				*dst++ = *src++;
-				--size;
-			} else {
-				if (size > 4) {
-					sprintf(dst, "\\%03o",
-					        *(const unsigned char *)src);
-					size -= 4;
-					dst += 4;
-					src++;
-				} else {
-					/* Buffer full. */
-					*dst = '\0';
-					return r;
-				}
-			}
+		} else if (((*src) & 0x80) == '\0') {
+			size--;
+			if (size <= 0)
+				break;
+
+			*dst++ = *src++;
+		} else {
+			size -= 4;
+			if (size <= 0)
+				break;
+
+			sprintf(dst, "\\%03o",
+			        *(const unsigned char *)src);
+			dst += 4;
+			src++;
 		}
 	}
-	/* Buffer full. */
-	*(dst - 1) = '\0';
+
+	*dst = '\0';
 
 	return r;
 }
-

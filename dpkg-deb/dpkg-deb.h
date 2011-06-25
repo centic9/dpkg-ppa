@@ -27,10 +27,8 @@ dofunction do_contents, do_control, do_showinfo;
 dofunction do_info, do_field, do_extract, do_vextract, do_fsystarfile;
 
 extern int debugflag, nocheckflag, oldformatflag;
-extern const struct cmdinfo *cipaction;
-extern dofunction *action;
 
-void extracthalf(const char *debar, const char *directory,
+void extracthalf(const char *debar, const char *dir,
                  const char *taroption, int admininfo);
 
 extern const char* showformat;

@@ -52,6 +52,7 @@ DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
 subdir = src
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/dpkg-arch.m4 \
+	$(top_srcdir)/m4/dpkg-build.m4 \
 	$(top_srcdir)/m4/dpkg-compiler.m4 \
 	$(top_srcdir)/m4/dpkg-coverage.m4 \
 	$(top_srcdir)/m4/dpkg-funcs.m4 $(top_srcdir)/m4/dpkg-libs.m4 \
@@ -74,31 +75,36 @@ PROGRAMS = $(bin_PROGRAMS)
 am_dpkg_OBJECTS = archives.$(OBJEXT) cleanup.$(OBJEXT) \
 	configure.$(OBJEXT) depcon.$(OBJEXT) enquiry.$(OBJEXT) \
 	errors.$(OBJEXT) filesdb.$(OBJEXT) filters.$(OBJEXT) \
-	divertdb.$(OBJEXT) statdb.$(OBJEXT) help.$(OBJEXT) \
-	main.$(OBJEXT) packages.$(OBJEXT) processarc.$(OBJEXT) \
-	remove.$(OBJEXT) select.$(OBJEXT) trigproc.$(OBJEXT) \
-	update.$(OBJEXT)
+	infodb.$(OBJEXT) divertdb.$(OBJEXT) statdb.$(OBJEXT) \
+	help.$(OBJEXT) main.$(OBJEXT) packages.$(OBJEXT) \
+	processarc.$(OBJEXT) remove.$(OBJEXT) select.$(OBJEXT) \
+	trigproc.$(OBJEXT) update.$(OBJEXT)
 dpkg_OBJECTS = $(am_dpkg_OBJECTS)
 am__DEPENDENCIES_1 =
-dpkg_DEPENDENCIES = ../lib/dpkg/libdpkg.a ../lib/compat/libcompat.a \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-am_dpkg_divert_OBJECTS = glob.$(OBJEXT) filesdb.$(OBJEXT) \
+am__DEPENDENCIES_2 = ../lib/dpkg/libdpkg.a ../lib/compat/libcompat.a \
+	$(am__DEPENDENCIES_1)
+dpkg_DEPENDENCIES = $(am__DEPENDENCIES_2) $(am__DEPENDENCIES_1)
+am_dpkg_divert_OBJECTS = filesdb.$(OBJEXT) infodb.$(OBJEXT) \
 	divertdb.$(OBJEXT) divertcmd.$(OBJEXT)
 dpkg_divert_OBJECTS = $(am_dpkg_divert_OBJECTS)
+dpkg_divert_LDADD = $(LDADD)
 dpkg_divert_DEPENDENCIES = ../lib/dpkg/libdpkg.a \
 	../lib/compat/libcompat.a $(am__DEPENDENCIES_1)
-am_dpkg_query_OBJECTS = filesdb.$(OBJEXT) divertdb.$(OBJEXT) \
-	querycmd.$(OBJEXT)
+am_dpkg_query_OBJECTS = filesdb.$(OBJEXT) infodb.$(OBJEXT) \
+	divertdb.$(OBJEXT) querycmd.$(OBJEXT)
 dpkg_query_OBJECTS = $(am_dpkg_query_OBJECTS)
+dpkg_query_LDADD = $(LDADD)
 dpkg_query_DEPENDENCIES = ../lib/dpkg/libdpkg.a \
 	../lib/compat/libcompat.a $(am__DEPENDENCIES_1)
-am_dpkg_statoverride_OBJECTS = glob.$(OBJEXT) filesdb.$(OBJEXT) \
+am_dpkg_statoverride_OBJECTS = filesdb.$(OBJEXT) infodb.$(OBJEXT) \
 	statdb.$(OBJEXT) statcmd.$(OBJEXT)
 dpkg_statoverride_OBJECTS = $(am_dpkg_statoverride_OBJECTS)
+dpkg_statoverride_LDADD = $(LDADD)
 dpkg_statoverride_DEPENDENCIES = ../lib/dpkg/libdpkg.a \
 	../lib/compat/libcompat.a $(am__DEPENDENCIES_1)
 am_dpkg_trigger_OBJECTS = trigcmd.$(OBJEXT)
 dpkg_trigger_OBJECTS = $(am_dpkg_trigger_OBJECTS)
+dpkg_trigger_LDADD = $(LDADD)
 dpkg_trigger_DEPENDENCIES = ../lib/dpkg/libdpkg.a \
 	../lib/compat/libcompat.a $(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = 
@@ -280,6 +286,11 @@ AM_CPPFLAGS = \
 	-I$(top_builddir) \
 	-I$(top_srcdir)/lib
 
+LDADD = \
+	../lib/dpkg/libdpkg.a \
+	../lib/compat/libcompat.a \
+	$(LIBINTL)
+
 EXTRA_DIST = \
 	$(test_cases)
 
@@ -292,6 +303,7 @@ dpkg_SOURCES = \
 	errors.c \
 	filesdb.c filesdb.h \
 	filters.c filters.h \
+	infodb.c infodb.h \
 	divertdb.c \
 	statdb.c \
 	help.c \
@@ -304,50 +316,29 @@ dpkg_SOURCES = \
 	update.c
 
 dpkg_LDADD = \
-	../lib/dpkg/libdpkg.a \
-	../lib/compat/libcompat.a \
-	$(LIBINTL) \
+	$(LDADD) \
 	$(SELINUX_LIBS)
 
 dpkg_divert_SOURCES = \
-	glob.c glob.h \
 	filesdb.c filesdb.h \
+	infodb.c infodb.h \
 	divertdb.c \
 	divertcmd.c
 
-dpkg_divert_LDADD = \
-	../lib/dpkg/libdpkg.a \
-	../lib/compat/libcompat.a \
-	$(LIBINTL)
-
 dpkg_query_SOURCES = \
 	filesdb.c filesdb.h \
+	infodb.c infodb.h \
 	divertdb.c \
 	querycmd.c
 
-dpkg_query_LDADD = \
-	../lib/dpkg/libdpkg.a \
-	../lib/compat/libcompat.a \
-	$(LIBINTL)
-
 dpkg_statoverride_SOURCES = \
-	glob.c glob.h \
 	filesdb.c filesdb.h \
+	infodb.c infodb.h \
 	statdb.c \
 	statcmd.c
 
-dpkg_statoverride_LDADD = \
-	../lib/dpkg/libdpkg.a \
-	../lib/compat/libcompat.a \
-	$(LIBINTL)
-
 dpkg_trigger_SOURCES = \
 	trigcmd.c
-
-dpkg_trigger_LDADD = \
-	../lib/dpkg/libdpkg.a \
-	../lib/compat/libcompat.a \
-	$(LIBINTL)
 
 TEST_VERBOSE = 0
 test_tmpdir = t.tmp
@@ -367,9 +358,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am $(top_srcdir)/Makecheck.am $(am__c
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu src/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign src/Makefile'; \
 	$(am__cd) $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu src/Makefile
+	  $(AUTOMAKE) --foreign src/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -457,8 +448,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/errors.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/filesdb.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/filters.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/glob.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/help.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/infodb.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/packages.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/processarc.Po@am__quote@

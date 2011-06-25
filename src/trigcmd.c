@@ -41,6 +41,7 @@
 #include <dpkg/myopt.h>
 #include <dpkg/trigdeferred.h>
 #include <dpkg/triglib.h>
+#include <dpkg/pkg-spec.h>
 
 const char thisname[] = "dpkg-trigger";
 
@@ -94,7 +95,7 @@ usage(const struct cmdinfo *ci, const char *value)
 	exit(0);
 }
 
-static const char *admindir = ADMINDIR;
+static const char *admindir;
 static int f_noact, f_check;
 
 static const char *bypackage, *activate;
@@ -146,20 +147,20 @@ static const struct trigdefmeths tdm_add = {
 static void DPKG_ATTR_NORET
 do_check(void)
 {
-	int uf;
+	enum trigdef_update_status uf;
 
-	uf = trigdef_update_start(tduf_nolockok, admindir);
+	uf = trigdef_update_start(tduf_nolockok);
 	switch (uf) {
-	case -1:
+	case tdus_error_no_dir:
 		fprintf(stderr, _("%s: triggers data directory not yet created\n"),
 		        thisname);
 		exit(1);
-	case -3:
+	case tdus_error_no_deferred:
 		fprintf(stderr, _("%s: trigger records not yet in existence\n"),
 		        thisname);
 		exit(1);
-	case 2:
-	case -2:
+	case tdus_ok:
+	case tdus_error_empty_deferred:
 		exit(0);
 	default:
 		internerr("unknown trigdef_update_start return value '%d'", uf);
@@ -180,17 +181,19 @@ static const struct cmdinfo cmdinfos[] = {
 int
 main(int argc, const char *const *argv)
 {
-	jmp_buf ejbuf;
 	int uf;
 	const char *badname;
 	enum trigdef_updateflags tduf;
+	struct pkg_spec pkgspec = PKG_SPEC_INIT(psf_def_native | psf_no_check);
 
 	setlocale(LC_ALL, "");
 	bindtextdomain(PACKAGE, LOCALEDIR);
 	textdomain(PACKAGE);
 
-	standard_startup(&ejbuf);
+	standard_startup();
 	myopt(&argv, cmdinfos);
+
+	admindir = dpkg_db_set_dir(admindir);
 
 	setvbuf(stdout, NULL, _IONBF, 0);
 
@@ -205,18 +208,29 @@ main(int argc, const char *const *argv)
 		badusage(_("takes one argument, the trigger name"));
 
 	if (!bypackage) {
-		bypackage = getenv(MAINTSCRIPTPKGENVVAR);
-		if (!bypackage)
-			ohshit(_("dpkg-trigger must be called from a maintainer script"
-			       " (or with a --by-package option)"));
+		struct varbuf vb = VARBUF_INIT;
+		const char *pkg, *arch;
+		pkg = getenv("DPKG_MAINTSCRIPT_PACKAGE");
+		if (!pkg)
+			ohshit(_("must be called from a maintainer script"
+			         " (or with a --by-package option)"));
+		varbuf_add_str(&vb, pkg);
+		arch = getenv("DPKG_MAINTSCRIPT_ARCH");
+		if (arch)
+			varbuf_printf(&vb, ":%s", arch);
+		bypackage = varbuf_detach(&vb);
 	}
-	if (strcmp(bypackage, "-") &&
-	    (badname = illegal_packagename(bypackage, NULL)))
-		ohshit(_("dpkg-trigger: illegal awaited package name `%.250s': %.250s"),
-		       bypackage, badname);
+	if (strcmp(bypackage, "-")) {
+		pkg_spec_parse(&pkgspec, bypackage);
+		badname = pkg_spec_is_illegal(&pkgspec);
+		if (badname)
+			ohshit(_("illegal awaited package name '%.250s': %.250s"),
+			       bypackage, badname);
+	}
 
 	activate = argv[0];
-	if ((badname = illegal_triggername(activate)))
+	badname = trig_name_is_illegal(activate);
+	if (badname)
 		badusage(_("invalid trigger name `%.250s': %.250s"),
 		         activate, badname);
 
@@ -225,7 +239,7 @@ main(int argc, const char *const *argv)
 	tduf = tduf_nolockok;
 	if (!f_noact)
 		tduf |= tduf_write | tduf_writeifempty;
-	uf = trigdef_update_start(tduf, admindir);
+	uf = trigdef_update_start(tduf);
 	if (uf >= 0) {
 		trigdef_parse();
 		if (!done_trig)
@@ -237,4 +251,3 @@ main(int argc, const char *const *argv)
 
 	return 0;
 }
-

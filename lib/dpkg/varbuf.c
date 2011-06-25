@@ -3,7 +3,7 @@
  * varbuf.c - variable length expandable buffer handling
  *
  * Copyright © 1994,1995 Ian Jackson <ian@chiark.greenend.org.uk>
- * Copyright © 2008, 2009 Guillem Jover <guillem@debian.org>
+ * Copyright © 2008-2011 Guillem Jover <guillem@debian.org>
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,14 +31,14 @@
 #include <dpkg/dpkg-db.h>
 
 void
-varbufaddc(struct varbuf *v, int c)
+varbuf_add_char(struct varbuf *v, int c)
 {
   varbuf_grow(v, 1);
   v->buf[v->used++]= c;
 }
 
 void
-varbufdupc(struct varbuf *v, int c, size_t n)
+varbuf_dup_char(struct varbuf *v, int c, size_t n)
 {
   varbuf_grow(v, n);
   memset(v->buf + v->used, c, n);
@@ -46,7 +46,7 @@ varbufdupc(struct varbuf *v, int c, size_t n)
 }
 
 void
-varbufsubstc(struct varbuf *v, int c_src, int c_dst)
+varbuf_map_char(struct varbuf *v, int c_src, int c_dst)
 {
   size_t i;
 
@@ -55,19 +55,21 @@ varbufsubstc(struct varbuf *v, int c_src, int c_dst)
       v->buf[i] = c_dst;
 }
 
-int varbufprintf(struct varbuf *v, const char *fmt, ...) {
+int
+varbuf_printf(struct varbuf *v, const char *fmt, ...)
+{
   int r;
   va_list args;
 
   va_start(args, fmt);
-  r = varbufvprintf(v, fmt, args);
+  r = varbuf_vprintf(v, fmt, args);
   va_end(args);
 
   return r;
 }
 
 int
-varbufvprintf(struct varbuf *v, const char *fmt, va_list args)
+varbuf_vprintf(struct varbuf *v, const char *fmt, va_list args)
 {
   va_list args_copy;
   int needed, r;
@@ -91,7 +93,7 @@ varbufvprintf(struct varbuf *v, const char *fmt, va_list args)
 }
 
 void
-varbufaddbuf(struct varbuf *v, const void *s, size_t size)
+varbuf_add_buf(struct varbuf *v, const void *s, size_t size)
 {
   varbuf_grow(v, size);
   memcpy(v->buf + v->used, s, size);
@@ -99,7 +101,14 @@ varbufaddbuf(struct varbuf *v, const void *s, size_t size)
 }
 
 void
-varbufinit(struct varbuf *v, size_t size)
+varbuf_end_str(struct varbuf *v)
+{
+  varbuf_grow(v, 1);
+  v->buf[v->used] = '\0';
+}
+
+void
+varbuf_init(struct varbuf *v, size_t size)
 {
   v->used = 0;
   v->size = size;
@@ -109,7 +118,9 @@ varbufinit(struct varbuf *v, size_t size)
     v->buf = NULL;
 }
 
-void varbufreset(struct varbuf *v) {
+void
+varbuf_reset(struct varbuf *v)
+{
   v->used= 0;
 }
 

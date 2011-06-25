@@ -72,17 +72,9 @@ subproc_signals_cleanup(int argc, void **argv)
 }
 
 static void
-print_error_forked(const char *emsg, const char *contextstring)
+print_subproc_error(const char *emsg, const char *contextstring)
 {
 	fprintf(stderr, _("%s (subprocess): %s\n"), thisname, emsg);
-}
-
-static void DPKG_ATTR_NORET
-subproc_fork_cleanup(int argc, void **argv)
-{
-	/* Don't do the other cleanups, because they'll be done by/in the
-	 * parent process. */
-	exit(2);
 }
 
 pid_t
@@ -98,8 +90,9 @@ subproc_fork(void)
 	if (r > 0)
 		return r;
 
-	push_cleanup(subproc_fork_cleanup, ~0, NULL, 0, 0);
-	set_error_display(print_error_forked, NULL);
+	/* Push a new error context, so that we don't do the other cleanups,
+	 * because they'll be done by/in the parent process. */
+	push_error_context_func(catch_fatal_error, print_subproc_error, NULL);
 
 	return r;
 }
@@ -107,7 +100,13 @@ subproc_fork(void)
 int
 subproc_check(int status, const char *desc, int flags)
 {
+	void (*out)(const char *fmt, ...) DPKG_ATTR_PRINTF(1);
 	int n;
+
+	if (flags & PROCWARN)
+		out = warning;
+	else
+		out = ohshit;
 
 	if (WIFEXITED(status)) {
 		n = WEXITSTATUS(status);
@@ -115,29 +114,24 @@ subproc_check(int status, const char *desc, int flags)
 			return 0;
 		if (flags & PROCNOERR)
 			return n;
-		if (flags & PROCWARN)
-			warning(_("subprocess %s returned error exit status %d"),
-			        desc, n);
-		else
-			ohshit(_("subprocess %s returned error exit status %d"),
-			       desc, n);
+
+		out(_("subprocess %s returned error exit status %d"), desc, n);
 	} else if (WIFSIGNALED(status)) {
 		n = WTERMSIG(status);
 		if (!n)
 			return 0;
 		if ((flags & PROCPIPE) && n == SIGPIPE)
 			return 0;
-		if (flags & PROCWARN)
-			warning(_("subprocess %s killed by signal (%s)%s"),
-			        desc, strsignal(n),
-			        WCOREDUMP(status) ? _(", core dumped") : "");
+
+		if (n == SIGINT)
+			out(_("subprocess %s was interrupted"), desc);
 		else
-			ohshit(_("subprocess %s killed by signal (%s)%s"),
-			       desc, strsignal(n),
-			       WCOREDUMP(status) ? _(", core dumped") : "");
+			out(_("subprocess %s was killed by signal (%s)%s"),
+			    desc, strsignal(n),
+			    WCOREDUMP(status) ? _(", core dumped") : "");
 	} else {
-		ohshit(_("subprocess %s failed with wait status code %d"),
-		       desc, status);
+		out(_("subprocess %s failed with wait status code %d"), desc,
+		    status);
 	}
 
 	return -1;
@@ -168,4 +162,3 @@ subproc_wait_check(pid_t pid, const char *desc, int flags)
 
 	return subproc_check(status, desc, flags);
 }
-

@@ -1,4 +1,4 @@
-.TH dpkg 1 "2010-10-10" "Debian Project" "dpkg suite"
+.TH dpkg 1 "2011-02-05" "Debian Project" "dpkg suite"
 .SH NAME
 dpkg \- package manager for Debian
 .
@@ -244,6 +244,16 @@ reason still haven't been installed.
 .B \-\-print\-architecture
 Print architecture of packages \fBdpkg\fP installs (for example, "i386").
 .TP
+.B \-\-foreign\-architecture \fIarchitecture\fP
+Add \fIarchitecture\fP to the list of architectures for which packages can be
+installed without using \fB\-\-force\-architecture\fP, in addition to the
+architecture \fBdpkg\fP is built for (i.e.: the output of
+\fB\-\-print\-architecture\fP).
+.TP
+.B \-\-print\-foreign\-architectures
+Print a space-separated list of the extra architectures \fBdpkg\fP is
+configured to allow packages to be installed for.
+.TP
 .B \-\-compare\-versions \fIver1 op ver2\fP
 Compare version numbers, where \fIop\fP is a binary operator. \fBdpkg\fP
 returns success (zero result) if the specified condition is satisfied,
@@ -339,7 +349,7 @@ values together from the list below (note that these values may change
 in future releases). \fB\-Dh\fP or \fB\-\-debug=help\fP display these
 debugging values.
 
-    number  description
+    Number   Description
          1   Generally helpful progress information
          2   Invocation and status of maintainer scripts
         10   Output for each file processed
@@ -463,7 +473,7 @@ any software not doing syncs before atomic renames.
 losing data, use with care.\fP
 
 \fBarchitecture\fP:
-Process even packages with the wrong architecture.
+Process even packages with wrong or no architecture.
 
 \fBbad\-path\fP:
 \fBPATH\fP is missing important programs, so problems are likely.
@@ -593,10 +603,8 @@ forms:
 Package status changed; \fIstatus\fR is as in the status file.
 .TP
 .BI "status: " package " : error : " extended-error-message
-An error occurred. Unfortunately at the time of writing
-\fIextended-error-message\fR can contain newlines, although in locales
-where the translators have not made mistakes every newline is followed
-by at least one space.
+An error occurred. Any possible newlines in \fIextended-error-message\fR
+will be converted to spaces before output.
 .TP
 .BI "status: " file " : conffile-prompt : '" real-old "' '" real-new "' " useredited " " distedited
 User is being asked a conffile question.
@@ -605,6 +613,12 @@ User is being asked a conffile question.
 Sent just before a processing stage starts. \fIstage\fR is one of
 .BR upgrade ", " install " (both sent before unpacking),"
 .BR configure ", " trigproc  ", " disappear ", " remove  ", " purge .
+.RE
+.TP
+\fB\-\-status\-logger\fR=\fIcommand\fR
+Send machine-readable package status and progress information to the
+shell \fIcommand\fR's standard input. This option can be specified
+multiple times. The output format used is the same as in \fB\-\-status\-fd.
 .RE
 .TP
 \fB\-\-log=\fP\fIfilename\fP
@@ -746,7 +760,7 @@ To install a package, you first need to find it in an archive or
 CDROM. The "available" file shows that the vim package is in section
 "editors":
 .br
-\fB     cd /cdrom/pool/main/v/vim\fP
+\fB     cd /media/cdrom/pool/main/v/vim\fP
 \fB     dpkg \-i vim_4.5\-3.deb\fP
 .br
 

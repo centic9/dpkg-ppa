@@ -29,15 +29,15 @@ test_pkginfo_informative(void)
 {
 	struct pkginfo pkg;
 
-	blankpackage(&pkg);
-	test_fail(informative(&pkg, &pkg.installed));
+	pkg_blank(&pkg);
+	test_fail(pkg_is_informative(&pkg, &pkg.installed));
 
 	pkg.want = want_purge;
-	test_pass(informative(&pkg, &pkg.installed));
+	test_pass(pkg_is_informative(&pkg, &pkg.installed));
 
-	blankpackage(&pkg);
+	pkg_blank(&pkg);
 	pkg.installed.description = "test description";
-	test_pass(informative(&pkg, &pkg.installed));
+	test_pass(pkg_is_informative(&pkg, &pkg.installed));
 
 	/* FIXME: Complete. */
 }
@@ -49,4 +49,3 @@ test(void)
 
 	/* FIXME: Complete. */
 }
-

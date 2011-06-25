@@ -42,25 +42,23 @@
 
 static struct diversion *diversions = NULL;
 static FILE *diversionsfile = NULL;
+static char *diversionsname;
 
 void
 ensure_diversions(void)
 {
-	static struct varbuf vb;
-
 	struct stat stab1, stab2;
 	char linebuf[MAXDIVERTFILENAME];
 	FILE *file;
 	struct diversion *ov, *oicontest, *oialtname;
 
-	varbufreset(&vb);
-	varbufaddstr(&vb, admindir);
-	varbufaddstr(&vb, "/" DIVERSIONSFILE);
-	varbufaddc(&vb, 0);
+	if (diversionsname != NULL)
+		free(diversionsname);
+	diversionsname = dpkg_db_get_path(DIVERSIONSFILE);
 
 	onerr_abort++;
 
-	file = fopen(vb.buf,"r");
+	file = fopen(diversionsname, "r");
 	if (!file) {
 		if (errno != ENOENT)
 			ohshite(_("failed to open diversions file"));
@@ -83,7 +81,7 @@ ensure_diversions(void)
 	if (diversionsfile)
 		fclose(diversionsfile);
 	diversionsfile = file;
-	setcloexec(fileno(diversionsfile), vb.buf);
+	setcloexec(fileno(diversionsfile), diversionsname);
 
 	for (ov = diversions; ov; ov = ov->next) {
 		ov->useinstead->divert->camefrom->divert = NULL;
@@ -95,20 +93,21 @@ ensure_diversions(void)
 		return;
 	}
 
-	while (fgets_checked(linebuf, sizeof(linebuf), file, vb.buf) >= 0) {
+	while (fgets_checked(linebuf, sizeof(linebuf), file, diversionsname) >= 0) {
 		oicontest = nfmalloc(sizeof(struct diversion));
 		oialtname = nfmalloc(sizeof(struct diversion));
 
 		oialtname->camefrom = findnamenode(linebuf, 0);
 		oialtname->useinstead = NULL;
 
-		fgets_must(linebuf, sizeof(linebuf), file, vb.buf);
+		fgets_must(linebuf, sizeof(linebuf), file, diversionsname);
 		oicontest->useinstead = findnamenode(linebuf, 0);
 		oicontest->camefrom = NULL;
 
-		fgets_must(linebuf, sizeof(linebuf), file, vb.buf);
-		oicontest->pkg = oialtname->pkg = strcmp(linebuf, ":") ?
-		                                  findpackage(linebuf) : NULL;
+		fgets_must(linebuf, sizeof(linebuf), file, diversionsname);
+		oicontest->pkgset = strcmp(linebuf, ":") ?
+		                    pkg_db_find_set(linebuf) : NULL;
+		oialtname->pkgset = oicontest->pkgset;
 
 		if (oialtname->camefrom->divert ||
 		    oicontest->useinstead->divert)
@@ -124,4 +123,3 @@ ensure_diversions(void)
 
 	onerr_abort--;
 }
-

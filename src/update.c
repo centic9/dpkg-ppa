@@ -1,6 +1,6 @@
 /*
  * dpkg - main program for package management
- * update.c - options which update the `available' database
+ * update.c - options which update the ‘available’ database
  *
  * Copyright © 1995 Ian Jackson <ian@chiark.greenend.org.uk>
  *
@@ -36,10 +36,12 @@
 
 void updateavailable(const char *const *argv) {
   const char *sourcefile= argv[0];
+  char *availfile;
   int count= 0;
-  static struct varbuf vb;
 
-  switch (cipaction->arg) {
+  modstatdb_init();
+
+  switch (cipaction->arg_int) {
   case act_avclear:
     if (sourcefile) badusage(_("--%s takes no arguments"),cipaction->olong);
     break;
@@ -48,20 +50,20 @@ void updateavailable(const char *const *argv) {
       badusage(_("--%s needs exactly one Packages file argument"),cipaction->olong);
     break;
   default:
-    internerr("unknown action '%d'", cipaction->arg);
+    internerr("unknown action '%d'", cipaction->arg_int);
   }
-  
+
   if (!f_noact) {
-    if (access(admindir,W_OK)) {
+    if (access(dpkg_db_get_dir(), W_OK)) {
       if (errno != EACCES)
         ohshite(_("unable to access dpkg status area for bulk available update"));
       else
         ohshit(_("bulk available update requires write access to dpkg status area"));
     }
-    modstatdb_lock(admindir);
+    modstatdb_lock();
   }
-  
-  switch (cipaction->arg) {
+
+  switch (cipaction->arg_int) {
   case act_avreplace:
     printf(_("Replacing available packages info, using %s.\n"),sourcefile);
     break;
@@ -71,30 +73,32 @@ void updateavailable(const char *const *argv) {
   case act_avclear:
     break;
   default:
-    internerr("unknown action '%d'", cipaction->arg);
+    internerr("unknown action '%d'", cipaction->arg_int);
   }
 
-  varbufaddstr(&vb,admindir);
-  varbufaddstr(&vb,"/" AVAILFILE);
-  varbufaddc(&vb,0);
+  availfile = dpkg_db_get_path(AVAILFILE);
 
-  if (cipaction->arg == act_avmerge)
-    parsedb(vb.buf, pdb_recordavailable | pdb_rejectstatus | pdb_lax_parser,
-            NULL, NULL, NULL);
+  if (cipaction->arg_int == act_avmerge)
+    parsedb(availfile, pdb_recordavailable | pdb_rejectstatus | pdb_lax_parser,
+            NULL);
 
-  if (cipaction->arg != act_avclear)
+  if (cipaction->arg_int != act_avclear)
     count += parsedb(sourcefile,
 		     pdb_recordavailable | pdb_rejectstatus | pdb_ignoreolder,
-                     NULL, NULL, NULL);
+                     NULL);
 
   if (!f_noact) {
-    writedb(vb.buf,1,0);
+    writedb(availfile, 1, 0);
     modstatdb_unlock();
   }
 
-  if (cipaction->arg != act_avclear)
+  free(availfile);
+
+  if (cipaction->arg_int != act_avclear)
     printf(P_("Information about %d package was updated.\n",
               "Information about %d packages was updated.\n", count), count);
+
+  modstatdb_done();
 }
 
 void forgetold(const char *const *argv) {

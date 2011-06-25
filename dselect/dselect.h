@@ -29,6 +29,8 @@
 using std::min;
 using std::max;
 
+#include <dpkg/debug.h>
+
 #include "dselect-curses.h"
 
 #define DSELECT		"dselect"
@@ -57,7 +59,7 @@ protected:
   int helpscreen_attr;
 
   int total_width;
-  
+
   // (n)curses stuff
   WINDOW *listpad, *infopad, *colheadspad, *thisstatepad;
   WINDOW *titlewin, *whatinfowin, *querywin;
@@ -106,7 +108,7 @@ protected:
   virtual bool checksearch(char *str);
   virtual bool matchsearch(int index);
   void wordwrapinfo(int offset, const char *string);
-  
+
 public:
 
   keybindings *bindings;
@@ -146,8 +148,6 @@ void mywerase(WINDOW *win);
 void curseson();
 void cursesoff();
 
-extern const char *admindir;
-extern FILE *debug;
 extern int expertmode;
 
 enum screenparts {

@@ -27,6 +27,7 @@ struct tarcontext {
   int backendpipe;
   struct pkginfo *pkg;
   struct fileinlist **newfilesp;
+  bool pkg_in_sync; /* Are all Multi-arch: same instances synchronized? */
 };
 
 struct pkg_deconf_list {
@@ -41,8 +42,7 @@ extern struct varbuf fnametmpvb;
 extern struct varbuf fnamenewvb;
 extern struct pkg_deconf_list *deconfigure;
 
-extern struct pkginfo *conflictor[];
-extern int cflict_index;
+void push_conflictor(struct pkginfo *pkg, struct pkginfo *pkg_fixbyrm);
 
 void cu_pathname(int argc, void **argv);
 void cu_cidir(int argc, void **argv);
@@ -50,6 +50,7 @@ void cu_fileslist(int argc, void **argv);
 void cu_backendpipe(int argc, void **argv);
 
 void cu_installnew(int argc, void **argv);
+void cu_installsharedconf(int argc, void **argv);
 
 void cu_prermupgrade(int argc, void **argv);
 void cu_prerminfavour(int argc, void **argv);
@@ -62,7 +63,8 @@ void cu_prermdeconfigure(int argc, void **argv);
 void ok_prermdeconfigure(int argc, void **argv);
 
 void setupfnamevbs(const char *filename);
-int unlinkorrmdir(const char *filename);
+
+int secure_remove(const char *filename);
 
 int tarobject(void *ctx, struct tar_entry *ti);
 int tarfileread(void *ud, char *buf, int len);

@@ -202,7 +202,7 @@ pkg_format_parse(const char *fmt)
 
 void
 pkg_format_show(const struct pkg_format_node *head,
-                struct pkginfo *pkg, struct pkginfoperfile *pif)
+                struct pkginfo *pkg, struct pkgbin *pif)
 {
 	struct varbuf vb = VARBUF_INIT, fb = VARBUF_INIT, wb = VARBUF_INIT;
 
@@ -213,13 +213,13 @@ pkg_format_show(const struct pkg_format_node *head,
 		ok = false;
 
 		if (head->width > 0)
-			snprintf(fmt, 16, "%%%s%zds",
+			snprintf(fmt, 16, "%%%s%zus",
 			         ((head->pad) ? "-" : ""), head->width);
 		else
 			strcpy(fmt, "%s");
 
 		if (head->type == string) {
-			varbufprintf(&fb, fmt, head->data);
+			varbuf_printf(&fb, fmt, head->data);
 			ok = true;
 		} else if (head->type == field) {
 			const struct fieldinfo *fip;
@@ -228,9 +228,9 @@ pkg_format_show(const struct pkg_format_node *head,
 				if (strcasecmp(head->data, fip->name) == 0) {
 					fip->wcall(&wb, pkg, pif, 0, fip);
 
-					varbufaddc(&wb, '\0');
-					varbufprintf(&fb, fmt, wb.buf);
-					varbufreset(&wb);
+					varbuf_end_str(&wb);
+					varbuf_printf(&fb, fmt, wb.buf);
+					varbuf_reset(&wb);
 					ok = true;
 					break;
 				}
@@ -240,7 +240,7 @@ pkg_format_show(const struct pkg_format_node *head,
 
 				for (afp = pif->arbs; afp; afp = afp->next)
 					if (strcasecmp(head->data, afp->name) == 0) {
-						varbufprintf(&fb, fmt, afp->value);
+						varbuf_printf(&fb, fmt, afp->value);
 						ok = true;
 						break;
 					}
@@ -251,15 +251,15 @@ pkg_format_show(const struct pkg_format_node *head,
 			size_t len = strlen(fb.buf);
 			if ((head->width > 0) && (len > head->width))
 				len = head->width;
-			varbufaddbuf(&vb, fb.buf, len);
+			varbuf_add_buf(&vb, fb.buf, len);
 		}
 
-		varbufreset(&fb);
+		varbuf_reset(&fb);
 		head = head->next;
 	}
 
 	if (vb.buf) {
-		varbufaddc(&vb, '\0');
+		varbuf_end_str(&vb);
 		fputs(vb.buf, stdout);
 	}
 
@@ -267,4 +267,3 @@ pkg_format_show(const struct pkg_format_node *head,
 	varbuf_destroy(&fb);
 	varbuf_destroy(&vb);
 }
-

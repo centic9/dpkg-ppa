@@ -124,7 +124,8 @@ void myfileopt(const char* fn, const struct cmdinfo* cmdinfos) {
       if (opt)
         config_error(fn, line_num, _("'%s' does not take a value"), linebuf);
       if (cip->call) cip->call(cip,NULL);
-      else *cip->iassignto= cip->arg;
+      else
+        *cip->iassignto = cip->arg_int;
     }
   }
   if (ferror(file)) ohshite(_("read error in configuration file `%.255s'"), fn);
@@ -156,8 +157,7 @@ load_config_dir(const char *prog, const struct cmdinfo* cmdinfos)
   struct dirent **dlist;
   int dlist_n, i;
 
-  dirname = m_malloc(strlen(CONFIGDIR "/.cfg.d") + strlen(prog) + 1);
-  sprintf(dirname, "%s/%s.cfg.d", CONFIGDIR, prog);
+  m_asprintf(&dirname, "%s/%s.cfg.d", CONFIGDIR, prog);
 
   dlist_n = scandir(dirname, &dlist, valid_config_filename, alphasort);
   if (dlist_n < 0) {
@@ -171,9 +171,7 @@ load_config_dir(const char *prog, const struct cmdinfo* cmdinfos)
   for (i = 0; i < dlist_n; i++) {
     char *filename;
 
-    filename = m_malloc(strlen(dirname) + 1 + strlen(dlist[i]->d_name) + 1);
-    sprintf(filename, "%s/%s", dirname, dlist[i]->d_name);
-
+    m_asprintf(&filename, "%s/%s", dirname, dlist[i]->d_name);
     myfileopt(filename, cmdinfos);
 
     free(dlist[i]);
@@ -186,24 +184,18 @@ load_config_dir(const char *prog, const struct cmdinfo* cmdinfos)
 
 void loadcfgfile(const char *prog, const struct cmdinfo* cmdinfos) {
   char *home, *file;
-  int l1, l2;
 
   load_config_dir(prog, cmdinfos);
 
-  l1 = strlen(CONFIGDIR "/.cfg") + strlen(prog);
-  file = m_malloc(l1 + 1);
-  sprintf(file, CONFIGDIR "/%s.cfg", prog);
+  m_asprintf(&file, "%s/%s.cfg", CONFIGDIR, prog);
   myfileopt(file, cmdinfos);
-  if ((home = getenv("HOME")) != NULL) {
-    l2 = strlen(home) + 1 + strlen("/.cfg") + strlen(prog);
-    if (l2 > l1) {
-      free(file);
-      file = m_malloc(l2 + 1);
-    }
-    sprintf(file, "%s/.%s.cfg", home, prog);
-    myfileopt(file, cmdinfos);
-  }
   free(file);
+
+  if ((home = getenv("HOME")) != NULL) {
+    m_asprintf(&file, "%s/.%s.cfg", home, prog);
+    myfileopt(file, cmdinfos);
+    free(file);
+  }
 }
 
 void myopt(const char *const **argvp, const struct cmdinfo *cmdinfos) {
@@ -237,7 +229,8 @@ void myopt(const char *const **argvp, const struct cmdinfo *cmdinfos) {
       } else {
         if (value) badusage(_("--%s option does not take a value"),cip->olong);
         if (cip->call) cip->call(cip,NULL);
-        else *cip->iassignto= cip->arg;
+        else
+          *cip->iassignto = cip->arg_int;
       }
     } else {
       while (*p) {
@@ -257,9 +250,35 @@ void myopt(const char *const **argvp, const struct cmdinfo *cmdinfos) {
         } else {
           if (*p == '=') badusage(_("-%c option does not take a value"),cip->oshort);
           if (cip->call) cip->call(cip,NULL);
-          else *cip->iassignto= cip->arg;
+          else
+            *cip->iassignto = cip->arg_int;
         }
       }
     }
   }
+}
+
+void
+setobsolete(const struct cmdinfo *cip, const char *value)
+{
+  warning(_("obsolete option '--%s'\n"), cip->olong);
+}
+
+const struct cmdinfo *cipaction = NULL;
+
+/* XXX: This function is a hack. */
+static inline int
+option_short(int c)
+{
+  return c ? c : '\b';
+}
+
+void
+setaction(const struct cmdinfo *cip, const char *value)
+{
+  if (cipaction)
+    badusage(_("conflicting actions -%c (--%s) and -%c (--%s)"),
+             option_short(cip->oshort), cip->olong,
+             option_short(cipaction->oshort), cipaction->olong);
+  cipaction = cip;
 }

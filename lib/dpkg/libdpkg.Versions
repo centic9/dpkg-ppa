@@ -9,20 +9,28 @@ local:
 
 LIBDPKG_PRIVATE {
 	# Error handling
-	set_error_display;
-	print_error_fatal;
-	push_error_handler;
+	push_error_context_jump;
+	push_error_context_func;
+	push_error_context;
+	pop_error_context;
+	print_fatal_error;
+	catch_fatal_error;
 	push_checkpoint;
 	push_cleanup;
 	pop_cleanup;
-	error_unwind;
 	onerr_abort;		# XXX variable, do not export
 	ohshitv;
 	ohshite;
 	ohshit;
-	werr;			# XXX: remove
 	do_internerr;
+	warning_get_count;
+	warningv;
 	warning;
+
+	debug_set_output;
+	debug_set_mask;
+	debug_has_flag;
+	debug;
 
 	# Generic cleanup
 	cu_closepipe;
@@ -34,6 +42,7 @@ LIBDPKG_PRIVATE {
 	m_malloc;
 	m_realloc;
 	m_strdup;
+	m_asprintf;
 	m_dup2;
 	m_pipe;
 	m_output;
@@ -47,39 +56,42 @@ LIBDPKG_PRIVATE {
 	str_strip_quotes;
 
 	# Variable buffer support
-	varbufinit;
-	varbufreset;
+	varbuf_init;
+	varbuf_reset;
 	varbuf_grow;
 	varbuf_trunc;
-	varbufaddc;
-	varbufdupc;
-	varbufsubstc;
-	varbufaddbuf;
-	varbufprintf;
-	varbufvprintf;
+	varbuf_add_char;
+	varbuf_dup_char;
+	varbuf_map_char;
+	varbuf_add_buf;
+	varbuf_end_str;
+	varbuf_printf;
+	varbuf_vprintf;
 	varbuf_detach;
 	varbuf_destroy;
 
 	# Path, directory and file functions
-	path_rtrim_slash_slashdot;
 	path_skip_slash_dotslash;
+	path_trim_slash_slashdot;
 	path_make_temp_template;
 	path_quote_filename;
 
-	dir_sync;
 	dir_sync_path;
 	dir_sync_contents;
 
 	file_copy_perms;
 
+	glob_list_prepend;
+	glob_list_free;
+
+	# Data structure functions
+	namevalue_find_by_name;
+
 	# Buffer I/O functions
-	buffer_init;
-	buffer_read;
-	buffer_write;
+	fd_read;
+	fd_write;
 	buffer_hash;
-	buffer_copy;
 	buffer_copy_*;
-	buffer_done;
 
 	# Subprocess and command handling
 	subproc_signals_setup;
@@ -95,6 +107,7 @@ LIBDPKG_PRIVATE {
 	command_add_argv;
 	command_add_args;
 	command_exec;
+	command_shell;
 	command_destroy;
 
 	setcloexec;
@@ -114,6 +127,24 @@ LIBDPKG_PRIVATE {
 	dpkg_ar_member_put_header;
 	dpkg_ar_member_put_file;
 	dpkg_ar_member_put_mem;
+	dpkg_ar_member_get_size;
+
+	# Architecture DB
+	dpkg_arch_find;
+	dpkg_arch_get_native;
+	dpkg_arch_get_list;
+	dpkg_arch_name_is_illegal;
+	dpkg_arch_reset;
+
+	# Package specifiers
+	pkg_spec_reset;
+	pkg_spec_parse;
+	pkg_spec_is_pattern;
+	pkg_spec_is_illegal;
+	pkg_spec_find_pkg;
+	pkg_spec_match_pkg;
+	pkg_spec_iter_start;
+	pkg_spec_iter_next_pkg;
 
 	# Configuration and command line handling
 	loadcfgfile;
@@ -121,13 +152,16 @@ LIBDPKG_PRIVATE {
 	badusage;
 	# printforhelp;		# XXX variable, do not require external
 	# thisname;		# XXX variable, do not require external
+	cipaction;		# XXX variable, do not export
+	setaction;
+	setobsolete;
 
 	# General logging
 	log_file;		# XXX variable, do not export
 	log_message;
 
 	# Action logging
-	status_pipes;		# XXX variable, do not export
+	statusfd_add;
 	statusfd_send;
 
 	# Progress report support
@@ -155,12 +189,15 @@ LIBDPKG_PRIVATE {
 	parseversion;
 
 	# Package struct handling
-	blankpackage;
-	blankpackageperfile;
-	illegal_packagename;
-	informative;
+	pkg_blank;
+	pkgbin_blank;
+	pkg_name_is_illegal;
+	pkg_is_informative;
 	copy_dependency_links;
 	pkg_sorter_by_name;
+	pkg_summary;
+	pkg_describe;
+	varbuf_pkg;
 
 	# Package list handling
 	pkg_list_new;
@@ -185,12 +222,15 @@ LIBDPKG_PRIVATE {
 	pkg_format_free;
 
 	# Package in-core database functions
-	findpackage;
-	countpackages;
-	resetpackages;
-	iterpkgstart;
-	iterpkgnext;
-	iterpkgend;
+	pkg_db_find_set;
+	pkg_db_find_pkg;
+	pkg_db_count_set;
+	pkg_db_count_pkg;
+	pkg_db_reset;
+	pkg_db_iter_new;
+	pkg_db_iter_next_set;
+	pkg_db_iter_next_pkg;
+	pkg_db_iter_free;
 
 	# Package on-disk database functions
 	statusinfos;		# XXX variable, do not export
@@ -198,22 +238,24 @@ LIBDPKG_PRIVATE {
 	varbufdependency;
 	varbufrecord;
 	writerecord;
-	pkgadmindir;
-	pkgadminfile;
 	parsedb;
 	writedb;
 
 	# Log based package on-disk database support
 	modstatdb_init;
+	modstatdb_is_locked;
+	modstatdb_can_lock;
 	modstatdb_lock;
 	modstatdb_unlock;
+	modstatdb_open;
 	modstatdb_note;
 	modstatdb_note_ifwrite;
 	modstatdb_checkpoint;
 	modstatdb_shutdown;
+	modstatdb_done;
 
 	# Triggers support
-	illegal_triggername;
+	trig_name_is_illegal;
 	trigdef_set_methods;
 	trigdef_update_start;
 	trigdef_update_printf;

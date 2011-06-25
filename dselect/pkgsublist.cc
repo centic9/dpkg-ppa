@@ -33,12 +33,14 @@
 #include "bindings.h"
 
 void packagelist::add(pkginfo *pkg) {
-  if (debug) fprintf(debug,"packagelist[%p]::add(pkginfo %s)\n",this,pkg->name);
+  debug(dbg_general, "packagelist[%p]::add(pkginfo %s)", this,
+        pkg_describe(pkg, pdo_foreign));
   if (!recursive ||  // never add things to top level
       !pkg->clientdata ||  // don't add pure virtual packages
       pkg->clientdata->uprec)  // don't add ones already in the recursive list
     return;
-  if (debug) fprintf(debug,"packagelist[%p]::add(pkginfo %s) adding\n",this,pkg->name);
+  debug(dbg_general, "packagelist[%p]::add(pkginfo %s) adding",
+        this, pkg_describe(pkg, pdo_foreign));
   perpackagestate *state= &datatable[nitems];
   state->pkg= pkg;
   state->direct= state->original= pkg->clientdata->selected;
@@ -49,44 +51,42 @@ void packagelist::add(pkginfo *pkg) {
   pkg->clientdata= state;
   table[nitems]= state;
   nitems++;
-}   
+}
 
 void packagelist::add(pkginfo *pkg, pkginfo::pkgwant nw) {
-  if (debug) fprintf(debug,"packagelist[%p]::add(pkginfo %s, %s)\n",
-                     this, pkg->name, wantstrings[nw]);
+  debug(dbg_general, "packagelist[%p]::add(pkginfo %s, %s)",
+        this, pkg_describe(pkg, pdo_foreign), wantstrings[nw]);
   add(pkg);  if (!pkg->clientdata) return;
   pkg->clientdata->direct= nw;
   selpriority np;
   np= would_like_to_install(nw,pkg) ? sp_selecting : sp_deselecting;
   if (pkg->clientdata->spriority > np) return;
-  if (debug) fprintf(debug,"packagelist[%p]::add(pkginfo %s, %s) setting\n",
-                     this, pkg->name, wantstrings[nw]);
+  debug(dbg_general, "packagelist[%p]::add(pkginfo %s, %s) setting",
+        this, pkg_describe(pkg, pdo_foreign), wantstrings[nw]);
   pkg->clientdata->suggested= pkg->clientdata->selected= nw;
   pkg->clientdata->spriority= np;
-    
-}   
+}
 
 void packagelist::add(pkginfo *pkg, const char *extrainfo, showpriority showimp) {
-  if (debug)
-    fprintf(debug,"packagelist[%p]::add(pkginfo %s, \"...\", showpriority %d)\n",
-            this,pkg->name,showimp);
+  debug(dbg_general, "packagelist[%p]::add(pkginfo %s, ..., showpriority %d)",
+        this, pkg_describe(pkg, pdo_foreign), showimp);
   add(pkg);  if (!pkg->clientdata) return;
   if (pkg->clientdata->dpriority < showimp) pkg->clientdata->dpriority= showimp;
   pkg->clientdata->relations(extrainfo);
   pkg->clientdata->relations.terminate();
-}   
+}
 
 bool
 packagelist::alreadydone(doneent **done, void *check)
 {
   doneent *search = *done;
-  
+
   while (search && search->dep != check)
     search = search->next;
   if (search)
     return true;
-  if (debug) fprintf(debug,"packagelist[%p]::alreadydone(%p,%p) new\n",
-                     this,done,check);
+  debug(dbg_general, "packagelist[%p]::alreadydone(%p, %p) new",
+        this, done, check);
   search= new doneent;
   search->next= *done;
   search->dep= check;
@@ -95,7 +95,7 @@ packagelist::alreadydone(doneent **done, void *check)
 }
 
 void packagelist::addunavailable(deppossi *possi) {
-  if (debug) fprintf(debug,"packagelist[%p]::addunavail(%p)\n",this,possi);
+  debug(dbg_general, "packagelist[%p]::addunavail(%p)", this, possi);
 
   if (!recursive) return;
   if (alreadydone(&unavdone,possi)) return;
@@ -111,14 +111,14 @@ void packagelist::addunavailable(deppossi *possi) {
 bool
 packagelist::add(dependency *depends, showpriority displayimportance)
 {
-  if (debug) fprintf(debug,"packagelist[%p]::add(dependency[%p])\n",this,depends);
+  debug(dbg_general, "packagelist[%p]::add(dependency[%p])", this, depends);
 
   if (alreadydone(&depsdone, depends))
     return false;
-  
+
   const char *comma= "";
   varbuf info;
-  info(depends->up->name);
+  info(pkg_describe(depends->up, pdo_foreign));
   info(' ');
   info(gettext(relatestrings[depends->type]));
   info(' ');
@@ -144,12 +144,12 @@ packagelist::add(dependency *depends, showpriority displayimportance)
   info('\n');
   add(depends->up,info.string(),displayimportance);
   for (possi=depends->list; possi; possi=possi->next) {
-    add(possi->ed,info.string(),displayimportance);
+    add(&possi->ed->pkg, info.string(), displayimportance);
     if (possi->verrel == dvr_none && depends->type != dep_provides) {
       // providers aren't relevant if a version was specified, or
       // if we're looking at a provider relationship already
       deppossi *provider;
-      for (provider = possi->ed->available.depended;
+      for (provider = possi->ed->depended.available;
            provider;
            provider = provider->rev_next) {
         if (provider->up->type != dep_provides) continue;
@@ -166,31 +166,31 @@ void repeatedlydisplay(packagelist *sub,
                        packagelist *unredisplay) {
   pkginfo **newl;
   keybindings *kb;
-  
-  if (debug) fprintf(debug,"repeatedlydisplay(packagelist[%p])\n",sub);
+
+  debug(dbg_general, "repeatedlydisplay(packagelist[%p])", sub);
   if (sub->resolvesuggest() != 0 && sub->deletelessimp_anyleft(initial)) {
-    if (debug) fprintf(debug,"repeatedlydisplay(packagelist[%p]) once\n",sub);
+    debug(dbg_general, "repeatedlydisplay(packagelist[%p]) once", sub);
     if (unredisplay) unredisplay->enddisplay();
     for (;;) {
       manual_install = 0; /* Remove flag now that resolvesuggest has seen it. */
       newl= sub->display();
       if (!newl) break;
-      if (debug) fprintf(debug,"repeatedlydisplay(packagelist[%p]) newl\n",sub);
+      debug(dbg_general, "repeatedlydisplay(packagelist[%p]) newl", sub);
       kb= sub->bindings; delete sub;
       sub= new packagelist(kb,newl);
       if (sub->resolvesuggest() <= 1) break;
       if (!sub->deletelessimp_anyleft(dp_must)) break;
-      if (debug) fprintf(debug,"repeatedlydisplay(packagelist[%p]) again\n",sub);
+      debug(dbg_general, "repeatedlydisplay(packagelist[%p]) again", sub);
     }
     if (unredisplay) unredisplay->startdisplay();
   }
-  if (debug) fprintf(debug,"repeatedlydisplay(packagelist[%p]) done\n",sub);
+  debug(dbg_general, "repeatedlydisplay(packagelist[%p]) done", sub);
   delete sub;
 }
 
 int packagelist::deletelessimp_anyleft(showpriority than) {
-  if (debug)
-    fprintf(debug,"packagelist[%p]::dli_al(%d): nitems=%d\n",this,than,nitems);
+  debug(dbg_general, "packagelist[%p]::dli_al(%d): nitems=%d",
+        this, than, nitems);
   int insat, runthr;
   for (runthr=0, insat=0;
        runthr < nitems;
@@ -203,7 +203,7 @@ int packagelist::deletelessimp_anyleft(showpriority than) {
     }
   }
   nitems= insat;
-  if (debug) fprintf(debug,"packagelist[%p]::dli_al(%d) done; nitems=%d\n",
-                     this,than,nitems);
+  debug(dbg_general, "packagelist[%p]::dli_al(%d) done; nitems=%d",
+        this, than, nitems);
   return nitems;
 }

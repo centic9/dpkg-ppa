@@ -1,8 +1,9 @@
 /*
- * dpkg - main program for package management
- * glob.h - file globing functions
+ * libdpkg - Debian packaging suite library routines
+ * namevalue.h - name value structure handling
  *
- * Copyright © 2009, 2010 Guillem Jover <guillem@debian.org>
+ * Copyright © 1994,1995 Ian Jackson <ian@chiark.greenend.org.uk>
+ * Copyright © 2009-2011 Guillem Jover <guillem@debian.org>
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,21 +19,27 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef DPKG_GLOB_H
-#define DPKG_GLOB_H
+#ifndef LIBDPKG_NAMEVALUE_H
+#define LIBDPKG_NAMEVALUE_H
 
 #include <dpkg/macros.h>
 
 DPKG_BEGIN_DECLS
 
-struct glob_node {
-	struct glob_node *next;
-	char *pattern;
+struct namevalue {
+	const char *name;
+	int value;
+	int length;
 };
 
-void glob_list_prepend(struct glob_node **list, char *pattern);
-void glob_list_free(struct glob_node *head);
+#define NAMEVALUE_DEF(n, v) \
+	[v] = { .name = n, .value = v, .length = sizeof(n) - 1 }
+#define NAMEVALUE_FALLBACK_DEF(n, v) \
+	[v] = { .name = n, .value = v, .length = 0 }
+
+const struct namevalue *namevalue_find_by_name(const struct namevalue *head,
+                                               const char *str);
 
 DPKG_END_DECLS
 
-#endif /* DPKG_GLOB_H */
+#endif /* LIBDPKG_NAMEVALUE_H */

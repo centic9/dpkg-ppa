@@ -41,20 +41,24 @@
 #include <dpkg/dpkg.h>
 #include <dpkg/dpkg-db.h>
 #include <dpkg/parsedump.h>
-#include <dpkg/buffer.h>
+#include <dpkg/fdio.h>
 
+/**
+ * Fields information.
+ */
 const struct fieldinfo fieldinfos[]= {
-  /* NB: capitalisation of these strings is important. */
+  /* Note: Capitalization of field name strings is important. */
   { "Package",          f_name,            w_name                                     },
   { "Essential",        f_boolean,         w_booleandefno,   PKGIFPOFF(essential)     },
   { "Status",           f_status,          w_status                                   },
+  { "Multi-Arch",       f_multiarch,       w_multiarch,      PKGIFPOFF(multiarch)     },
   { "Priority",         f_priority,        w_priority                                 },
   { "Section",          f_section,         w_section                                  },
   { "Installed-Size",   f_charfield,       w_charfield,      PKGIFPOFF(installedsize) },
   { "Origin",           f_charfield,       w_charfield,      PKGIFPOFF(origin)        },
   { "Maintainer",       f_charfield,       w_charfield,      PKGIFPOFF(maintainer)    },
   { "Bugs",             f_charfield,       w_charfield,      PKGIFPOFF(bugs)          },
-  { "Architecture",     f_charfield,       w_charfield,      PKGIFPOFF(architecture)  },
+  { "Architecture",     f_architecture,    w_architecture                             },
   { "Source",           f_charfield,       w_charfield,      PKGIFPOFF(source)        },
   { "Version",          f_version,         w_version,        PKGIFPOFF(version)       },
   { "Revision",         f_revision,        w_null                                     },
@@ -76,43 +80,259 @@ const struct fieldinfo fieldinfos[]= {
   { "Description",      f_charfield,       w_charfield,      PKGIFPOFF(description)   },
   { "Triggers-Pending", f_trigpend,        w_trigpend                                 },
   { "Triggers-Awaited", f_trigaw,          w_trigaw                                   },
+  { "PackageSpec",      f_forbidden,       w_packagespec                              },
   /* Note that aliases are added to the nicknames table in parsehelp.c. */
-  {  NULL   /* sentinel - tells code that list is ended */                               }
+  {  NULL                                                                             }
 };
 
-int parsedb(const char *filename, enum parsedbflags flags,
-            struct pkginfo **donep, FILE *warnto, int *warncount) {
-  /* warnto, warncount and donep may be null.
-   * If donep is not null only one package's information is expected.
-   */
-  
-  static int fd;
-  struct pkginfo newpig, *pigp;
-  struct pkginfoperfile *newpifp, *pifp;
-  struct arbitraryfield *arp, **larpp;
-  struct trigaw *ta;
-  int pdone;
+struct field_state {
+  const char *fieldstart;
+  const char *valuestart;
+  struct varbuf value;
+  int fieldlen;
+  int valuelen;
   int fieldencountered[array_count(fieldinfos)];
-  const struct fieldinfo *fip;
+};
+
+/**
+ * Parse the field and value into the package being constructed.
+ */
+static void
+pkg_parse_field(struct parsedb_state *ps, struct field_state *fs,
+                struct pkginfo *pkg, struct pkgbin *pkgbin)
+{
   const struct nickname *nick;
+  const struct fieldinfo *fip;
+  int *ip;
+
+  for (nick = nicknames; nick->nick; nick++)
+    if (strncasecmp(nick->nick, fs->fieldstart, fs->fieldlen) == 0 &&
+        nick->nick[fs->fieldlen] == '\0')
+      break;
+  if (nick->nick) {
+    fs->fieldstart = nick->canon;
+    fs->fieldlen = strlen(fs->fieldstart);
+  }
+
+  for (fip = fieldinfos, ip = fs->fieldencountered; fip->name; fip++, ip++)
+    if (strncasecmp(fip->name, fs->fieldstart, fs->fieldlen) == 0)
+      break;
+  if (fip->name) {
+    if ((*ip)++)
+      parse_error(ps, pkg,
+                  _("duplicate value for `%s' field"), fip->name);
+
+    varbuf_reset(&fs->value);
+    varbuf_add_buf(&fs->value, fs->valuestart, fs->valuelen);
+    varbuf_end_str(&fs->value);
+
+    fip->rcall(pkg, pkgbin, ps, fs->value.buf, fip);
+  } else {
+    struct arbitraryfield *arp, **larpp;
+
+    if (fs->fieldlen < 2)
+      parse_error(ps, pkg,
+                  _("user-defined field name `%.*s' too short"),
+                  fs->fieldlen, fs->fieldstart);
+    larpp = &pkgbin->arbs;
+    while ((arp = *larpp) != NULL) {
+      if (!strncasecmp(arp->name, fs->fieldstart, fs->fieldlen))
+        parse_error(ps, pkg,
+                   _("duplicate value for user-defined field `%.*s'"),
+                   fs->fieldlen, fs->fieldstart);
+      larpp = &arp->next;
+    }
+    arp = nfmalloc(sizeof(struct arbitraryfield));
+    arp->name = nfstrnsave(fs->fieldstart, fs->fieldlen);
+    arp->value = nfstrnsave(fs->valuestart, fs->valuelen);
+    arp->next = NULL;
+    *larpp = arp;
+  }
+}
+
+/**
+ * Verify and fixup the package structure being constructed.
+ */
+static void
+pkg_parse_verify(struct parsedb_state *ps,
+                 struct pkginfo *pkg, struct pkgbin *pkgbin)
+{
+  struct dependency *dep;
+  struct deppossi *dop;
+
+  parse_must_have_field(ps, pkg, pkg->set->name, "package name");
+
+  /* XXX: We need to check for status != stat_halfinstalled as while
+   * unpacking a deselected package, it will not have yet all data in
+   * place. But we cannot check for > stat_halfinstalled as stat_configfiles
+   * always should have those fields. */
+  if ((ps->flags & pdb_recordavailable) ||
+      (pkg->status != stat_notinstalled &&
+       pkg->status != stat_halfinstalled)) {
+    parse_ensure_have_field(ps, pkg, &pkgbin->description, "description");
+    parse_ensure_have_field(ps, pkg, &pkgbin->maintainer, "maintainer");
+    parse_must_have_field(ps, pkg, pkgbin->version.version, "version");
+
+    /* Warn about missing architecture information (as long as the package
+     * is in such a state that it makes sense) */
+    if (pkgbin->arch->type == arch_none)
+      parse_warn(ps, pkg, _("missing %s"), "architecture");
+
+    if (pkgbin->arch->type == arch_all && pkgbin->multiarch == multiarch_same)
+      parse_error(ps, pkg, _("package is marked '%s' but is architecture all"),
+                  "Multi-Arch: same");
+  }
+
+  /* Initialize deps to be arch-specific unless stated otherwise */
+  for (dep = pkgbin->depends; dep; dep = dep->next)
+    for (dop = dep->list; dop; dop = dop->next)
+      if (!dop->arch)
+        dop->arch = pkgbin->arch;
+
+  /* Check the Config-Version information:
+   * If there is a Config-Version it is definitely to be used, but
+   * there shouldn't be one if the package is ‘installed’ (in which case
+   * the Version and/or Revision will be copied) or if the package is
+   * ‘not-installed’ (in which case there is no Config-Version). */
+  if (!(ps->flags & pdb_recordavailable)) {
+    if (pkg->configversion.version) {
+      if (pkg->status == stat_installed || pkg->status == stat_notinstalled)
+        parse_error(ps, pkg,
+                    _("Configured-Version for package with inappropriate Status"));
+    } else {
+      if (pkg->status == stat_installed)
+        pkg->configversion = pkgbin->version;
+    }
+  }
+
+  if (pkg->trigaw.head &&
+      (pkg->status <= stat_configfiles ||
+       pkg->status >= stat_triggerspending))
+    parse_error(ps, pkg,
+                _("package has status %s but triggers are awaited"),
+                statusinfos[pkg->status].name);
+  else if (pkg->status == stat_triggersawaited && !pkg->trigaw.head)
+    parse_error(ps, pkg,
+                _("package has status triggers-awaited but no triggers awaited"));
+
+  if (pkg->trigpend_head &&
+      !(pkg->status == stat_triggerspending ||
+        pkg->status == stat_triggersawaited))
+    parse_error(ps, pkg,
+                _("package has status %s but triggers are pending"),
+                statusinfos[pkg->status].name);
+  else if (pkg->status == stat_triggerspending && !pkg->trigpend_head)
+    parse_error(ps, pkg,
+                _("package has status triggers-pending but no triggers "
+                  "pending"));
+
+  /* FIXME: There was a bug that could make a not-installed package have
+   * conffiles, so we check for them here and remove them (rather than
+   * calling it an error, which will do at some point). */
+  if (!(ps->flags & pdb_recordavailable) &&
+      pkg->status == stat_notinstalled &&
+      pkgbin->conffiles) {
+    parse_warn(ps, pkg,
+               _("Package which in state not-installed has conffiles, "
+                 "forgetting them"));
+    pkgbin->conffiles = NULL;
+  }
+
+  /* XXX: Mark not-installed leftover packages for automatic removal on
+   * next database dump. This code can be removed after dpkg 1.16.x, when
+   * there's guarantee that no leftover is found on the status file on
+   * major distributions. */
+  if (!(ps->flags & pdb_recordavailable) &&
+      pkg->status == stat_notinstalled &&
+      pkg->eflag == eflag_ok &&
+      (pkg->want == want_purge ||
+       pkg->want == want_deinstall ||
+       pkg->want == want_hold)) {
+    pkg->want = want_unknown;
+  }
+}
+
+/**
+ * Copy into the in-core database the package being constructed.
+ */
+static void
+pkg_parse_copy(struct parsedb_state *ps,
+               struct pkginfo *dst_pkg, struct pkgbin *dst_pkgbin,
+               struct pkginfo *src_pkg, struct pkgbin *src_pkgbin)
+{
+  /* Copy the priority and section across, but don't overwrite existing
+   * values if the pdb_weakclassification flag is set. */
+  if (src_pkg->section && *src_pkg->section &&
+      !((ps->flags & pdb_weakclassification) &&
+        dst_pkg->section && *dst_pkg->section))
+    dst_pkg->section = src_pkg->section;
+  if (src_pkg->priority != pri_unknown &&
+      !((ps->flags & pdb_weakclassification) &&
+        dst_pkg->priority != pri_unknown)) {
+    dst_pkg->priority = src_pkg->priority;
+    if (src_pkg->priority == pri_other)
+      dst_pkg->otherpriority = src_pkg->otherpriority;
+  }
+
+  /* Sort out the dependency mess. */
+  copy_dependency_links(dst_pkg, &dst_pkgbin->depends, src_pkgbin->depends,
+                        (ps->flags & pdb_recordavailable) ? true : false);
+
+  /* Copy across data. */
+  memcpy(dst_pkgbin, src_pkgbin, sizeof(struct pkgbin));
+  if (!(ps->flags & pdb_recordavailable)) {
+    struct trigaw *ta;
+
+    dst_pkg->want = src_pkg->want;
+    dst_pkg->eflag = src_pkg->eflag;
+    dst_pkg->status = src_pkg->status;
+    dst_pkg->configversion = src_pkg->configversion;
+    dst_pkg->files = NULL;
+
+    dst_pkg->trigpend_head = src_pkg->trigpend_head;
+    dst_pkg->trigaw = src_pkg->trigaw;
+    for (ta = dst_pkg->trigaw.head; ta; ta = ta->sameaw.next) {
+      assert(ta->aw == src_pkg);
+      ta->aw = dst_pkg;
+      /* ->othertrigaw_head is updated by trig_note_aw in *(pkg_db_find())
+       * rather than in dst_pkg. */
+    }
+  } else if (!(ps->flags & pdb_ignorefiles)) {
+    dst_pkg->files = src_pkg->files;
+  }
+}
+
+/**
+ * Parse an RFC-822 style file.
+ *
+ * warnto, warncount and donep may be NULL.
+ * If donep is not NULL only one package's information is expected.
+ */
+int parsedb(const char *filename, enum parsedbflags flags,
+            struct pkginfo **donep)
+{
+  static int fd;
+  struct pkgset new_set;
+  struct pkginfo *new_pkg, *db_pkg;
+  struct pkgbin *new_pkgbin, *db_pkgbin;
+  int pdone;
   char *data, *dataptr, *endptr;
-  const char *fieldstart, *valuestart;
-  char *value= NULL;
-  int fieldlen= 0, valuelen= 0;
-  int *ip, c;
   struct stat st;
   struct parsedb_state ps;
+  struct field_state fs;
 
   ps.filename = filename;
   ps.flags = flags;
   ps.lno = 0;
-  if (warnto == NULL)
-    ps.warnto = stderr;
-  else
-    ps.warnto = warnto;
-  ps.warncount = 0;
 
-  newpifp= (flags & pdb_recordavailable) ? &newpig.available : &newpig.installed;
+  memset(&fs, 0, sizeof(fs));
+
+  new_pkg = &new_set.pkg;
+  if (flags & pdb_recordavailable)
+    new_pkgbin = &new_pkg->available;
+  else
+    new_pkgbin = &new_pkg->installed;
+
   fd= open(filename, O_RDONLY);
   if (fd == -1) ohshite(_("failed to open package info file `%.255s' for reading"),filename);
 
@@ -129,7 +349,8 @@ int parsedb(const char *filename, enum parsedbflags flags,
 #else
     dataptr = m_malloc(st.st_size);
 
-    fd_buf_copy(fd, dataptr, st.st_size, _("copy info file `%.255s'"), filename);
+    if (fd_read(fd, dataptr, st.st_size) < 0)
+      ohshite(_("reading package info file '%.255s'"), filename);
 #endif
     data= dataptr;
     endptr = dataptr + st.st_size;
@@ -142,248 +363,101 @@ int parsedb(const char *filename, enum parsedbflags flags,
 #define getc_mmap(dataptr)		*dataptr++;
 #define ungetc_mmap(c, dataptr, data)	dataptr--;
 
-  for (;;) { /* loop per package */
-    memset(fieldencountered, 0, sizeof(fieldencountered));
-    blankpackage(&newpig);
+  /* Loop per package. */
+  for (;;) {
+    int c;
 
-/* Skip adjacent new lines */
+    memset(fs.fieldencountered, 0, sizeof(fs.fieldencountered));
+    pkgset_blank(&new_set);
+
+    /* Skip adjacent new lines. */
     while(!EOF_mmap(dataptr, endptr)) {
       c= getc_mmap(dataptr); if (c!='\n' && c!=MSDOS_EOF_CHAR ) break;
       ps.lno++;
     }
     if (EOF_mmap(dataptr, endptr)) break;
-    for (;;) { /* loop per field */
-      fieldstart= dataptr - 1;
+
+    /* Loop per field. */
+    for (;;) {
+      fs.fieldstart = dataptr - 1;
       while (!EOF_mmap(dataptr, endptr) && !isspace(c) && c!=':' && c!=MSDOS_EOF_CHAR)
         c= getc_mmap(dataptr);
-      fieldlen= dataptr - fieldstart - 1;
+      fs.fieldlen = dataptr - fs.fieldstart - 1;
       while (!EOF_mmap(dataptr, endptr) && c != '\n' && isspace(c)) c= getc_mmap(dataptr);
       if (EOF_mmap(dataptr, endptr))
-        parse_error(&ps, &newpig,
-                    _("EOF after field name `%.*s'"), fieldlen, fieldstart);
+        parse_error(&ps, new_pkg,
+                    _("EOF after field name `%.*s'"), fs.fieldlen, fs.fieldstart);
       if (c == '\n')
-        parse_error(&ps, &newpig,
-                    _("newline in field name `%.*s'"), fieldlen, fieldstart);
+        parse_error(&ps, new_pkg,
+                    _("newline in field name `%.*s'"), fs.fieldlen, fs.fieldstart);
       if (c == MSDOS_EOF_CHAR)
-        parse_error(&ps, &newpig,
+        parse_error(&ps, new_pkg,
                     _("MSDOS EOF (^Z) in field name `%.*s'"),
-                    fieldlen, fieldstart);
+                    fs.fieldlen, fs.fieldstart);
       if (c != ':')
-        parse_error(&ps, &newpig,
+        parse_error(&ps, new_pkg,
                     _("field name `%.*s' must be followed by colon"),
-                    fieldlen, fieldstart);
-/* Skip space after ':' but before value and eol */
+                    fs.fieldlen, fs.fieldstart);
+      /* Skip space after ‘:’ but before value and EOL. */
       while(!EOF_mmap(dataptr, endptr)) {
         c= getc_mmap(dataptr);
         if (c == '\n' || !isspace(c)) break;
       }
       if (EOF_mmap(dataptr, endptr))
-        parse_error(&ps, &newpig,
+        parse_error(&ps, new_pkg,
                     _("EOF before value of field `%.*s' (missing final newline)"),
-                 fieldlen,fieldstart);
+                    fs.fieldlen, fs.fieldstart);
       if (c == MSDOS_EOF_CHAR)
-        parse_error(&ps, &newpig,
+        parse_error(&ps, new_pkg,
                     _("MSDOS EOF char in value of field `%.*s' (missing newline?)"),
-                    fieldlen,fieldstart);
-      valuestart= dataptr - 1;
+                    fs.fieldlen, fs.fieldstart);
+      fs.valuestart = dataptr - 1;
       for (;;) {
         if (c == '\n' || c == MSDOS_EOF_CHAR) {
           ps.lno++;
 	  if (EOF_mmap(dataptr, endptr)) break;
           c= getc_mmap(dataptr);
-/* Found double eol, or start of new field */
+          /* Found double EOL, or start of new field. */
           if (EOF_mmap(dataptr, endptr) || c == '\n' || !isspace(c)) break;
           ungetc_mmap(c,dataptr, data);
           c= '\n';
         } else if (EOF_mmap(dataptr, endptr)) {
-          parse_error(&ps, &newpig,
+          parse_error(&ps, new_pkg,
                       _("EOF during value of field `%.*s' (missing final newline)"),
-                      fieldlen,fieldstart);
+                      fs.fieldlen, fs.fieldstart);
         }
         c= getc_mmap(dataptr);
       }
-      valuelen= dataptr - valuestart - 1;
-/* trim ending space on value */
-      while (valuelen && isspace(*(valuestart+valuelen-1)))
- valuelen--;
-      for (nick = nicknames;
-           nick->nick && (strncasecmp(nick->nick, fieldstart, fieldlen) ||
-                          nick->nick[fieldlen] != '\0'); nick++) ;
-      if (nick->nick) {
-	fieldstart= nick->canon;
-	fieldlen= strlen(fieldstart);
-      }
-      for (fip= fieldinfos, ip= fieldencountered;
-           fip->name && strncasecmp(fieldstart,fip->name, fieldlen);
-           fip++, ip++);
-      if (fip->name) {
-        value = m_realloc(value, valuelen + 1);
-	memcpy(value,valuestart,valuelen);
-        *(value + valuelen) = '\0';
-        if ((*ip)++)
-          parse_error(&ps, &newpig,
-                      _("duplicate value for `%s' field"), fip->name);
-        fip->rcall(&newpig, newpifp, &ps, value, fip);
-      } else {
-        if (fieldlen<2)
-          parse_error(&ps, &newpig,
-                      _("user-defined field name `%.*s' too short"),
-                      fieldlen, fieldstart);
-        larpp= &newpifp->arbs;
-        while ((arp= *larpp) != NULL) {
-          if (!strncasecmp(arp->name,fieldstart,fieldlen))
-            parse_error(&ps, &newpig,
-                       _("duplicate value for user-defined field `%.*s'"),
-                       fieldlen, fieldstart);
-          larpp= &arp->next;
-        }
-        arp= nfmalloc(sizeof(struct arbitraryfield));
-        arp->name= nfstrnsave(fieldstart,fieldlen);
-        arp->value= nfstrnsave(valuestart,valuelen);
-        arp->next= NULL;
-        *larpp= arp;
-      }
+      fs.valuelen = dataptr - fs.valuestart - 1;
+      /* Trim ending space on value. */
+      while (fs.valuelen && isspace(*(fs.valuestart + fs.valuelen - 1)))
+        fs.valuelen--;
+
+      pkg_parse_field(&ps, &fs, new_pkg, new_pkgbin);
+
       if (EOF_mmap(dataptr, endptr) || c == '\n' || c == MSDOS_EOF_CHAR) break;
-    } /* loop per field */
+    } /* Loop per field. */
+
     if (pdone && donep)
-      parse_error(&ps, &newpig,
+      parse_error(&ps, new_pkg,
                   _("several package info entries found, only one allowed"));
-    parse_must_have_field(&ps, &newpig, newpig.name, "package name");
-    /* XXX: We need to check for status != stat_halfinstalled as while
-     * unpacking a deselected package, it will not have yet all data in
-     * place. But we cannot check for > stat_halfinstalled as stat_configfiles
-     * always should have those fields. */
-    if ((flags & pdb_recordavailable) ||
-        (newpig.status != stat_notinstalled &&
-         newpig.status != stat_halfinstalled)) {
-      parse_ensure_have_field(&ps, &newpig,
-                              &newpifp->description, "description");
-      parse_ensure_have_field(&ps, &newpig,
-                              &newpifp->maintainer, "maintainer");
-      parse_must_have_field(&ps, &newpig,
-                            newpifp->version.version, "version");
-    }
+
+    pkg_parse_verify(&ps, new_pkg, new_pkgbin);
+
+    db_pkg = pkg_db_find_pkg(new_pkg->set->name, new_pkgbin->arch);
     if (flags & pdb_recordavailable)
-      parse_ensure_have_field(&ps, &newpig,
-                              &newpifp->architecture, "architecture");
-
-    /* Check the Config-Version information:
-     * If there is a Config-Version it is definitely to be used, but
-     * there shouldn't be one if the package is `installed' (in which case
-     * the Version and/or Revision will be copied) or if the package is
-     * `not-installed' (in which case there is no Config-Version).
-     */
-    if (!(flags & pdb_recordavailable)) {
-      if (newpig.configversion.version) {
-        if (newpig.status == stat_installed || newpig.status == stat_notinstalled)
-          parse_error(&ps, &newpig,
-                      _("Configured-Version for package with inappropriate Status"));
-      } else {
-        if (newpig.status == stat_installed) newpig.configversion= newpifp->version;
-      }
-    }
-
-    if (newpig.trigaw.head &&
-        (newpig.status <= stat_configfiles ||
-         newpig.status >= stat_triggerspending))
-      parse_error(&ps, &newpig,
-                  _("package has status %s but triggers are awaited"),
-                  statusinfos[newpig.status].name);
-    else if (newpig.status == stat_triggersawaited && !newpig.trigaw.head)
-      parse_error(&ps, &newpig,
-                  _("package has status triggers-awaited but no triggers "
-                    "awaited"));
-
-    if (!(newpig.status == stat_triggerspending ||
-          newpig.status == stat_triggersawaited) &&
-        newpig.trigpend_head)
-      parse_error(&ps, &newpig,
-                  _("package has status %s but triggers are pending"),
-                  statusinfos[newpig.status].name);
-    else if (newpig.status == stat_triggerspending && !newpig.trigpend_head)
-      parse_error(&ps, &newpig,
-                  _("package has status triggers-pending but no triggers "
-                    "pending"));
-
-    /* FIXME: There was a bug that could make a not-installed package have
-     * conffiles, so we check for them here and remove them (rather than
-     * calling it an error, which will do at some point).
-     */
-    if (!(flags & pdb_recordavailable) &&
-        newpig.status == stat_notinstalled &&
-        newpifp->conffiles) {
-      parse_warn(&ps, &newpig,
-                 _("Package which in state not-installed has conffiles, "
-                   "forgetting them"));
-      newpifp->conffiles= NULL;
-    }
-
-    /* XXX: Mark not-installed leftover packages for automatic removal on
-     * next database dump. This code can be removed after dpkg 1.16.x, when
-     * there's guarantee that no leftover is found on the status file on
-     * major distributions. */
-    if (!(flags & pdb_recordavailable) &&
-        newpig.status == stat_notinstalled &&
-        newpig.eflag == eflag_ok &&
-        (newpig.want == want_purge ||
-         newpig.want == want_deinstall ||
-         newpig.want == want_hold)) {
-      newpig.want = want_unknown;
-    }
-
-    pigp= findpackage(newpig.name);
-    pifp= (flags & pdb_recordavailable) ? &pigp->available : &pigp->installed;
+      db_pkgbin = &db_pkg->available;
+    else
+      db_pkgbin = &db_pkg->installed;
 
     if ((flags & pdb_ignoreolder) &&
-	versioncompare(&newpifp->version, &pifp->version) < 0)
+        versioncompare(&new_pkgbin->version, &db_pkgbin->version) < 0)
       continue;
 
-    /* Copy the priority and section across, but don't overwrite existing
-     * values if the pdb_weakclassification flag is set.
-     */
-    if (newpig.section && *newpig.section &&
-        !((flags & pdb_weakclassification) && pigp->section && *pigp->section))
-      pigp->section= newpig.section;
-    if (newpig.priority != pri_unknown &&
-        !((flags & pdb_weakclassification) && pigp->priority != pri_unknown)) {
-      pigp->priority= newpig.priority;
-      if (newpig.priority == pri_other) pigp->otherpriority= newpig.otherpriority;
-    }
+    pkg_parse_copy(&ps, db_pkg, db_pkgbin, new_pkg, new_pkgbin);
 
-    /* Sort out the dependency mess. */
-    copy_dependency_links(pigp,&pifp->depends,newpifp->depends,
-                          (flags & pdb_recordavailable) ? 1 : 0);
-    /* Leave the `depended' pointer alone, we've just gone to such
-     * trouble to get it right :-).  The `depends' pointer in
-     * pifp was indeed also updated by copy_dependency_links,
-     * but since the value was that from newpifp anyway there's
-     * no need to copy it back.
-     */
-    newpifp->depended= pifp->depended;
-
-    /* Copy across data */
-    memcpy(pifp,newpifp,sizeof(struct pkginfoperfile));
-    if (!(flags & pdb_recordavailable)) {
-      pigp->want= newpig.want;
-      pigp->eflag= newpig.eflag;
-      pigp->status= newpig.status;
-      pigp->configversion= newpig.configversion;
-      pigp->files= NULL;
-
-      pigp->trigpend_head = newpig.trigpend_head;
-      pigp->trigaw = newpig.trigaw;
-      for (ta = pigp->trigaw.head; ta; ta = ta->sameaw.next) {
-        assert(ta->aw == &newpig);
-        ta->aw = pigp;
-        /* ->othertrigaw_head is updated by trig_note_aw in *(findpackage())
-         * rather than in newpig */
-      }
-
-    } else if (!(flags & pdb_ignorefiles)) {
-      pigp->files= newpig.files;
-    }
-
-    if (donep) *donep= pigp;
+    if (donep)
+      *donep = db_pkg;
     pdone++;
     if (EOF_mmap(dataptr, endptr)) break;
     if (c == '\n')
@@ -396,82 +470,79 @@ int parsedb(const char *filename, enum parsedbflags flags,
     free(data);
 #endif
   }
-  free(value);
+  varbuf_destroy(&fs.value);
   pop_cleanup(ehflag_normaltidy);
   if (close(fd)) ohshite(_("failed to close after read: `%.255s'"),filename);
   if (donep && !pdone) ohshit(_("no package information in `%.255s'"),filename);
 
-  if (warncount)
-    *warncount = ps.warncount;
-
   return pdone;
 }
 
+/**
+ * Copy dependency links structures.
+ *
+ * This routine is used to update the ‘reverse’ dependency pointers when
+ * new ‘forwards’ information has been constructed. It first removes all
+ * the links based on the old information. The old information starts in
+ * *updateme; after much brou-ha-ha the reverse structures are created
+ * and *updateme is set to the value from newdepends.
+ *
+ * @param pkg The package we're doing this for. This is used to construct
+ *        correct uplinks.
+ * @param updateme The forwards dependency pointer that we are to update.
+ *        This starts out containing the old forwards info, which we use to
+ *        unthread the old reverse links. After we're done it is updated.
+ * @param newdepends The value that we ultimately want to have in updateme.
+ * @param available The pkgbin to modify, available or installed.
+ *
+ * It is likely that the backward pointer for the package in question
+ * (‘depended’) will be updated by this routine, but this will happen by
+ * the routine traversing the dependency data structures. It doesn't need
+ * to be told where to update that; I just mention it as something that
+ * one should be cautious about.
+ */
 void copy_dependency_links(struct pkginfo *pkg,
                            struct dependency **updateme,
                            struct dependency *newdepends,
                            bool available)
 {
-  /* This routine is used to update the `reverse' dependency pointers
-   * when new `forwards' information has been constructed.  It first
-   * removes all the links based on the old information.  The old
-   * information starts in *updateme; after much brou-ha-ha
-   * the reverse structures are created and *updateme is set
-   * to the value from newdepends.
-   *
-   * Parameters are:
-   * pkg - the package we're doing this for.  This is used to
-   *       construct correct uplinks.
-   * updateme - the forwards dependency pointer that we are to
-   *            update.  This starts out containing the old forwards
-   *            info, which we use to unthread the old reverse
-   *            links.  After we're done it is updated.
-   * newdepends - the value that we ultimately want to have in
-   *              updateme.
-   * It is likely that the backward pointer for the package in
-   * question (`depended') will be updated by this routine,
-   * but this will happen by the routine traversing the dependency
-   * data structures.  It doesn't need to be told where to update
-   * that; I just mention it as something that one should be
-   * cautious about.
-   */
   struct dependency *dyp;
-  struct deppossi *dop;
-  struct pkginfoperfile *addtopifp;
-  
-  /* Delete `backward' (`depended') links from other packages to
-   * dependencies listed in old version of this one.  We do this by
+  struct deppossi *dop, **revdeps;
+
+  /* Delete ‘backward’ (‘depended’) links from other packages to
+   * dependencies listed in old version of this one. We do this by
    * going through all the dependencies in the old version of this
    * one and following them down to find which deppossi nodes to
-   * remove.
-   */
+   * remove. */
   for (dyp= *updateme; dyp; dyp= dyp->next) {
     for (dop= dyp->list; dop; dop= dop->next) {
       if (dop->rev_prev)
         dop->rev_prev->rev_next = dop->rev_next;
       else
         if (available)
-          dop->ed->available.depended = dop->rev_next;
+          dop->ed->depended.available = dop->rev_next;
         else
-          dop->ed->installed.depended = dop->rev_next;
+          dop->ed->depended.installed = dop->rev_next;
       if (dop->rev_next)
         dop->rev_next->rev_prev = dop->rev_prev;
     }
   }
-  /* Now fill in new `ed' links from other packages to dependencies listed
-   * in new version of this one, and set our uplinks correctly.
-   */
+
+  /* Now fill in new ‘ed’ links from other packages to dependencies
+   * listed in new version of this one, and set our uplinks correctly. */
   for (dyp= newdepends; dyp; dyp= dyp->next) {
     dyp->up= pkg;
     for (dop= dyp->list; dop; dop= dop->next) {
-      addtopifp= available ? &dop->ed->available : &dop->ed->installed;
-      dop->rev_next = addtopifp->depended;
+      revdeps = available ? &dop->ed->depended.available :
+                            &dop->ed->depended.installed;
+      dop->rev_next = *revdeps;
       dop->rev_prev = NULL;
-      if (addtopifp->depended)
-        addtopifp->depended->rev_prev = dop;
-      addtopifp->depended= dop;
+      if (*revdeps)
+        (*revdeps)->rev_prev = dop;
+      *revdeps = dop;
     }
   }
+
   /* Finally, we fill in the new value. */
   *updateme= newdepends;
 }

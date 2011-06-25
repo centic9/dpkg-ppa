@@ -35,6 +35,7 @@
 #include <fcntl.h>
 #include <dirent.h>
 #include <unistd.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -45,7 +46,10 @@
 #include <dpkg/dir.h>
 #include <dpkg/triglib.h>
 
+static bool db_initialized;
+
 static enum modstatdb_rw cstatus=-1, cflags=0;
+static char *lockfile;
 static char *statusfile, *availablefile;
 static char *importanttmpfile=NULL;
 static FILE *importanttmp;
@@ -75,8 +79,7 @@ static void cleanupdates(void) {
   struct dirent **cdlist;
   int cdn, i;
 
-  parsedb(statusfile, pdb_lax_parser | pdb_weakclassification,
-          NULL, NULL, NULL);
+  parsedb(statusfile, pdb_lax_parser | pdb_weakclassification, NULL);
 
   *updatefnrest = '\0';
   updateslength= -1;
@@ -84,17 +87,16 @@ static void cleanupdates(void) {
   if (cdn == -1) ohshite(_("cannot scan updates directory `%.255s'"),updatefnbuf);
 
   if (cdn) {
-    
     for (i=0; i<cdn; i++) {
       strcpy(updatefnrest, cdlist[i]->d_name);
       parsedb(updatefnbuf, pdb_lax_parser | pdb_weakclassification,
-              NULL, NULL, NULL);
+              NULL);
       if (cstatus < msdbrw_write) free(cdlist[i]);
     }
 
     if (cstatus >= msdbrw_write) {
       writedb(statusfile,0,1);
-    
+
       for (i=0; i<cdn; i++) {
         strcpy(updatefnrest, cdlist[i]->d_name);
         if (unlink(updatefnbuf))
@@ -104,7 +106,6 @@ static void cleanupdates(void) {
 
       dir_sync_path(updatesdir);
     }
-    
   }
   free(cdlist);
 
@@ -113,9 +114,9 @@ static void cleanupdates(void) {
 
 static void createimptmp(void) {
   int i;
-  
+
   onerr_abort++;
-  
+
   importanttmp= fopen(importanttmpfile,"w");
   if (!importanttmp)
     ohshite(_("unable to create `%.255s'"), importanttmpfile);
@@ -136,6 +137,7 @@ static const struct fni {
   const char *suffix;
   char **store;
 } fnis[] = {
+  {   LOCKFILE,                   &lockfile           },
   {   STATUSFILE,                 &statusfile         },
   {   AVAILFILE,                  &availablefile      },
   {   UPDATESDIR,                 &updatesdir         },
@@ -144,99 +146,127 @@ static const struct fni {
   {   NULL, NULL                                      }
 };
 
+void
+modstatdb_init(void)
+{
+  const struct fni *fnip;
+
+  if (db_initialized)
+    return;
+
+  for (fnip = fnis; fnip->suffix; fnip++) {
+    free(*fnip->store);
+    *fnip->store = dpkg_db_get_path(fnip->suffix);
+  }
+
+  updatefnbuf = m_malloc(strlen(updatesdir) + IMPORTANTMAXLEN + 5);
+  strcpy(updatefnbuf, updatesdir);
+  updatefnrest = updatefnbuf + strlen(updatefnbuf);
+
+  db_initialized = true;
+}
+
+void
+modstatdb_done(void)
+{
+  const struct fni *fnip;
+
+  if (!db_initialized)
+    return;
+
+  for (fnip = fnis; fnip->suffix; fnip++) {
+    free(*fnip->store);
+    *fnip->store = NULL;
+  }
+  free(updatefnbuf);
+
+  db_initialized = false;
+}
+
 static int dblockfd = -1;
 
 bool
-modstatdb_is_locked(const char *admindir)
+modstatdb_is_locked(void)
 {
-  struct varbuf lockfile = VARBUF_INIT;
   int lockfd;
   bool locked;
 
-  varbufprintf(&lockfile, "%s/%s", admindir, LOCKFILE);
-
   if (dblockfd == -1) {
-    lockfd = open(lockfile.buf, O_RDONLY);
+    lockfd = open(lockfile, O_RDONLY);
     if (lockfd == -1)
-      ohshite(_("unable to open lock file %s for testing"), lockfile.buf);
+      ohshite(_("unable to open lock file %s for testing"), lockfile);
   } else {
     lockfd = dblockfd;
   }
 
-  locked = file_is_locked(lockfd, lockfile.buf);
+  locked = file_is_locked(lockfd, lockfile);
 
   /* We only close the file if there was no lock open, otherwise we would
    * release the existing lock on close. */
   if (dblockfd == -1)
     close(lockfd);
 
-  varbuf_destroy(&lockfile);
-
   return locked;
 }
 
-void
-modstatdb_lock(const char *admindir)
+bool
+modstatdb_can_lock(void)
 {
-  int n;
-  char *dblockfile = NULL;
+  if (dblockfd >= 0)
+    return true;
 
-  n = strlen(admindir);
-  dblockfile = m_malloc(n + sizeof(LOCKFILE) + 2);
-  strcpy(dblockfile, admindir);
-  strcpy(dblockfile + n, "/" LOCKFILE);
-
+  dblockfd = open(lockfile, O_RDWR | O_CREAT | O_TRUNC, 0660);
   if (dblockfd == -1) {
-    dblockfd = open(dblockfile, O_RDWR | O_CREAT | O_TRUNC, 0660);
-    if (dblockfd == -1) {
-      if (errno == EPERM)
-        ohshit(_("you do not have permission to lock the dpkg status database"));
+    if (errno == EACCES || errno == EPERM)
+      return false;
+    else
       ohshite(_("unable to open/create status database lockfile"));
-    }
   }
 
-  file_lock(&dblockfd, dblockfile,
-            _("unable to lock dpkg status database"),
-            _("status database area is locked by another process"));
+  return true;
+}
 
-  free(dblockfile);
+void
+modstatdb_lock(void)
+{
+  if (!modstatdb_can_lock())
+    ohshit(_("you do not have permission to lock the dpkg status database"));
+
+  file_lock(&dblockfd, FILE_LOCK_NOWAIT, lockfile, _("dpkg status database"));
 }
 
 void
 modstatdb_unlock(void)
 {
-  file_unlock();
+  /* Unlock. */
+  pop_cleanup(ehflag_normaltidy);
+
+  dblockfd = -1;
 }
 
 enum modstatdb_rw
-modstatdb_init(const char *admindir, enum modstatdb_rw readwritereq)
+modstatdb_open(enum modstatdb_rw readwritereq)
 {
-  const struct fni *fnip;
-  
-  for (fnip=fnis; fnip->suffix; fnip++) {
-    free(*fnip->store);
-    *fnip->store = m_malloc(strlen(admindir) + strlen(fnip->suffix) + 2);
-    sprintf(*fnip->store, "%s/%s", admindir, fnip->suffix);
-  }
+  modstatdb_init();
 
-  cflags= readwritereq & msdbrw_flagsmask;
-  readwritereq &= ~msdbrw_flagsmask;
+  cflags = readwritereq & msdbrw_available_mask;
+  readwritereq &= ~msdbrw_available_mask;
 
   switch (readwritereq) {
   case msdbrw_needsuperuser:
   case msdbrw_needsuperuserlockonly:
     if (getuid() || geteuid())
       ohshit(_("requested operation requires superuser privilege"));
-    /* fall through */
+    /* Fall through. */
   case msdbrw_write: case msdbrw_writeifposs:
-    if (access(admindir, W_OK)) {
+    if (access(dpkg_db_get_dir(), W_OK)) {
       if (errno != EACCES)
         ohshite(_("unable to access dpkg status area"));
       else if (readwritereq == msdbrw_write)
         ohshit(_("operation requires read/write access to dpkg status area"));
       cstatus= msdbrw_readonly;
     } else {
-      modstatdb_lock(admindir);
+      modstatdb_lock();
       cstatus= (readwritereq == msdbrw_needsuperuserlockonly ?
                 msdbrw_needsuperuserlockonly :
                 msdbrw_write);
@@ -248,25 +278,21 @@ modstatdb_init(const char *admindir, enum modstatdb_rw readwritereq)
     internerr("unknown modstatdb_rw '%d'", readwritereq);
   }
 
-  updatefnbuf = m_malloc(strlen(updatesdir) + IMPORTANTMAXLEN + 5);
-  strcpy(updatefnbuf, updatesdir);
-  updatefnrest= updatefnbuf+strlen(updatefnbuf);
-
   if (cstatus != msdbrw_needsuperuserlockonly) {
     cleanupdates();
-    if(!(cflags & msdbrw_noavail))
+    if (cflags >= msdbrw_available_readonly)
     parsedb(availablefile,
             pdb_recordavailable | pdb_rejectstatus | pdb_lax_parser,
-            NULL,NULL,NULL);
+            NULL);
   }
 
   if (cstatus >= msdbrw_write) {
     createimptmp();
-    varbufinit(&uvb, 10240);
+    varbuf_init(&uvb, 10240);
   }
 
   trig_fixup_awaiters(cstatus);
-  trig_incorporate(cstatus, admindir);
+  trig_incorporate(cstatus);
 
   return cstatus;
 }
@@ -276,10 +302,11 @@ void modstatdb_checkpoint(void) {
 
   assert(cstatus >= msdbrw_write);
   writedb(statusfile,0,1);
-  
+
   for (i=0; i<nextupdate; i++) {
     sprintf(updatefnrest, IMPORTANTFMT, i);
-    assert(strlen(updatefnrest)<=IMPORTANTMAXLEN); /* or we've made a real mess */
+    /* Have we made a real mess? */
+    assert(strlen(updatefnrest) <= IMPORTANTMAXLEN);
     if (unlink(updatefnbuf))
       ohshite(_("failed to remove my own update file %.255s"),updatefnbuf);
   }
@@ -290,27 +317,24 @@ void modstatdb_checkpoint(void) {
 }
 
 void modstatdb_shutdown(void) {
-  const struct fni *fnip;
+  if (cflags >= msdbrw_available_write)
+    writedb(availablefile, 1, 0);
+
   switch (cstatus) {
   case msdbrw_write:
     modstatdb_checkpoint();
-    writedb(availablefile,1,0);
-    /* tidy up a bit, but don't worry too much about failure */
+    /* Tidy up a bit, but don't worry too much about failure. */
     fclose(importanttmp);
     unlink(importanttmpfile);
     varbuf_destroy(&uvb);
-    /* fall through */
+    /* Fall through. */
   case msdbrw_needsuperuserlockonly:
     modstatdb_unlock();
   default:
     break;
   }
 
-  for (fnip=fnis; fnip->suffix; fnip++) {
-    free(*fnip->store);
-    *fnip->store= NULL;
-  }
-  free(updatefnbuf);
+  modstatdb_done();
 }
 
 static void
@@ -318,22 +342,28 @@ modstatdb_note_core(struct pkginfo *pkg)
 {
   assert(cstatus >= msdbrw_write);
 
-  varbufreset(&uvb);
+  varbuf_reset(&uvb);
   varbufrecord(&uvb, pkg, &pkg->installed);
 
   if (fwrite(uvb.buf, 1, uvb.used, importanttmp) != uvb.used)
-    ohshite(_("unable to write updated status of `%.250s'"), pkg->name);
+    ohshite(_("unable to write updated status of `%.250s'"),
+            pkg_describe(pkg, pdo_foreign));
   if (fflush(importanttmp))
-    ohshite(_("unable to flush updated status of `%.250s'"), pkg->name);
+    ohshite(_("unable to flush updated status of `%.250s'"),
+            pkg_describe(pkg, pdo_foreign));
   if (ftruncate(fileno(importanttmp), uvb.used))
-    ohshite(_("unable to truncate for updated status of `%.250s'"), pkg->name);
+    ohshite(_("unable to truncate for updated status of `%.250s'"),
+            pkg_describe(pkg, pdo_foreign));
   if (fsync(fileno(importanttmp)))
-    ohshite(_("unable to fsync updated status of `%.250s'"), pkg->name);
+    ohshite(_("unable to fsync updated status of `%.250s'"),
+            pkg_describe(pkg, pdo_foreign));
   if (fclose(importanttmp))
-    ohshite(_("unable to close updated status of `%.250s'"), pkg->name);
+    ohshite(_("unable to close updated status of `%.250s'"),
+            pkg_describe(pkg, pdo_foreign));
   sprintf(updatefnrest, IMPORTANTFMT, nextupdate);
   if (rename(importanttmpfile, updatefnbuf))
-    ohshite(_("unable to install updated status of `%.250s'"), pkg->name);
+    ohshite(_("unable to install updated status of `%.250s'"),
+            pkg_describe(pkg, pdo_foreign));
 
   dir_sync_path(updatesdir);
 
@@ -350,7 +380,8 @@ modstatdb_note_core(struct pkginfo *pkg)
   createimptmp();
 }
 
-/* Note: If anyone wants to set some triggers-pending, they must also
+/*
+ * Note: If anyone wants to set some triggers-pending, they must also
  * set status appropriately, or we will undo it. That is, it is legal
  * to call this when pkg->status and pkg->trigpend_head disagree and
  * in that case pkg->status takes precedence and pkg->trigpend_head
@@ -362,8 +393,7 @@ void modstatdb_note(struct pkginfo *pkg) {
   onerr_abort++;
 
   /* Clear pending triggers here so that only code that sets the status
-   * to interesting (for triggers) values has to care about triggers.
-   */
+   * to interesting (for triggers) values has to care about triggers. */
   if (pkg->status != stat_triggerspending &&
       pkg->status != stat_triggersawaited)
     pkg->trigpend_head = NULL;
@@ -374,21 +404,22 @@ void modstatdb_note(struct pkginfo *pkg) {
     pkg->trigaw.head = pkg->trigaw.tail = NULL;
   }
 
-  log_message("status %s %s %s", statusinfos[pkg->status].name, pkg->name,
+  log_message("status %s %s %s", statusinfos[pkg->status].name,
+              pkg_describe(pkg, pdo_foreign),
 	      versiondescribe(&pkg->installed.version, vdew_nonambig));
-  statusfd_send("status: %s: %s", pkg->name, statusinfos[pkg->status].name);
+  statusfd_send("status: %s: %s", pkg_describe(pkg, pdo_foreign),
+                statusinfos[pkg->status].name);
 
   if (cstatus >= msdbrw_write)
     modstatdb_note_core(pkg);
 
   if (!pkg->trigpend_head && pkg->othertrigaw_head) {
     /* Automatically remove us from other packages' Triggers-Awaited.
-     * We do this last because we want to maximise our chances of
+     * We do this last because we want to maximize our chances of
      * successfully recording the status of the package we were
      * pointed at by our caller, although there is some risk of
      * leaving us in a slightly odd situation which is cleared up
-     * by the trigger handling logic in deppossi_ok_found.
-     */
+     * by the trigger handling logic in deppossi_ok_found. */
     trig_clear_awaiters(pkg);
   }
 
@@ -400,22 +431,5 @@ modstatdb_note_ifwrite(struct pkginfo *pkg)
 {
   if (cstatus >= msdbrw_write)
     modstatdb_note(pkg);
-}
-
-const char *
-pkgadmindir(void)
-{
-  return infodir;
-}
-
-const char *pkgadminfile(struct pkginfo *pkg, const char *whichfile) {
-  static struct varbuf vb;
-  varbufreset(&vb);
-  varbufaddstr(&vb, infodir);
-  varbufaddstr(&vb,pkg->name);
-  varbufaddc(&vb,'.');
-  varbufaddstr(&vb,whichfile);
-  varbufaddc(&vb,0);
-  return vb.buf;
 }
 

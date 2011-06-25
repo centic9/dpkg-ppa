@@ -26,15 +26,32 @@
 
 #include <dpkg/string.h>
 
+/**
+ * Escape format characters from a string.
+ *
+ * @param dst The destination string.
+ * @param src The source string.
+ * @param n The size of the destination buffer.
+ *
+ * @return The end of the destination string.
+ */
 char *
-str_escape_fmt(char *dst, const char *src)
+str_escape_fmt(char *dst, const char *src, size_t n)
 {
 	char *d = dst;
 	const char *s = src;
 
+	if (n == 0)
+		return d;
+
 	while (*s) {
-		if (*s == '%')
+		if (*s == '%') {
+			if (n-- <= 2)
+				break;
 			*d++ = '%';
+		}
+		if (n-- <= 1)
+			break;
 		*d++ = *s++;
 	}
 
@@ -43,7 +60,13 @@ str_escape_fmt(char *dst, const char *src)
 	return d;
 }
 
-/* Check and strip possible surrounding quotes in string. */
+/**
+ * Check and strip possible surrounding quotes in string.
+ *
+ * @param str The string to act on.
+ *
+ * @return A pointer to str or NULL if the quotes were unbalanced.
+ */
 char *
 str_strip_quotes(char *str)
 {
@@ -60,4 +83,3 @@ str_strip_quotes(char *str)
 
 	return str;
 }
-

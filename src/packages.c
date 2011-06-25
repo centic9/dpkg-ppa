@@ -3,6 +3,8 @@
  * packages.c - common to actions that process packages
  *
  * Copyright © 1994,1995 Ian Jackson <ian@chiark.greenend.org.uk>
+ * Copyright © 2011 Linaro Limited
+ * Copyright © 2011 Raphaël Hertzog <hertzog@debian.org>
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -38,9 +40,11 @@
 #include <dpkg/dpkg-db.h>
 #include <dpkg/pkg-list.h>
 #include <dpkg/pkg-queue.h>
+#include <dpkg/pkg-spec.h>
 #include <dpkg/myopt.h>
 
 #include "filesdb.h"
+#include "infodb.h"
 #include "main.h"
 
 static struct pkginfo *progress_bytrigproc;
@@ -60,9 +64,9 @@ enqueue_pending(void)
   struct pkgiterator *it;
   struct pkginfo *pkg;
 
-  it = iterpkgstart();
-  while ((pkg = iterpkgnext(it)) != NULL) {
-    switch (cipaction->arg) {
+  it = pkg_db_iter_new();
+  while ((pkg = pkg_db_iter_next_pkg(it)) != NULL) {
+    switch (cipaction->arg_int) {
     case act_configure:
       if (!(pkg->status == stat_unpacked ||
             pkg->status == stat_halfconfigured ||
@@ -89,43 +93,55 @@ enqueue_pending(void)
         continue;
       break;
     default:
-      internerr("unknown action '%d'", cipaction->arg);
+      internerr("unknown action '%d'", cipaction->arg_int);
     }
     add_to_queue(pkg);
   }
-  iterpkgend(it);
+  pkg_db_iter_free(it);
 }
 
 static void
 enqueue_specified(const char *const *argv)
 {
   const char *thisarg;
+  struct pkg_spec pkgspec = PKG_SPEC_INIT(psf_def_native | psf_patterns |
+                                          psf_skip_not_installed);
 
   while ((thisarg = *argv++) != NULL) {
     struct pkginfo *pkg;
+    int count = 0;
 
-    pkg = findpackage(thisarg);
-    if (pkg->status == stat_notinstalled) {
-      size_t l = strlen(pkg->name);
-      const char *extension = pkg->name + l - sizeof(DEBEXT) + 1;
+    pkg_spec_parse(&pkgspec, thisarg);
+
+    pkg_spec_iter_start(&pkgspec);
+    while ((pkg = pkg_spec_iter_next_pkg(&pkgspec))) {
+      add_to_queue(pkg);
+      count++;
+    }
+    if (!count) {
+      size_t l = strlen(thisarg);
+      const char *extension = thisarg + l - sizeof(DEBEXT) + 1;
 
       if (l >= sizeof(DEBEXT) && strcmp(extension, DEBEXT) == 0)
         badusage(_("you must specify packages by their own names,"
                    " not by quoting the names of the files they come in"));
+      warning(_("there's no installed package matching %s"), thisarg);
     }
-    add_to_queue(pkg);
   }
+  pkg_spec_reset(&pkgspec);
 }
 
 void
 packages(const char *const *argv)
 {
+  enum modstatdb_rw msdb_status;
+
   trigproc_install_hooks();
 
-  modstatdb_init(admindir,
-                 f_noact ?    msdbrw_readonly
-               : fc_nonroot ? msdbrw_write
-               :              msdbrw_needsuperuser);
+  msdb_status = modstatdb_open(f_noact ?    msdbrw_readonly :
+                               fc_nonroot ? msdbrw_write :
+                                            msdbrw_needsuperuser);
+  pkg_infodb_init(msdb_status);
   checkpath();
   log_message("startup packages %s", cipaction->olong);
 
@@ -152,51 +168,53 @@ packages(const char *const *argv)
 void process_queue(void) {
   struct pkg_list *rundown;
   struct pkginfo *volatile pkg;
+  char *pkgname;
   volatile enum action action_todo;
   jmp_buf ejbuf;
   enum istobes istobe= itb_normal;
-  
+
   if (abort_processing)
     return;
 
   clear_istobes();
 
-  switch (cipaction->arg) {
+  switch (cipaction->arg_int) {
   case act_triggers:
   case act_configure: case act_install:  istobe= itb_installnew;  break;
   case act_remove: case act_purge:       istobe= itb_remove;      break;
   default:
-    internerr("unknown action '%d'", cipaction->arg);
+    internerr("unknown action '%d'", cipaction->arg_int);
   }
   for (rundown = queue.head; rundown; rundown = rundown->next) {
     ensure_package_clientdata(rundown->pkg);
     if (rundown->pkg->clientdata->istobe == istobe) {
       /* Erase the queue entry - this is a second copy! */
-      switch (cipaction->arg) {
+      switch (cipaction->arg_int) {
       case act_triggers:
       case act_configure: case act_remove: case act_purge:
         printf(_("Package %s listed more than once, only processing once.\n"),
-               rundown->pkg->name);
+               pkg_describe(rundown->pkg, pdo_foreign));
         break;
       case act_install:
         printf(_("More than one copy of package %s has been unpacked\n"
                " in this run !  Only configuring it once.\n"),
-               rundown->pkg->name);
+               pkg_describe(rundown->pkg, pdo_foreign));
         break;
       default:
-        internerr("unknown action '%d'", cipaction->arg);
+        internerr("unknown action '%d'", cipaction->arg_int);
       }
       rundown->pkg = NULL;
    } else {
       rundown->pkg->clientdata->istobe= istobe;
     }
   }
-  
+
   while (!pkg_queue_is_empty(&queue)) {
     pkg = pkg_queue_pop(&queue);
-    if (!pkg) continue; /* duplicate, which we removed earlier */
+    if (!pkg)
+      continue; /* Duplicate, which we removed earlier. */
 
-    action_todo = cipaction->arg;
+    action_todo = cipaction->arg_int;
 
     if (sincenothing++ > queue.length * 2 + 2) {
       if (progress_bytrigproc && progress_bytrigproc->trigpend_head) {
@@ -211,22 +229,27 @@ void process_queue(void) {
     }
 
     assert(pkg->status <= stat_installed);
+    pkgname = m_strdup(pkg_describe(pkg, pdo_foreign));
 
     if (setjmp(ejbuf)) {
-      /* give up on it from the point of view of other packages, ie reset istobe */
+      /* Give up on it from the point of view of other packages, i.e. reset
+       * istobe. */
       pkg->clientdata->istobe= itb_normal;
-      error_unwind(ehflag_bombout);
+
+      pop_error_context(ehflag_bombout);
+      free(pkgname);
       if (abort_processing)
         return;
       continue;
     }
-    push_error_handler(&ejbuf,print_error_perpackage,pkg->name);
+    push_error_context_jump(&ejbuf, print_error_perpackage, pkgname);
+
     switch (action_todo) {
     case act_triggers:
       if (!pkg->trigpend_head)
         ohshit(_("package %.250s is not ready for trigger processing\n"
                  " (current status `%.250s' with no pending triggers)"),
-               pkg->name, statusinfos[pkg->status].name);
+               pkg_describe(pkg, pdo_foreign), statusinfos[pkg->status].name);
       /* Fall through. */
     case act_install:
       /* Don't try to configure pkgs that we've just disappeared. */
@@ -244,43 +267,44 @@ void process_queue(void) {
       deferred_remove(pkg);
       break;
     default:
-      internerr("unknown action '%d'", cipaction->arg);
+      internerr("unknown action '%d'", cipaction->arg_int);
     }
     m_output(stdout, _("<standard output>"));
     m_output(stderr, _("<standard error>"));
-    set_error_display(NULL, NULL);
-    error_unwind(ehflag_normaltidy);
+
+    pop_error_context(ehflag_normaltidy);
+    free(pkgname);
   }
   assert(!queue.length);
-}    
+}
 
-/*** dependency processing - common to --configure and --remove ***/
+/*** Dependency processing - common to --configure and --remove. ***/
 
 /*
  * The algorithm for deciding what to configure or remove first is as
  * follows:
  *
- * Loop through all packages doing a `try 1' until we've been round and
- * nothing has been done, then do `try 2' and `try 3' likewise.
+ * Loop through all packages doing a ‘try 1’ until we've been round and
+ * nothing has been done, then do ‘try 2’ and ‘try 3’ likewise.
  *
  * When configuring, in each try we check to see whether all
- * dependencies of this package are done.  If so we do it.  If some of
+ * dependencies of this package are done. If so we do it. If some of
  * the dependencies aren't done yet but will be later we defer the
  * package, otherwise it is an error.
  *
  * When removing, in each try we check to see whether there are any
  * packages that would have dependencies missing if we removed this
- * one.  If not we remove it now.  If some of these packages are
+ * one. If not we remove it now. If some of these packages are
  * themselves scheduled for removal we defer the package until they
  * have been done.
  *
  * The criteria for satisfying a dependency vary with the various
- * tries.  In try 1 we treat the dependencies as absolute.  In try 2 we
+ * tries. In try 1 we treat the dependencies as absolute. In try 2 we
  * check break any cycles in the dependency graph involving the package
  * we are trying to process before trying to process the package
- * normally.  In try 3 (which should only be reached if
+ * normally. In try 3 (which should only be reached if
  * --force-depends-version is set) we ignore version number clauses in
- * Depends lines.  In try 4 (only reached if --force-depends is set) we
+ * Depends lines. In try 4 (only reached if --force-depends is set) we
  * say "ok" regardless.
  *
  * If we are configuring and one of the packages we depend on is
@@ -291,44 +315,49 @@ void process_queue(void) {
  * and breaking.
  */
 
-/* Return values:
+enum found_status {
+  found_none = 0,
+  found_defer = 1,
+  found_forced = 2,
+  found_ok = 3,
+};
+
+/*
+ * Return values:
  *   0: cannot be satisfied.
  *   1: defer: may be satisfied later, when other packages are better or
  *      at higher dependtry due to --force
  *      will set *fixbytrig to package whose trigger processing would help
- *      if applicable (and leave it alone otherwise)
+ *      if applicable (and leave it alone otherwise).
  *   2: not satisfied but forcing
- *      (*interestingwarnings >= 0 on exit? caller is to print oemsgs)
- *   3: satisfied now
+ *      (*interestingwarnings >= 0 on exit? caller is to print oemsgs).
+ *   3: satisfied now.
  */
-static int deppossi_ok_found(struct pkginfo *possdependee,
-                             struct pkginfo *requiredby,
-                             struct pkginfo *removing,
-                             struct pkginfo *providing,
-                             struct pkginfo **fixbytrig,
-                             bool *matched,
-                             struct deppossi *checkversion,
-                             int *interestingwarnings,
-                             struct varbuf *oemsgs) {
-  int thisf;
-  
+static enum found_status
+deppossi_ok_found(struct pkginfo *possdependee, struct pkginfo *requiredby,
+                  struct pkginfo *removing, struct pkgset *providing,
+                  struct pkginfo **fixbytrig,
+                  bool *matched, struct deppossi *checkversion,
+                  int *interestingwarnings, struct varbuf *oemsgs)
+{
+  enum found_status thisf;
+
   if (ignore_depends(possdependee)) {
     debug(dbg_depcondetail,"      ignoring depended package so ok and found");
-    return 3;
+    return found_ok;
   }
-  thisf= 0;
+  thisf = found_none;
   if (possdependee == removing) {
     if (providing) {
-      varbufprintf(oemsgs,
-		   _("  Package %s which provides %s is to be removed.\n"),
-		   possdependee->name, providing->name);
+      varbuf_printf(oemsgs,
+                    _("  Package %s which provides %s is to be removed.\n"),
+                    pkg_describe(possdependee, pdo_foreign), providing->name);
     } else {
-      varbufprintf(oemsgs, _("  Package %s is to be removed.\n"),
-		   possdependee->name);
+      varbuf_printf(oemsgs, _("  Package %s is to be removed.\n"),
+                    pkg_describe(possdependee, pdo_foreign));
     }
 
     *matched = true;
-    if (fc_depends) thisf= (dependtry >= 4) ? 2 : 1;
     debug(dbg_depcondetail,"      removing possdependee, returning %d",thisf);
     return thisf;
   }
@@ -339,12 +368,13 @@ static int deppossi_ok_found(struct pkginfo *possdependee,
   case stat_triggerspending:
   case stat_installed:
     if (checkversion && !versionsatisfied(&possdependee->installed,checkversion)) {
-      varbufprintf(oemsgs, _("  Version of %s on system is %s.\n"),
-		   possdependee->name,
-		   versiondescribe(&possdependee->installed.version,
-				   vdew_nonambig));
+      varbuf_printf(oemsgs, _("  Version of %s on system is %s.\n"),
+                    pkg_describe(possdependee, pdo_foreign),
+                    versiondescribe(&possdependee->installed.version,
+                                    vdew_nonambig));
       assert(checkversion->verrel != dvr_none);
-      if (fc_depends || fc_dependsversion) thisf= (dependtry >= 3) ? 2 : 1;
+      if (fc_depends || fc_dependsversion)
+        thisf = (dependtry >= 3) ? found_forced : found_defer;
       debug(dbg_depcondetail,"      bad version, returning %d",thisf);
       (*interestingwarnings)++;
       return thisf;
@@ -352,20 +382,20 @@ static int deppossi_ok_found(struct pkginfo *possdependee,
     if (possdependee->status == stat_installed ||
         possdependee->status == stat_triggerspending) {
       debug(dbg_depcondetail,"      is installed, ok and found");
-      return 3;
+      return found_ok;
     }
     if (possdependee->status == stat_triggersawaited) {
       assert(possdependee->trigaw.head);
       if (removing || !(f_triggers ||
                         possdependee->clientdata->istobe == itb_installnew)) {
         if (providing) {
-          varbufprintf(oemsgs,
-                       _("  Package %s which provides %s awaits trigger processing.\n"),
-                       possdependee->name, providing->name);
+          varbuf_printf(oemsgs,
+                        _("  Package %s which provides %s awaits trigger processing.\n"),
+                        pkg_describe(possdependee, pdo_foreign), providing->name);
         } else {
-          varbufprintf(oemsgs,
-                       _("  Package %s awaits trigger processing.\n"),
-                       possdependee->name);
+          varbuf_printf(oemsgs,
+                        _("  Package %s awaits trigger processing.\n"),
+                        pkg_describe(possdependee, pdo_foreign));
         }
         debug(dbg_depcondetail, "      triggers-awaited, no fixbytrig");
         goto unsuitable;
@@ -375,37 +405,39 @@ static int deppossi_ok_found(struct pkginfo *possdependee,
        * the named package doesn't actually have any pending triggers. In
        * that case we queue the non-pending package for trigger processing
        * anyway, and that trigger processing will be a noop except for
-       * sorting out all of the packages which name it in T-Awaited.
+       * sorting out all of the packages which name it in Triggers-Awaited.
        *
        * (This situation can only arise if modstatdb_note success in
        * clearing the triggers-pending status of the pending package
-       * but then fails to go on to update the awaiters.)
-       */
+       * but then fails to go on to update the awaiters.) */
       *fixbytrig = possdependee->trigaw.head->pend;
       debug(dbg_depcondetail,
-            "      triggers-awaited, fixbytrig `%s', returning 1",
-            (*fixbytrig)->name);
-      return 1;
+            "      triggers-awaited, fixbytrig '%s', defer",
+            pkg_describe(*fixbytrig, pdo_foreign));
+      return found_defer;
     }
     if (possdependee->clientdata &&
         possdependee->clientdata->istobe == itb_installnew) {
       debug(dbg_depcondetail,"      unpacked/halfconfigured, defer");
-      return 1;
+      return found_defer;
     } else if (!removing && fc_configureany &&
                !skip_due_to_hold(possdependee) &&
                !(possdependee->status == stat_halfconfigured)) {
       fprintf(stderr,
               _("dpkg: also configuring `%s' (required by `%s')\n"),
-              possdependee->name, requiredby->name);
-      add_to_queue(possdependee); sincenothing=0; return 1;
+              pkg_describe(possdependee, pdo_foreign),
+              pkg_describe(requiredby, pdo_foreign));
+      add_to_queue(possdependee);
+      sincenothing = 0;
+      return found_defer;
     } else {
       if (providing) {
-	varbufprintf(oemsgs,
-		     _("  Package %s which provides %s is not configured yet.\n"),
-		     possdependee->name, providing->name);
+        varbuf_printf(oemsgs,
+                      _("  Package %s which provides %s is not configured yet.\n"),
+                      pkg_describe(possdependee, pdo_foreign), providing->name);
       } else {
-	varbufprintf(oemsgs, _("  Package %s is not configured yet.\n"),
-		     possdependee->name);
+        varbuf_printf(oemsgs, _("  Package %s is not configured yet.\n"),
+                      pkg_describe(possdependee, pdo_foreign));
       }
 
       debug(dbg_depcondetail, "      not configured/able");
@@ -414,12 +446,12 @@ static int deppossi_ok_found(struct pkginfo *possdependee,
 
   default:
     if (providing) {
-      varbufprintf(oemsgs,
-		   _("  Package %s which provides %s is not installed.\n"),
-		   possdependee->name, providing->name);
+      varbuf_printf(oemsgs,
+                    _("  Package %s which provides %s is not installed.\n"),
+                    pkg_describe(possdependee, pdo_foreign), providing->name);
     } else {
-      varbufprintf(oemsgs, _("  Package %s is not installed.\n"),
-		   possdependee->name);
+      varbuf_printf(oemsgs, _("  Package %s is not installed.\n"),
+                    pkg_describe(possdependee, pdo_foreign));
     }
 
     debug(dbg_depcondetail, "      not installed");
@@ -427,100 +459,114 @@ static int deppossi_ok_found(struct pkginfo *possdependee,
   }
 
 unsuitable:
-  if (fc_depends)
-    thisf = (dependtry >= 4) ? 2 : 1;
-
   debug(dbg_depcondetail, "        returning %d", thisf);
   (*interestingwarnings)++;
 
   return thisf;
 }
 
-static void breaks_check_one(struct varbuf *aemsgs, int *ok,
-                             struct deppossi *breaks,
-                             struct pkginfo *broken,
-                             struct pkginfo *breaker,
-                             struct pkginfo *virtbroken) {
+static void
+breaks_check_one(struct varbuf *aemsgs, enum dep_check *ok,
+                 struct deppossi *breaks, struct pkginfo *broken,
+                 struct pkginfo *breaker, struct pkgset *virtbroken)
+{
   struct varbuf depmsg = VARBUF_INIT;
 
   debug(dbg_depcondetail, "      checking breaker %s virtbroken %s",
-        breaker->name, virtbroken ? virtbroken->name : "<none>");
+        pkg_describe(breaker, pdo_foreign),
+        virtbroken ? virtbroken->name : "<none>");
 
   if (breaker->status == stat_notinstalled ||
       breaker->status == stat_configfiles) return;
   if (broken == breaker) return;
   if (!versionsatisfied(&broken->installed, breaks)) return;
+  /* The test below can only trigger if dep_breaks start having arch
+   * qualifier different from "any" */
+  if (!archsatisfied(&broken->installed, breaks))
+    return;
   if (ignore_depends(breaker)) return;
-  if (virtbroken && ignore_depends(virtbroken)) return;
+  if (virtbroken && ignore_depends(&virtbroken->pkg)) return;
 
   varbufdependency(&depmsg, breaks->up);
-  varbufaddc(&depmsg, 0);
-  varbufprintf(aemsgs, _(" %s (%s) breaks %s and is %s.\n"),
-               breaker->name,
-               versiondescribe(&breaker->installed.version, vdew_nonambig),
-               depmsg.buf,
-               gettext(statusstrings[breaker->status]));
+  varbuf_end_str(&depmsg);
+  varbuf_printf(aemsgs, _(" %s (%s) breaks %s and is %s.\n"),
+                pkg_describe(breaker, pdo_foreign),
+                versiondescribe(&breaker->installed.version, vdew_nonambig),
+                depmsg.buf, gettext(statusstrings[breaker->status]));
   varbuf_destroy(&depmsg);
 
   if (virtbroken) {
-    varbufprintf(aemsgs, _("  %s (%s) provides %s.\n"),
-                 broken->name,
-                 versiondescribe(&broken->installed.version, vdew_nonambig),
-                 virtbroken->name);
+    varbuf_printf(aemsgs, _("  %s (%s) provides %s.\n"),
+                  pkg_describe(broken, pdo_foreign),
+                  versiondescribe(&broken->installed.version, vdew_nonambig),
+                  virtbroken->name);
   } else if (breaks->verrel != dvr_none) {
-    varbufprintf(aemsgs, _("  Version of %s to be configured is %s.\n"),
-                 broken->name,
-                 versiondescribe(&broken->installed.version, vdew_nonambig));
+    varbuf_printf(aemsgs, _("  Version of %s to be configured is %s.\n"),
+                  pkg_describe(broken, pdo_foreign),
+                  versiondescribe(&broken->installed.version, vdew_nonambig));
     if (fc_dependsversion) return;
   }
   if (force_breaks(breaks)) return;
-  *ok= 0;
+  *ok = dep_check_halt;
 }
 
-static void breaks_check_target(struct varbuf *aemsgs, int *ok,
-                                struct pkginfo *broken,
-                                struct pkginfo *target,
-                                struct pkginfo *virtbroken) {
+static void
+breaks_check_target(struct varbuf *aemsgs, enum dep_check *ok,
+                    struct pkginfo *broken, struct pkgset *target,
+                    struct pkgset *virtbroken)
+{
   struct deppossi *possi;
 
-  for (possi = target->installed.depended; possi; possi = possi->rev_next) {
+  for (possi = target->depended.installed; possi; possi = possi->rev_next) {
     if (possi->up->type != dep_breaks) continue;
     if (virtbroken && possi->verrel != dvr_none) continue;
     breaks_check_one(aemsgs, ok, possi, broken, possi->up->up, virtbroken);
   }
 }
 
-int breakses_ok(struct pkginfo *pkg, struct varbuf *aemsgs) {
+enum dep_check
+breakses_ok(struct pkginfo *pkg, struct varbuf *aemsgs)
+{
   struct dependency *dep;
-  struct pkginfo *virtbroken;
-  int ok= 2;
+  struct pkgset *virtbroken;
+  enum dep_check ok = dep_check_ok;
 
   debug(dbg_depcon, "    checking Breaks");
 
-  breaks_check_target(aemsgs, &ok, pkg, pkg, NULL);
+  breaks_check_target(aemsgs, &ok, pkg, pkg->set, NULL);
 
   for (dep= pkg->installed.depends; dep; dep= dep->next) {
     if (dep->type != dep_provides) continue;
-    virtbroken= dep->list->ed;
+    virtbroken = dep->list->ed;
     debug(dbg_depcondetail, "     checking virtbroken %s", virtbroken->name);
     breaks_check_target(aemsgs, &ok, pkg, virtbroken, virtbroken);
   }
   return ok;
 }
 
-int dependencies_ok(struct pkginfo *pkg, struct pkginfo *removing,
-                    struct varbuf *aemsgs) {
-  int ok, found, thisf, interestingwarnings;
+/*
+ * Checks [Pre]-Depends only.
+ */
+enum dep_check
+dependencies_ok(struct pkginfo *pkg, struct pkginfo *removing,
+                struct varbuf *aemsgs)
+{
+  /* Valid values: 2 = ok, 1 = defer, 0 = halt. */
+  enum dep_check ok;
+  /* Valid values: 0 = none, 1 = defer, 2 = withwarning, 3 = ok. */
+  enum found_status found, thisf;
+  int interestingwarnings;
   bool matched, anycannotfixbytrig;
   struct varbuf oemsgs = VARBUF_INIT;
   struct dependency *dep;
   struct deppossi *possi, *provider;
-  struct pkginfo *possfixbytrig, *canfixbytrig;
+  struct pkginfo *possfixbytrig, *canfixbytrig, *pkg_pos;
 
   interestingwarnings= 0;
-  ok= 2; /* 2=ok, 1=defer, 0=halt */
+  ok = dep_check_ok;
   debug(dbg_depcon,"checking dependencies of %s (- %s)",
-        pkg->name, removing ? removing->name : "<none>");
+        pkg_describe(pkg, pdo_foreign),
+        removing ? pkg_describe(removing, pdo_foreign) : "<none>");
 
   anycannotfixbytrig = false;
   canfixbytrig = NULL;
@@ -528,28 +574,35 @@ int dependencies_ok(struct pkginfo *pkg, struct pkginfo *removing,
     if (dep->type != dep_depends && dep->type != dep_predepends) continue;
     debug(dbg_depcondetail,"  checking group ...");
     matched = false;
-    varbufreset(&oemsgs);
-    found= 0; /* 0=none, 1=defer, 2=withwarning, 3=ok */
+    varbuf_reset(&oemsgs);
+    found = found_none;
     possfixbytrig = NULL;
-    for (possi= dep->list; found != 3 && possi; possi= possi->next) {
+    for (possi = dep->list; found != found_ok && possi; possi = possi->next) {
       debug(dbg_depcondetail,"    checking possibility  -> %s",possi->ed->name);
       if (possi->cyclebreak) {
         debug(dbg_depcondetail,"      break cycle so ok and found");
-        found= 3; break;
+        found = found_ok;
+        break;
       }
-      thisf = deppossi_ok_found(possi->ed, pkg, removing, NULL,
-                                &possfixbytrig,
-                               &matched,possi,&interestingwarnings,&oemsgs);
-      if (thisf > found) found= thisf;
-      if (found != 3 && possi->verrel == dvr_none) {
-        for (provider = possi->ed->installed.depended;
-             found != 3 && provider;
+      pkg_pos = NULL;
+      while (found != found_ok &&
+             (pkg_pos = deppossi_get_pkg(possi, wpb_installed, pkg_pos))) {
+        thisf = deppossi_ok_found(pkg_pos, pkg, removing, NULL,
+                                  &possfixbytrig, &matched, possi,
+                                  &interestingwarnings, &oemsgs);
+        if (thisf > found)
+          found = thisf;
+      }
+      if (found != found_ok && possi->verrel == dvr_none) {
+        for (provider = possi->ed->depended.installed;
+             found != found_ok && provider;
              provider = provider->rev_next) {
           if (provider->up->type != dep_provides)
             continue;
           debug(dbg_depcondetail, "     checking provider %s",
-                provider->up->up->name);
-          thisf = deppossi_ok_found(provider->up->up, pkg, removing, possi->ed,
+                pkg_describe(provider->up->up, pdo_foreign));
+          thisf = deppossi_ok_found(provider->up->up, pkg, removing,
+                                    possi->ed,
                                     &possfixbytrig, &matched, NULL,
                                     &interestingwarnings, &oemsgs);
           if (thisf > found)
@@ -557,49 +610,57 @@ int dependencies_ok(struct pkginfo *pkg, struct pkginfo *removing,
         }
       }
       debug(dbg_depcondetail,"    found %d",found);
-      if (thisf > found) found= thisf;
+    }
+    if (fc_depends) {
+      thisf = (dependtry >= 4) ? found_forced : found_defer;
+      if (thisf > found) {
+        found = thisf;
+        debug(dbg_depcondetail, "  rescued by force-depends, found %d", found);
+      }
     }
     debug(dbg_depcondetail, "  found %d matched %d possfixbytrig %s",
-          found, matched, possfixbytrig ? possfixbytrig->name : "-");
+          found, matched,
+          possfixbytrig ? pkg_describe(possfixbytrig, pdo_foreign) : "-");
     if (removing && !matched) continue;
     switch (found) {
-    case 0:
+    case found_none:
       anycannotfixbytrig = true;
-      ok= 0;
-    case 2:
-      varbufaddstr(aemsgs, " ");
-      varbufaddstr(aemsgs, pkg->name);
-      varbufaddstr(aemsgs, _(" depends on "));
+      ok = dep_check_halt;
+    case found_forced:
+      varbuf_add_str(aemsgs, " ");
+      varbuf_pkg(aemsgs, pkg, pdo_foreign);
+      varbuf_add_str(aemsgs, _(" depends on "));
       varbufdependency(aemsgs, dep);
       if (interestingwarnings) {
         /* Don't print the line about the package to be removed if
-         * that's the only line.
-         */
-        varbufaddstr(aemsgs, _("; however:\n"));
-        varbufaddc(&oemsgs, 0);
-        varbufaddstr(aemsgs, oemsgs.buf);
+         * that's the only line. */
+        varbuf_end_str(&oemsgs);
+        varbuf_add_str(aemsgs, _("; however:\n"));
+        varbuf_add_str(aemsgs, oemsgs.buf);
       } else {
-        varbufaddstr(aemsgs, ".\n");
+        varbuf_add_str(aemsgs, ".\n");
       }
       break;
-    case 1:
+    case found_defer:
       if (possfixbytrig)
         canfixbytrig = possfixbytrig;
       else
         anycannotfixbytrig = true;
-      if (ok>1) ok= 1;
+      if (ok > dep_check_defer)
+        ok = dep_check_defer;
       break;
-    case 3:
+    case found_ok:
       break;
     default:
       internerr("unknown value for found '%d'", found);
     }
   }
-  if (ok == 0 && (pkg->clientdata && pkg->clientdata->istobe == itb_remove))
-    ok= 1;
+  if (ok == dep_check_halt &&
+      (pkg->clientdata && pkg->clientdata->istobe == itb_remove))
+    ok = dep_check_defer;
   if (!anycannotfixbytrig && canfixbytrig)
     progress_bytrigproc = canfixbytrig;
-  
+
   varbuf_destroy(&oemsgs);
   debug(dbg_depcon,"ok %d msgs >>%.*s<<", ok, (int)aemsgs->used, aemsgs->buf);
   return ok;

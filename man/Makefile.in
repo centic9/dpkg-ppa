@@ -48,6 +48,7 @@ DIST_COMMON = $(dist_man_MANS) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/dpkg-arch.m4 \
+	$(top_srcdir)/m4/dpkg-build.m4 \
 	$(top_srcdir)/m4/dpkg-compiler.m4 \
 	$(top_srcdir)/m4/dpkg-coverage.m4 \
 	$(top_srcdir)/m4/dpkg-funcs.m4 $(top_srcdir)/m4/dpkg-libs.m4 \
@@ -257,11 +258,12 @@ PO4A_CLEAN_OPTS = $(PO4A_COMMON_OPTS) --rm-backups --rm-translations
 
 # Extract the list of languages from the po4a config file.
 LINGUAS_DIST = `sed -ne 's/^.*\[po4a_langs\] \(.*\)$$/\1/p' $(srcdir)/po/po4a.cfg`
-dist_man_MANS = deb-control.5 deb-version.5 deb-shlibs.5 deb-split.5 \
-	deb-substvars.5 deb-symbols.5 deb-triggers.5 deb-old.5 \
-	deb-override.5 deb-extra-override.5 deb.5 dpkg-architecture.1 \
-	dpkg-buildflags.1 dpkg-buildpackage.1 dpkg-checkbuilddeps.1 \
-	dpkg-deb.1 dpkg-distaddfile.1 dpkg-divert.8 dpkg-genchanges.1 \
+dist_man_MANS = deb-control.5 deb-src-control.5 deb-version.5 \
+	deb-shlibs.5 deb-split.5 deb-substvars.5 deb-symbols.5 \
+	deb-triggers.5 deb-old.5 deb-override.5 deb-extra-override.5 \
+	deb.5 dpkg-architecture.1 dpkg-buildflags.1 \
+	dpkg-buildpackage.1 dpkg-checkbuilddeps.1 dpkg-deb.1 \
+	dpkg-distaddfile.1 dpkg-divert.8 dpkg-genchanges.1 \
 	dpkg-gencontrol.1 dpkg-gensymbols.1 dpkg-maintscript-helper.1 \
 	dpkg-mergechangelogs.1 dpkg-name.1 dpkg-parsechangelog.1 \
 	dpkg-query.1 dpkg-scanpackages.1 dpkg-scansources.1 \
@@ -285,9 +287,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu man/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign man/Makefile'; \
 	$(am__cd) $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu man/Makefile
+	  $(AUTOMAKE) --foreign man/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \

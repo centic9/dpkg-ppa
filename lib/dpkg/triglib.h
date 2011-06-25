@@ -36,7 +36,7 @@ DPKG_BEGIN_DECLS
  * we're actually doing real package management work.
  */
 
-const char *illegal_triggername(const char *p);
+const char *trig_name_is_illegal(const char *p);
 
 struct trigfileint {
 	struct pkginfo *pkg;
@@ -69,8 +69,6 @@ struct trig_hooks {
 
 void trig_override_hooks(const struct trig_hooks *hooks);
 
-char *trig_get_triggersdir(const char *admindir);
-
 void trig_file_activate_byname(const char *trig, struct pkginfo *aw);
 void trig_file_activate(struct filenamenode *trig, struct pkginfo *aw);
 
@@ -92,7 +90,7 @@ void trig_cicb_statuschange_activate(const char *trig, void *user);
 void trig_parse_ci(const char *file, trig_parse_cicb *interest,
                    trig_parse_cicb *activate, void *user);
 
-void trig_incorporate(enum modstatdb_rw cstatus, const char *admindir);
+void trig_incorporate(enum modstatdb_rw cstatus);
 
 DPKG_END_DECLS
 

@@ -47,7 +47,7 @@ static int nerrs = 0;
 
 struct error_report {
   struct error_report *next;
-  const char *what;
+  char *what;
 };
 
 static struct error_report *reports = NULL;
@@ -56,35 +56,42 @@ static struct error_report emergency;
 
 void print_error_perpackage(const char *emsg, const char *arg) {
   struct error_report *nr;
-  
+
   fprintf(stderr, _("%s: error processing %s (--%s):\n %s\n"),
-          DPKG, arg, cipaction->olong, emsg);
+          thisname, arg, cipaction->olong, emsg);
 
   statusfd_send("status: %s : %s : %s", arg, "error", emsg);
 
   nr= malloc(sizeof(struct error_report));
   if (!nr) {
-    perror(_("dpkg: failed to allocate memory for new entry in list of failed packages."));
+    fprintf(stderr,
+            _("%s: failed to allocate memory for new entry in list of failed packages: %s"),
+            thisname, strerror(errno));
     abort_processing = true;
     nr= &emergency;
   }
-  nr->what= arg;
+  nr->what = m_strdup(arg);
   nr->next = NULL;
   *lastreport= nr;
   lastreport= &nr->next;
-    
+
   if (nerrs++ < errabort) return;
-  fprintf(stderr, _("dpkg: too many errors, stopping\n"));
+  fprintf(stderr, _("%s: too many errors, stopping\n"), thisname);
   abort_processing = true;
 }
 
 int reportbroken_retexitstatus(void) {
+  struct error_report *next;
   if (reports) {
     fputs(_("Errors were encountered while processing:\n"),stderr);
     while (reports) {
       fprintf(stderr," %s\n",reports->what);
-      reports= reports->next;
+      next = reports->next;
+      free(reports->what);
+      free(reports);
+      reports = next;
     }
+    lastreport = &reports;
   }
   if (abort_processing) {
     fputs(_("Processing was halted because there were too many errors.\n"),stderr);
@@ -99,11 +106,11 @@ skip_due_to_hold(struct pkginfo *pkg)
     return false;
   if (fc_hold) {
     fprintf(stderr, _("Package %s was on hold, processing it anyway as you requested\n"),
-            pkg->name);
+            pkg_describe(pkg, pdo_foreign));
     return false;
   }
   printf(_("Package %s is on hold, not touching it.  Use --force-hold to override.\n"),
-         pkg->name);
+         pkg_describe(pkg, pdo_foreign));
   return true;
 }
 

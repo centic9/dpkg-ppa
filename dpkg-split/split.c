@@ -27,13 +27,13 @@
 #include <sys/wait.h>
 
 #include <limits.h>
-#include <errno.h>
 #include <fcntl.h>
 #include <libgen.h>
 #include <string.h>
 #include <ctype.h>
 #include <time.h>
 #include <unistd.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -65,18 +65,19 @@ deb_field(const char *filename, const char *field)
 		close(p[1]);
 
 		execlp(BACKEND, BACKEND, "--field", filename, field, NULL);
-		ohshite(_("failed to exec dpkg-deb to extract field value"));
+		ohshite(_("unable to execute %s (%s)"),
+		        _("package field value extraction"), BACKEND);
 	}
 	close(p[1]);
 
 	/* Parant reads from pipe. */
-	varbufreset(&buf);
-	fd_vbuf_copy(p[0], &buf, -1, _("dpkg-deb field extraction"));
-	varbufaddc(&buf, '\0');
+	varbuf_reset(&buf);
+	fd_vbuf_copy(p[0], &buf, -1, _("package field value extraction"));
+	varbuf_end_str(&buf);
 
 	close(p[0]);
 
-	subproc_wait_check(pid, _("dpkg-deb field extraction"), PROCPIPE);
+	subproc_wait_check(pid, _("package field value extraction"), PROCPIPE);
 
 	/* Trim down trailing junk. */
 	for (end = buf.buf + strlen(buf.buf) - 1; end - buf.buf >= 1; end--)
@@ -109,20 +110,20 @@ clean_msdos_filename(char *filename)
 }
 
 static int
-mksplit(const char *file_src, const char *prefix, size_t partsize,
-        size_t maxpartsize, bool msdos)
+mksplit(const char *file_src, const char *prefix, off_t maxpartsize,
+        bool msdos)
 {
 	int fd_src;
 	struct stat st;
 	char hash[MD5HASHLEN + 1];
 	char *package, *version;
 	int nparts, curpart;
-	off_t startat;
+	off_t partsize;
+	off_t last_partsize;
 	char *prefixdir = NULL, *msdos_prefix = NULL;
 	struct varbuf file_dst = VARBUF_INIT;
 	struct varbuf partmagic = VARBUF_INIT;
 	struct varbuf partname = VARBUF_INIT;
-	char *partdata;
 
 	fd_src = open(file_src, O_RDONLY);
 	if (fd_src < 0)
@@ -139,11 +140,17 @@ mksplit(const char *file_src, const char *prefix, size_t partsize,
 	package = deb_field(file_src, "Package");
 	version = deb_field(file_src, "Version");
 
+	partsize = maxpartsize - HEADERALLOWANCE;
+	last_partsize = st.st_size % partsize;
+	if (last_partsize == 0)
+		last_partsize = partsize;
 	nparts = (st.st_size + partsize - 1) / partsize;
 
 	setvbuf(stdout, NULL, _IONBF, 0);
 
-	printf("Splitting package %s into %d parts: ", package, nparts);
+	printf(P_("Splitting package %s into %d part: ",
+	          "Splitting package %s into %d parts: ", nparts),
+	       package, nparts);
 
 	if (msdos) {
 		char *t;
@@ -159,40 +166,33 @@ mksplit(const char *file_src, const char *prefix, size_t partsize,
 		prefix = clean_msdos_filename(msdos_prefix);
 	}
 
-	partdata = m_malloc(partsize);
-	curpart = 1;
-
-	for (startat = 0; startat < st.st_size; startat += partsize) {
+	for (curpart = 1; curpart <= nparts; curpart++) {
 		int fd_dst;
-		ssize_t partrealsize;
 
-		varbufreset(&file_dst);
+		varbuf_reset(&file_dst);
 		/* Generate output filename. */
 		if (msdos) {
-			struct varbuf refname = VARBUF_INIT;
+			char *refname;
 			int prefix_max;
 
-			varbufprintf(&refname, "%dof%d", curpart, nparts);
-			prefix_max = max(8 - strlen(refname.buf), 0);
-			varbufprintf(&file_dst, "%s/%.*s%.8s.deb",
-			             prefixdir, prefix_max, prefix,
-			             refname.buf);
-			varbuf_destroy(&refname);
+			m_asprintf(&refname, "%dof%d", curpart, nparts);
+			prefix_max = max(8 - strlen(refname), 0);
+			varbuf_printf(&file_dst, "%s/%.*s%.8s.deb",
+			              prefixdir, prefix_max, prefix, refname);
+			free(refname);
 		} else {
-			varbufprintf(&file_dst, "%s.%dof%d.deb",
-			             prefix, curpart, nparts);
+			varbuf_printf(&file_dst, "%s.%dof%d.deb",
+			              prefix, curpart, nparts);
 		}
 
-		/* Read data from the original package. */
-		partrealsize = read(fd_src, partdata, partsize);
-		if (partrealsize < 0)
-			ohshite("mksplit: read");
+		if (curpart == nparts)
+			partsize = last_partsize;
 
-		if ((size_t)partrealsize > maxpartsize) {
-			ohshit("Header is too long, making part too long. "
+		if (partsize > maxpartsize) {
+			ohshit(_("Header is too long, making part too long. "
 			       "Your package name or version\n"
 			       "numbers must be extraordinarily long, "
-			       "or something. Giving up.\n");
+			       "or something. Giving up.\n"));
 		}
 
 		/* Split the data. */
@@ -204,37 +204,35 @@ mksplit(const char *file_src, const char *prefix, size_t partsize,
 		dpkg_ar_put_magic(file_dst.buf, fd_dst);
 
 		/* Write the debian-split part. */
-		varbufprintf(&partmagic, "%s\n%s\n%s\n%s\n%zu\n%zu\n%d/%d\n",
-		             SPLITVERSION, package, version, hash,
-		             st.st_size, partsize, curpart, nparts);
+		varbuf_printf(&partmagic, "%s\n%s\n%s\n%s\n%jd\n%jd\n%d/%d\n",
+		              SPLITVERSION, package, version, hash,
+		              (intmax_t)st.st_size, (intmax_t)partsize,
+		              curpart, nparts);
 		dpkg_ar_member_put_mem(file_dst.buf, fd_dst, PARTMAGIC,
 		                       partmagic.buf, partmagic.used);
-		varbufreset(&partmagic);
+		varbuf_reset(&partmagic);
 
 		/* Write the data part. */
-		varbufprintf(&partname, "data.%d", curpart);
-		dpkg_ar_member_put_mem(file_dst.buf, fd_dst, partname.buf,
-		                       partdata, (size_t)partrealsize);
-		varbufreset(&partname);
+		varbuf_printf(&partname, "data.%d", curpart);
+		dpkg_ar_member_put_file(file_dst.buf, fd_dst, partname.buf,
+		                        fd_src, partsize);
+		varbuf_reset(&partname);
 
 		close(fd_dst);
 
 		printf("%d ", curpart);
-
-		curpart++;
 	}
 
 	varbuf_destroy(&file_dst);
 	varbuf_destroy(&partname);
 	varbuf_destroy(&partmagic);
-	free(partdata);
 
 	free(prefixdir);
 	free(msdos_prefix);
 
 	close(fd_src);
 
-	printf("done\n");
+	printf(_("done\n"));
 
 	return 0;
 }
@@ -243,9 +241,6 @@ void
 do_split(const char *const *argv)
 {
 	const char *sourcefile, *prefix;
-	char *palloc;
-	int l;
-	size_t partsize;
 
 	sourcefile = *argv++;
 	if (!sourcefile)
@@ -254,6 +249,9 @@ do_split(const char *const *argv)
 	if (prefix && *argv)
 		badusage(_("--split takes at most a source filename and destination prefix"));
 	if (!prefix) {
+		char *palloc;
+		int l;
+
 		l = strlen(sourcefile);
 		palloc = nfmalloc(l + 1);
 		strcpy(palloc, sourcefile);
@@ -263,9 +261,8 @@ do_split(const char *const *argv)
 		}
 		prefix = palloc;
 	}
-	partsize = opt_maxpartsize - HEADERALLOWANCE;
 
-	mksplit(sourcefile, prefix, partsize, opt_maxpartsize, opt_msdos);
+	mksplit(sourcefile, prefix, opt_maxpartsize, opt_msdos);
 
 	exit(0);
 }

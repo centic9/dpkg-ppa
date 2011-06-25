@@ -52,7 +52,7 @@ static const char *const methoddirectories[]= {
   LIBDIR "/" METHODSDIR,
   LOCALLIBDIR "/" METHODSDIR,
   0
-};    
+};
 
 static char *methodlockfile= 0;
 static int methlockfd= -1;
@@ -105,13 +105,9 @@ static enum urqresult ensureoptions(void) {
 static enum urqresult lockmethod(void) {
   struct flock fl;
 
-  if (!methodlockfile) {
-    int l;
-    l= strlen(admindir);
-    methodlockfile= new char[l+sizeof(METHLOCKFILE)+2];
-    strcpy(methodlockfile,admindir);
-    strcpy(methodlockfile+l, "/" METHLOCKFILE);
-  }
+  if (methodlockfile == NULL)
+    methodlockfile = dpkg_db_get_path(METHLOCKFILE);
+
   if (methlockfd == -1) {
     methlockfd= open(methodlockfile, O_RDWR|O_CREAT|O_TRUNC, 0660);
     if (methlockfd == -1) {
@@ -139,42 +135,28 @@ static enum urqresult lockmethod(void) {
 static urqresult
 falliblesubprocess(struct command *cmd)
 {
-  pid_t c1;
+  pid_t pid;
   int status, i, c;
-  
+
   cursesoff();
 
   subproc_signals_setup(cmd->name);
 
-  c1 = subproc_fork();
-  if (!c1) {
+  pid = subproc_fork();
+  if (pid == 0) {
     subproc_signals_cleanup(0, 0);
     command_exec(cmd);
   }
 
-  status = subproc_wait(c1, cmd->name);
+  status = subproc_wait(pid, cmd->name);
 
   pop_cleanup(ehflag_normaltidy);
 
-  if (WIFEXITED(status) && !WEXITSTATUS(status)) {
+  fprintf(stderr, "\n");
+  i = subproc_check(status, cmd->name, PROCWARN);
+  if (i == 0) {
     sleep(1);
     return urqr_normal;
-  }
-  fprintf(stderr, "\n%s ", cmd->name);
-  if (WIFEXITED(status)) {
-    i= WEXITSTATUS(status);
-    fprintf(stderr,_("returned error exit status %d.\n"),i);
-  } else if (WIFSIGNALED(status)) {
-    i= WTERMSIG(status);
-    if (i == SIGINT) {
-      fprintf(stderr,_("was interrupted.\n"));
-    } else {
-      fprintf(stderr,_("was terminated by a signal: %s.\n"),strsignal(i));
-    }
-    if (WCOREDUMP(status))
-      fprintf(stderr,_("(It left a coredump.)\n"));
-  } else {
-    fprintf(stderr,_("failed with an unknown wait return code %d.\n"),status);
   }
   fprintf(stderr,_("Press <enter> to continue.\n"));
   m_output(stderr, _("<standard error>"));
@@ -197,8 +179,8 @@ static urqresult runscript(const char *exepath, const char *name) {
     strcpy(coption->meth->pathinmeth,exepath);
 
     command_init(&cmd, coption->meth->path, name);
-    command_add_args(&cmd, exepath, admindir, coption->meth->name,
-                     coption->name, NULL);
+    command_add_args(&cmd, exepath, dpkg_db_get_dir(),
+                     coption->meth->name, coption->name, NULL);
     ur = falliblesubprocess(&cmd);
     command_destroy(&cmd);
   } else {
@@ -223,7 +205,7 @@ static urqresult rundpkgauto(const char *name, const char *dpkgmode) {
   struct command cmd;
 
   command_init(&cmd, DPKG, name);
-  command_add_args(&cmd, DPKG, "--admindir", admindir, "--pending",
+  command_add_args(&cmd, DPKG, "--admindir", dpkg_db_get_dir(), "--pending",
                    dpkgmode, NULL);
 
   cursesoff();
@@ -262,15 +244,15 @@ urqresult urq_setup(void) {
     strcpy(coption->meth->pathinmeth,METHODSETUPSCRIPT);
 
     command_init(&cmd, coption->meth->path, _("query/setup script"));
-    command_add_args(&cmd, METHODSETUPSCRIPT, admindir, coption->meth->name,
-                     coption->name, NULL);
+    command_add_args(&cmd, METHODSETUPSCRIPT, dpkg_db_get_dir(),
+                     coption->meth->name, coption->name, NULL);
     ur = falliblesubprocess(&cmd);
     command_destroy(&cmd);
     if (ur == urqr_normal) writecurrentopt();
   } else {
     ur= urqr_fail;
   }
-  
+
   pop_cleanup(ehflag_normaltidy);
   return ur;
 }

@@ -1,8 +1,8 @@
 /*
- * dpkg - main program for package management
- * glob.c - file globing functions
+ * libdpkg - main program for package management
+ * fdio.h - safe file descriptor based input/output
  *
- * Copyright © 2009, 2010 Guillem Jover <guillem@debian.org>
+ * Copyright © 2009-2010 Guillem Jover <guillem@debian.org>
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,34 +18,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <config.h>
-#include <compat.h>
+#ifndef LIBDPKG_FDIO_H
+#define LIBDPKG_FDIO_H
 
-#include <stdlib.h>
+#include <sys/types.h>
 
-#include <dpkg/dpkg.h>
+#include <dpkg/macros.h>
 
-#include "glob.h"
+DPKG_BEGIN_DECLS
 
-void
-glob_list_prepend(struct glob_node **list, char *pattern)
-{
-	struct glob_node *node;
+ssize_t fd_read(int fd, void *buf, size_t len);
+ssize_t fd_write(int fd, const void *buf, size_t len);
 
-	node = m_malloc(sizeof(*node));
-	node->pattern = pattern;
-	node->next = *list;
-	*list = node;
-}
+DPKG_END_DECLS
 
-void
-glob_list_free(struct glob_node *head)
-{
-	while (head) {
-		struct glob_node *node = head;
-
-		head = head->next;
-		free(node->pattern);
-		free(node);
-	}
-}
+#endif /* LIBDPKG_FDIO_H */
