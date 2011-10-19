@@ -1,3 +1,10 @@
+dpkg (1.16.0~ubuntu7.2~ppa1) lucid; urgency=low
+
+  * Upgrade to newer version in order to get libserf in order to get
+    Subversion 1.7.
+
+ -- Dominik Stadler (Ubuntu key) <dominik.stadler@gmx.at>  Wed, 19 Oct 2011 12:23:03 +0200
+
 dpkg (1.16.0~ubuntu7.1) natty-proposed; urgency=low
 
   * src/packages.c: fix use of --force-depends so that it works again for
