@@ -1,3 +1,9 @@
+dpkg (1.16.0~ubuntu7.2~ppa1natty1) natty; urgency=low
+
+  * Also build for Natty.
+
+ -- Dominik Stadler (Ubuntu key) <dominik.stadler@gmx.at>  Sat, 29 Oct 2011 16:37:11 +0200
+
 dpkg (1.16.0~ubuntu7.2~ppa1maverick1) maverick; urgency=low
 
   * Also build for Maverick.
