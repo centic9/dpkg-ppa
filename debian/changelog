@@ -1,3 +1,9 @@
+dpkg (1.16.0~ubuntu7.2~ppa1maverick1) maverick; urgency=low
+
+  * Also build for Maverick.
+
+ -- Dominik Stadler (Ubuntu key) <dominik.stadler@gmx.at>  Sat, 29 Oct 2011 16:34:48 +0200
+
 dpkg (1.16.0~ubuntu7.2~ppa1) lucid; urgency=low
 
   * Upgrade to newer version in order to get libserf in order to get
