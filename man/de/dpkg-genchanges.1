@@ -2,7 +2,7 @@
 .\"
 .\" Copyright Â© 1995-1996 Ian Jackson <ian@chiark.chu.cam.ac.uk>
 .\" Copyright Â© 2000 Wichert Akkerman <wakkerma@debian.org>
-.\" Copyright Â© 2006-2012 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2006-2014 Guillem Jover <guillem@debian.org>
 .\" Copyright Â© 2008-2010 RaphaÃ«l Hertzog <hertzog@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
@@ -23,8 +23,8 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH dpkg\-genchanges 1 2012\-05\-04 Debian\-Projekt dpkg\-Hilfsprogramme
-.SH NAME
+.TH dpkg\-genchanges 1 2014\-09\-24 Debian\-Projekt dpkg\-Hilfsprogramme
+.SH BEZEICHNUNG
 dpkg\-genchanges \- erstelle Debian .changes\-Dateien
 .
 .SH ÜBERSICHT
@@ -37,6 +37,14 @@ Debian\-Quellcodebaum und aus den darin erzeugten Dateien und erzeugt eine
 Debian\-Steuerdatei für das Hochladen (die \fB.changes\fP\-Datei).
 .
 .SH OPTIONEN
+.TP 
+\fB\-g\fP
+Gibt an, dass nur die Quellen und architekturunabhängige Pakete hochgeladen
+werden sollen (keine architekturspezifischen Pakete werden enthalten sein).
+.TP 
+\fB\-G\fP
+Gibt an, dass nur die Quellen und architekturabhängige Pakete hochgeladen
+werden sollen (keine architekturunabhängigen Pakete werden enthalten sein).
 .TP 
 \fB\-b\fP, \fB\-B\fP, \fB\-A\fP
 Gibt an, das ein rein\-binärer Bau stattfindet (keine Quelldateien sollen
@@ -142,7 +150,7 @@ Die Liste der erstellten Dateien, die Teil der zum Hochladen vorbereiteten
 Dateien sind. \fBdpkg\-genchanges\fP liest hier die Daten, wenn es die Datei
 \&\fB.changes\fP erstellt.
 .SH ÜBERSETZUNG
-Die deutsche Übersetzung wurde 2004, 2006-2013 von Helge Kreutzmann
+Die deutsche Übersetzung wurde 2004, 2006-2015 von Helge Kreutzmann
 <debian@helgefjell.de>, 2007 von Florian Rehnisch <eixman@gmx.de> und
 2008 von Sven Joachim <svenjoac@gmx.de>
 angefertigt. Diese Übersetzung ist Freie Dokumentation; lesen Sie die

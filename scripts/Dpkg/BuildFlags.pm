@@ -78,24 +78,33 @@ sub load_vendor_defaults {
 	CPPFLAGS => '',
 	CFLAGS   => $default_flags,
 	CXXFLAGS => $default_flags,
+	OBJCFLAGS   => $default_flags,
+	OBJCXXFLAGS => $default_flags,
 	GCJFLAGS => $default_flags,
 	FFLAGS   => $default_flags,
+	FCFLAGS  => $default_flags,
 	LDFLAGS  => '',
     };
     $self->{origin} = {
 	CPPFLAGS => 'vendor',
 	CFLAGS   => 'vendor',
 	CXXFLAGS => 'vendor',
+	OBJCFLAGS   => 'vendor',
+	OBJCXXFLAGS => 'vendor',
 	GCJFLAGS => 'vendor',
 	FFLAGS   => 'vendor',
+	FCFLAGS  => 'vendor',
 	LDFLAGS  => 'vendor',
     };
     $self->{maintainer} = {
 	CPPFLAGS => 0,
 	CFLAGS   => 0,
 	CXXFLAGS => 0,
+	OBJCFLAGS   => 0,
+	OBJCXXFLAGS => 0,
 	GCJFLAGS => 0,
 	FFLAGS   => 0,
+	FCFLAGS  => 0,
 	LDFLAGS  => 0,
     };
     # The Debian vendor hook will add hardening build flags
@@ -122,8 +131,8 @@ Update flags from the user configuration.
 sub load_user_config {
     my ($self) = @_;
     my $confdir = $ENV{XDG_CONFIG_HOME};
-    $confdir ||= $ENV{HOME} . '/.config' if defined $ENV{HOME};
-    if (defined $confdir) {
+    $confdir ||= $ENV{HOME} . '/.config' if length $ENV{HOME};
+    if (length $confdir) {
         $self->update_from_conffile("$confdir/dpkg/buildflags.conf", 'user');
     }
 }
@@ -301,6 +310,8 @@ $source is the origin recorded for any build flag set or modified.
 
 sub update_from_conffile {
     my ($self, $file, $src) = @_;
+    local $_;
+
     return unless -e $file;
     open(my $conf_fh, '<', $file) or syserr(_g('cannot read %s'), $file);
     while (<$conf_fh>) {
@@ -427,6 +438,18 @@ sub list {
 
 =head1 CHANGES
 
+=head2 Version 1.03
+
+New method: $bf->get_feature_areas() to list possible values for
+$bf->get_features.
+
+New method $bf->is_maintainer_modified() and new optional parameter to
+$bf->set(), $bf->append(), $bf->prepend(), $bf->strip().
+
+=head2 Version 1.02
+
+New methods: $bf->get_features(), $bf->has_features(), $bf->set_feature().
+
 =head2 Version 1.01
 
 New method: $bf->prepend() very similar to append(). Implement support of
@@ -435,17 +458,9 @@ the prepend operation everywhere.
 New method: $bf->load_maintainer_config() that update the build flags
 based on the package maintainer directives.
 
-=head2 Version 1.02
+=head2 Version 1.00
 
-New methods: $bf->get_features(), $bf->has_features(), $bf->set_feature().
-
-=head2 Version 1.03
-
-New method: $bf->get_feature_areas() to list possible values for
-$bf->get_features.
-
-New method $bf->is_maintainer_modified() and new optional parameter to
-$bf->set(), $bf->append(), $bf->prepend(), $bf->strip().
+Mark the module as public.
 
 =head1 AUTHOR
 

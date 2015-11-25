@@ -41,38 +41,39 @@ test_subproc_fork(void)
 	pid = subproc_fork();
 	if (pid == 0)
 		exit(0);
-	ret = subproc_wait_check(pid, "subproc exit pass", PROCNOERR);
+	ret = subproc_reap(pid, "subproc exit pass", SUBPROC_RETERROR);
 	test_pass(ret == 0);
 
 	pid = subproc_fork();
 	if (pid == 0)
 		exit(128);
-	ret = subproc_wait_check(pid, "subproc exit fail", PROCNOERR);
+	ret = subproc_reap(pid, "subproc exit fail", SUBPROC_RETERROR);
 	test_pass(ret == 128);
 
 	/* Test signals. */
 	pid = subproc_fork();
 	if (pid == 0)
 		raise(SIGINT);
-	ret = subproc_wait_check(pid, "subproc signal", PROCWARN);
+	ret = subproc_reap(pid, "subproc signal", SUBPROC_WARN);
 	test_pass(ret == -1);
 
 	pid = subproc_fork();
 	if (pid == 0)
 		raise(SIGTERM);
-	ret = subproc_wait_check(pid, "subproc signal", PROCWARN);
+	ret = subproc_reap(pid, "subproc signal", SUBPROC_WARN);
 	test_pass(ret == -1);
 
 	pid = subproc_fork();
 	if (pid == 0)
 		raise(SIGPIPE);
-	ret = subproc_wait_check(pid, "subproc SIGPIPE", PROCWARN | PROCPIPE);
+	ret = subproc_reap(pid, "subproc SIGPIPE",
+	                   SUBPROC_WARN | SUBPROC_NOPIPE);
 	test_pass(ret == 0);
 
 	pid = subproc_fork();
 	if (pid == 0)
 		raise(SIGPIPE);
-	ret = subproc_wait_check(pid, "subproc SIGPIPE", PROCWARN);
+	ret = subproc_reap(pid, "subproc SIGPIPE", SUBPROC_WARN);
 	test_pass(ret == -1);
 }
 
@@ -81,10 +82,12 @@ test(void)
 {
 	int fd;
 
-	/* XXX: Shut up output, we just want the error code. */
+	test_plan(6);
+
+	/* XXX: Shut up stderr, we don't want the error output. */
 	fd = open("/dev/null", O_RDWR);
-	test_pass(fd >= 0);
-	dup2(fd, 1);
+	if (fd < 0)
+		test_bail("cannot open /dev/null");
 	dup2(fd, 2);
 
 	test_subproc_fork();

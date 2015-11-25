@@ -125,9 +125,9 @@ sub _sanity_check {
 	    if $self->{pid};
     # Check options
     my $to = my $from = 0;
-    foreach (qw(file handle string pipe)) {
-        $to++ if $opts{"to_$_"};
-        $from++ if $opts{"from_$_"};
+    foreach my $thing (qw(file handle string pipe)) {
+        $to++ if $opts{"to_$thing"};
+        $from++ if $opts{"from_$thing"};
     }
     croak 'exactly one to_* parameter is needed' if $to != 1;
     croak 'exactly one from_* parameter is needed' if $from != 1;
@@ -147,8 +147,9 @@ properly close the sub-process (and verify that it exited without error).
 =cut
 
 sub compress {
-    my $self = shift;
-    my %opts = $self->_sanity_check(@_);
+    my ($self, %opts) = @_;
+
+    $self->_sanity_check(%opts);
     my @prog = $self->get_compress_cmdline();
     $opts{exec} = \@prog;
     $self->{cmdline} = "@prog";
@@ -169,8 +170,9 @@ properly close the sub-process (and verify that it exited without error).
 =cut
 
 sub uncompress {
-    my $self = shift;
-    my %opts = $self->_sanity_check(@_);
+    my ($self, %opts) = @_;
+
+    $self->_sanity_check(%opts);
     my @prog = $self->get_uncompress_cmdline();
     $opts{exec} = \@prog;
     $self->{cmdline} = "@prog";
@@ -190,13 +192,19 @@ it for you.
 
 sub wait_end_process {
     my ($self, %opts) = @_;
-    $opts{cmdline} ||= $self->{cmdline};
+    $opts{cmdline} //= $self->{cmdline};
     wait_child($self->{pid}, %opts) if $self->{pid};
     delete $self->{pid};
     delete $self->{cmdline};
 }
 
 =back
+
+=head1 CHANGES
+
+=head2 Version 1.00
+
+Mark the module as public.
 
 =head1 AUTHOR
 

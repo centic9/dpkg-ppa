@@ -5,7 +5,7 @@
 .\" Copyright Â© 2000-2001 Wichert Akkerman <wakkerma@debian.org>
 .\" Copyright Â© 2002-2003 Adam Heath <doogie@debian.org>
 .\" Copyright Â© 2004 Scott James Remnant <keybuk@debian.org>
-.\" Copyright Â© 2008-2012 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2008-2014 Guillem Jover <guillem@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH start\-stop\-daemon 8 "17 giugno 2012" "Progetto Debian" "utilità dpkg"
+.TH start\-stop\-daemon 8 "26 marzo 2014" "Progetto Debian" "utilità dpkg"
 .SH NOME
 start\-stop\-daemon \- avvia e ferma i programmi demone di sistema
 .
@@ -38,11 +38,11 @@ terminazione dei processi a livello di sistema. Usando una delle opzioni
 corrispondenti, \fBstart\-stop\-daemon\fP può essere configurato per trovare le
 istanze esistenti di un processo in esecuzione.
 .PP
-Nota: a meno che non venga specificata l'opzione \fB\-\-pidfile\fP,
+Nota: a meno che non venga specificata l'opzione \fB\-\-pid\fP o \fB\-\-pidfile\fP,
 \fBstart\-stop\-daemon\fP si comporta in modo simile a
 \fBkillall\fP(1). \fBstart\-stop\-daemon\fP analizza la tabella dei processi
-cercando qualsiasi processo che corrisponde al nome, UID o GID (se
-specificati) di processo. Ogni processo che corrisponde impedirà a
+cercando qualsiasi processo che corrisponde al nome, PID del genitore, UID o
+GID (se specificati) di processo. Ogni processo che corrisponde impedirà a
 \fB\-\-start\fP di avviare il demone. Se viene specificata l'opzione \fB\-\-stop\fP a
 tutti i processi che corrispondono verrà inviato il segnale TERM (o quello
 specificato con \fB\-\-signal\fP o \fB\-\-retry\fP). Per i demoni che hanno processi
@@ -78,7 +78,15 @@ Visualizza informazioni sull'uso ed esce.
 Visualizza la versione del programma ed esce.
 .
 .SH OPZIONI
-.SS "Matching options"
+.SS "Opzioni per corrispondenze"
+.TP 
+\fB\-\-pid\fP \fIpid\fP
+Cerca un processo con il \fIpid\fP specificato. Il \fIpid\fP deve essere un numero
+maggiore di 0.
+.TP 
+\fB\-\-ppid\fP \fIppid\fP
+Cerca un processo con il \fIppid\fP specificato (PID genitore). Il \fIppid\fP deve
+essere un numero maggiore di 0.
 .TP 
 \fB\-p\fP, \fB\-\-pidfile\fP \fIfile\-pid\fP
 Controlla se un processo ha creato il file \fIfile\-pid\fP. Nota: usare questa
@@ -107,7 +115,7 @@ Cerca i processi di proprietà dell'utente specificato da \fInomeutente\fP o
 \fIuid\fP. Nota: l'uso di questa opzione di corrispondenza da sola farà sì che
 l'azione abbia effetto su tutti i processi corrispondenti all'utente.
 .
-.SS "Generic options"
+.SS "Opzioni generiche"
 .TP 
 \fB\-g\fP, \fB\-\-group\fP \fIgruppo\fP|\fIgid\fP
 Modifica in \fIgroup\fP o \fIgid\fP quando avvia il processo.
@@ -171,10 +179,10 @@ Cambia la directory e la chroot a \fIroot\fP prima di avviare il
 processo. Notare che anche il filepid viene scritto dopo chroot.
 .TP 
 \fB\-d\fP, \fB\-\-chdir\fP \fIpercorso\fP
-Chdir to \fIpath\fP before starting the process. This is done after the chroot
-if the \fB\-r\fP|\fB\-\-chroot\fP option is set. When not specified,
-\fBstart\-stop\-daemon\fP will chdir to the root directory before starting the
-process.
+Cambia la directory a \fIpercorso\fP prima di avviare il processo. Questo viene
+fatto dopo chroot, se viene usata l'opzione \fB\-r\fP|\fB\-\-chroot\fP. Quando non
+specificato, \fBstart\-stop\-daemon\fP cambia la directory in quella root prima
+di avviare il processo.
 .TP 
 \fB\-b\fP, \fB\-\-background\fP
 Usata tipicamente con i programmi che non si scollegano da soli. Questa
@@ -216,11 +224,16 @@ Imposta l'umask del processo prima di avviarlo.
 Usata quando si avvia un processo che non crea il proprio file PID. Questa
 opzione fa sì che \fBstart\-stop\-daemon\fP crei il file specificato con
 \fB\-\-pidfile\fP e che vi metta il PID immediatamente prima di eseguire il
-processo. Notare che il file non verrà rimosso quando il programma viene
-fermato. \fBNOTA:\fP questa funzionalità può non funzionare in tutti i casi. In
-particolar modo quando il programma eseguito fa il fork dal suo processo
-principale. Per questo è di solito utile solo quando usato in combinazione
-con l'opzione \fB\-\-background\fP.
+processo. Notare che il file verrà rimosso quando viene fermato il programma
+solamente se viene usato \fB\-\-remove\-pidfile\fP. \fBNOTA:\fP questa funzionalità
+può non funzionare in tutti i casi. In particolar modo quando il programma
+eseguito fa il fork dal suo processo principale. Per questo è di solito
+utile solo quando usato in combinazione con l'opzione \fB\-\-background\fP.
+.TP 
+\fB\-\-remove\-pidfile\fP
+Usato quando si ferma un programma che non rimuove il proprio file
+PID. Questa opzione farà sì che \fBstart\-stop\-daemon\fP rimuova il file a cui
+fa riferimento \fB\-\-pidfile\fP dopo aver fermato il processo.
 .TP 
 \fB\-v\fP, \fB\-\-verbose\fP
 Visualizza messaggi informativi dettagliati.

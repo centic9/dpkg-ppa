@@ -40,14 +40,14 @@ pozwalaj± równie¿ na podawanie warto¶ci opcji jako oddzielnego parametru.
 .
 .SH POLECENIA
 .TP 
-\fB\-x \fP\fInazwa\-pliku\fP\fB.dsc \fP[\fIkatalog\-wyj¶ciowy\fP]
-Rozpakowanie pakietu ¼ród³owego. Wymagane jest podanie jednego argumentu nie
-bêd±cego opcj±, nazwy pliku kontrolny pakietu ¼ród³owego (\fB.dsc\fP). Ponadto
-mo¿e byæ podany drugi opcjonalny argument niebêd±cy opcj±, okre¶laj±cy
-katalog, do którego pakiet ¼ród³owy ma zostaæ rozpakowany (katalog ten nie
-mo¿e istnieæ). Je¶li nie podano katalogu wyj¶ciowego, pakiet ¼ród³owy jest
-rozpakowywany do katalogu o nazwie \fI¼ród³o\fP\-\fIwersja\fP w ramach bie¿±cego
-katalogu roboczego.
+\fB\-x\fP, \fB\-\-extract\fP \fIfilename\fP.dsc [\fIoutput\-directory\fP]
+Extract a source package.  The \fB\-\-extract\fP alias was added in dpkg
+1.17.14.  One non\-option argument must be supplied, the name of the Debian
+source control file (\fB.dsc\fP).  An optional second non\-option argument may
+be supplied to specify the directory to extract the source package to, this
+must not exist. If no output directory is specified, the source package is
+extracted into a directory named \fIsource\fP\-\fIversion\fP under the current
+working directory.
 
 \fBdpkg\-source\fP odczyta nazwy innych plików tworz±cych pakiet ¼ród³owy z
 pliku kontrolnego; zak³adane jest, ¿e s± one w tym samym katalogu co
@@ -67,12 +67,12 @@ wszystkie formaty poza "1.0"), jego nazwa bêdzie umieszczona w pliku
 ¼ród³owego bêdzie domy¶lnie u¿ywany ten sam format.
 
 .TP 
-\fB\-b\fP, \fIkatalog\fP [\fIparametry\-zale¿ne\-od\-formatu\fP]
-Budowanie pakietu ¼ród³owego. Pierwszy argument nie bêd±cy opcj± przyjmowany
-jest jako nazwa katalogu zdebianizowanego drzewa ze ¼ród³ami (czyli
-zawieraj±cego podkatalog "debian" i byæ mo¿e zmiany w stosunku do
-oryginalnych plików). Zale¿nie od formatu pakietu ¼ród³owego u¿ywanego przy
-budowaniu pakietu, mog± byæ równie¿ akceptowane dodatkowe parametry.
+\fB\-b\fP, \fB\-\-build\fP \fIdirectory\fP [\fIformat\-specific\-parameters\fP]
+Build a source package.  The \fB\-\-build\fP alias was added in dpkg 1.17.14.
+The first non\-option argument is taken as the name of the directory
+containing the debianized source tree (i.e. with a debian sub\-directory and
+maybe changes to the original files).  Depending on the source package
+format used to build the package, additional parameters might be accepted.
 
 \fBdpkg\-source\fP bêdzie budowaæ pakiet ¼ród³owy z u¿yciem pierwszego
 znalezionego formatu z nastêpuj±cej listy, w kolejno¶ci: format(y)
@@ -85,9 +85,9 @@ i kiedy¶ zostanie usuniêty, dlatego nale¿y zawsze dokumentowaæ ¿±dany format
 
 .TP 
 \fB\-\-print\-format\fP \fIkatalog\fP
-Wy¶wietla format ¼ród³owy, który bêdzie u¿yty do zbudowania pakietu
-¼ród³owego, je¶li zostanie wywo³ane \fBdpkg\-source \-b \fP\fIkatalog\fP (z tymi
-samymi warunkami i parametrami).
+Print the source format that would be used to build the source package if
+\fBdpkg\-source \-\-build \fP\fIdirectory\fP was called (in the same conditions and
+with the same parameters).
 
 .TP 
 \fB\-\-before\-build\fP \fIkatalog\fP
@@ -162,7 +162,8 @@ Usuwa wyj¶ciowe pole pliku kontrolnego.
 Specify the compression to use for created files (tarballs and diffs).  Note
 that this option will not cause existing tarballs to be recompressed, it
 only affects new files. Supported values are: \fIgzip\fP, \fIbzip2\fP, \fIlzma\fP and
-\fIxz\fP.  \fIgzip\fP is the default. \fIxz\fP is only supported since dpkg 1.15.5.
+\fIxz\fP.  The default is \fIxz\fP for formats 2.0 and newer, and \fIgzip\fP for
+format 1.0. \fIxz\fP is only supported since dpkg 1.15.5.
 .TP 
 \fB\-z\fP\fIpoziom\fP, \fB\-\-compression\-level\fP=\fIpoziom\fP
 U¿ywany poziom kompresowania. Podobnie jak w wypadku \fB\-Z\fP, dotyczy tylko
@@ -238,6 +239,11 @@ podpisu OpenPGP, który móg³by byæ zweryfikowany przez klucze u¿ytkownika z
 pliku \fItrustedkeys.gpg\fP, jeden z kluczy twórców pakietu, lub jeden z
 oficjalnych kluczy Debiana (\fI/usr/share/keyrings/debian\-keyring.gpg\fP oraz
 \fI/usr/share/keyrings/debian\-maintainers.gpg\fP).
+.TP 
+\fB\-\-ignore\-bad\-version\fP
+Turns the bad source package version check into a non\-fatal warning.  This
+option should only be necessary when extracting ancient source packages with
+broken versions, just for backwards compatibility.
 
 .SH "FORMATY PAKIETÓW ¬RÓD£OWYCH"
 Je¶li nie wiadomo którego formatu ¼róde³ u¿yæ, powinno siê wybraæ
@@ -271,7 +277,7 @@ rozpakowanie oryginalnego archiwum do oddzielnego katalogu z przyrostkiem
 ".orig" i regeneracjê pliku \fB.diff.gz\fP poprzez porównanie \fIkatalogu\fP
 pakietu ¼ród³owego z katalogiem ".orig".
 
-\fBOpcje budowania (z \-b):\fP
+\fBBuild options (with \-\-build):\fP
 
 Buduje pakiet ¼ród³owy. Nale¿y podaæ jeden lub dwa argumenty, nie bêd±ce
 opcjami. Pierwszym z nich jest nazwa katalogu zawieraj±cego rozpakowane
@@ -335,8 +341,9 @@ Proces zwróci b³±d, je¶li wygenerowany plik ró¿nic zawiera zmiany w plikach
 spoza podkatalogu debian. Opcja ta nie mo¿e byæ u¿yta w
 \fBdebian/source/options\fP, lecz mo¿e byæ u¿yta w
 \fBdebian/source/local\-options\fP.
+.PP
 
-\fBOpcje rozpakowywania (z \-x):\fP
+\fBExtract options (with \-\-extract):\fP
 
 We wszystkich przypadkach, istniej±ce oryginalne drzewo ze ¼ród³ami bêdzie
 usuniête.
@@ -450,13 +457,12 @@ files as well as many temporary files (see default value associated to \fB\-i\fP
 option in the \fB\-\-help\fP output). In particular, the \fB.pc\fP directory used by
 \fBquilt\fP is ignored during generation of the automatic patch.
 
-Uwaga: \fBdpkg\-source\fP \fB\-\-before\-build\fP (i \fB\-b\fP) upewni siê, ¿e drzewo ze
-¼ród³ami bêdzie mieæ na³o¿one wszystkie ³atki okre¶lone w pliku series
-podczas generowania pakietu ¼ród³owego. Czyni to odnajduj±c niezaaplikowane
-³atki (s± one wypisane w pliku \fBseries\fP, lecz nie s± w
-\&\fB.pc/applied\-patches\fP), a je¶li pierwsza ³atka z tego zestawu mo¿e byæ
-zaaplikowana bez b³êdów, zostan± zaaplikowane wszystkie. Opcja
-\fB\-\-no\-preparation\fP mo¿e byæ u¿yta, aby wy³±czyæ to zachowanie.
+Note: \fBdpkg\-source\fP \fB\-\-before\-build\fP (and \fB\-\-build\fP) will ensure that all
+patches listed in the series file are applied so that a package build always
+has all patches applied. It does this by finding unapplied patches (they are
+listed in the \fBseries\fP file but not in \fB.pc/applied\-patches\fP), and if the
+first patch in that set can be applied without errors, it will apply them
+all. The option \fB\-\-no\-preparation\fP can be used to disable this behavior.
 
 .PP
 \fBZapisywanie zmian\fP
@@ -475,10 +481,10 @@ integracji. Proszê zauwa¿yæ, ¿e zmiany zawarte w pliku ³atki musz± byæ ju¿
 zaaplikowane w drzewie i ¿e pliki zmodyfikowane przez ³atkê nie mog±
 zawieraæ uzupe³niaj±cych, niezapisanych zmian.
 
-Je¶li przy generowaniu ³atki wykryte zostan± zmodyfikowane pliki binarne,
-zostan± one automatycznie dodane do \fBdebian/source/include\-binaries\fP, przez
-co znajd± siê one w archiwum debian (dok³adnie jak zrobi³oby \fBdpkg\-source
-\-\-include\-binaries \-b\fP).
+If the patch generation detects modified binary files, they will be
+automatically added to \fBdebian/source/include\-binaries\fP so that they end up
+in the debian tarball (exactly like \fBdpkg\-source \-\-include\-binaries
+\-\-build\fP would do).
 .PP
 \fBOpcje budowania\fP
 .TP 
@@ -675,10 +681,10 @@ powinny byæ zawarte w archiwum debian. Pocz±tkowe i koñcowe znaki spacji s±
 usuwane. Linie rozpoczynaj±ce siê od "#" s± traktowane jak komentarze i s±
 pomijane, puste linie s± ignorowane.
 .SS debian/source/options
-Plik zawiera listê d³ugich opcji, które powinny byæ automatycznie dodawane
-na pocz±tku zestawu opcji wiersza polecenia wywo³ania \fBdpkg\-source \-b\fP lub
-\fBdpkg\-source \-\-print\-format\fP. Do tego pliku ¶wietnie nadaj± siê opcje takie
-jak \fB\-\-compression\fP i \fB\-\-compression\-level\fP.
+This file contains a list of long options that should be automatically
+prepended to the set of command line options of a \fBdpkg\-source \-\-build\fP or
+\fBdpkg\-source \-\-print\-format\fP call. Options like \fB\-\-compression\fP and
+\fB\-\-compression\-level\fP are well suited for this file.
 .P
 Ka¿da opcja powinna byæ umieszczona w osobnym wierszu. Puste wiersze i
 wiersze zaczynaj±ce siê od znaku "#" s± ignorowane. Pocz±tkowe "\-\-" powinno
@@ -701,7 +707,7 @@ Dok³adnie jak \fBdebian/source/options\fP z tym wyj±tkiem, ¿e plik nie jest
 do³±czany do wygenerowanego pakietu ¼ród³owego. Mo¿e byæ przydatny aby
 przechowaæ preferencje opiekuna lub repozytorium VCS, gdzie pakiet ¼ród³owy
 jest zarz±dzany.
-.SS "debian/source/local\-patch\-header and debian/source/patch\-header"
+.SS "debian/source/local\-patch\-header \fRand\fP debian/source/patch\-header"
 Tekst w dowolnej postaci, który zostanie umieszczony na górze ³atki
 wygenerowanej automatycznie, w formacie "2.0" lub "3.0
 (quilt). \fBlocal\-patch\-header\fP nie jest do³±czone w generowanym pakiecie

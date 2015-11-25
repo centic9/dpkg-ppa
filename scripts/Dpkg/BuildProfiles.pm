@@ -18,11 +18,13 @@ package Dpkg::BuildProfiles;
 use strict;
 use warnings;
 
-our $VERSION = '0.01';
-our @EXPORT_OK = qw(get_build_profiles set_build_profiles);
+our $VERSION = '1.00';
+our @EXPORT_OK = qw(get_build_profiles set_build_profiles parse_build_profiles
+                    evaluate_restriction_formula);
 
 use Exporter qw(import);
 
+use Dpkg::Util qw(:list);
 use Dpkg::BuildEnv;
 
 my $cache_profiles;
@@ -54,7 +56,7 @@ sub get_build_profiles {
     return @build_profiles if $cache_profiles;
 
     if (Dpkg::BuildEnv::has('DEB_BUILD_PROFILES')) {
-        @build_profiles = split / /, Dpkg::BuildEnv::get('DEB_BUILD_PROFILES');
+        @build_profiles = split /\s+/, Dpkg::BuildEnv::get('DEB_BUILD_PROFILES');
     }
     $cache_profiles = 1;
 
@@ -75,7 +77,64 @@ sub set_build_profiles {
     Dpkg::BuildEnv::set('DEB_BUILD_PROFILES', join ' ', @profiles);
 }
 
+=item my @profiles = parse_build_profiles($string)
+
+Parses a build profiles specification, into an array of array references.
+
+=cut
+
+sub parse_build_profiles {
+    my $string = shift;
+
+    $string =~ s/^\s*<(.*)>\s*$/$1/;
+
+    return map { [ split /\s+/ ] } split />\s+</, $string;
+}
+
+=item evaluate_restriction_formula(\@formula, \@profiles)
+
+Evaluate whether a restriction formula of the form "<foo bar> <baz>", given as
+a nested array, is true or false, given the array of enabled build profiles.
+
+=cut
+
+sub evaluate_restriction_formula {
+    my ($formula, $profiles) = @_;
+
+    # Restriction formulas are in disjunctive normal form:
+    # (foo AND bar) OR (blub AND bla)
+    foreach my $restrlist (@{$formula}) {
+        my $seen_profile = 1;
+
+        foreach my $restriction (@$restrlist) {
+            next if $restriction !~ m/^(!)?(.+)/;
+
+            my $negated = defined $1 && $1 eq '!';
+            my $profile = $2;
+            my $found = any { $_ eq $profile } @{$profiles};
+
+            # If a negative set profile is encountered, stop processing.
+            # If a positive unset profile is encountered, stop processing.
+            if ($found == $negated) {
+                $seen_profile = 0;
+                last;
+            }
+        }
+
+        # This conjunction evaluated to true so we don't have to evaluate
+        # the others.
+        return 1 if $seen_profile;
+    }
+    return 0;
+}
+
 =back
+
+=head1 CHANGES
+
+=head2 Version 1.00
+
+Mark the module as public.
 
 =cut
 

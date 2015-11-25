@@ -4,7 +4,7 @@
  *
  * Copyright © 1995,1996 Ian Jackson <ian@chiark.greenend.org.uk>
  * Copyright © 2000,2001 Wichert Akkerman <wakkerma@debian.org>
- * Copyright © 2006-2012 Guillem Jover <guillem@debian.org>
+ * Copyright © 2006-2014 Guillem Jover <guillem@debian.org>
  * Copyright © 2011 Linaro Limited
  * Copyright © 2011 Raphaël Hertzog <hertzog@debian.org>
  *
@@ -117,6 +117,9 @@ list_format_init(struct list_format *fmt, struct pkg_array *array)
 
     for (i = 0; i < array->n_pkgs; i++) {
       int plen, vlen, alen, dlen;
+
+      if (array->pkgs[i] == NULL)
+        continue;
 
       plen = str_width(pkg_name(array->pkgs[i], pnaw_nonambig));
       vlen = str_width(versiondescribe(&array->pkgs[i]->installed.version,
@@ -240,6 +243,21 @@ list1package(struct pkginfo *pkg, struct list_format *fmt, struct pkg_array *arr
                     pdesc, l);
 }
 
+static void
+list_found_packages(struct list_format *fmt, struct pkg_array *array)
+{
+  int i;
+
+  for (i = 0; i < array->n_pkgs; i++) {
+    struct pkginfo *pkg = array->pkgs[i];
+
+    if (pkg == NULL)
+      continue;
+
+    list1package(pkg, fmt, array);
+  }
+}
+
 static int
 listpackages(const char *const *argv)
 {
@@ -262,9 +280,11 @@ listpackages(const char *const *argv)
   if (!*argv) {
     for (i = 0; i < array.n_pkgs; i++) {
       pkg = array.pkgs[i];
-      if (pkg->status == stat_notinstalled) continue;
-      list1package(pkg, &fmt, &array);
+      if (pkg->status == PKG_STAT_NOTINSTALLED)
+        array.pkgs[i] = NULL;
     }
+
+    list_found_packages(&fmt, &array);
   } else {
     int argc, ip, *found;
     struct pkg_spec *ps;
@@ -274,7 +294,7 @@ listpackages(const char *const *argv)
 
     ps = m_malloc(sizeof(*ps) * argc);
     for (ip = 0; ip < argc; ip++) {
-      pkg_spec_init(&ps[ip], psf_patterns | psf_arch_def_wildcard);
+      pkg_spec_init(&ps[ip], PKG_SPEC_PATTERNS | PKG_SPEC_ARCH_WILDCARD);
       pkg_spec_parse(&ps[ip], argv[ip]);
     }
 
@@ -282,12 +302,15 @@ listpackages(const char *const *argv)
       pkg = array.pkgs[i];
       for (ip = 0; ip < argc; ip++) {
         if (pkg_spec_match_pkg(&ps[ip], pkg, &pkg->installed)) {
-          list1package(pkg, &fmt, &array);
           found[ip]++;
           break;
         }
       }
+      if (ip == argc)
+        array.pkgs[i] = NULL;
     }
+
+    list_found_packages(&fmt, &array);
 
     /* FIXME: we might get non-matching messages for sub-patterns specified
      * after their super-patterns, due to us skipping on first match. */
@@ -433,20 +456,15 @@ enqperpackage(const char *const *argv)
     modstatdb_open(msdbrw_readonly);
 
   while ((thisarg = *argv++) != NULL) {
-    struct dpkg_error err;
-
-    pkg = pkg_spec_parse_pkg(thisarg, &err);
-    if (pkg == NULL)
-      badusage(_("--%s needs a valid package name but '%.250s' is not: %s"),
-               cipaction->olong, thisarg, err.str);
+    pkg = dpkg_options_parse_pkgname(cipaction, thisarg);
 
     switch (cipaction->arg_int) {
     case act_status:
-      if (pkg->status == stat_notinstalled &&
-          pkg->priority == pri_unknown &&
+      if (pkg->status == PKG_STAT_NOTINSTALLED &&
+          pkg->priority == PKG_PRIO_UNKNOWN &&
           str_is_unset(pkg->section) &&
           !pkg->files &&
-          pkg->want == want_unknown &&
+          pkg->want == PKG_WANT_UNKNOWN &&
           !pkg_is_informative(pkg, &pkg->installed)) {
         notice(_("package '%s' is not installed and no information is available"),
                pkg_name(pkg, pnaw_nonambig));
@@ -466,7 +484,7 @@ enqperpackage(const char *const *argv)
       break;
     case act_listfiles:
       switch (pkg->status) {
-      case stat_notinstalled:
+      case PKG_STAT_NOTINSTALLED:
         notice(_("package '%s' is not installed"),
                pkg_name(pkg, pnaw_nonambig));
         failures++;
@@ -549,7 +567,8 @@ showpackages(const char *const *argv)
   if (!*argv) {
     for (i = 0; i < array.n_pkgs; i++) {
       pkg = array.pkgs[i];
-      if (pkg->status == stat_notinstalled) continue;
+      if (pkg->status == PKG_STAT_NOTINSTALLED)
+        continue;
       pkg_format_show(fmt, pkg, &pkg->installed);
     }
   } else {
@@ -561,7 +580,7 @@ showpackages(const char *const *argv)
 
     ps = m_malloc(sizeof(*ps) * argc);
     for (ip = 0; ip < argc; ip++) {
-      pkg_spec_init(&ps[ip], psf_patterns | psf_arch_def_wildcard);
+      pkg_spec_init(&ps[ip], PKG_SPEC_PATTERNS | PKG_SPEC_ARCH_WILDCARD);
       pkg_spec_parse(&ps[ip], argv[ip]);
     }
 
@@ -661,7 +680,6 @@ control_path_file(struct pkginfo *pkg, const char *control_file)
 static int
 control_path(const char *const *argv)
 {
-  struct dpkg_error err;
   struct pkginfo *pkg;
   const char *pkgname;
   const char *control_file;
@@ -680,12 +698,8 @@ control_path(const char *const *argv)
 
   modstatdb_open(msdbrw_readonly);
 
-  pkg = pkg_spec_parse_pkg(pkgname, &err);
-  if (pkg == NULL)
-    badusage(_("--%s needs a valid package name but '%.250s' is not: %s"),
-             cipaction->olong, pkgname, err.str);
-
-  if (pkg->status == stat_notinstalled)
+  pkg = dpkg_options_parse_pkgname(cipaction, pkgname);
+  if (pkg->status == PKG_STAT_NOTINSTALLED)
     ohshit(_("package '%s' is not installed"),
            pkg_name(pkg, pnaw_nonambig));
 
@@ -702,7 +716,6 @@ control_path(const char *const *argv)
 static int
 control_list(const char *const *argv)
 {
-  struct dpkg_error err;
   struct pkginfo *pkg;
   const char *pkgname;
 
@@ -712,12 +725,8 @@ control_list(const char *const *argv)
 
   modstatdb_open(msdbrw_readonly);
 
-  pkg = pkg_spec_parse_pkg(pkgname, &err);
-  if (pkg == NULL)
-    badusage(_("--%s needs a valid package name but '%.250s' is not: %s"),
-             cipaction->olong, pkgname, err.str);
-
-  if (pkg->status == stat_notinstalled)
+  pkg = dpkg_options_parse_pkgname(cipaction, pkgname);
+  if (pkg->status == PKG_STAT_NOTINSTALLED)
     ohshit(_("package '%s' is not installed"), pkg_name(pkg, pnaw_nonambig));
 
   pkg_infodb_foreach(pkg, &pkg->installed, pkg_infodb_print_filetype);
@@ -730,7 +739,6 @@ control_list(const char *const *argv)
 static int
 control_show(const char *const *argv)
 {
-  struct dpkg_error err;
   struct pkginfo *pkg;
   const char *pkgname;
   const char *filename;
@@ -749,12 +757,8 @@ control_show(const char *const *argv)
 
   modstatdb_open(msdbrw_readonly);
 
-  pkg = pkg_spec_parse_pkg(pkgname, &err);
-  if (pkg == NULL)
-    badusage(_("--%s needs a valid package name but '%.250s' is not: %s"),
-             cipaction->olong, pkgname, err.str);
-
-  if (pkg->status == stat_notinstalled)
+  pkg = dpkg_options_parse_pkgname(cipaction, pkgname);
+  if (pkg->status == PKG_STAT_NOTINSTALLED)
     ohshit(_("package '%s' is not installed"), pkg_name(pkg, pnaw_nonambig));
 
   if (pkg_infodb_has_file(pkg, &pkg->installed, control_file))

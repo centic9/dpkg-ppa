@@ -2,7 +2,7 @@
 .\"
 .\" Copyright 息 1996 Michael Shields <shields@crosslink.net>
 .\" Copyright 息 2006 Frank Lichtenheld <djpig@debian.org>
-.\" Copyright 息 2007 Guillem Jover <guillem@debian.org>
+.\" Copyright 息 2007, 2009, 2011-2014 Guillem Jover <guillem@debian.org>
 .\" Copyright 息 2009 Rapha谷l Hertzog <hertzog@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
@@ -64,6 +64,11 @@ dpkg\-scanpackages \- Packages インデックスファイルの作成
 .TP 
 \fB\-a\fP, \fB\-\-arch\fP \fIarch\fP
 すべての deb ファイルを検索する代わりに、\fI*_all.deb\fP および \fI*_arch.deb\fP といったパターンを検索する。
+.TP 
+\fB\-h\fP, \fB\-\-hash\fP \fIhash\-list\fP
+Only generate file hashes for the comma\-specified list specified.  The
+default is to generate all currently supported hashes.  Supported values:
+\fBmd5\fP, \fBsha1\fP, \fBsha256\fP.
 .TP 
 \fB\-m\fP, \fB\-\-multiversion\fP
 みつかったパッケージすべてを出力する。

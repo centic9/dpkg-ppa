@@ -3,7 +3,7 @@
  * extract.c - extracting archives
  *
  * Copyright © 1994,1995 Ian Jackson <ian@chiark.greenend.org.uk>
- * Copyright © 2006-2012 Guillem Jover <guillem@debian.org>
+ * Copyright © 2006-2014 Guillem Jover <guillem@debian.org>
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -62,7 +62,7 @@ static void movecontrolfiles(const char *thing) {
   if (pid == 0) {
     command_shell(buf, _("shell command to move files"));
   }
-  subproc_wait_check(pid, _("shell command to move files"), 0);
+  subproc_reap(pid, _("shell command to move files"), 0);
 }
 
 static void DPKG_ATTR_NORET
@@ -122,7 +122,7 @@ extracthalf(const char *debar, const char *dir,
   char nlc;
   int adminmember = -1;
   bool header_done;
-  enum compressor_type decompressor = compressor_type_gzip;
+  enum compressor_type decompressor = COMPRESSOR_TYPE_GZIP;
 
   arfd = open(debar, O_RDONLY);
   if (arfd < 0)
@@ -178,9 +178,18 @@ extracthalf(const char *debar, const char *dir,
         if (fd_skip(arfd, memberlen + (memberlen & 1), &err) < 0)
           ohshit(_("cannot skip archive member from '%s': %s"), debar, err.str);
       } else {
-	if (strncmp(arh.ar_name, ADMINMEMBER, sizeof(arh.ar_name)) == 0)
+        if (strncmp(arh.ar_name, ADMINMEMBER, strlen(ADMINMEMBER)) == 0) {
+          const char *extension = arh.ar_name + strlen(ADMINMEMBER);
+
 	  adminmember = 1;
-	else {
+          decompressor = compressor_find_by_extension(extension);
+          if (decompressor != COMPRESSOR_TYPE_NONE &&
+              decompressor != COMPRESSOR_TYPE_GZIP &&
+              decompressor != COMPRESSOR_TYPE_XZ)
+            ohshit(_("archive '%s' uses unknown compression for member '%.*s', "
+                     "giving up"),
+                   debar, (int)sizeof(arh.ar_name), arh.ar_name);
+        } else {
           if (adminmember != 1)
             ohshit(_("archive '%s' has premature member '%.*s' before '%s', "
                      "giving up"),
@@ -191,7 +200,7 @@ extracthalf(const char *debar, const char *dir,
 
 	    adminmember= 0;
 	    decompressor = compressor_find_by_extension(extension);
-            if (decompressor == compressor_type_unknown)
+            if (decompressor == COMPRESSOR_TYPE_UNKNOWN)
               ohshit(_("archive '%s' uses unknown compression for member '%.*s', "
                        "giving up"),
                      debar, (int)sizeof(arh.ar_name), arh.ar_name);
@@ -347,12 +356,12 @@ extracthalf(const char *debar, const char *dir,
       command_exec(&cmd);
     }
     close(p2[0]);
-    subproc_wait_check(c3, "tar", 0);
+    subproc_reap(c3, "tar", 0);
   }
 
-  subproc_wait_check(c2, _("<decompress>"), PROCPIPE);
+  subproc_reap(c2, _("<decompress>"), SUBPROC_NOPIPE);
   if (c1 != -1)
-    subproc_wait_check(c1, _("paste"), 0);
+    subproc_reap(c1, _("paste"), 0);
   if (version.major == 0 && admininfo) {
     /* Handle the version as a float to preserve the behaviour of old code,
      * because even if the format is defined to be padded by 0's that might
@@ -365,6 +374,23 @@ extracthalf(const char *debar, const char *dir,
     else if (version.minor == 932 || version.minor == 933)
       movecontrolfiles(OLDDEBDIR);
   }
+}
+
+int
+do_ctrltarfile(const char *const *argv)
+{
+  const char *debar;
+
+  debar = *argv++;
+  if (debar == NULL)
+    badusage(_("--%s needs a .deb filename argument"), cipaction->olong);
+  if (*argv)
+    badusage(_("--%s takes only one argument (.deb filename)"),
+             cipaction->olong);
+
+  extracthalf(debar, NULL, DPKG_TAR_PASSTHROUGH, 1);
+
+  return 0;
 }
 
 int

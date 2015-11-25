@@ -22,7 +22,7 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH deb\-src\-control 5 2013\-09\-17 Debianprojektet Debian
+.TH deb\-src\-control 5 2013\-12\-20 Debianprojektet Debian
 .SH NAMN
 deb\-src\-control \- Debians filformat för källkodspakets huvudstyrfil
 .
@@ -82,7 +82,21 @@ formatet är \fIsystemtyp\fP://\fIaddress\fP, till exempel
 nödvändigt.
 
 .TP 
-\fBVcs\-*:\fP\fI url\fP
+\fBVcs\-Arch:\fP\fI url\fP
+.TQ
+\fBVcs\-Bzr:\fP\fI url\fP
+.TQ
+\fBVcs\-Cvs:\fP\fI url\fP
+.TQ
+\fBVcs\-Darcs:\fP\fI url\fP
+.TQ
+\fBVcs\-Git:\fP\fI url\fP
+.TQ
+\fBVcs\-Hg:\fP\fI url\fP
+.TQ
+\fBVcs\-Mtn:\fP\fI url\fP
+.TQ
+\fBVcs\-Svn:\fP\fI url\fP
 \fIUrl\fP:en till versionshanteringsarkivet som används för att underhålla det
 här paketet. För närvarande stöds \fBArch\fP, \fBBzr\fP (Bazaar), \fBCvs\fP,
 \fBDarcs\fP, \fBGit\fP, \fBHg\fP (Mercurial), \fBMtn\fP (Monotone) och \fBSvn\fP
@@ -125,10 +139,10 @@ byggen av endast källkod.
 
 .TP 
 \fBBuild\-Depends\-Arch:\fP\fI paketlista\fP
-Same as \fBBuild\-Depends\fP, but they are only needed when building the
-architecture dependent packages. The \fBBuild\-Depends\fP are also installed in
-this case. This field is supported since dpkg 1.16.4; in order to build with
-older dpkg versions, \fBBuild\-Depends\fP should be used instead.
+Motsvarar \fBBuild\-Depends\fP, men de behövs endast för att bygga de
+arkitekturoberoende paketen. \fBBuild\-Depends\fP installeras också i detta
+fall. Det här fältet stöds sedan dpkg 1.16.4; för att bygga med äldre
+dpkg\-versioner bör \fBBuild\-Depends\fP användas istället.
 
 .TP 
 \fBBuild\-Depends\-Indep:\fP\fI paketlista\fP
@@ -146,9 +160,9 @@ effekten att den används för byggen av endast källkod.
 
 .TP 
 \fBBuild\-Conflicts\-Arch:\fP\fI paketlista\fP
-Same as \fBBuild\-Conflicts\fP, but only when building the architecture
-dependent packages. This field is supported since dpkg 1.16.4; in order to
-build with older dpkg versions, \fBBuild\-Conflicts\fP should be used instead.
+Motsvarar \fBBuild\-Conflicts\fP, men endast när arkitekturoberoende paket
+byggs. Fältet stöds sedan dpkg 1.16.4; för att bygga med äldre versioner av
+dpkg bör \fBBuild\-Conflicts\fP användas istället.
 
 .TP 
 \fBBuild\-Conflicts\-Indep:\fP\fI paketlista\fP
@@ -156,21 +170,23 @@ Motsvarar \fBBuild\-Conflicts\fP, men endast när de arkitekturoberoende paketen
 byggs.
 
 .PP
-The syntax of the \fBBuild\-Depends\fP, \fBBuild\-Depends\-Arch\fP and
-\fBBuild\-Depends\-Indep\fP fields is a list of groups of alternative
-packages. Each group is a list of packages separated by vertical bar (or
-"pipe") symbols, "|". The groups are separated by commas. Commas are to be
-read as "AND", and pipes as "OR", with pipes binding more tightly. Each
-package name is optionally followed by a version number specification in
-parentheses, an architecture specification in square brackets, and a profile
-specification in angle brackets.
+Syntaxen för fälten \fBBuild\-Depends\fP, \fBBuild\-Depends\-Arch\fP och
+\fBBuild\-Depends\-Indep\fP\-fälten är en lista med grupper av alternativa
+paket. Varje grupp innehåller en lista med paket avdelade med ett
+vertikalstreck (rör) ("|"). Grupperna avdelas med kommatecken. Komma utläses
+som "OCH", och vertikalstrecken som "ELLER", där vertikalstrecken binder
+hårdare. Varje paketnamn kan eventuellt följas av en versionsnummerangivelse
+inom parenteser, en arkitekturangivelse inom hakparenteser och en
+begränsningsformel som består av en eller flera listor med profilnamn inom
+vinkelparenteser.
 
-The syntax of the \fBBuild\-Conflicts\fP, \fBBuild\-Conflicts\-Arch\fP and
-\fBBuild\-Conflicts\-Indep\fP fields is a list of comma\-separated package names,
-where the comma is read as an "AND". Specifying alternative packages using a
-"pipe" is not supported.  Each package name is optionally followed by a
-version number specification in parentheses, an architecture specification
-in square brackets, and a profile specification in angle brackets.
+Syntaxen för fälten \fBBuild\-Conflicts\fP, \fBBuild\-Conflicts\-Arch\fP och
+\fBBuild\-Conflicts\-Indep\fP\-fälten är en kommaseparerad lista med paketnamn,
+där komma utläses som "OCH". Det är inte möjligt att ange alternativa paket
+med "rör". Varje paketnamn kan eventuellt följas av en
+versionsnummerangivelse inom parenteseren arkitekturangivelse inom
+hakparenteser och en begränsningsformel bestående av en eller flera listor
+med profilnamn inom vinkelparenteser.
 
 Ett versionsnummer kan börja med ">>", vilket betyder att vilken som
 helst senare version matchar, där det är valfritt att ange
@@ -179,13 +195,15 @@ Debianuppdateringen (avdelad med bindestreck).  Tillåtna versionrelationer
 större än eller lika med", "<=" för mindre än eller lika med, och "="
 för lika med.
 
-An architecture specification consists of one or more architecture names,
-separated by whitespace. Exclamation marks may be prepended to each of the
-names, meaning "NOT".
+En arkitekturangivelse består av ett eller flera arkitekturnamn, avdelade
+med blanktecken. Varje namn kan föregås av ett utropstecken, vilket betyder
+"ICKE".
 
-A profile specification consists of one or more profile names, prefixed with
-the "\fBprofile.\fP" namespace, separated by whitespace. Exclamation marks may
-be prepended to each of the names, meaning "NOT".
+En begränsningsformel består av en eller flera begränsningslistor, avdelade
+med blanksteg. Varje begränsningslista skrivs inom vinkelparenteser. Poster
+i begränsningslistan är namn på byggprofiler, avdelade av blanksteg och kan
+föregås av ett utropstecken, vilket betyder "INTE". En begränsningsformel
+representerar ett uttryck i disjunktiv normalform.
 
 Observera att beroenden på paket i \fBbuild\-essential\fP\-uppsättningen kan
 utelämnas och att det är omöjligt att deklarera byggkonflikter mot dem. En
@@ -233,7 +251,7 @@ Dessa fält används av debian\-installer och behövs normalt inte. Se
 .TP 
 \fBEssential:\fP \fByes\fP|\fBno\fP
 .TQ
-\fBMulti\-Arch:\fP \fBsame\fP|\fBforeign\fP|\fBallowed\fP
+\fBMulti\-Arch:\fP \fBsame\fP|\fBforeign\fP|\fBallowed\fP|\fBno\fP
 .TQ
 \fBTag:\fP\fI lista\-med\-märken\fP
 .TQ
@@ -280,8 +298,7 @@ changes\-filen och visas inte i styrfilerna för binär\- och källkodspaketen.
 Tänk på att dess användardefinierade fält använder den globala namnrymden,
 vilket en gång i framtiden kan komma att kollidera med officiellt erkända
 fält. För att undvika sådana potentiella situationer kan du använda prefixet
-\fBPrivate\-\fP för dessa fält, som \fBXB\-Private\-New\-Field\fP, vilket har som
-sidoeffekt att \fBdpkg\-deb\fP inte varnar för dem som okända fält.
+\fBPrivate\-\fP för dessa fält, som \fBXB\-Private\-New\-Field\fP.
 
 .SH EXEMPEL
 .\" .RS
@@ -294,8 +311,8 @@ Maintainer: Dpkg Developers <debian\-dpkg@lists.debian.org>
 # det här fältet kopieras till binär\- och källkodspaketen
 XBS\-Upstream\-Release\-Status: stable
 Homepage: https://wiki.debian.org/Teams/Dpkg
-Vcs\-Browser: http://git.debian.org/?p=dpkg/dpkg.git
-Vcs\-Git: git://git.debian.org/git/dpkg/dpkg.git
+Vcs\-Browser: https://anonscm.debian.org/cgit/dpkg/dpkg.git
+Vcs\-Git: git://anonscm.debian.org/dpkg/dpkg.git
 Standards\-Version: 3.7.3
 Build\-Depends: pkg\-config, debhelper (>= 4.1.81),
  libselinux1\-dev (>= 1.28\-4) [!linux\-any]

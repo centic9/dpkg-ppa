@@ -1,7 +1,7 @@
 .\" dpkg manual page - deb-triggers(5)
 .\"
-.\" Copyright Â© 2008, 2013 Guillem Jover <guillem@debian.org>
-.\" Copyright Â© 2011 RaphaÃ«l Hertzog <hertzog@debian.org>
+.\" Copyright Â© 2008, 2013, 2014 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2011, 2014 RaphaÃ«l Hertzog <hertzog@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH deb\-triggers 5 2013\-04\-02 "Projet Debian" "Utilitaires de dpkg"
+.TH deb\-triggers 5 15\-10\-2014 "Projet Debian" "Utilitaires de dpkg"
 .SH NOM
 deb\-triggers \- actions différées du paquet
 .
@@ -30,17 +30,20 @@ actions différées
 .
 .SH DESCRIPTION
 Un paquet déclare ses relations avec des actions différées en incluant un
-fichier \fItriggers\fP dans son archive de contrôle (c.\-à\-d. \fIDEBIAN/triggers\fP
-au moment de la création du paquet).
+fichier \fItriggers\fP dans son archive de contrôle (c'est\-à\-dire
+\fIDEBIAN/triggers\fP au moment de la création du paquet).
 .PP
 Ce fichier contient des directives, une par ligne. Les mises en page et
-autres espaces ainsi que ce qui suit le caractère \fB"#"\fP sont sautés, et les
-lignes vides seront ignorées.
+autres espaces ainsi que ce qui suit le caractère \fB«\ #\ »\fP sont sautés, et
+les lignes vides seront ignorées.
 .PP
 Les directives actuellement gérées sont\ :
 .PP
 .in +5
 \fBinterest\fP \fInom\-action\-différée\fP
+.PP
+.in +5
+\fBinterest\-await\fP \fInom\-action\-différée\fP
 .PP
 .in +5
 \fBinterest\-noawait\fP \fInom\-action\-différée\fP
@@ -56,6 +59,9 @@ fournie par l'action différée n'est pas critique.
 .PP
 .in +5
 \fBactivate\fP \fInom\-action\-différée\fP
+.PP
+.in +5
+\fBactivate\-await\fP \fInom\-action\-différée\fP
 .PP
 .in +5
 \fBactivate\-noawait\fP \fInom\-action\-différée\fP
@@ -82,10 +88,24 @@ activées.
 Les directives inconnues sont des erreurs qui empêcheront l'installation du
 paquet.
 .PP
-The "\-noawait" variants are only supported since dpkg 1.16.1, and will lead
-to errors if used with an older dpkg. It is thus recommended to add a
-"Pre\-Depends: dpkg (>= 1.16.1)" to any package that wish to use those
-directives.
+Les variantes «\ \-noawait\ » doivent toujours être privilégiées quand c'est
+possible dans la mesure où les paquets provoquant une action différée ne
+sont pas placés en état «\ triggers\-awaited\ » (actions différées attendues),
+et peuvent donc être immédiatement configurés sans recourir à l'exécution de
+l'action différée. Si les paquets provoquant l'action différée sont des
+dépendances d'autres paquets mis à jour, cela évitera le lancement de
+l'action différée et rendra possible l'exécution de l'action différée une
+seule fois au cours des étapes finales de la mise à jour.
+.PP
+Les variantes «\ \-noawait\ » ne sont gérées qu'à partir de dpkg 1.16.1 et
+provoqueront des erreurs avec les versions plus anciennes. Il est donc
+conseillé d'utiliser «\ Pre\-Depends: dpkg(>= 1.16.1)\ » pour chaque paquet
+qui a besoin de se servir de telles directives.
+.PP
+Les alias de variantes «\ \-await\ » ne sont gérés qu'à partir de dpkg 1.17.21
+et provoqueront des erreurs avec les versions plus anciennes. Il est donc
+conseillé d'utiliser «\ Pre\-Depends: dpkg(>= 1.17.21)\ » pour chaque
+paquet qui a besoin de se servir de telles directives.
 .
 .SH "VOIR AUSSI"
 \fBdpkg\-trigger\fP(1), \fBdpkg\fP(1), \fB/usr/share/doc/dpkg\-dev/triggers.txt.gz\fP.

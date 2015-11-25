@@ -3,6 +3,7 @@
  * main.h - external definitions for this program
  *
  * Copyright © 1995 Ian Jackson <ian@chiark.greenend.org.uk>
+ * Copyright © 2006,2008-2014 Guillem Jover <guillem@debian.org>
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,19 +27,30 @@
 
 /* These two are defined in filesdb.h. */
 struct fileinlist;
+struct filenamenode_queue;
 struct filenamenode;
 
+enum pkg_istobe {
+	PKG_ISTOBE_NORMAL,
+	PKG_ISTOBE_REMOVE,
+	PKG_ISTOBE_INSTALLNEW,
+	PKG_ISTOBE_DECONFIGURE,
+	PKG_ISTOBE_PREINSTALL,
+};
+
+enum pkg_cycle_color {
+	PKG_CYCLE_WHITE,
+	PKG_CYCLE_GRAY,
+	PKG_CYCLE_BLACK,
+};
+
 struct perpackagestate {
-  enum istobes {
-    itb_normal, itb_remove, itb_installnew, itb_deconfigure, itb_preinstall
-  } istobe;
+  enum pkg_istobe istobe;
 
   /** Used during cycle detection. */
-  enum {
-    white,
-    gray,
-    black,
-  } color;
+  enum pkg_cycle_color color;
+
+  bool enqueued;
 
   /**
    * filelistvalid  files  Meaning
@@ -52,6 +64,7 @@ struct perpackagestate {
   bool fileslistvalid;
   struct fileinlist *files;
   int replacingfilesandsaid;
+  int cmdline_seen;
 
   off_t listfile_phys_offs;
 
@@ -92,6 +105,7 @@ enum action {
 	act_assertlongfilenames,
 	act_assertmulticonrep,
 	act_assertmultiarch,
+	act_assertverprovides,
 
 	act_audit,
 	act_unpackchk,
@@ -139,8 +153,10 @@ struct invoke_hook {
 int archivefiles(const char *const *argv);
 void process_archive(const char *filename);
 bool wanttoinstall(struct pkginfo *pkg);
-struct fileinlist *newconff_append(struct fileinlist ***newconffileslastp_io,
-				   struct filenamenode *namenode);
+
+struct fileinlist *
+filenamenode_queue_push(struct filenamenode_queue *queue,
+                        struct filenamenode *namenode);
 
 /* from update.c */
 
@@ -156,6 +172,7 @@ int assertpredep(const char *const *argv);
 int assertlongfilenames(const char *const *argv);
 int assertmulticonrep(const char *const *argv);
 int assertmultiarch(const char *const *argv);
+int assertverprovides(const char *const *argv);
 int predeppackage(const char *const *argv);
 int printarch(const char *const *argv);
 int printinstarch(const char *const *argv);
@@ -164,7 +181,7 @@ int cmpversions(const char *const *argv);
 
 /* from verify.c */
 
-int verify_set_output(const char *name);
+bool verify_set_output(const char *name);
 int verify(const char *const *argv);
 
 /* from select.c */
@@ -177,15 +194,16 @@ int clearselections(const char *const *argv);
 
 void md5hash(struct pkginfo *pkg, char *hashbuf, const char *fn);
 void enqueue_package(struct pkginfo *pkg);
+void enqueue_package_mark_seen(struct pkginfo *pkg);
 void process_queue(void);
 int packages(const char *const *argv);
 void removal_bulk(struct pkginfo *pkg);
 int conffderef(struct pkginfo *pkg, struct varbuf *result, const char *in);
 
 enum dep_check {
-  dep_check_halt = 0,
-  dep_check_defer = 1,
-  dep_check_ok = 2,
+  DEP_CHECK_HALT = 0,
+  DEP_CHECK_DEFER = 1,
+  DEP_CHECK_OK = 2,
 };
 
 enum dep_check dependencies_ok(struct pkginfo *pkg, struct pkginfo *removing,
@@ -254,11 +272,19 @@ void log_action(const char *action, struct pkginfo *pkg, struct pkgbin *pkgbin);
 
 /* from trigproc.c */
 
+enum trigproc_type {
+	/** Opportunistic trigger processing. */
+	TRIGPROC_TRY,
+	/** Required trigger processing. */
+	TRIGPROC_REQUIRED,
+};
+
 void trigproc_install_hooks(void);
+void trigproc_populate_deferred(void);
 void trigproc_run_deferred(void);
 void trigproc_reset_cycle(void);
 
-void trigproc(struct pkginfo *pkg);
+void trigproc(struct pkginfo *pkg, enum trigproc_type type);
 
 void trig_activate_packageprocessing(struct pkginfo *pkg);
 

@@ -3,7 +3,7 @@
 .\" Copyright Â© 1995 Raul Miller, Ian Jackson, Ian Murdock
 .\" Copyright Â© 1999 Ben Collins <bcollins@debian.org>
 .\" Copyright Â© 2000 Wichert Akkerman <wakkerma@debian.org>
-.\" Copyright Â© 2007-2011 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2007-2011, 2013 Guillem Jover <guillem@debian.org>
 .\" Copyright Â© 2008-2012 RaphaÃ«l Hertzog <hertzog@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
@@ -24,7 +24,7 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH deb\-control 5 "14 agosto 2011" "Progetto Debian" Debian
+.TH deb\-control 5 "20 dicembre 2013" "Progetto Debian" Debian
 .SH NOME
 deb\-control \- formato del file principale di controllo dei pacchetti Debian
 .
@@ -117,7 +117,7 @@ Elenco di etichette che descrivono le qualità del pacchetto. La descrizione
 e l'elenco delle etichette supportate possono essere trovati nel pacchetto
 \fBdebtags\fP.
 .TP 
-\fBMulti\-Arch:\fP \fBsame\fP|\fBforeign\fP|\fBallowed\fP
+\fBMulti\-Arch:\fP \fBsame\fP|\fBforeign\fP|\fBallowed\fP|\fBno\fP
 Questo campo viene usato per indicare come questo pacchetto dovrebbe
 comportarsi nelle installazioni multi\-arch. Il valore \fBsame\fP significa che
 il pacchetto è co\-installabile insieme a sé stesso, ma non deve essere usato
@@ -126,7 +126,10 @@ diversa dalla propria. Il valore \fBforeign\fP significa che il pacchetto non è
 co\-installabile insieme a sé stesso, ma può soddisfare le dipendenze di un
 pacchetto di un'architettura diversa dalla propria. Il valore \fBallowed\fP
 permette alle dipendenze inverse di indicare nel loro campo Depends di
-accettare un pacchetto da un'architettura diversa, ma non ha altri effetti.
+accettare un pacchetto da un'architettura diversa, ma non ha altri
+effetti. Il valore \fBno\fP è il valore predefinito quando il campo viene
+omesso, nel qual caso aggiungere il campo con un valore \fBno\fP esplicito è
+generalmente non necessario.
 .TP 
 \fBSource:\fP\fI nome\-sorgente\fP
 Il nome del pacchetto sorgente da cui deriva questo pacchetto binario, se è

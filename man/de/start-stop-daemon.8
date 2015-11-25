@@ -5,7 +5,7 @@
 .\" Copyright Â© 2000-2001 Wichert Akkerman <wakkerma@debian.org>
 .\" Copyright Â© 2002-2003 Adam Heath <doogie@debian.org>
 .\" Copyright Â© 2004 Scott James Remnant <keybuk@debian.org>
-.\" Copyright Â© 2008-2012 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2008-2014 Guillem Jover <guillem@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -25,8 +25,8 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH start\-stop\-daemon 8 2012\-06\-17 Debian\-Projekt dpkg\-Hilfsprogramme
-.SH NAME
+.TH start\-stop\-daemon 8 2014\-03\-26 Debian\-Projekt dpkg\-Hilfsprogramme
+.SH BEZEICHNUNG
 start\-stop\-daemon \- startet und stoppt System\-Daemon\-Programme
 .
 .SH ÜBERSICHT
@@ -38,15 +38,15 @@ Prozessen auf Systemebene verwendet. Durch die Verwendung einer der
 Abgleich\-Optionen kann \fBstart\-stop\-daemon\fP so konfiguriert werden, dass er
 existierende Instanzen von einem laufenden Prozess finden kann.
 .PP
-Hinweis: Falls \fB\-\-pidfile\fP nicht angegeben ist, verhält sich
+Hinweis: Falls \fB\-\-pid\fP oder \fB\-\-pidfile\fP nicht angegeben ist, verhält sich
 \fBstart\-stop\-daemon\fP ähnlich zu \fBkillall\fP(1). \fBstart\-stop\-daemon\fP wird die
-Prozesstabelle nach Prozessen durchsuchen, die auf den Prozessnamen, uid
-und/oder gid (falls angegeben) passen. Jeder passende Prozess wird
-\fB\-\-start\fP daran hindern, den Daemon zu starten. Allen passenden Prozessen
-wird das TERM\-Signal (oder das mit \fB\-\-signal\fP oder \fB\-\-retry\fP angegebene)
-geschickt, falls \fB\-\-stop\fP angegeben ist. Für Daemons die langlebige Kinder
-haben, die ein \fB\-\-stop\fP überleben müssen, müssen Sie eine PID\-Datei
-angeben.
+Prozesstabelle nach Prozessen durchsuchen, die auf den Prozessnamen, die
+Eltern\-PID, uid und/oder gid (falls angegeben) passen. Jeder passende
+Prozess wird \fB\-\-start\fP daran hindern, den Daemon zu starten. Allen
+passenden Prozessen wird das TERM\-Signal (oder das mit \fB\-\-signal\fP oder
+\fB\-\-retry\fP angegebene) geschickt, falls \fB\-\-stop\fP angegeben ist. Für Daemons
+die langlebige Kinder haben, die ein \fB\-\-stop\fP überleben müssen, müssen Sie
+eine PID\-Datei angeben.
 .
 .SH BEFEHLE
 .TP 
@@ -57,7 +57,7 @@ Fehlerstatus 1 (0, falls \fB\-\-oknodo\fP angegeben wurde). Falls ein solcher
 Prozess nicht existiert, dann startet es eine Instanz, entweder unter
 Verwendung des ausführbaren Programms, das mittels \fB\-\-exec\fP (oder, falls
 angegeben, mittels \fB\-\-startas\fP) spezifiziert wurde. Jedes weitere auf der
-Kommandozeile nach \fB\-\-\fP angegebene Argument wird unverändert an das zu
+Befehlszeile nach \fB\-\-\fP angegebene Argument wird unverändert an das zu
 startende Programm weitergegeben.
 .TP 
 \fB\-K\fP, \fB\-\-stop\fP
@@ -80,6 +80,14 @@ Zeige die Programmversion und beendet sich.
 .
 .SH OPTIONEN
 .SS Abgleichoptionen
+.TP 
+\fB\-\-pid\fP \fIPID\fP
+Prüfe auf einen Prozess mit der angegebenen \fIPID\fP. Die \fIPID\fP muss eine
+Zahl größer Null sein.
+.TP 
+\fB\-\-ppid\fP \fIPPID\fP
+Prüfe auf einen Prozess mit der angegebenen \fIPPID\fP (Eltern\-PID). Die
+\fIPPID\fP muss eine Zahl größer Null sein.
 .TP 
 \fB\-p\fP, \fB\-\-pidfile\fP \fIpid\-Datei\fP
 Prüfe, ob ein Prozess \fIpid\-Datei\fP erstellt hat. Hinweis: Wird diese
@@ -215,17 +223,23 @@ beträgt sie immer 7. Die derzeit unterstützten Werte für die \fIKlasse\fP
 lauten \fBidle\fP, \fBbest\-effort\fP und \fBreal\-time\fP.
 .TP 
 \fB\-k\fP, \fB\-\-umask\fP \fIMaske\fP
-Dies setzt die umask des Prozesses bevor er gestartet wird.
+Dies setzt die umask des Prozesses, bevor er gestartet wird.
 .TP 
 \fB\-m\fP, \fB\-\-make\-pidfile\fP
 Verwendet, wenn ein Programm gestartet wird, das keine eigene PID\-Datei
 anlegt. Diese Option sorgt dafür, dass \fBstart\-stop\-daemon\fP die mit
 \fB\-\-pidfile\fP referenzierte Datei anlegt und die PID kurz vor der Ausführung
-des Prozesse hineinlegt. Beachten Sie, dass die Datei nicht entfernt wird,
-wenn das Programm beendet wird. \fBHINWEIS:\fP Diese Funktion könnte in nicht
-allen Fällen funktionieren. Insbesondere wenn das auszuführende Programm
-sich vom Hauptprozess forkt. Deshalb ist diese Option normalerweise nur in
+des Prozesse hineinlegt. Beachten Sie, dass die Datei beim Anhalten des
+Programms nur entfernt wird, falls \fB\-\-remove\-pidfile\fP verwandt
+wird. \fBHINWEIS:\fP Diese Funktion könnte in nicht allen Fällen
+funktionieren. Insbesondere wenn das auszuführende Programm sich vom
+Hauptprozess forkt. Deshalb ist diese Option normalerweise nur in
 Kombination mit der Option \fB\-\-background\fP sinnvoll.
+.TP 
+\fB\-\-remove\-pidfile\fP
+Wird verwandt, wenn ein Programm gestoppt wird, das seine PID\-Datei nicht
+entfernt. Diese Option führt dazu, dass \fBstart\-stop\-daemon\fP die durch
+\fB\-\-pidfile\fP referenzierte Datei nach der Beendigung des Prozesses entfernt.
 .TP 
 \fB\-v\fP, \fB\-\-verbose\fP
 Gibt ausführliche informative Meldungen aus.
@@ -288,7 +302,7 @@ start\-stop\-daemon \-\-stop \-\-oknodo \-\-user food \-\-name food \e
 	\-\-pidfile /run/food.pid \-\-retry=TERM/30/KILL/5
 .fi
 .SH ÜBERSETZUNG
-Die deutsche Übersetzung wurde 2004, 2006-2013 von Helge Kreutzmann
+Die deutsche Übersetzung wurde 2004, 2006-2015 von Helge Kreutzmann
 <debian@helgefjell.de>, 2007 von Florian Rehnisch <eixman@gmx.de> und
 2008 von Sven Joachim <svenjoac@gmx.de>
 angefertigt. Diese Übersetzung ist Freie Dokumentation; lesen Sie die

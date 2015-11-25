@@ -59,10 +59,6 @@ my $changelogformat;
 
 my $build_format;
 my %options = (
-    # Compression related
-    compression => compression_get_default(),
-    comp_level => compression_get_default_level(),
-    comp_ext => compression_get_property(compression_get_default(), 'file_ext'),
     # Ignore files
     tar_ignore => [],
     diff_ignore_regex => '',
@@ -83,29 +79,32 @@ my $diff_ignore_regex = get_default_diff_ignore_regex();
 my @options;
 my @cmdline_options;
 while (@ARGV && $ARGV[0] =~ m/^-/) {
-    $_ = shift(@ARGV);
-    if (m/^-b$/) {
-        setopmode('-b');
-    } elsif (m/^-x$/) {
-        setopmode('-x');
-    } elsif (m/^--(before|after)-build$/) {
-        setopmode($_);
-    } elsif (m/^--commit$/) {
-        setopmode($_);
-    } elsif (m/^--print-format$/) {
-	setopmode('--print-format');
+    my $arg = shift @ARGV;
+
+    if ($arg eq '-b' or $arg eq '--build') {
+        setopmode('build');
+    } elsif ($arg eq '-x' or $arg eq '--extract') {
+        setopmode('extract');
+    } elsif ($arg eq '--before-build') {
+        setopmode('before-build');
+    } elsif ($arg eq '--after-build') {
+        setopmode('after-build');
+    } elsif ($arg eq '--commit') {
+        setopmode('commit');
+    } elsif ($arg eq '--print-format') {
+        setopmode('print-format');
 	report_options(info_fh => \*STDERR); # Avoid clutter on STDOUT
     } else {
-	push @options, $_;
+        push @options, $arg;
     }
 }
 
 my $dir;
 if (defined($options{opmode}) &&
-    $options{opmode} =~ /^(-b|--print-format|--(before|after)-build|--commit)$/) {
+    $options{opmode} =~ /^(build|print-format|(before|after)-build|commit)$/) {
     if (not scalar(@ARGV)) {
-	usageerr(_g('%s needs a directory'), $options{opmode})
-	    unless $1 eq '--commit';
+	usageerr(_g('--%s needs a directory'), $options{opmode})
+	    unless $1 eq 'commit';
 	$dir = '.';
     } else {
 	$dir = File::Spec->catdir(shift(@ARGV));
@@ -136,7 +135,7 @@ if (defined($options{opmode}) &&
 	$conf->filter(remove => sub { $_[0] =~ $forbidden_opts_re->{$filename} });
 	if (@$conf) {
 	    info(_g('using options from %s: %s'), $optfile, join(' ', @$conf))
-		unless $options{opmode} eq '--print-format';
+		unless $options{opmode} eq 'print-format';
 	    unshift @options, @$conf;
 	}
     }
@@ -149,7 +148,6 @@ while (@options) {
     } elsif (m/^-(?:Z|-compression=)(.*)$/) {
 	my $compression = $1;
 	$options{compression} = $compression;
-	$options{comp_ext} = compression_get_property($compression, 'file_ext');
 	usageerr(_g('%s is not a supported compression'), $compression)
 	    unless compression_is_supported($compression);
 	compression_set_default($compression);
@@ -195,7 +193,7 @@ while (@options) {
         $substvars->set($1, $2);
     } elsif (m/^-T(.*)$/) {
 	$substvars->load($1) if -e $1;
-    } elsif (m/^-(\?|-help)$/) {
+    } elsif (m/^-(?:\?|-help)$/) {
         usage();
         exit(0);
     } elsif (m/^--version$/) {
@@ -215,10 +213,10 @@ while (@options) {
 }
 
 unless (defined($options{opmode})) {
-    usageerr(_g('need a command (-x, -b, --before-build, --after-build, --print-format, --commit)'));
+    usageerr(_g('need an action option'));
 }
 
-if ($options{opmode} =~ /^(-b|--print-format|--(before|after)-build|--commit)$/) {
+if ($options{opmode} =~ /^(build|print-format|(before|after)-build|commit)$/) {
 
     $options{ARGV} = \@ARGV;
 
@@ -250,7 +248,7 @@ if ($options{opmode} =~ /^(-b|--print-format|--(before|after)-build|--commit)$/)
 	    $fields->{$_} = $v;
 	} elsif (m/^Uploaders$/i) {
 	    ($fields->{$_} = $v) =~ s/\s*[\r\n]\s*/ /g; # Merge in a single-line
-	} elsif (m/^Build-(Depends|Conflicts)(-Arch|-Indep)?$/i) {
+	} elsif (m/^Build-(?:Depends|Conflicts)(?:-Arch|-Indep)?$/i) {
 	    my $dep;
 	    my $type = field_get_dep_type($_);
 	    $dep = deps_parse($v, build_dep => 1, union => $type eq 'union');
@@ -272,8 +270,35 @@ if ($options{opmode} =~ /^(-b|--print-format|--(before|after)-build|--commit)$/)
 	my $prio = $pkg->{'Priority'} || $src_prio;
 	my $type = $pkg->{'Package-Type'} ||
 	        $pkg->get_custom_field('Package-Type') || 'deb';
-	push @pkglist, sprintf('%s %s %s %s', $p, $type, $sect, $prio);
-	push(@binarypackages,$p);
+        my $arch = $pkg->{'Architecture'};
+        my $profile = $pkg->{'Build-Profiles'};
+
+        my $pkg_summary = sprintf('%s %s %s %s', $p, $type, $sect, $prio);
+
+        $pkg_summary .= ' arch=' . join ',', split /\s+/, $arch;
+
+        if (defined $profile) {
+            # If the string does not contain brackets then it is using the
+            # old syntax. Emit a fatal error.
+            if ($profile !~ m/^\s*<.*>\s*$/) {
+                error(_g('binary package stanza %s is using an obsolete ' .
+                         'Build-Profiles field syntax'), $p);
+            }
+
+            # Instead of splitting twice and then joining twice, we just do
+            # simple string replacements:
+
+            # Remove the enclosing <>
+            $profile =~ s/^\s*<(.*)>\s*$/$1/;
+            # Join lists with a plus (OR)
+            $profile =~ s/>\s+</+/g;
+            # Join their elements with a comma (AND)
+            $profile =~ s/\s+/,/g;
+            $pkg_summary .= " profile=$profile";
+        }
+
+        push @pkglist, $pkg_summary;
+	push @binarypackages, $p;
 	foreach (keys %{$pkg}) {
 	    my $v = $pkg->{$_};
             if (m/^Architecture$/) {
@@ -326,6 +351,9 @@ if ($options{opmode} =~ /^(-b|--print-format|--(before|after)-build|--commit)$/)
     $fields->{'Architecture'} = join(' ', @sourcearch);
     $fields->{'Package-List'} = "\n" . join("\n", sort @pkglist);
 
+    # Check if we have a testsuite, and handle manual and automatic values.
+    set_testsuite_field($fields);
+
     # Scan fields of dpkg-parsechangelog
     foreach (keys %{$changelog}) {
         my $v = $changelog->{$_};
@@ -339,7 +367,7 @@ if ($options{opmode} =~ /^(-b|--print-format|--(before|after)-build|--commit)$/)
 	    $fields->{$_} = $v;
 	} elsif (m/^Binary-Only$/) {
 	    error(_g('building source for a binary-only release'))
-	        if $v eq 'yes' and $options{opmode} eq '-b';
+	        if $v eq 'yes' and $options{opmode} eq 'build';
 	} elsif (m/^Maintainer$/i) {
             # Do not replace the field coming from the source entry
 	} else {
@@ -366,7 +394,7 @@ if ($options{opmode} =~ /^(-b|--print-format|--(before|after)-build|--commit)$/)
 	} else {
 	    warning(_g('no source format specified in %s, ' .
 	               'see dpkg-source(1)'), 'debian/source/format')
-		if $options{opmode} eq '-b';
+		if $options{opmode} eq 'build';
 	    $build_format = '1.0';
 	}
     }
@@ -376,16 +404,16 @@ if ($options{opmode} =~ /^(-b|--print-format|--(before|after)-build|--commit)$/)
     $srcpkg->init_options();
     $srcpkg->parse_cmdline_options(@cmdline_options);
 
-    if ($options{opmode} eq '--print-format') {
+    if ($options{opmode} eq 'print-format') {
 	print $fields->{'Format'} . "\n";
 	exit(0);
-    } elsif ($options{opmode} eq '--before-build') {
+    } elsif ($options{opmode} eq 'before-build') {
 	$srcpkg->before_build($dir);
 	exit(0);
-    } elsif ($options{opmode} eq '--after-build') {
+    } elsif ($options{opmode} eq 'after-build') {
 	$srcpkg->after_build($dir);
 	exit(0);
-    } elsif ($options{opmode} eq '--commit') {
+    } elsif ($options{opmode} eq 'commit') {
 	$srcpkg->commit($dir);
 	exit(0);
     }
@@ -409,18 +437,20 @@ if ($options{opmode} =~ /^(-b|--print-format|--(before|after)-build|--commit)$/)
 		       substvars => $substvars);
     exit(0);
 
-} elsif ($options{opmode} eq '-x') {
+} elsif ($options{opmode} eq 'extract') {
 
     # Check command line
     unless (scalar(@ARGV)) {
-	usageerr(_g('-x needs at least one argument, the .dsc'));
+        usageerr(_g('--%s needs at least one argument, the .dsc'),
+                 $options{opmode});
     }
     if (scalar(@ARGV) > 2) {
-	usageerr(_g('-x takes no more than two arguments'));
+        usageerr(_g('--%s takes no more than two arguments'), $options{opmode});
     }
     my $dsc = shift(@ARGV);
     if (-d $dsc) {
-	usageerr(_g('-x needs the .dsc file as first argument, not a directory'));
+        usageerr(_g('--%s needs the .dsc file as first argument, not a directory'),
+                 $options{opmode});
     }
 
     # Create the object that does everything
@@ -461,11 +491,30 @@ if ($options{opmode} =~ /^(-b|--print-format|--(before|after)-build|--commit)$/)
     exit(0);
 }
 
-sub setopmode {
-    if (defined($options{opmode})) {
-	usageerr(_g('only one of -x, -b or --print-format allowed, and only once'));
+sub set_testsuite_field
+{
+    my ($fields) = @_;
+
+    my $testsuite_field = $fields->{'Testsuite'} // '';
+    my %testsuite = map { $_ => 1 } split /\s*,\s*/, $testsuite_field;
+    if (-e "$dir/debian/tests/control") {
+        $testsuite{autopkgtest} = 1;
+    } elsif ($testsuite{autopkgtest}) {
+        warning(_g('%s field contains value %s, but no tests control file %s'),
+                'Testsuite', 'autopkgtest', 'debian/tests/control');
+        delete $testsuite{autopkgtest};
     }
-    $options{opmode} = $_[0];
+    $fields->{'Testsuite'} = join ', ', sort keys %testsuite;
+}
+
+sub setopmode {
+    my $opmode = shift;
+
+    if (defined($options{opmode})) {
+        usageerr(_g('two commands specified: --%s and --%s'),
+                 $options{opmode}, $opmode);
+    }
+    $options{opmode} = $opmode;
 }
 
 sub version {
@@ -482,18 +531,18 @@ sub usage {
 'Usage: %s [<option>...] <command>')
     . "\n\n" . _g(
 'Commands:
-  -x <filename>.dsc [<output-dir>]
+  -x, --extract <filename>.dsc [<output-dir>]
                            extract source package.
-  -b <dir>                 build source package.
-  --print-format <dir>     print the source format that would be
-                           used to build the source package.
-  --commit [<dir> [<patch-name>]]
+  -b, --build <dir>        build source package.
+      --print-format <dir> print the format to be used for the source package.
+      --commit [<dir> [<patch-name>]]
                            store upstream changes in a new patch.')
     . "\n\n" . _g(
 "Build options:
   -c<control-file>         get control info from this file.
   -l<changelog-file>       get per-version info from this file.
   -F<changelog-format>     force changelog format.
+  --format=<source-format> set the format to be used for the source package.
   -V<name>=<value>         set a substitution variable.
   -T<substvars-file>       read variables here.
   -D<field>=<value>        override or add a .dsc field and value.
@@ -511,7 +560,8 @@ sub usage {
 "Extract options:
   --no-copy                don't copy .orig tarballs
   --no-check               don't check signature and checksums before unpacking
-  --require-valid-signature abort if the package doesn't have a valid signature")
+  --require-valid-signature abort if the package doesn't have a valid signature
+  --ignore-bad-version     allow bad source package versions.")
     . "\n\n" . _g(
 'General options:
   -?, --help               show this help message.

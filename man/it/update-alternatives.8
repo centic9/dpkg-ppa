@@ -72,8 +72,8 @@ Al momento dell'installazione, cambiamento o rimozione di ogni pacchetto che
 fornisce un file con una particolare funzionalità, viene invocato
 \fBupdate\-alternatives\fP per aggiornare le informazioni su quel file nel
 sistema delle alternative. \fBupdate\-alternatives\fP viene solitamente chiamato
-dagli script \fBpostinst\fP (configurazione) o \fBprerm\fP (installazione) dei
-pacchetti Debian.
+dagli script \fBpostinst\fP (configurazione) o \fBprerm\fP (rimozione e
+deconfigurazione) dei pacchetti Debian.
 .PP
 Spesso è utile che un certo numero di alternative siano sincronizzate, in
 modo da venir modificate in gruppo; per esempio, quando sono installate
@@ -264,10 +264,10 @@ permette all'utente di selezionare in modo interattivo quale usare. Il
 gruppo di collegamenti viene aggiornato.
 .TP 
 \fB\-\-help\fP
-Show the usage message and exit.
+Mostra il messaggio sull'uso ed esce.
 .TP 
 \fB\-\-version\fP
-Show the version and exit.
+Mostra la versione ed esce.
 .
 .SH OPZIONI
 .TP 
@@ -364,10 +364,11 @@ Percorso dell'alternativa di questo blocco.
 Valore della priorità di questa alternativa.
 .TP 
 \fBSlaves:\fP\fI elenco di collegamenti secondari\fP
-When this field is present, the \fBnext\fP lines hold all slave alternatives
-associated to the master link of the alternative. There is one slave per
-line. Each line contains one space, the generic name of the slave
-alternative, another space, and the path to the slave alternative.
+Quando è presente questo campo, le righe \fBsuccessive\fP contengono tutte le
+alternative secondarie associate con il collegamento principale
+dell'alternativa, uno per riga. Ogni riga contiene uno spazio, il nome
+generico dell'alternativa secondaria, un altro spazio e il percorso
+dell'alternativa secondaria.
 .
 .TP 
 \fBEsempio\fP

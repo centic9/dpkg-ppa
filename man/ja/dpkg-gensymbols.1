@@ -60,8 +60,11 @@ maintainer to keep those files up\-to\-date and accurate, but
 The symbols files are really useful only if they reflect the evolution of
 the package through several releases. Thus the maintainer has to update them
 every time that a new symbol is added so that its associated minimal version
-matches reality. To do this properly the diffs contained in the build logs
-can be used. In most cases, the diff applies directly to the
+matches reality.  The diffs contained in the build logs can be used as a
+starting point, but the maintainer, additionally, has to make sure that the
+behaviour of those symbols has not changed in a way that would make anything
+using those symbols and linking against the new version, stop working with
+the old version.  In most cases, the diff applies directly to the
 debian/\fIpackage\fP.symbols file. That said, further tweaks are usually
 needed: it's recommended for example to drop the Debian revision from the
 minimal version so that backports with a lower version number but the same
@@ -73,6 +76,13 @@ specific change, then one should suffix the version with "~".
 .P
 シンボルファイルにコメントを記載することもできる。'#' から始まる行は'#include' (\fBUsing includes\fP セクションを参照)
 から始まる場合をのぞき、コメントと見なされる。'#MISSING:' から始まる行は、なくなったシンボルについて記載された特別なコメントを意味する。
+.P
+Do not forget to check if old symbol versions need to be increased.  There
+is no way \fBdpkg\-gensymbols\fP can warn about this. Blindly applying the diff
+or assuming there is nothing to change if there is no diff, without checking
+for such changes, can lead to packages with loose dependencies that claim
+they can work with older packages they cannot work with. This will introduce
+hard to find bugs with (partial)  upgrades.
 .SS "#PACKAGE# 置換の使用"
 .P
 稀ではあるが、アーキテクチャによってライブラリ名が異なる場合がある。シンボルファイルにパッケージ名をハードコードすることを避けるため、\fI#PACKAGE#\fP
@@ -80,8 +90,11 @@ specific change, then one should suffix the version with "~".
 マークと異なり、\fI#PACKAGE#\fP がバイナリパッケージ内のシンボルファイルに現れることは決してない。
 .SS シンボルタグの使用
 .P
-シンボルタグは何らかの意味で特別なシンボルを識別する際に有用である。シンボルには任意の数のタグを関連付けることができる。すべてのタグが解析されて保存されるが、\fBdpkg\-gensymbols\fP
-が認識し、シンボルに対して特殊な扱いを行うものは、その一部のみである。これらのタグについての詳細は、\fB標準シンボルタグ\fP サブセクションを参照のこと。
+Symbol tagging is useful for marking symbols that are special in some way.
+Any symbol can have an arbitrary number of tags associated with it. While
+all tags are parsed and stored, only some of them are understood by
+\fBdpkg\-gensymbols\fP and trigger special handling of the symbols. See
+subsection \fBStandard symbol tags\fP for reference of these tags.
 .P
 タグはシンボル名の前に設置され (空白文字を間にいれることはできない)、\fB(\fP から始まり\fB)\fP で終わり、間に最低 1
 つのタグを記載する必要がある。複数のタグは \fB|\fP 文字で区切る。各タグには、タグ名との間を \fB=\fP

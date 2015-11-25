@@ -28,7 +28,7 @@ deb\-origin \- Fichiers d'informations propre à l'éditeur
 \fB/etc/dpkg/origins/\fP\fIfichier\fP
 .SH DESCRIPTION
 Les fichiers de \fB/etc/dpkg/origins\fP peuvent fournir des informations sur
-les différents éditeurs («\ vendor\ ») qui fournissent des paquets Debian. Ils
+les différents distributeurs qui fournissent des paquets Debian. Ils
 contiennent un certain nombre de champs ou de commentaires pour les lignes
 commençant par un caractère «\ \fB#\fP\ ». Chaque champ commence par une
 étiquette, telle que \fBVendor\fP ou \fBParent\fP, suivi du caractère
@@ -38,25 +38,25 @@ s'étendre sur plusieurs lignes, mais les outils d'installation joindront en
 général les lignes pendant le traitement du contenu du champ.
 .SH "CHAMPS REQUIS"
 .TP 
-\fBVendor:\fP\fI éditeur\fP
-La valeur de ce champ donne le nom de l'éditeur(«\ vendor\ »).
+\fBVendor:\fP\fI distributeur\fP
+La valeur de ce champ donne le nom du distributeur.
 .SH "CHAMPS OPTIONNELS"
 .TP 
-\fBVendor\-URL:\fP\fI adresse\-URL\-éditeur\fP
-La valeur de ce champ donne l'adresse URL de l'éditeur
+\fBVendor\-URL:\fP\fI adresse\-URL\-distributeur\fP
+La valeur de ce champ donne l'adresse URL du distributeur
 .TP 
 \fBBugs:\fP\fI url\-du\-bogue\fP
 La valeur de ce champ donne le type et l'adresse du système de suivi des
-bogues de l'éditeur. Cela peut être une URL mailto ou debbugs
-(p.ex.\ debbugs://bugs.debian.org/).
+bogues du distributeur. Cela peut être une URL mailto ou debbugs (par
+exemple debbugs://bugs.debian.org/).
 .TP 
-\fBParent:\fP\fI éditeur\fP
-La valeur de ce champ donne le nom de l'éditeur dont le présent éditeur est
-dérivé.
+\fBParent:\fP\fI distributeur\fP
+La valeur de ce champ donne le nom du distributeur dont le présent éditeur
+est dérivé.
 .SH EXEMPLE
 .nf
 Vendor: Debian
-Vendor\-URL: http://www.debian.org/
+Vendor\-URL: https://www.debian.org/
 Bugs: debbugs://bugs.debian.org
 .fi
 .SH "VOIR AUSSI"

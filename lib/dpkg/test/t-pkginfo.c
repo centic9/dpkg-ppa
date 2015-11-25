@@ -2,7 +2,7 @@
  * libdpkg - Debian packaging suite library routines
  * t-pkginfo.c - test pkginfo handling
  *
- * Copyright © 2009-2010,2012 Guillem Jover <guillem@debian.org>
+ * Copyright © 2009-2010,2012-2014 Guillem Jover <guillem@debian.org>
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,7 +33,7 @@ test_pkginfo_informative(void)
 	pkg_blank(&pkg);
 	test_fail(pkg_is_informative(&pkg, &pkg.installed));
 
-	pkg_set_want(&pkg, want_purge);
+	pkg_set_want(&pkg, PKG_WANT_PURGE);
 	test_pass(pkg_is_informative(&pkg, &pkg.installed));
 
 	pkg_blank(&pkg);
@@ -49,18 +49,18 @@ test_pkginfo_eflags(void)
 	struct pkginfo pkg;
 
 	pkg_blank(&pkg);
-	test_pass(pkg.eflag == eflag_ok);
+	test_pass(pkg.eflag == PKG_EFLAG_OK);
 
-	pkg_set_eflags(&pkg, eflag_reinstreq);
-	test_pass(pkg.eflag == eflag_reinstreq);
+	pkg_set_eflags(&pkg, PKG_EFLAG_REINSTREQ);
+	test_pass(pkg.eflag == PKG_EFLAG_REINSTREQ);
 
-	pkg_clear_eflags(&pkg, eflag_reinstreq);
-	test_pass(pkg.eflag == eflag_ok);
+	pkg_clear_eflags(&pkg, PKG_EFLAG_REINSTREQ);
+	test_pass(pkg.eflag == PKG_EFLAG_OK);
 
 	pkg_set_eflags(&pkg, 0x11);
 	test_pass(pkg.eflag == 0x11);
 	pkg_reset_eflags(&pkg);
-	test_pass(pkg.eflag == eflag_ok);
+	test_pass(pkg.eflag == PKG_EFLAG_OK);
 }
 
 static void
@@ -82,68 +82,70 @@ test_pkginfo_instance_tracking(void)
 	pkgset_link_pkg(&set, &pkg2);
 
 	/* Test installation state transitions. */
-	pkg_set_status(&pkg4, stat_installed);
+	pkg_set_status(&pkg4, PKG_STAT_INSTALLED);
 	test_pass(pkgset_installed_instances(&set) == 1);
 
-	pkg_set_status(&pkg4, stat_installed);
+	pkg_set_status(&pkg4, PKG_STAT_INSTALLED);
 	test_pass(pkgset_installed_instances(&set) == 1);
 
-	pkg_set_status(&pkg4, stat_triggerspending);
+	pkg_set_status(&pkg4, PKG_STAT_TRIGGERSPENDING);
 	test_pass(pkgset_installed_instances(&set) == 1);
 
-	pkg_set_status(&pkg4, stat_triggersawaited);
+	pkg_set_status(&pkg4, PKG_STAT_TRIGGERSAWAITED);
 	test_pass(pkgset_installed_instances(&set) == 1);
 
-	pkg_set_status(&pkg4, stat_halfconfigured);
+	pkg_set_status(&pkg4, PKG_STAT_HALFCONFIGURED);
 	test_pass(pkgset_installed_instances(&set) == 1);
 
-	pkg_set_status(&pkg4, stat_unpacked);
+	pkg_set_status(&pkg4, PKG_STAT_UNPACKED);
 	test_pass(pkgset_installed_instances(&set) == 1);
 
-	pkg_set_status(&pkg4, stat_halfinstalled);
+	pkg_set_status(&pkg4, PKG_STAT_HALFINSTALLED);
 	test_pass(pkgset_installed_instances(&set) == 1);
 
-	pkg_set_status(&pkg4, stat_configfiles);
+	pkg_set_status(&pkg4, PKG_STAT_CONFIGFILES);
 	test_pass(pkgset_installed_instances(&set) == 1);
 
-	pkg_set_status(&pkg4, stat_notinstalled);
+	pkg_set_status(&pkg4, PKG_STAT_NOTINSTALLED);
 	test_pass(pkgset_installed_instances(&set) == 0);
 
-	pkg_set_status(&pkg4, stat_notinstalled);
+	pkg_set_status(&pkg4, PKG_STAT_NOTINSTALLED);
 	test_pass(pkgset_installed_instances(&set) == 0);
 
 	/* Toggle installation states on various packages. */
-	pkg_set_status(&pkg4, stat_installed);
+	pkg_set_status(&pkg4, PKG_STAT_INSTALLED);
 	test_pass(pkgset_installed_instances(&set) == 1);
 
-	pkg_set_status(&pkg2, stat_halfinstalled);
+	pkg_set_status(&pkg2, PKG_STAT_HALFINSTALLED);
 	test_pass(pkgset_installed_instances(&set) == 2);
 
-	pkg_set_status(&set.pkg, stat_configfiles);
+	pkg_set_status(&set.pkg, PKG_STAT_CONFIGFILES);
 	test_pass(pkgset_installed_instances(&set) == 3);
 
-	pkg_set_status(&pkg3, stat_notinstalled);
+	pkg_set_status(&pkg3, PKG_STAT_NOTINSTALLED);
 	test_pass(pkgset_installed_instances(&set) == 3);
 
-	pkg_set_status(&pkg3, stat_unpacked);
+	pkg_set_status(&pkg3, PKG_STAT_UNPACKED);
 	test_pass(pkgset_installed_instances(&set) == 4);
 
-	pkg_set_status(&set.pkg, stat_notinstalled);
+	pkg_set_status(&set.pkg, PKG_STAT_NOTINSTALLED);
 	test_pass(pkgset_installed_instances(&set) == 3);
 
-	pkg_set_status(&pkg2, stat_notinstalled);
+	pkg_set_status(&pkg2, PKG_STAT_NOTINSTALLED);
 	test_pass(pkgset_installed_instances(&set) == 2);
 
-	pkg_set_status(&pkg3, stat_notinstalled);
+	pkg_set_status(&pkg3, PKG_STAT_NOTINSTALLED);
 	test_pass(pkgset_installed_instances(&set) == 1);
 
-	pkg_set_status(&pkg4, stat_notinstalled);
+	pkg_set_status(&pkg4, PKG_STAT_NOTINSTALLED);
 	test_pass(pkgset_installed_instances(&set) == 0);
 }
 
 static void
 test(void)
 {
+	test_plan(28);
+
 	test_pkginfo_informative();
 	test_pkginfo_eflags();
 	test_pkginfo_instance_tracking();

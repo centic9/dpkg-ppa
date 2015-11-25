@@ -3,7 +3,7 @@
 .\" Copyright Â© 1995-1996 Ian Jackson <ian@chiark.chu.cam.ac.uk>
 .\" Copyright Â© 1999 Wichert Akkerman <wakkerma@debian.org>
 .\" Copyright Â© 2006 Frank Lichtenheld <djpig@debian.org>
-.\" Copyright Â© 2007-2012 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2007-2014 Guillem Jover <guillem@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -23,8 +23,8 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH dpkg\-deb 1 2013\-03\-27 Debian\-Projekt dpkg\-Programmsammlung
-.SH NAME
+.TH dpkg\-deb 1 2014\-08\-20 Debian\-Projekt dpkg\-Programmsammlung
+.SH BEZEICHNUNG
 dpkg\-deb \- Debian\-Paketarchiv (.deb) Manipulationswerkzeug
 .
 .SH ÜBERSICHT
@@ -129,6 +129,13 @@ DEBIAN\-Unterverzeichnis des angegebenen Verzeichnisses.
 Das Zielverzeichnis (aber nicht übergeordnete) wird, falls notwendig,
 angelegt.
 .TP 
+\fB\-\-ctrl\-tarfile\fP \fIArchiv\fP
+Extrahiert die Steuerdaten aus einem Binärpaket und schickt sie zur
+Standardausgabe im \fBtar\fP\-Format (seit Dpkg 1.17.14. Dies kann zusammen mit
+\fBtar\fP(1) verwendet werden, um eine bestimmte control\-Datei aus einem
+Paketarchiv zu extrahieren. Das Eingabearchiv wird immer sequenziell
+verarbeitet.
+.TP 
 \fB\-\-fsys\-tarfile\fP \fIArchiv\fP
 Extrahiert die Dateisystembaum\-Daten aus einem Binärpaket und schickt sie
 zur Standardausgabe im \fBtar\fP\-Format. Dies kann zusammen mit \fBtar\fP(1)
@@ -184,7 +191,15 @@ für Xz.
 .TP 
 \fB\-Z\fP\fIKomprimierart\fP
 Gibt die Art der Komprimierung beim Bau eines Pakets an. Erlaubte Werte sind
-\fIgzip\fP, \fIxz\fP, \fIbzip2\fP, \fIlzma\fP und \fInone\fP (voreingestellt ist \fIxz\fP).
+\fIgzip\fP, \fIxz\fP, \fIbzip2\fP (veraltet), \fIlzma\fP (veraltet) und \fInone\fP
+(voreingestellt ist \fIxz\fP).
+.TP 
+\fB\-\-uniform\-compression\fP
+Gibt an, dass die gleichen Komprimierungsparameter für alle Archivteile
+(d.h. \fBcontrol.tar\fP und \fBdata.tar\fP) verwandt werden sollen. Andernfalls
+wird nur der Teil \fBdata.tar\fP diese Parameter verwenden. Die einzigen
+unterstützten Kompressionstypen, die übergreifend benutzt werden dürfen,
+sind \fInone\fP, \fIgzip\fP und \fIxz\fP.
 .TP 
 \fB\-\-deb\-format=\fP\fIFormat\fP
 Setzt das beim Bau verwandte Archivformat (seit Dpkg 1.17.0). Erlaubte Werte
@@ -239,7 +254,7 @@ wurde. Allerdings wird dies von den Werkzeugen auf niedrigerer Ebene nicht
 direkt unterstützt.)
 .
 .SH ÜBERSETZUNG
-Die deutsche Übersetzung wurde 2004, 2006-2013 von Helge Kreutzmann
+Die deutsche Übersetzung wurde 2004, 2006-2015 von Helge Kreutzmann
 <debian@helgefjell.de>, 2007 von Florian Rehnisch <eixman@gmx.de> und
 2008 von Sven Joachim <svenjoac@gmx.de>
 angefertigt. Diese Übersetzung ist Freie Dokumentation; lesen Sie die

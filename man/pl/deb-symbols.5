@@ -49,19 +49,28 @@ jest dynamicznie zamieniane albo przez zale¿no¶æ wersji w postaci "(>=
 \fIminimalna\-wersja\fP)", albo jest usuwane (je¿eli wystarcza niewersjonowana
 zale¿no¶æ).
 .P
-Z ka¿dym wyeksportowanym \fIsymbolem\fP (wymienionym jako \fInazwa\fP@\fIwersja\fP,
-gdzie \fIwersja\fP jest równa "Base", je¶li biblioteka nie jest wersjonowana)
-jest skojarzona \fIminimalna\-wersja\fP w szablonie zale¿no¶ci (g³ówny szablon
-zale¿no¶ci jest u¿ywany, je¿eli nie podano
-\fIid\-szablonu\-zale¿no¶ci\fP). Alternatywne szablony zale¿no¶ci s± kolejno
-numerowane, pierwszy ma numer 1, drugi \- 2, itd.
+Each exported \fIsymbol\fP (listed as \fIname\fP@\fIversion\fP, with \fIversion\fP being
+"Base" if the library is not versioned) is associated to a
+\fIminimal\-version\fP of its dependency template (the main dependency template
+is always used and will end up being combined with the dependency template
+referenced by \fIid\-of\-dependency\-template\fP if present). The first
+alternative dependency template is numbered 1, the second one 2, etc.
 .P
-Ka¿dy wpis dotycz±cy biblioteki mo¿e mieæ tak¿e parê pól zawieraj±cych
-metadane. Pola te s± przechowywane w liniach zaczynaj±cych siê od znaku
-gwiazdki. Obecnie, jedynym poprawnym polem jest \fIBuild\-Depends\-Package\fP,
-które okre¶la nazwê pakietu "\-dev" skojarzonego z bibliotek± i u¿ywanego
-przez \fBdpkg\-shlibdeps\fP do upewnienia siê, ¿e wygenerowana zale¿no¶æ jest co
-najmniej tak restrykcyjna jak odpowiadaj±ca jej zale¿no¶æ czasu budowania.
+Each entry for a library can also have some fields of meta\-information.
+Those fields are stored on lines starting with an asterisk. Currently, the
+only valid fields are:
+.TP 
+\fBBuild\-Depends\-Package\fP
+It indicates the name of the "\-dev" package associated to the library and is
+used by \fBdpkg\-shlibdeps\fP to make sure that the dependency generated is at
+least as strict as the corresponding build dependency.
+.TP 
+\fBIgnore\-Blacklist\-Groups\fP
+It indicates what blacklist groups should be ignored, as a whitespace
+separated list, so that the symbols contained in those groups get included
+in the output file. This should only be necessary for toolchain packages
+providing those blacklisted symbols. The available groups are system
+dependent, for ELF and GNU\-based systems these are \fBaeabi\fP and \fBgomp\fP.
 .SH PRZYK£ADY
 .SS "Prosty plik symboli"
 .PP

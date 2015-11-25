@@ -40,10 +40,8 @@ our $CURRENT_MINOR_VERSION = '0';
 
 sub init_options {
     my ($self) = @_;
-    $self->{options}{single_debian_patch} = 0
-        unless exists $self->{options}{single_debian_patch};
-    $self->{options}{allow_version_of_quilt_db} = []
-        unless exists $self->{options}{allow_version_of_quilt_db};
+    $self->{options}{single_debian_patch} //= 0;
+    $self->{options}{allow_version_of_quilt_db} //= [];
 
     $self->SUPER::init_options();
 }
@@ -51,7 +49,7 @@ sub init_options {
 sub parse_cmdline_option {
     my ($self, $opt) = @_;
     return 1 if $self->SUPER::parse_cmdline_option($opt);
-    if ($opt =~ /^--single-debian-patch$/) {
+    if ($opt eq '--single-debian-patch') {
         $self->{options}{single_debian_patch} = 1;
         # For backwards compatibility.
         $self->{options}{auto_commit} = 1;
@@ -76,7 +74,8 @@ sub can_build {
     return ($code, $msg) if $code == 0;
 
     my $v = Dpkg::Version->new($self->{fields}->{'Version'});
-    warning (_g('version does not contain a revision')) if $v->is_native();
+    return (0, _g('non-native package version does not contain a revision'))
+        if $v->is_native();
 
     my $quilt = $self->build_quilt_object($dir);
     $msg = $quilt->find_problems();
@@ -108,7 +107,7 @@ sub apply_patches {
 
     # Always create the quilt db so that if the maintainer calls quilt to
     # create a patch, it's stored in the right directory
-    $quilt->write_db();
+    $quilt->save_db();
 
     # Update debian/patches/series symlink if needed to allow quilt usage
     my $series = $quilt->get_series_file();
@@ -168,9 +167,11 @@ sub prepare_build {
     # on debian/patches/series symlinks and d/p/.dpkg-source-applied
     # stamp file created by ourselves
     my $func = sub {
-        return 1 if $_[0] =~ m{^debian/patches/series$} and -l $_[0];
-        return 1 if $_[0] =~ /^\.pc(\/|$)/;
-        return 1 if $_[0] =~ /$self->{options}{diff_ignore_regex}/;
+        my $pathname = shift;
+
+        return 1 if $pathname eq 'debian/patches/series' and -l $pathname;
+        return 1 if $pathname =~ /^\.pc(\/|$)/;
+        return 1 if $pathname =~ /$self->{options}{diff_ignore_regex}/;
         return 0;
     };
     $self->{diff_options}{diff_ignore_func} = $func;
@@ -220,34 +221,10 @@ sub check_patches_applied {
     $self->apply_patches($dir, usage => 'preparation', verbose => 1);
 }
 
-sub _add_line {
-    my ($file, $line) = @_;
-
-    open(my $file_fh, '>>', $file) or syserr(_g('cannot write %s'), $file);
-    print { $file_fh } "$line\n";
-    close($file_fh);
-}
-
-sub _drop_line {
-    my ($file, $re) = @_;
-
-    open(my $file_fh, '<', $file) or syserr(_g('cannot read %s'), $file);
-    my @lines = <$file_fh>;
-    close($file_fh);
-    open($file_fh, '>', $file) or syserr(_g('cannot write %s'), $file);
-    print { $file_fh } $_ foreach grep { not /^\Q$re\E\s*$/ } @lines;
-    close($file_fh);
-}
-
 sub register_patch {
     my ($self, $dir, $tmpdiff, $patch_name) = @_;
 
     my $quilt = $self->build_quilt_object($dir);
-
-    my @patches = $quilt->series();
-    my $has_patch = (grep { $_ eq $patch_name } @patches) ? 1 : 0;
-    my $series = $quilt->get_series_file();
-    my $applied = $quilt->get_db_file('applied-patches');
     my $patch = $quilt->get_patch_file($patch_name);
 
     if (-s $tmpdiff) {
@@ -260,30 +237,11 @@ sub register_patch {
     }
 
     if (-e $patch) {
-        $quilt->setup_db();
         # Add patch to series file
-        if (not $has_patch) {
-            _add_line($series, $patch_name);
-            _add_line($applied, $patch_name);
-            $quilt->load_series();
-            $quilt->load_db();
-        }
-        # Ensure quilt meta-data are created and in sync with some trickery:
-        # reverse-apply the patch, drop .pc/$patch, re-apply it
-        # with the correct options to recreate the backup files
-        $quilt->pop(reverse_apply => 1);
-        $quilt->push();
+        $quilt->register($patch_name);
     } else {
         # Remove auto_patch from series
-        if ($has_patch) {
-            _drop_line($series, $patch_name);
-            _drop_line($applied, $patch_name);
-            erasedir($quilt->get_db_file($patch_name));
-            $quilt->load_db();
-            $quilt->load_series();
-        }
-        # Clean up empty series
-        unlink($series) if -z $series;
+        $quilt->unregister($patch_name);
     }
     return $patch;
 }

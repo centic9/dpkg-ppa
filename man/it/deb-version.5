@@ -22,7 +22,7 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH deb\-version 5 2013\-04\-02 "Progetto Debian" Debian
+.TH deb\-version 5 "2 aprile 2013" "Progetto Debian" Debian
 .SH NOME
 deb\-version \- formato del numero di versione dei pacchetti Debian
 .
@@ -79,7 +79,7 @@ n'è uno) per determinare \fIversione\-originale\fP e \fIrevisione\-debian\fP. In
 confronto, l'assenza di una \fIrevisione\-debian\fP viene considerarata
 anteriore rispetto alla sua presenza (ma si deve notare che
 \fIrevisione\-debian\fP è la parte meno significativa del numero di versione).
-.SS "Sorting algorithm"
+.SS "Algoritmo di ordinamento"
 Le parti \fIversione\-originale\fP e \fIrevisione\-debian\fP vengono confrontate dal
 sistema di gestione dei pacchetti usando lo stesso algoritmo:
 .PP
@@ -113,8 +113,9 @@ situazioni in cui i numeri di versione contengono stringhe o lettere che il
 sistema di gestione dei pacchetti non può interpretare (come «ALPHA» o
 «pre\-») oppure con ordinamenti insensati.
 .SH NOTE
-The tilde character and its special sorting properties were introduced in
-dpkg 1.10 and some parts of the dpkg build scripts only gained support for
-it later in the 1.10.x series.
+Il carattere tilde e le sue particolari proprietà di ordinamento sono stati
+introdotti nella versione 1.10 di dpkg e alcune parti degli script di
+compilazione di dpkg hanno acquisito il supporto per essi solamente più
+tardi nella serie 1.10.x.
 .SH "VEDERE ANCHE"
 \fBdeb\-control\fP(5), \fBdeb\fP(5), \fBdpkg\fP(1)

@@ -4,7 +4,7 @@
 .\" Copyright Â© 2000 Josip Rodin
 .\" Copyright Â© 2001 Joost Kooij
 .\" Copyright Â© 2001 Wichert Akkerman <wakkerma@debian.org>
-.\" Copyright Â© 2010-2011 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2010-2014 Guillem Jover <guillem@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH dselect 1 2012\-04\-07 Debianprojektet Debian
+.TH dselect 1 2014\-08\-11 Debianprojektet Debian
 .SH NAMN
 dselect \- Debians pakethanteringsskal
 .
@@ -58,11 +58,12 @@ finns ändå att tillgå för att förändra hur \fBdselect\fP arbetar eller för att
 visa ytterligare information om programmet.
 .
 .SH FLAGGOR
-All options can be specified both on the command line and in the \fBdselect\fP
-configuration file \fI/etc/dpkg/dselect.cfg\fP or the files on the
-configuration directory \fI/etc/dpkg/dselect.cfg.d/\fP. Each line in the
-configuration file is either an option (exactly the same as the command line
-option but without leading hyphens) or a comment (if it starts with a \fB#\fP).
+Alla flaggorna kan ges både på kommandoraden och i \fBdselect\fPs
+konfigurationsfil \fI/etc/dpkg/dselect.cfg\fP eller filerna i
+konfigurationskatalogen \fI/etc/dpkg/dpkg.cfg.d/\fP. En rad i
+konfigurationsfilen är antingen en flagga (precis samma som på
+kommandoraden, men utan inledande bindestreck) eller en kommentar (om den
+börjar med ett \fB#\fP).
 .br
 .TP 
 \fB\-\-admindir\fP\fI katalog\fP
@@ -123,11 +124,11 @@ Används för att visa frågor.
 \fBhelpscreen\fP
 Färg på hjälpskärmar.
 .RE
-.P
+.IP
 Efter skärmdelen följer ett kolon och färgangivelsen. Du kan ange antingen
 förgrundsfärgen, bakgrundsfärgen eller båda två, vilka kommer att ersätta de
 inkompilerade färgerna. Använd de normala curses\-namnen för färgerna.
-.P
+.IP
 Du kan även ange ytterligare ett kolon efter färgangivelsen och där ge
 attribut. Detta är en lista med ett eller flera attribut, avdelade med
 plustecken ("+"). Tillgängliga attribut är (alla fungerar inte på alla
@@ -201,7 +202,7 @@ köra installationen på nytt. I de flesta fall kommer problemet försvinna
 eller lösas. Om problemet kvarstår eller den installation som genomfördes
 var felaktig, ber vi dig undersöka orsaken och omständigheterna och
 rapportera ett fel i Debians felrapporteringssystem. Instruktioner om hur du
-gör det finns på http://bugs.debian.org/ eller genom att läsa
+gör det finns på https://bugs.debian.org/ eller genom att läsa
 dokumentationen för \fBbug\fP(1) eller \fBreportbug\fP(1), om dessa är
 installerade.
 .sp
@@ -226,7 +227,7 @@ Avslutar \fBdselect\fP
 Avslutar dselect med felkod noll (lyckat).
 .sp
 .
-.SH "PACKAGE SELECTIONS MANAGEMENT"
+.SH "HANTERING AV PAKETVAL"
 .sp
 .SS Introduktion
 .sp
@@ -278,11 +279,13 @@ pakethanteringssystem, vilket inbegriper paket installerade på systemet och
 paket kända från databasen över tillgängliga paket.
 .sp
 För varje paket visar listan paketets status, prioritet, avdelning,
-installerade och tillgängliga versioner, paketets namn och dess korta
-beskrivning, allt på en rad. Genom att trycka på tangenten \fB"V"\fP slås
-visningen av den installerade och den aktiva versionen på och av. Genom att
-trycka på tangenten \fB"v"\fP växlas paketstatusvisningen mellan ordrik och
-förkortad, med den förkortade visningen som förval.
+installerade och tillgängliga arkitekturer, installerade och tillgängliga
+versioner, paketets namn och dess korta beskrivning, allt på en rad. Genom
+att trycka på knappen \fB"A"\fP slås visningen av installerade och tillgängliga
+arkitekturer på och av. Genom att trycka på tangenten \fB"V"\fP slås visningen
+av den installerade och den aktiva versionen på och av. Genom att trycka på
+tangenten \fB"v"\fP växlas paketstatusvisningen mellan ordrik och förkortad,
+med den förkortade visningen som förval.
 .sp
 Den förkortade statusindikeringen består av fyra delar: en felflagga, vilken
 normalt skall vara blank, aktuell status, senast vald status och nu vald

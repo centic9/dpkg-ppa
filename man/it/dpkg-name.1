@@ -21,7 +21,7 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH dpkg\-name 1 2012\-04\-15 "Progetto Debian" "utilità dpkg"
+.TH dpkg\-name 1 "15 aprile 2012" "Progetto Debian" "utilità dpkg"
 .SH NOME
 dpkg\-name \- rinomina i pacchetti Debian in nomi completi di pacchetto
 .
@@ -66,21 +66,23 @@ sezione non è obbligatorio per cui molti pacchetti finiscono nell'area
 «no\-section». Usare questa opzione con cautela perché crea confusione.
 .TP 
 \fB\-c\fP, \fB\-\-create\-dir\fP
-This option can used together with the \fB\-s\fP option. If a target directory
-isn't found it will be created automatically.  \fBUse this option with care.\fP
+Questa opzione può essere usata insieme all'opzione \fB\-s\fP. Se non viene
+trovata una directory target, verrà creata automaticamente. \fBUsare questa
+opzione con cautela.\fP
 .TP 
 \fB\-?\fP, \fB\-\-help\fP
-Show the usage message and exit.
+Mostra il messaggio sull'uso ed esce.
 .TP 
 \fB\-v\fP, \fB\-\-version\fP
-Show the version and exit.
+Mostra la versione ed esce.
 .
 .SH BUG
-Some packages don't follow the name structure
-\fIpackage\fP\fB_\fP\fIversion\fP\fB_\fP\fIarchitecture\fP\fB.deb\fP.  Packages renamed by
-\fBdpkg\-name\fP will follow this structure. Generally this will have no impact
-on how packages are installed by \fBdselect\fP(1)/\fBdpkg\fP(1), but other
-installation tools might depend on this naming structure.
+Alcuni pacchetti non seguono la struttura dei nomi
+\fIpacchetto\fP\fB_\fP\fIversione\fP\fB_\fP\fIarchitettura\fP\fB.deb\fP. I pacchetti
+rinominati con \fBdpkg\-name\fP seguiranno questa struttura. Generalmente ciò
+non ha effetto su come i pacchetti vengono installati da \fBdselect\fP(1) o
+\fBdpkg\fP(1), ma altri strumenti di installazione possono fare affidamento su
+questa struttura dei nomi.
 .
 .SH ESEMPI
 .TP 
@@ -90,9 +92,9 @@ qualcosa del genere (in base alle informazioni contenute nella parte di
 controllo di «pinco\-pallo.deb»).
 .TP 
 \fBfind /root/debian/ \-name \(aq*.deb\(aq | xargs \-n 1 dpkg\-name \-a\fP
-All files with the extension `deb' in the directory /root/debian and its
-subdirectory's will be renamed by \fBdpkg\-name\fP if required into names with
-no architecture information.
+Tutti i file con estensione «deb» nella directory /root/debian e nelle sue
+sottodirectory verranno rinominati, se necessario, da \fBdpkg\-name\fP in nomi
+senza informazioni sull'architettura.
 .TP 
 \fBfind \-name \(aq*.deb\(aq | xargs \-n 1 dpkg\-name \-a \-o \-s \-c\fP
 \fBNon usarlo.\fP Se lo si fa, il proprio archivio verrà completamente

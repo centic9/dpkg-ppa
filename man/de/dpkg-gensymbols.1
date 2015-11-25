@@ -23,7 +23,7 @@
 .\"
 .\"*******************************************************************
 .TH dpkg\-gensymbols 1 2013\-09\-06 Debian\-Projekt dpkg\-Hilfsprogramme
-.SH NAME
+.SH BEZEICHNUNG
 dpkg\-gensymbols \- erstelle Symboldateien (Abhängigkeitsinformationen für
 Laufzeitbibliotheken)
 .
@@ -67,17 +67,20 @@ große Unterschiede Sie tolerieren können, sehen Sie hierzu die Option
 Die Symboldateien sind nur wirklich nützlich, falls sie die Entwicklung
 eines Paketes über mehrere Veröffentlichungen hinweg wiedergeben. Daher muss
 der Betreuer sie immer aktualisieren, wenn eine neues Symbol hinzugefügt
-wird, so dass die zugeordnete minimale Version der Realität entspricht. Um
-dies vernünftig durchzuführen, können die Diffs aus den Bauprotokollen
-verwandt werden. Meistens kann der Diff direkt auf die Datei
-debian/\fIPaket\fP.symbols angewandt werden. Allerdings werden normalerweise
-weitere Anpassungen notwendig: es wird beispielsweise empfohlen, die
-Debian\-Revision von der minimalen Version zu entfernen, so dass Backports
-mit einer niedrigeren Versionsnummer aber der gleichen Version der
-Originalautoren immer noch die erstellten Abhängigkeiten erfüllen. Falls die
-Debian\-Revision nicht entfernt werden kann, da das Symbol wirklich von der
-Debian\-spezifischen Änderung hinzugefügt wurde, dann sollte der Version »~«
-angehängt werden.
+wird, so dass die zugeordnete minimale Version der Realität entspricht. Die
+in den Bauprotokollen enthaltenen Diffs können als Startpunkt benutzt
+werden, aber zusätzlich hat der Betreuer sicherzustellen, dass sich das
+Verhalten dieser Symbole nicht derart geändert hat, dass irgendetwas, was
+diese Symbole verwendet und gegen die neue Version gelinkt ist, daran
+hindern würde, mit der alten Version zu funktionieren. Meistens kann der
+Diff direkt auf die Datei debian/\fIPaket\fP.symbols angewandt
+werden. Allerdings werden normalerweise weitere Anpassungen notwendig: es
+wird beispielsweise empfohlen, die Debian\-Revision von der minimalen Version
+zu entfernen, so dass Backports mit einer niedrigeren Versionsnummer aber
+der gleichen Version der Originalautoren immer noch die erstellten
+Abhängigkeiten erfüllen. Falls die Debian\-Revision nicht entfernt werden
+kann, da das Symbol wirklich von der Debian\-spezifischen Änderung
+hinzugefügt wurde, dann sollte der Version »~« angehängt werden.
 .P
 Bevor irgendein Patch auf die Symboldatei angewendet wird, sollte der
 Betreuer zweimal prüfen, dass der Patch vernünftig ist. Öffentliche Symbole
@@ -89,6 +92,15 @@ Zeile, die mit »#« als ersten Zeichen beginnt, ist ein Kommentare, falls sie
 nicht mit »#include« beginnt (siehe Abschnitt \fBIncludes
 verwenden\fP). Zeilen, die mit »#MISSING:« anfangen, sind besondere
 Kommentare, die verschwundene Symbole dokumentieren.
+.P
+Vergessen Sie nicht, zu überprüfen, ob alte Versionen aktualisiert werden
+müssen. Es gibt für \fBdpkg\-gensymbols\fP keine Möglichkeit, hierzu eine
+Warnung auszugeben. Wird der Diff blind akzeptiert oder wird angenommen,
+dass nichts geändert werden muss, wenn es keinen Diff gibt, ohne auf
+Änderungen zu prüfen, kann dies dazu führen, dass lockere Abhängigkeiten
+erzeugt werden, laut deren mit älteren Versionen gearbeitet werden kann,
+obwohl dies nicht möglich ist. Dies wird zu schwer zu findenden Fehlern bei
+(teilweisen) Upgrades führen.
 .SS "Verwendung der #PACKAGE#\-Ersetzung"
 .P
 In einigen seltenen Fällen unterscheidet sich der Name der Bibliothek auf
@@ -518,7 +530,7 @@ Zeige den Bedienungshinweis und beende.
 Gebe die Version aus und beende sich.
 .
 .SH ÜBERSETZUNG
-Die deutsche Übersetzung wurde 2004, 2006-2013 von Helge Kreutzmann
+Die deutsche Übersetzung wurde 2004, 2006-2015 von Helge Kreutzmann
 <debian@helgefjell.de>, 2007 von Florian Rehnisch <eixman@gmx.de> und
 2008 von Sven Joachim <svenjoac@gmx.de>
 angefertigt. Diese Übersetzung ist Freie Dokumentation; lesen Sie die

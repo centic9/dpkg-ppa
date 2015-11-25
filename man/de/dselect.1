@@ -4,7 +4,7 @@
 .\" Copyright Â© 2000 Josip Rodin
 .\" Copyright Â© 2001 Joost Kooij
 .\" Copyright Â© 2001 Wichert Akkerman <wakkerma@debian.org>
-.\" Copyright Â© 2010-2011 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2010-2014 Guillem Jover <guillem@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -24,8 +24,8 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH dselect 1 2012\-04\-07 Debian\-Projekt Debian
-.SH NAME
+.TH dselect 1 2014\-08\-11 Debian\-Projekt Debian
+.SH BEZEICHNUNG
 dselect \- Debian\-Paketverwaltungsoberfläche
 .
 .SH ÜBERSICHT
@@ -54,16 +54,16 @@ Zugriffsmethode ist \fIapt\fP, die vom Paket \fBapt\fP bereitgestellt wird.
 Normalerweise wird \fBdselect\fP ohne Parameter aufgerufen. Es wird ein
 interaktives Menü präsentiert, das dem Benutzer eine Liste von Aktionen
 anbietet. Falls eine Aktion als Argument übergeben wird, wird diese Aktion
-sofort begonnen. Es sind noch mehrere Kommandozeilenparameter vorhanden, um
+sofort begonnen. Es sind noch mehrere Befehlszeilenparameter vorhanden, um
 das Laufzeitverhalten von \fBdselect\fP zu verändern oder zusätzliche
 Informationen über das Programm anzuzeigen.
 .
 .SH OPTIONEN
-Alle Optionen können sowohl auf der Kommandozeile als auch in der
+Alle Optionen können sowohl auf der Befehlszeile als auch in der
 Konfigurationsdatei \fI/etc/dpkg/dselect.cfg\fP oder in den Dateien im
 Konfigurationsverzeichnis \fI/etc/dpkg/dselect.cfg.d/\fP von \fBdselect\fP
 angegeben werden. Jede Zeile in der Konfigurationsdatei ist entweder eine
-Option (exakt identisch mit der Kommandozeilenoption, nur ohne einleitende
+Option (exakt identisch mit der Befehlszeilenoption, nur ohne einleitende
 Bindestriche) oder ein Kommentar (falls sie mit \fB#\fP beginnt).
 .br
 .TP 
@@ -125,12 +125,12 @@ Verwendet zum Anzeigen von Abfragezeilen
 \fBhelpscreen\fP
 Farbe der Hilfebildschirme.
 .RE
-.P
+.IP
 Nach dem Teil des Bildschirms kommt ein Doppelpunkt und die Farbangabe. Sie
 können entweder die Vordergrundfarbe, die Hintergrundfarbe oder beide
 angeben und damit die eingebauten Werte überschreiben. Verwenden Sie die
 Standard\-Farbnamen von Curses.
-.P
+.IP
 Optional kann nach der Farbangabe ein weiterer Doppelpunkt und eine
 Attribut\-Angabe folgen. Dies ist eine Liste von einem oder mehreren
 Attribut(en), getrennt durch Plus\-Zeichen (»+«). Folgende Attribute sind
@@ -145,7 +145,7 @@ Gebe Versionsinformationen aus und beende sich erfolgreich.
 .
 .SH AKTIONEN
 Wenn \fBDselect\fP gestartet wird, kann es die folgenden Aktionen durchführen,
-entweder direkt, falls sie auf der Kommandozeile angegeben wurde oder indem
+entweder direkt, falls sie auf der Befehlszeile angegeben wurde oder indem
 dem Benutzer ein Menü der verfügbaren Aktionen bei interkativen Betrieb
 angezeigt wird:
 .SS Zugriff
@@ -211,7 +211,7 @@ wird das Problem verschwinden oder gelöst werden. Falls Probleme bleiben
 oder die durchgeführte Installation nicht korrekt war, untersuchen Sie bitte
 den Grund und die Umstände und reichen Sie einen Fehler in der
 Fehlerdatenbank von Debian ein. Anleitungen wie dies erfolgen kann, sind auf
-http://bugs.debian.org/ verfügbar oder können durch Lesen der Dokumentation
+https://bugs.debian.org/ verfügbar oder können durch Lesen der Dokumentation
 für \fBbug\fP(1) oder \fBreportbug\fP(1) (falls diese installiert sind) erhalten
 werden.
 .sp
@@ -295,12 +295,14 @@ System installierten Pakete und Pakete, die aus den verfügbaren
 Paketdatenbanken bekannt sind.
 .sp
 Für jedes Paket zeigt die Liste den Paketstatus, die Priorität, den Bereich,
-installierte und verfügbare Versionen, den Namen und die Kurzbeschreibung
-des Paketes, alles in einer Zeile. Durch Drücken der Taste \fB»V«\fP kann die
-Anzeige der installierten und verfügbaren Version zwischen ein und aus
-umgeschaltet werden. Durch Drücken der Taste \fB»v«\fP wird die Anzeige des
-Paketstatus zwischen ausführlich und verkürzt umgeschaltet. Die verkürzte
-Anzeige ist voreingestellt.
+installierte und verfügbare Architektur, installierte und verfügbare
+Versionen, den Namen und die Kurzbeschreibung des Paketes, alles in einer
+Zeile. Durch Drücken der Taste \fB»A«\fP kann die Anzeige der installierten und
+verfügbaren Architektur an\- und ausgeschaltet werden. Durch Drücken der
+Taste \fB»V«\fP kann die Anzeige der installierten und verfügbaren Version
+zwischen ein und aus umgeschaltet werden. Durch Drücken der Taste \fB»v«\fP
+wird die Anzeige des Paketstatus zwischen ausführlich und verkürzt
+umgeschaltet. Die verkürzte Anzeige ist voreingestellt.
 .sp
 Die Kurzstatusangabe besteht aus vier Teilen: einer Fehlermarkierung, die
 normalerweise leer sein sollte, dem aktuellen Status, dem letzten
@@ -481,7 +483,7 @@ Zugriffsmethode, sie funktioniert nicht nur, sondern ist sogar flexibler als
 die eingebauten Zugriffsmethoden.
 .
 .SH ÜBERSETZUNG
-Die deutsche Übersetzung wurde 2004, 2006-2013 von Helge Kreutzmann
+Die deutsche Übersetzung wurde 2004, 2006-2015 von Helge Kreutzmann
 <debian@helgefjell.de>, 2007 von Florian Rehnisch <eixman@gmx.de> und
 2008 von Sven Joachim <svenjoac@gmx.de>
 angefertigt. Diese Übersetzung ist Freie Dokumentation; lesen Sie die

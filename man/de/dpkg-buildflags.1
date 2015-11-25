@@ -2,7 +2,7 @@
 .\"
 .\" Copyright Â© 2010-2011 RaphaÃ«l Hertzog <hertzog@debian.org>
 .\" Copyright Â© 2011 Kees Cook <kees@debian.org>
-.\" Copyright Â© 2011-2013 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2011-2014 Guillem Jover <guillem@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -22,8 +22,8 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH dpkg\-buildflags 1 2013\-10\-20 Debian\-Projekt dpkg\-Programmsammlung
-.SH NAME
+.TH dpkg\-buildflags 1 2014\-09\-04 Debian\-Projekt dpkg\-Programmsammlung
+.SH BEZEICHNUNG
 dpkg\-buildflags \- liefert Bauschalter zum Einsatz beim Paketbau
 .
 .SH ÜBERSICHT
@@ -147,9 +147,10 @@ gesetzt/verändert
 .TP 
 \fB\-\-query\-features\fP\fI Bereich\fP
 Gibt die Funktionalitäten, die für den übergebenen Bereich aktiviert sind,
-aus. Der einzige derzeit erkannte Bereich ist \fBhardening\fP. Lesen Sie den
-Abschnitt \fBFUNKTIONALITÄTSBEREICHE\fP für weitere Details. Beendet sich mit
-0, falls der Bereich bekannt ist, andernfalls mit 1.
+aus. Die einzigen derzeit erkannten Bereiche sind \fBqa\fP, \fBreproducible\fP und
+\fBhardening\fP. Lesen Sie den Abschnitt \fBFUNKTIONALITÄTSBEREICHE\fP für weitere
+Details. Beendet sich mit 0, falls der Bereich bekannt ist, andernfalls mit
+1.
 .IP
 Das Ausgabeformat ist im RFC822\-Format, mit einem Abschnitt pro
 Funktionalität. Beispiel:
@@ -181,11 +182,20 @@ Optionen für den C\-Präprozessor. Standardwert: leer
 \fBCXXFLAGS\fP
 Optionen für den C++\-Compiler. Identisch zu \fBCFLAGS\fP.
 .TP 
+\fBOBJCFLAGS\fP
+Optionen für den Objective\-C\-Compiler. Identisch zu \fBCFLAGS\fP.
+.TP 
+\fBOBJCXXFLAGS\fP
+Optionen für den Objective\-C++\-Compiler. Identisch zu \fBCXXFLAGS\fP.
+.TP 
 \fBGCJFLAGS\fP
 Optionen für den GNU\-Java\-Compiler (gcj). Eine Untermenge von \fBCFLAGS\fP.
 .TP 
 \fBFFLAGS\fP
-Optionen für den Fortran\-Compiler. Eine Untermenge von \fBCFLAGS\fP.
+Optionen für den Fortran\-77\-Compiler. Eine Untermenge von \fBCFLAGS\fP.
+.TP 
+\fBFCFLAGS\fP
+Optionen für den Fortran\-9x\-Compiler. Identisch zu \fBFFLAGS\fP.
 .TP 
 \fBLDFLAGS\fP
 Optionen die beim Linken von Programmen oder Laufzeitbibliotheken an den
@@ -197,37 +207,59 @@ Neue Schalter können in Zukunft hinzugefügt werden, falls die Notwendigkeit
 aufkommt (beispielsweise, um weitere Sprachen zu unterstützen).
 .
 .SH FUNKTIONALITÄTSBEREICHE
+.P
+Jede Bereichsfunktionalität kann durch den entsprechenden Bereichswert in
+den Umgebungsvariablen \fBDEB_BUILD_OPTIONS\fP und \fBDEB_BUILD_MAINT_OPTIONS\fP
+mit den »+«\- und »\-«\-Schaltern aktiviert und deaktiviert werden. Soll
+beispielsweise für \fBhardening\fP die »pie«\-Funktionalität aktiviert und die
+»fortify«\-Funktionalität deaktiviert werden, können Sie Folgendes in
+\fBdebian/rules\fP verwenden:
+.P
+  export DEB_BUILD_MAINT_OPTIONS=hardening=+pie,\-fortify
+.P
+Die spezielle Funktionalität \fBall\fP (in allen Bereichen gültig) kann dazu
+verwandt werden, alle Bereichsfunktionalitäten auf einmal zu aktivieren oder
+zu deaktiveren. Um daher alles im Bereich \fBhardening\fP zu deaktiveren und
+nur »format« und »fortify« zu aktiveren, kann Folgendes eingesetzt werden:
+.P
+  export DEB_BUILD_MAINT_OPTIONS=hardening=\-all,+format,+fortify
+.
+.SS "Qualitätssicherung (QS)"
+Mehrere Optionen zur Kompilierung (Details weiter unten) können verwandt
+werden, um dabei zu helfen, Probleme im Quellcode oder im Bausystem zu
+erkennen.
+.TP 
+\fBbug\fP
+Diese Einstellung (standardmäßig deaktiviert) fügt Warnoptionen hinzu, die
+zuverlässig problematischen Quellcode erkennen. Diese Warnungen sind fatal.
+.TP 
+\fBcanary\fP
+Diese Einstellung (standardmäßig deaktiviert) fügt
+Pseudo\-Kanarienvögel\-Optionen zu den Bauschaltern hinzu, so dass die
+Bauprotokolle überprüft werden können, wie die Bauschalter sich
+fortpflanzen. Dies erlaubt, Auslassungen in den normalen
+Bauschaltereinstellungen zu finden. Derzeit werden nur die Schalter
+\fBCPPFLAGS\fP, \fBCFLAGS\fP, \fBOBJCFLAGS\fP, \fBCXXFLAGS\fP und \fBOBJCXXFLAGS\fP
+unterstützt, wobei die Schalter auf
+\fB\-D__DEB_CANARY_\fP\fISchalter\fP_\fIZufallskennung\fP\fB__\fP gesetzt werden, und
+\fBLDFLAGS\fP, das auf \fB\-Wl,\-z,deb\-canary\-\fP\fIZufallskennung\fP gesetzt wird.
+.
 .SS Härtung
 Mehrere Kompilierzeit\-Optionen (weiter unten beschrieben) können dazu
 verwandt werden, ein erstelltes Programm gegen Speicherverfälschungsangriffe
 zu härten, oder zusätzliche Warnungsmeldungen während der Übersetzung
 auszugeben. Sie werden für Architekturen, die diese unterstützen,
 standardmäßig aktiviert; die Ausnahmen sind unten angegeben.
-.P
-Jede Härtungsfunktionalität kann durch den entsprechenden \fBHärtungs\-\fP\-Wert
-in der Umgebungsvariablen \fBDEB_BUILD_MAINT_OPTIONS\fP mit den »+«\- und
-»\-«\-Schaltern aktiviert und deaktiviert werden. Soll beispielsweise die
-»pie«\-Funktionalität aktiviert und die »fortify«\-Funktionalität deaktiviert
-werden, können Sie Folgendes in \fBdebian/rules\fP verwenden:
-.P
-  export DEB_BUILD_MAINT_OPTIONS=hardening=+pie,\-fortify
-.P
-Die spezielle Funktionalität \fBall\fP kann dazu verwandt werden, alle
-Härtungsfunktionalitäten auf einmal zu aktivieren oder zu deaktiveren. Um
-daher alles zu deaktiveren und nur »format« und »fortify« zu aktiveren, kann
-Folgendes eingesetzt werden:
-.P
-  export DEB_BUILD_MAINT_OPTIONS=hardening=\-all,+format,+fortify
-.
 .TP 
 \fBformat\fP
 Diese Einstellung (standardmäßig aktiviert) fügt \fB\-Wformat
-\-Werror=format\-security\fP zu \fBCFLAGS\fP und \fBCXXFLAGS\fP hinzu. Damit wird über
-inkorrekte Formatzeichenkettenverwendungen gewarnt und zu einem Fehler
-führen, wenn Formatfunktionen deart verwandt werden, dass daraus ein
-mögliches Sicherheitsproblem werden könnte. Derzeit warnt dies über Aufrufe
-auf \fBprintf\fP\- und \fBscanf\fP\-Funktionen, bei denen die Formatzeichenkette
-nicht eine reine Zeichenkette ist und es keine Formatargumente gibt, wie in
+\-Werror=format\-security\fP zu \fBCFLAGS\fP, \fBCXXFLAGS\fP \fBCXXFLAGS\fP, \fBOBJCFLAGS\fP
+und \fBOBJCXXFLAGS\fP hinzu. Damit wird über inkorrekte
+Formatzeichenkettenverwendungen gewarnt und zu einem Fehler führen, wenn
+Formatfunktionen deart verwandt werden, dass daraus ein mögliches
+Sicherheitsproblem werden könnte. Derzeit warnt dies über Aufrufe auf
+\fBprintf\fP\- und \fBscanf\fP\-Funktionen, bei denen die Formatzeichenkette nicht
+eine reine Zeichenkette ist und es keine Formatargumente gibt, wie in
 \fBprintf(foo);\fP statt \fBprintf("%s", foo);\fP. Dies könnte ein
 Sicherheitsproblem sein, falls die Formatzeichenkette aus einer
 unvertrauenswürdigen Eingabe stammt und »%n« enthält.
@@ -249,17 +281,30 @@ müssen, damit diese Option einen Effekt hat. Falls die Umgebungsvariable
 \fBfortify\fP aufgrund neuer Warnungen von Glibc 2.16 und neuer deaktiviert.
 .TP 
 \fBstackprotector\fP
-Diese Einstellung (standardmäßig aktiviert) fügt \fB\-fstack\-protector
-\-\-param=ssp\-buffer\-size=4\fP zu \fBCFLAGS\fP und \fBCXXFLAGS\fP hinzu. Dies fügt
-Sicherheitsprüfungen gegen die Überschreibung des Stapelspeichers (Stacks)
-hinzu. Damit werden viele mögliche Code\-Einfügeangriffe zu
-Abbruchsituationen. Im besten Fall werden damit Code\-Einfügungsangriffe zu
-Diensteverweigerungsangriffen oder zu keinen Problemen (abhängig von der
-Anwendung).
+Diese Einstellung (standardmäßig aktiviert falls stackprotectorstrong nicht
+verwandt wird) fügt \fB\-fstack\-protector \-\-param=ssp\-buffer\-size=4\fP zu
+\fBCFLAGS\fP, \fBCXXFLAGS\fP, \fBOBJCFLAGS\fP, \fBOBJCXXFLAGS\fP, \fBGCJFLAGS\fP, \fBFFLAGS\fP
+und \fBFCFLAGS\fP hinzu. Dies fügt Sicherheitsprüfungen gegen die
+Überschreibung des Stapelspeichers (Stacks) hinzu. Damit werden viele
+mögliche Code\-Einfügeangriffe zu Abbruchsituationen. Im besten Fall werden
+damit Code\-Einfügungsangriffe zu Diensteverweigerungsangriffen oder zu
+keinen Problemen (abhängig von der Anwendung).
 
 Diese Funktionalität benötigt das Linken mit Glibc (oder einem anderen
 Anbieter von \fB__stack_chk_fail\fP). Sie muss daher deaktiviert werden, wenn
 mit \fB\-nostdlib\fP oder \fB\-ffreestanding\fP oder Ähnlichem gebaut wird.
+.
+.TP 
+\fBstackprotectorstrong\fP
+Diese Einstellung (standardmäßig aktiviert) fügt \fB\-fstack\-protector\-strong\fP
+zu \fBCFLAGS\fP, \fBCXXFLAGS\fP, \fBOBJCFLAGS\fP, \fBOBJCXXFLAGS\fP, \fBGCJFLAGS\fP,
+\fBFFLAGS\fP und \fBFCFLAGS\fP hinzu. Dies ist eine stärkere Variante von
+\fBstackprotector\fP allerdings ohne signifikante Einbußen bei der Leistung.
+
+Deaktivierung von \fBstackprotector\fP deaktiviert auch diese Einstellung.
+
+Diese Funktionalität stellt die gleichen Anforderungen wie \fBstackprotector\fP
+und benötigt zusätzlich Gcc 4.9 oder neuer.
 .
 .TP 
 \fBrelro\fP
@@ -281,8 +326,9 @@ falls \fBrelro\fP nicht aktiviert ist.
 .
 .TP 
 \fBpie\fP
-Diese Einstellung (standardmäßig deaktiviert) fügt \fB\-fPIE\fP zu \fBCFLAGS\fP und
-\fBCXXFLAGS\fP sowie \fB\-fPIE \-pie\fP zu \fBLDFLAGS\fP hinzu. »Position Independent
+Diese Einstellung (standardmäßig deaktiviert) fügt \fB\-fPIE\fP zu \fBCFLAGS\fP,
+\fBCXXFLAGS\fP, \fBOBJCFLAGS\fP, \fBOBJCXXFLAGS\fP, \fBGCJFLAGS\fP, \fBFFLAGS\fP und
+\fBFCFLAGS\fP sowie \fB\-fPIE \-pie\fP zu \fBLDFLAGS\fP hinzu. »Position Independent
 Executable« (positionsunabhängige Programme) werden benötigt, um »Address
 Space Layout Randomization« (Bereitstellung eines zufälligen
 Adressbereichlayouts) auszunutzen, der von einigen Kernelversionen
@@ -305,6 +351,17 @@ Anwendungsfällen auftreten, da PIE über allgemeine Register implementiert
 ist; in den meisten Anwendungsfällen sind dies weniger als 1%. Architekturen
 mit mehr allgemeinen Registern (z.B. Amd64) erfahren nicht diese
 Schlimmstfall\-Strafe.
+.SS Reproduzierbarkeit
+Die Kompilierzeit\-Optionen (weiter unten beschrieben) können dazu verwandt
+werden, die Reproduzierbarkeit zu verbessern oder zusätzliche
+Warnungsmeldungen während der Übersetzung auszugeben. Sie werden für
+Architekturen, die diese unterstützen, standardmäßig aktiviert; die
+Ausnahmen sind unten angegeben.
+.TP 
+\fBtimeless\fP
+Diese (standardmäßig deaktivierte) Einstellung fügt \fB\-Wdate\-time\fP zu
+\fBCPPFLAGS\fP hinzu. Dies führt zu Warnungen, wenn die Makros \fB__TIME__\fP,
+\fB__DATE__\fP und \fB__TIMESTAMP__\fP verwandt werden.
 .
 .SH UMGEBUNG
 Es gibt einen Satz von zwei Umgebungsvariablen, die den gleichen Vorgang
@@ -339,10 +396,15 @@ Diese Variable kann zum Anhängen ergänzender Optionen zum Wert, der von
 Diese Variable kann zum Voranstellen ergänzender Optionen zum Wert, der von
 \fISchalter\fP zurückgegeben wird, verwandt werden.
 .TP 
+\fBDEB_BUILD_OPTIONS\fP
+.TQ
 \fBDEB_BUILD_MAINT_OPTIONS\fP
-Diese Variable kann zum Deaktivieren oder Aktivieren verschiedener
-Härtungsbauschalter durch die Option \fBhardening\fP verwandt werden. Lesen Sie
-den Abschnitt \fBFUNKTIONALITÄTSBEREICHE\fP für weitere Details.
+Diese Variablen können von Benutzern oder Betreuern zum Deaktivieren oder
+Aktivieren verschiedener Bereichsfunktionalitäten benutzt werden, die
+Bauschalter beeinflussen. Die Variable \fBDEB_BUILD_MAINT_OPTIONS\fP setzt jede
+Einstellung in den Funktionalitätsbereichen \fBDEB_BUILD_OPTIONS\fP außer
+Kraft. Lesen Sie den Abschnitt \fBFUNKTIONALITÄTSBEREICHE\fP für weitere
+Details.
 .
 .SH DATEIEN
 .SS Konfigurationsdateien
@@ -437,7 +499,7 @@ build\-arch:
 .fi
 .RE
 .SH ÜBERSETZUNG
-Die deutsche Übersetzung wurde 2004, 2006-2013 von Helge Kreutzmann
+Die deutsche Übersetzung wurde 2004, 2006-2015 von Helge Kreutzmann
 <debian@helgefjell.de>, 2007 von Florian Rehnisch <eixman@gmx.de> und
 2008 von Sven Joachim <svenjoac@gmx.de>
 angefertigt. Diese Übersetzung ist Freie Dokumentation; lesen Sie die

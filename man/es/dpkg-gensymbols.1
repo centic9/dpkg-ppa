@@ -65,8 +65,11 @@ versiones. Más aún, puede que falle si la diferencia es demasiado grande,
 The symbols files are really useful only if they reflect the evolution of
 the package through several releases. Thus the maintainer has to update them
 every time that a new symbol is added so that its associated minimal version
-matches reality. To do this properly the diffs contained in the build logs
-can be used. In most cases, the diff applies directly to the
+matches reality.  The diffs contained in the build logs can be used as a
+starting point, but the maintainer, additionally, has to make sure that the
+behaviour of those symbols has not changed in a way that would make anything
+using those symbols and linking against the new version, stop working with
+the old version.  In most cases, the diff applies directly to the
 debian/\fIpackage\fP.symbols file. That said, further tweaks are usually
 needed: it's recommended for example to drop the Debian revision from the
 minimal version so that backports with a lower version number but the same
@@ -84,6 +87,13 @@ cualquier línea que comienza con el carácter «#» es un comentario, a menos
 que empiece con «#include» (consulte la sección \fBUsar «include»\fP. Las
 líneas que comienzan con «#MISSING:» son comentarios especiales que
 documentan los símbolos que han desaparecido.
+.P
+Do not forget to check if old symbol versions need to be increased.  There
+is no way \fBdpkg\-gensymbols\fP can warn about this. Blindly applying the diff
+or assuming there is nothing to change if there is no diff, without checking
+for such changes, can lead to packages with loose dependencies that claim
+they can work with older packages they cannot work with. This will introduce
+hard to find bugs with (partial)  upgrades.
 .SS "Usar la sustitución de #PACKAGE#"
 .P
 En algunos casos aislados el nombre de la biblioteca varía según la
@@ -94,12 +104,11 @@ por el nombre real del paquete durante la instalación de los ficheros
 aparecerá en un fichero «symbols» contenido en un paquete binario.
 .SS "Usar etiquetas de símbolos"
 .P
-El etiquetado de símbolos es útil para marcar aquellos símbolos que son de
-alguna manera especiales. Cada símbolo puede tener un número arbitrario de
-etiquetas asociadas a éste. Aunque se analizan y guardan todas las
-etiquetas, \fBdpkg\-gensymbols\fP sólo entiende algunas de ellas, e iniciará un
-tratamiento especial de los símbolos. Consulte la sub\-sección \fBEtiquetas
-estándar de símbolos\fP para una referencia de estas etiquetas.
+Symbol tagging is useful for marking symbols that are special in some way.
+Any symbol can have an arbitrary number of tags associated with it. While
+all tags are parsed and stored, only some of them are understood by
+\fBdpkg\-gensymbols\fP and trigger special handling of the symbols. See
+subsection \fBStandard symbol tags\fP for reference of these tags.
 .P
 La especificación de la etiqueta aparece a continuación del nombre del
 símbolo (no se permite un espacio vacío entre estos). Siempre comienza con

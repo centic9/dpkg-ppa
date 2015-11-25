@@ -4,7 +4,7 @@
  *
  * Copyright © 1995 Ian Jackson <ian@chiark.greenend.org.uk>
  * Copyright © 2001 Wichert Akkerman
- * Copyright © 2006,2008-2012 Guillem Jover <guillem@debian.org>
+ * Copyright © 2006,2008-2014 Guillem Jover <guillem@debian.org>
  * Copyright © 2011 Linaro Limited
  * Copyright © 2011 Raphaël Hertzog <hertzog@debian.org>
  *
@@ -89,9 +89,9 @@ w_configversion(struct varbuf *vb,
     return;
   if (!dpkg_version_is_informative(&pkg->configversion))
     return;
-  if (pkg->status == stat_installed ||
-      pkg->status == stat_notinstalled ||
-      pkg->status == stat_triggerspending)
+  if (pkg->status == PKG_STAT_INSTALLED ||
+      pkg->status == PKG_STAT_NOTINSTALLED ||
+      pkg->status == PKG_STAT_TRIGGERSPENDING)
     return;
   if (flags&fw_printheader)
     varbuf_add_str(vb, "Config-Version: ");
@@ -212,9 +212,9 @@ w_architecture(struct varbuf *vb,
 {
   if (!pkgbin->arch)
     return;
-  if (pkgbin->arch->type == arch_none)
+  if (pkgbin->arch->type == DPKG_ARCH_NONE)
     return;
-  if (pkgbin->arch->type == arch_empty)
+  if (pkgbin->arch->type == DPKG_ARCH_EMPTY)
     return;
 
   if (flags & fw_printheader)
@@ -229,14 +229,12 @@ w_priority(struct varbuf *vb,
            const struct pkginfo *pkg, const struct pkgbin *pkgbin,
            enum fwriteflags flags, const struct fieldinfo *fip)
 {
-  if (pkg->priority == pri_unknown)
+  if (pkg->priority == PKG_PRIO_UNKNOWN)
     return;
-  assert(pkg->priority <= pri_unknown);
+  assert(pkg->priority <= PKG_PRIO_UNKNOWN);
   if (flags&fw_printheader)
     varbuf_add_str(vb, "Priority: ");
-  varbuf_add_str(vb, pkg->priority == pri_other ?
-                     pkg->otherpriority :
-                     priorityinfos[pkg->priority].name);
+  varbuf_add_str(vb, pkg_priority_name(pkg));
   if (flags&fw_printheader)
     varbuf_add_char(vb, '\n');
 }
@@ -248,30 +246,30 @@ w_status(struct varbuf *vb,
 {
   if (pkgbin != &pkg->installed)
     return;
-  assert(pkg->want <= want_purge);
-  assert(pkg->eflag <= eflag_reinstreq);
+  assert(pkg->want <= PKG_WANT_PURGE);
+  assert(pkg->eflag <= PKG_EFLAG_REINSTREQ);
 
 #define PEND pkg->trigpend_head
 #define AW pkg->trigaw.head
   switch (pkg->status) {
-  case stat_notinstalled:
-  case stat_configfiles:
+  case PKG_STAT_NOTINSTALLED:
+  case PKG_STAT_CONFIGFILES:
     assert(!PEND);
     assert(!AW);
     break;
-  case stat_halfinstalled:
-  case stat_unpacked:
-  case stat_halfconfigured:
+  case PKG_STAT_HALFINSTALLED:
+  case PKG_STAT_UNPACKED:
+  case PKG_STAT_HALFCONFIGURED:
     assert(!PEND);
     break;
-  case stat_triggersawaited:
+  case PKG_STAT_TRIGGERSAWAITED:
     assert(AW);
     break;
-  case stat_triggerspending:
+  case PKG_STAT_TRIGGERSPENDING:
     assert(PEND);
     assert(!AW);
     break;
-  case stat_installed:
+  case PKG_STAT_INSTALLED:
     assert(!PEND);
     assert(!AW);
     break;
@@ -283,11 +281,11 @@ w_status(struct varbuf *vb,
 
   if (flags&fw_printheader)
     varbuf_add_str(vb, "Status: ");
-  varbuf_add_str(vb, wantinfos[pkg->want].name);
+  varbuf_add_str(vb, pkg_want_name(pkg));
   varbuf_add_char(vb, ' ');
-  varbuf_add_str(vb, eflaginfos[pkg->eflag].name);
+  varbuf_add_str(vb, pkg_eflag_name(pkg));
   varbuf_add_char(vb, ' ');
-  varbuf_add_str(vb, statusinfos[pkg->status].name);
+  varbuf_add_str(vb, pkg_status_name(pkg));
   if (flags&fw_printheader)
     varbuf_add_char(vb, '\n');
 }
@@ -304,22 +302,22 @@ void varbufdependency(struct varbuf *vb, struct dependency *dep) {
     varbuf_add_str(vb, dop->ed->name);
     if (!dop->arch_is_implicit)
       varbuf_add_archqual(vb, dop->arch);
-    if (dop->verrel != dpkg_relation_none) {
+    if (dop->verrel != DPKG_RELATION_NONE) {
       varbuf_add_str(vb, " (");
       switch (dop->verrel) {
-      case dpkg_relation_eq:
+      case DPKG_RELATION_EQ:
         varbuf_add_char(vb, '=');
         break;
-      case dpkg_relation_ge:
+      case DPKG_RELATION_GE:
         varbuf_add_str(vb, ">=");
         break;
-      case dpkg_relation_le:
+      case DPKG_RELATION_LE:
         varbuf_add_str(vb, "<=");
         break;
-      case dpkg_relation_gt:
+      case DPKG_RELATION_GT:
         varbuf_add_str(vb, ">>");
         break;
-      case dpkg_relation_lt:
+      case DPKG_RELATION_LT:
         varbuf_add_str(vb, "<<");
         break;
       default:
@@ -392,8 +390,8 @@ w_trigpend(struct varbuf *vb,
   if (pkgbin == &pkg->available || !pkg->trigpend_head)
     return;
 
-  assert(pkg->status >= stat_triggersawaited &&
-         pkg->status <= stat_triggerspending);
+  assert(pkg->status >= PKG_STAT_TRIGGERSAWAITED &&
+         pkg->status <= PKG_STAT_TRIGGERSPENDING);
 
   if (flags & fw_printheader)
     varbuf_add_str(vb, "Triggers-Pending:");
@@ -415,8 +413,8 @@ w_trigaw(struct varbuf *vb,
   if (pkgbin == &pkg->available || !pkg->trigaw.head)
     return;
 
-  assert(pkg->status > stat_configfiles &&
-         pkg->status <= stat_triggersawaited);
+  assert(pkg->status > PKG_STAT_CONFIGFILES &&
+         pkg->status <= PKG_STAT_TRIGGERSAWAITED);
 
   if (flags & fw_printheader)
     varbuf_add_str(vb, "Triggers-Awaited:");
@@ -424,6 +422,19 @@ w_trigaw(struct varbuf *vb,
     varbuf_add_char(vb, ' ');
     varbuf_add_pkgbin_name(vb, ta->pend, &ta->pend->installed, pnaw_nonambig);
   }
+  if (flags & fw_printheader)
+    varbuf_add_char(vb, '\n');
+}
+
+void
+varbuf_add_arbfield(struct varbuf *vb, const struct arbitraryfield *arbfield,
+                    enum fwriteflags flags)
+{
+  if (flags & fw_printheader) {
+    varbuf_add_str(vb, arbfield->name);
+    varbuf_add_str(vb, ": ");
+  }
+  varbuf_add_str(vb, arbfield->value);
   if (flags & fw_printheader)
     varbuf_add_char(vb, '\n');
 }
@@ -439,10 +450,7 @@ varbufrecord(struct varbuf *vb,
     fip->wcall(vb, pkg, pkgbin, fw_printheader, fip);
   }
   for (afp = pkgbin->arbs; afp; afp = afp->next) {
-    varbuf_add_str(vb, afp->name);
-    varbuf_add_str(vb, ": ");
-    varbuf_add_str(vb, afp->value);
-    varbuf_add_char(vb, '\n');
+    varbuf_add_arbfield(vb, afp, fw_printheader);
   }
 }
 
@@ -482,7 +490,7 @@ writedb(const char *filename, enum writedb_flags flags)
 
   which = (flags & wdb_dump_available) ? "available" : "status";
 
-  file = atomic_file_new(filename, aff_backup);
+  file = atomic_file_new(filename, ATOMIC_FILE_BACKUP);
   atomic_file_open(file);
   if (setvbuf(file->fp, writebuf, _IOFBF, sizeof(writebuf)))
     ohshite(_("unable to set buffering on %s database file"), which);

@@ -78,14 +78,19 @@ le traitement des actions différées est attendu par T et l'état de T reste
 inchangé. T peut être considéré installé même si les actions différées de I
 n'ont pas encore été exécutées.
 .TP 
+\fB\-\-await\fP
+Cette option a l'effet inverse de \fB\-\-no\-await\fP. C'est actuellement le
+comportement par défaut.
+.TP 
 \fB\-\-no\-act\fP
 Teste uniquement, n'apporte aucun changement.
 .
 .SH ENVIRONNEMENT
 .TP 
 \fBDPKG_ADMINDIR\fP
-If set and the \fB\-\-admindir\fP option has not been specified, it will be used
-as the \fBdpkg\fP data directory.
+Si cette variable est positionnée et que l'option \fB\-\-admindir\fP n'est pas
+précisée, ce répertoire sera utilisé comme répertoire de données pour
+\fBdpkg\fP.
 .
 .SH "VOIR AUSSI"
 \fBdpkg\fP(1), \fBdeb\-triggers\fP(5), \fB/usr/share/doc/dpkg\-dev/triggers.txt.gz\fP.

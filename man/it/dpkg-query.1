@@ -92,12 +92,13 @@ per essere letto da persone e non è facilmente leggibile da macchine. Vedere
 di output.
 .TP 
 \fB\-W\fP, \fB\-\-show\fP [\fImodello\-nome\-pacchetti\fP...]
-Just like the \fB\-\-list\fP option this will list all packages matching the
-given pattern. However the output can be customized using the
-\fB\-\-showformat\fP option.  The default output format gives one line per
-matching package, each line having the name (extended with the architecture
-qualifier for \fBMulti\-Arch\fP \fBsame\fP packages) and installed version of the
-package, separated by a tab.
+Proprio come l'opzione \fB\-\-list\fP, questa elenca tutti i pacchetti che
+corrispondono al modello indicato. Tuttavia l'output può essere
+personalizzato usando l'opzione \fB\-\-showformat\fP. L'output predefinito
+fornisce una riga per ogni pacchetto che corrisponde, ciascuna riga contiene
+il nome (esteso con l'elemento che identifica l'architettura per i pacchetti
+\fBMulti\-Arch\fP \fBsame\fP) e la versione installata del pacchetto, separati da
+una tabulazione.
 .TP 
 \fB\-s\fP, \fB\-\-status\fP \fInome\-pacchetto\fP...
 Segnala lo stato dei pacchetti specificati. Si limita a visualizzare la voce
@@ -125,9 +126,15 @@ Stampa sullo standard output il \fIfile\-controllo\fP installato nel sistema da
 \fB\-c\fP, \fB\-\-control\-path\fP \fInome\-pacchetto\fP [\fIfile\-controllo\fP]
 Elenca i percorsi dei file di controllo installati nel sistema da
 \fInome\-pacchetto\fP. Se viene specificato \fIfile\-controllo\fP allora elenca solo
-il percorso di quel file di controllo, se presente. \fBAvvertimento\fP: questo
-comando è deprecato, passare all'uso di \fB\-\-control\-list\fP e
-\fB\-\-control\-show\fP.
+il percorso di quel file di controllo, se presente.
+
+\fBAvvertimento\fP: questo comando è deprecato perché dà accesso diretto al
+database interno di dpkg; passare invece all'uso di \fB\-\-control\-list\fP e
+\fB\-\-control\-show\fP per tutti i casi in cui questi comandi possono fornire lo
+stesso risultato finale. Tuttavia, fino a che c'è ancora almeno un caso in
+cui è necessario questo comando (cioè quando si deve rimuovere uno script
+postrm del manutentore pericoloso) e fino a che non c'è una buona soluzione
+per il problema, questo comando non sarà rimosso.
 .TP 
 \fB\-S\fP, \fB\-\-search\fP \fImodello\-ricerca\-nomefile\fP...
 Cerca pacchetti a cui appartengono dei file che corrispondono al modello
@@ -146,10 +153,10 @@ Gli utenti di frontend basati su APT dovrebbero usare \fBapt\-cache show\fP
 aggiornato solo quando si usa \fBdselect\fP.
 .TP 
 \fB\-?\fP, \fB\-\-help\fP
-Show the usage message and exit.
+Mostra il messaggio sull'uso ed esce.
 .TP 
 \fB\-\-version\fP
-Show the version and exit.
+Mostra la versione ed esce.
 .
 .SH OPZIONI
 .TP 
@@ -224,23 +231,49 @@ vanno solo i campi interni o i campi memorizzati nel pacchetto binario):
 I seguenti sono campi virtuali, generati da \fBdpkg\-query\fP a partire dai
 valori di altri campi (notare che questi non usano nomi validi per i campi
 nei file di controllo):
-
-.nf
-    \fBbinary:Package\fP
-    \fBbinary:Summary\fP
-    \fBdb:Status\-Abbrev\fP
-    \fBsource:Package\fP
-    \fBsource:Version\fP
-.fi
-
-The default format string is \(lq\fB${binary:Package}\et${Version}\en\fP\(rq.
-Actually, all other fields found in the status file (i.e. user defined
-fields) can be requested, too. They will be printed as\-is, though, no
-conversion nor error checking is done on them. \fBbinary:Package\fP is a
-special field that will print the package name with an architecture
-qualifier (like "libc6:amd64") if the package has a \fBMulti\-Arch\fP field with
-a value of \fBsame\fP, and as such its name could be ambiguous.  To get the
-name of the \fBdpkg\fP maintainer and the installed version, you could run:
+.RS
+.TP 
+\fBbinary:Package\fP
+Contiene il nome del pacchetto binario con un possibile qualificatore di
+architettura come «libc6:amd64» (a partire da dpkg 1.16.2). Il qualificatore
+di architettura sarà presente solo se il pacchetto ha un campo \fBMulti\-Arch\fP
+con un valore di \fBsame\fP. Ciò rende il nome di pacchetto non ambiguo.
+.TP 
+\fBbinary:Summary\fP
+Contiene la descrizione breve del pacchetto (a partire da dpkg 1.16.2).
+.TP 
+\fBdb:Status\-Abbrev\fP
+Contiene lo stato abbreviato del pacchetto, come \(lqii\(rq (a partire da
+dpkg 1.16.2).
+.TP 
+\fBdb:Status\-Want\fP
+Contiene lo stato richiesto del pacchetto, parte del campo Status (a partire
+da dpkg 1.17.11).
+.TP 
+\fBdb:Status\-Status\fP
+Contiene la parola di stato del pacchetto, parte del campo Status (a partire
+da dpkg 1.17.11).
+.TP 
+\fBdb:Status\-Eflag\fP
+Contiene il contrassegno di errore di stato del pacchetto, parte del campo
+Status (a partire da dpkg 1.17.11).
+.TP 
+\fBsource:Package\fP
+Contiene il nome del pacchetto sorgente per questo pacchetto binario (a
+partire da dpkg 1.16.2).
+.TP 
+\fBsource:Version\fP
+Contiene la versione del pacchetto sorgente per questo pacchetto binario (a
+partire da dpkg 1.16.2).
+.RE
+.IP
+La stringa di formato predefinita è
+\(lq\fB${binary:Package}\et${Version}\en\fP\(rq. Di fatto, è possibile
+richiedere anche tutti gli altri campi che si trovano nel file di stato
+(cioè i campi definiti dall'utente). Verranno però stampati come sono, senza
+che vanga fatta su di essi alcuna conversione o alcun controllo degli
+errori. Per ottenere il nome del manutentore di \fBdpkg\fP e la versione
+installata si può usare:
 
 .nf
   \fBdpkg\-query \-W \-f=\(aq${binary:Package} ${Version}\et${Maintainer}\en\(aq dpkg\fP
@@ -252,15 +285,15 @@ name of the \fBdpkg\fP maintainer and the installed version, you could run:
 L'interrogazione richiesta è stata effettuata con successo.
 .TP 
 \fB1\fP
-Problems were encountered while parsing the command line or performing the
-query, including no file or package being found (except for
-\fB\-\-control\-path\fP).
+Si sono verificati dei problemi durante l'analisi della riga di comando o
+nell'effettuare l'interrogazione, incluso il non aver trovato alcun file o
+pacchetto (tranne per \fB\-\-control\-path\fP).
 .
 .SH AMBIENTE
 .TP 
 \fBDPKG_ADMINDIR\fP
-If set and the \fB\-\-admindir\fP option has not been specified, it will be used
-as the \fBdpkg\fP data directory.
+Se impostata e l'opzione \fB\-\-admindir\fP non è stata specificata, verrà usata
+come directory dei dati di \fBdpkg\fP.
 .TP 
 \fBCOLUMNS\fP
 Questa impostazione influenza l'output dell'opzione \fB\-\-list\fP modificando la

@@ -95,7 +95,7 @@ foreach (@ARGV) {
 	$stdout = 1;
     } elsif (m/^-O(.+)$/) {
 	$varlistfile = $1;
-    } elsif (m/^-(\?|-help)$/) {
+    } elsif (m/^-(?:\?|-help)$/) {
 	usage(); exit(0);
     } elsif (m/^--version$/) {
 	version(); exit(0);
@@ -244,10 +244,8 @@ foreach my $file (keys %exec) {
             if (defined($symfile_path)) {
                 # Load symbol information
                 print "Using symbols file $symfile_path for $soname\n" if $debug;
-                unless (exists $symfile_cache{$symfile_path}) {
-                    $symfile_cache{$symfile_path} =
-                        Dpkg::Shlibs::SymbolFile->new(file => $symfile_path);
-                }
+                $symfile_cache{$symfile_path} //=
+                   Dpkg::Shlibs::SymbolFile->new(file => $symfile_path);
                 $symfile->merge_object_from_symfile($symfile_cache{$symfile_path}, $soname);
             }
 	    if (defined($symfile_path) && $symfile->has_object($soname)) {
@@ -257,19 +255,13 @@ foreach my $file (keys %exec) {
                 # package and we really need it)
 		my $dep = $symfile->get_dependency($soname);
 		my $minver = $symfile->get_smallest_version($soname) || '';
-		foreach my $subdep (split /\s*,\s*/, $dep) {
-		    if (not exists $dependencies{$cur_field}{$subdep}) {
-			$dependencies{$cur_field}{$subdep} = Dpkg::Version->new($minver);
-                        print " Initialize dependency ($subdep) with minimal " .
-                              "version ($minver)\n" if $debug > 1;
-		    }
-		}
+		update_dependency_version($dep, $minver);
+		print " Minimal version of ($dep) initialized with ($minver)\n"
+		    if $debug > 1;
 	    } else {
 		# No symbol file found, fall back to standard shlibs
                 print "Using shlibs+objdump for $soname (file $lib)\n" if $debug;
-                unless (exists $objdump_cache{$lib}) {
-                    $objdump_cache{$lib} = Dpkg::Shlibs::Objdump::Object->new($lib);
-                }
+                $objdump_cache{$lib} //= Dpkg::Shlibs::Objdump::Object->new($lib);
                 my $libobj = $objdump_cache{$lib};
                 my $id = $dumplibs_wo_symfile->add_object($libobj);
 		if (($id ne $soname) and ($id ne $lib)) {
@@ -295,7 +287,9 @@ foreach my $file (keys %exec) {
 		    # 3/ when we have been asked to do so
 		    $ignore++ if $ignore_missing_info;
 		    error(_g('no dependency information found for %s ' .
-		             '(used by %s)'), $lib, $file)
+		             "(used by %s)\n" .
+		             'Hint: check if the library actually comes ' .
+		             'from a package.'), $lib, $file)
 		        unless $ignore;
 		}
 	    }
@@ -305,14 +299,14 @@ foreach my $file (keys %exec) {
     # Scan all undefined symbols of the binary and resolve to a
     # dependency
     my %soname_used;
-    foreach (@sonames) {
+    foreach my $soname (@sonames) {
         # Initialize statistics
-        $soname_used{$_} = 0;
-        $global_soname_used{$_} = 0 unless exists $global_soname_used{$_};
-        if (exists $global_soname_needed{$_}) {
-            push @{$global_soname_needed{$_}}, $file;
+        $soname_used{$soname} = 0;
+        $global_soname_used{$soname} //= 0;
+        if (exists $global_soname_needed{$soname}) {
+            push @{$global_soname_needed{$soname}}, $file;
         } else {
-            $global_soname_needed{$_} = [ $file ];
+            $global_soname_needed{$soname} = [ $file ];
         }
     }
     my $nb_warnings = 0;
@@ -483,22 +477,22 @@ sub filter_deps {
 	return 0 if $dep =~ /^\s*\Q$exc\E\b/;
     }
     # Don't include dependencies if they are already
-    # mentionned in a higher priority field
+    # mentioned in a higher priority field
     if (not exists($depseen{$dep})) {
 	$depseen{$dep} = $dependencies{$field}{$dep};
 	return 1;
     } else {
-	# Since dependencies can be versionned, we have to
+	# Since dependencies can be versioned, we have to
 	# verify if the dependency is stronger than the
 	# previously seen one
 	my $stronger;
 	if ($depseen{$dep} eq $dependencies{$field}{$dep}) {
-	    # If both versions are the same (possibly unversionned)
+	    # If both versions are the same (possibly unversioned)
 	    $stronger = 0;
 	} elsif ($dependencies{$field}{$dep} eq '') {
-	    $stronger = 0; # If the dep is unversionned
+	    $stronger = 0; # If the dep is unversioned
 	} elsif ($depseen{$dep} eq '') {
-	    $stronger = 1; # If the dep seen is unversionned
+	    $stronger = 1; # If the dep seen is unversioned
 	} elsif (version_compare_relation($depseen{$dep}, REL_GT,
                                           $dependencies{$field}{$dep})) {
 	    # The version of the dep seen is stronger...
@@ -517,13 +511,14 @@ foreach my $field (reverse @depfields) {
 	$dep = join ', ',
 	    map {
 		# Translate dependency templates into real dependencies
-		if ($dependencies{$field}{$_}) {
-		    s/#MINVER#/(>= $dependencies{$field}{$_})/g;
+		my $templ = $_;
+		if ($dependencies{$field}{$templ}) {
+		    $templ =~ s/#MINVER#/(>= $dependencies{$field}{$templ})/g;
 		} else {
-		    s/#MINVER#//g;
+		    $templ =~ s/#MINVER#//g;
 		}
-		s/\s+/ /g;
-		$_;
+		$templ =~ s/\s+/ /g;
+		$templ;
 	    } grep { filter_deps($_, $field) }
 	    keys %{$dependencies{$field}};
     }
@@ -538,7 +533,7 @@ foreach my $field (reverse @depfields) {
 # Replace old file by new one
 if (!$stdout) {
     close($fh) or syserr(_g('cannot close %s'), "$varlistfile.new");
-    rename("$varlistfile.new",$varlistfile)
+    rename "$varlistfile.new", $varlistfile
         or syserr(_g("install new varlist file \`%s'"), $varlistfile);
 }
 
@@ -622,7 +617,7 @@ sub update_dependency_version {
 	if (exists $dependencies{$cur_field}{$subdep} and
 	    defined($dependencies{$cur_field}{$subdep}))
 	{
-	    if ($dependencies{$cur_field}{$subdep} eq '' or
+	    if ($dependencies{$cur_field}{$subdep} eq '' or $minver ne '' and
 		version_compare_relation($minver, REL_GT,
 				         $dependencies{$cur_field}{$subdep}))
 	    {
@@ -638,7 +633,7 @@ sub add_shlibs_dep {
     my ($soname, $pkg, $libfile) = @_;
     my @shlibs = ($shlibslocal, $shlibsoverride);
     if ($pkg eq '') {
-	# If the file is not packaged, try to find out the shlibs file in
+	# If the file is not packaged, try to find out the shlibs file in
 	# the package being built where the lib has been found
 	my $pkg_root = guess_pkg_root_dir($libfile);
 	if (defined $pkg_root) {
@@ -701,7 +696,7 @@ sub extract_from_shlibs {
 	            $shlibfile, $., $_);
 	    next;
 	}
-	my $depread = defined($4) ? $4 : '';
+	my $depread = $4 // '';
 	if (($libname eq $2) && ($libversion eq $3)) {
 	    # Define dep and end here if the package type explicitly
 	    # matches. Otherwise if the packagetype is not specified, use
@@ -725,7 +720,7 @@ sub find_symbols_file {
     my ($pkg, $soname, $libfile) = @_;
     my @files;
     if ($pkg eq '') {
-	# If the file is not packaged, try to find out the symbols file in
+	# If the file is not packaged, try to find out the symbols file in
 	# the package being built where the lib has been found
 	my $pkg_root = guess_pkg_root_dir($libfile);
 	if (defined $pkg_root) {
@@ -831,13 +826,13 @@ sub find_packages {
     my @files;
     my $pkgmatch = {};
 
-    foreach (@_) {
-	if (exists $cached_pkgmatch{$_}) {
-	    $pkgmatch->{$_} = $cached_pkgmatch{$_};
+    foreach my $path (@_) {
+	if (exists $cached_pkgmatch{$path}) {
+	    $pkgmatch->{$path} = $cached_pkgmatch{$path};
 	} else {
-	    push @files, $_;
-	    $cached_pkgmatch{$_} = ['']; # placeholder to cache misses too.
-	    $pkgmatch->{$_} = [''];        # might be replaced later on
+	    push @files, $path;
+	    $cached_pkgmatch{$path} = ['']; # placeholder to cache misses too.
+	    $pkgmatch->{$path} = [''];      # might be replaced later on
 	}
     }
     return $pkgmatch unless scalar(@files);
@@ -853,14 +848,15 @@ sub find_packages {
 	exec('dpkg', '--search', '--', @files)
 	    or syserr(_g('unable to execute %s'), 'dpkg');
     }
-    while (defined($_ = <$dpkg_fh>)) {
-	chomp($_);
+    while (<$dpkg_fh>) {
+	chomp;
 	if (m/^local diversion |^diversion by/) {
 	    warning(_g('diversions involved - output may be incorrect'));
 	    print { *STDERR } " $_\n"
 		or syserr(_g('write diversion info to stderr'));
 	} elsif (m/^([-a-z0-9+.:, ]+): (\/.*)$/) {
-	    $cached_pkgmatch{$2} = $pkgmatch->{$2} = [ split(/, /, $1) ];
+	    my ($pkgs, $path) = ($1, $2);
+	    $cached_pkgmatch{$path} = $pkgmatch->{$path} = [ split /, /, $pkgs ];
 	} else {
 	    warning(_g("unknown output from dpkg --search: '%s'"), $_);
 	}

@@ -65,34 +65,6 @@ create_logfile() {
     chown root:root $logfile 2>/dev/null || chown 0:0 $logfile
 }
 
-new_installs_multiarch()
-{
-    if [ "$DPKG_MAINTSCRIPT_ARCH" = "amd64" ]; then
-        dpkg --add-architecture i386
-    fi
-}
-
-migrate_multiarch_conffile()
-{
-    ADD_ARCHES=""
-    for i in /etc/dpkg/dpkg.cfg $(run-parts --list /etc/dpkg/dpkg.cfg.d); do
-        ADD_ARCHES="$ADD_ARCHES $(awk '/^foreign-architecture/ {print $2}' $i)"
-        sed -i -e 's/^foreign-architecture/# foreign-architecture/' $i
-    done
-    if [ -f /etc/dpkg/dpkg.cfg.d/multiarch.dpkg-remove ]; then
-        ADD_ARCHES="$ADD_ARCHES $(awk '/^foreign-architecture/ {print $2}' \
-          /etc/dpkg/dpkg.cfg.d/multiarch.dpkg-remove)"
-        rm -f /etc/dpkg/dpkg.cfg.d/multiarch.dpkg-remove
-    elif [ -f /etc/dpkg/dpkg.cfg.d/multiarch.dpkg-backup ]; then
-        ADD_ARCHES="$ADD_ARCHES $(awk '/^foreign-architecture/ {print $2}' \
-          /etc/dpkg/dpkg.cfg.d/multiarch.dpkg-backup)"
-        mv /etc/dpkg/dpkg.cfg.d/multiarch.dpkg-backup \
-          /etc/dpkg/dpkg.cfg.d/multiarch.dpkg-bak
-    fi
-    for i in $ADD_ARCHES; do
-        dpkg --add-architecture $i
-    done
-}
 
 case "$1" in
     configure)
@@ -101,14 +73,6 @@ case "$1" in
 
 	move_info_directory
 	remove_info_symlink
-
-	if dpkg --compare-versions "$2" lt 1.16.0.3ubuntu4; then
-	    new_installs_multiarch
-        fi
-
-	if dpkg --compare-versions "$2" lt 1.16.3; then
-	    migrate_multiarch_conffile
-	fi
 	;;
 
     abort-upgrade|abort-deconfigure|abort-remove)

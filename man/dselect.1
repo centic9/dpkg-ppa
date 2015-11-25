@@ -4,7 +4,7 @@
 .\" Copyright © 2000 Josip Rodin
 .\" Copyright © 2001 Joost Kooij
 .\" Copyright © 2001 Wichert Akkerman <wakkerma@debian.org>
-.\" Copyright © 2010-2011 Guillem Jover <guillem@debian.org>
+.\" Copyright © 2010-2014 Guillem Jover <guillem@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
 .\" You should have received a copy of the GNU General Public License
 .\" along with this program.  If not, see <https://www.gnu.org/licenses/>.
 .
-.TH dselect 1 "2012-04-07" "Debian Project" "Debian"
+.TH dselect 1 "2014-08-11" "Debian Project" "Debian"
 .SH NAME
 dselect \- Debian package management frontend
 .
@@ -121,11 +121,11 @@ Used to display query lines
 .B helpscreen
 Color of help screens.
 .RE
-.P
+.IP
 After the part of the screen comes a colon and the color specification. You
 can specify either the foreground color, the background color, or both,
 overriding the compiled-in colors. Use standard curses color names.
-.P
+.IP
 Optionally, after the color specification is another colon, and an
 attribute specification. This is a list of one or more attributes,
 separated by plus ("+") characters. Available attributes include (not all
@@ -201,7 +201,7 @@ install again. In most cases, the problems will disappear or be solved.
 If problems persist or the installation performed was incorrect, please
 investigate into the causes and circumstances, and file a bug in the
 Debian bug tracking system. Instructions on how to do this can be found
-at http://bugs.debian.org/ or by reading the documentation
+at https://bugs.debian.org/ or by reading the documentation
 for \fBbug\fP(1) or \fBreportbug\fP(1), if these are installed.
 .sp
 Details of the install action depend on the access method's implementation.
@@ -280,12 +280,15 @@ The main select screen displays a list of all packages known to the debian
 package management system. This includes packages installed on the system
 and packages known from the available packages database.
 .sp
-For every package, the list shows the package's status, priority,
-section, installed and available versions, the package name and its
-short description, all in one line. By pressing the \fB'V'\fP key,
-the display of the installed and available version can be toggled between
-on an off. By pressing the \fB'v'\fP key,
-the package status display is toggled between verbose and shorthand.
+For every package, the list shows the package's status, priority, section,
+installed and available architecture, installed and available versions,
+the package name and its short description, all in one line.
+By pressing the \fB'A'\fP key, the display of the installed and available
+architecture can be toggled between on an off.
+By pressing the \fB'V'\fP key, the display of the installed and available
+version can be toggled between on an off.
+By pressing the \fB'v'\fP key, the package status display is toggled between
+verbose and shorthand.
 Shorthand display is the default.
 .sp
 The shorthand status indication consists

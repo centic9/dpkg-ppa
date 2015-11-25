@@ -18,15 +18,6 @@ Why:
  The semantics of Source-Version are missleading when applied to binNMUs.
  Should switch to use binary:Version or source:Version substvars.
 
-What: Revision, Package-Revision, Package_Revision, Class, Recommended,
-      Optional (field)
-Status: obsolete
-When: 1.15.x
-Warning: program
-Why:
- These fields have been superseded by either other fields with better names
- or values in other fields.
-
 What: --print-installation-architecture (dpkg option)
 Status: obsolete
 When: 1.15.x
@@ -54,13 +45,26 @@ Why:
  support compressing new .deb files with that format, although unpacking
  will be kept being supported to handle existing compressed files.
 
+What: -Zbzip2 (dpkg-deb option value)
+Status: deprecated
+When: 1.18.x
+Warning: program
+Why:
+ bzip2 compression has been superseded by xz when it comes to size, and
+ gzip is still faster, in Debian there's really not many packages using
+ that compression, as such there's no point in continuing to support
+ compressing new .deb files with that format, although unpacking
+ will be kept being supported to handle existing compressed files.
+
 What: --control-path (dpkg-query option)
 Status: deprecated
 When: 1.18.x
 Warning: man page
  This was a semi-public interface now superceded by --control-list and
  --control-show, which are a better interface as they do not rely on any
- specific database layout.
+ specific database layout. Although there might still be cases where it's
+ required to avoid hardcoding the database layout, and it will be kept as
+ long as there's legitimate uses for it and no viable replacements.
 
 What: --new, --old (dpkg-deb options)
 Status: deprecated
@@ -136,7 +140,7 @@ Why:
  rely on some of its features.
 
 What: -u, --udeb (dpkg-scanpackages option)
-Status: deprecated
+Status: removed
 When: 1.16.4
 Warning: program
 Why:

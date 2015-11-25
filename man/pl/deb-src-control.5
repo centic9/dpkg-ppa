@@ -22,7 +22,7 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH deb\-src\-control 5 2013\-09\-17 "Projekt Debian" Debian
+.TH deb\-src\-control 5 2013\-12\-20 "Projekt Debian" Debian
 .SH NAZWA
 deb\-src\-control \- format g³ównego pliku kontrolnego pakietu ¼ród³owego
 Debiana
@@ -83,7 +83,21 @@ jest is \fItyp_bts\fP\fB://\fP\fIadres_bts\fP, na przyk³ad:
 \fBdebbugs://bugs.debian.org\fP. Pole to zwykle nie jest potrzebne.
 
 .TP 
-\fBVcs\-*:\fP\fI URL\fP
+\fBVcs\-Arch:\fP\fI url\fP
+.TQ
+\fBVcs\-Bzr:\fP\fI url\fP
+.TQ
+\fBVcs\-Cvs:\fP\fI url\fP
+.TQ
+\fBVcs\-Darcs:\fP\fI url\fP
+.TQ
+\fBVcs\-Git:\fP\fI url\fP
+.TQ
+\fBVcs\-Hg:\fP\fI url\fP
+.TQ
+\fBVcs\-Mtn:\fP\fI url\fP
+.TQ
+\fBVcs\-Svn:\fP\fI url\fP
 \fIURL\fP repozytorium systemu kontroli wersji, u¿ywanego do zarz±dzania danym
 pakietem. Obecnie obs³ugiwane s±: \fBArch\fP, \fBBzr\fP (Bazaar), \fBCvs\fP,
 \fBDarcs\fP, \fBGit\fP, \fBHg\fP (Mercurial), \fBMtn\fP (Monotone) i \fBSvn\fP
@@ -161,15 +175,17 @@ packages. Each group is a list of packages separated by vertical bar (or
 "pipe") symbols, "|". The groups are separated by commas. Commas are to be
 read as "AND", and pipes as "OR", with pipes binding more tightly. Each
 package name is optionally followed by a version number specification in
-parentheses, an architecture specification in square brackets, and a profile
-specification in angle brackets.
+parentheses, an architecture specification in square brackets, and a
+restriction formula consisting of one or more lists of profile names in
+angle brackets.
 
 The syntax of the \fBBuild\-Conflicts\fP, \fBBuild\-Conflicts\-Arch\fP and
 \fBBuild\-Conflicts\-Indep\fP fields is a list of comma\-separated package names,
 where the comma is read as an "AND". Specifying alternative packages using a
 "pipe" is not supported.  Each package name is optionally followed by a
 version number specification in parentheses, an architecture specification
-in square brackets, and a profile specification in angle brackets.
+in square brackets, and a restriction formula consisting of one or more
+lists of profile names in angle brackets.
 
 Numer wersji mo¿e zaczynaæ siê od ">>", co oznacza, ¿e ka¿da
 pó¼niejsza wersja pakietu bêdzie odpowiednia; mo¿na tak¿e podawaæ lub
@@ -182,9 +198,11 @@ An architecture specification consists of one or more architecture names,
 separated by whitespace. Exclamation marks may be prepended to each of the
 names, meaning "NOT".
 
-A profile specification consists of one or more profile names, prefixed with
-the "\fBprofile.\fP" namespace, separated by whitespace. Exclamation marks may
-be prepended to each of the names, meaning "NOT".
+A restriction formula consists of one or more restriction lists, separated
+by whitespace. Each restriction list is enclosed in angle brackets. Items in
+the restriction list are build profile names, separated by whitespace and
+can be prefixed with an exclamation mark, meaning "NOT". A restriction
+formula represents a disjunctive normal form expression.
 
 Proszê zauwa¿yæ, ¿e zale¿no¶ci wobec pakietów z zestawu \fBbuild\-essential\fP
 mog± byæ pominiête, nie da siê równie¿ deklarowaæ wobec nich
@@ -234,7 +252,7 @@ pakietu \fBdebian\-installer\fP zawiera wiêcej informacji.
 .TP 
 \fBEssential:\fP \fByes\fP|\fBno\fP
 .TQ
-\fBMulti\-Arch:\fP \fBsame\fP|\fBforeign\fP|\fBallowed\fP
+\fBMulti\-Arch:\fP \fBsame\fP|\fBforeign\fP|\fBallowed\fP|\fBno\fP
 .TQ
 \fBTag:\fP\fI lista\-znaczników\fP
 .TQ
@@ -279,12 +297,10 @@ pola s± kopiowane do plików wyj¶ciowych. Pole \fBXC\-Approved\-By\fP pojawi siê
 jako \fBApproved\-By\fP w pliku .changes i nie pojawi siê w plikach kontrolnych
 pakietu ¼ród³owego, ani binarnego.
 
-Proszê wzi±æ pod uwagê, ¿e pola zdefiniowane przez u¿ytkownika bêd± u¿ywa³y
-globalnej przestrzeni nazw, co mo¿e w przysz³o¶ci kolidowaæ z oficjalnie
-rozpoznawanymi polami. Aby zapobiec takiej potencjalnej sytuacji, mo¿na
-poprzedziæ takie pola przedrostkiem \fBPrivate\-\fP,
-np. \fBXB\-Private\-New\-Field\fP, co dodatkowo spowoduje, ¿e \fBdpkg\-deb\fP nie
-bêdzie ostrzega³ przed nierozpoznanymi polami.
+Take into account that these user\-defined fields will be using the global
+namespace, which might at some point in the future collide with officially
+recognized fields. To avoid such potential situation you can prefix those
+fields with \fBPrivate\-\fP, such as \fBXB\-Private\-New\-Field\fP.
 
 .SH PRZYK£AD
 .\" .RS
@@ -297,8 +313,8 @@ Maintainer: Dpkg Developers <debian\-dpkg@lists.debian.org>
 # to pole bêdzie skopiowane do pakietu binarnego i ¼ród³owego
 XBS\-Upstream\-Release\-Status: stable
 Homepage: https://wiki.debian.org/Teams/Dpkg
-Vcs\-Browser: http://git.debian.org/?p=dpkg/dpkg.git
-Vcs\-Git: git://git.debian.org/git/dpkg/dpkg.git
+Vcs\-Browser: https://anonscm.debian.org/cgit/dpkg/dpkg.git
+Vcs\-Git: git://anonscm.debian.org/dpkg/dpkg.git
 Standards\-Version: 3.7.3
 Build\-Depends: pkg\-config, debhelper (>= 4.1.81),
  libselinux1\-dev (>= 1.28\-4) [!linux\-any]

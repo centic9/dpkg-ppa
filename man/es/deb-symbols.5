@@ -50,19 +50,28 @@ dinámicamente bien por una revisión de la versión como «(>=
 \fIversión\-mínima\fP)», o nada, si se considera que es suficiente una
 dependencia sin versión.
 .P
-Cada \fIsímbolo\fP exportado (listado como \fInombre\fP@\fIversión\fP, siendo
-\fIversión\fP «Base» si no se definió la versión de la biblioteca ) se asocia
-con una \fIversión\-mínima\fP de su plantilla de dependencia (se usará la
-plantilla principal de dependencia de no estar presente el
-\fIidentificador\-plantilla\-dependencia\fP). La primera plantilla de dependencia
-alternativa se numera como 1, la segunda como 2, etc.
+Each exported \fIsymbol\fP (listed as \fIname\fP@\fIversion\fP, with \fIversion\fP being
+"Base" if the library is not versioned) is associated to a
+\fIminimal\-version\fP of its dependency template (the main dependency template
+is always used and will end up being combined with the dependency template
+referenced by \fIid\-of\-dependency\-template\fP if present). The first
+alternative dependency template is numbered 1, the second one 2, etc.
 .P
-Cada entrada para una biblioteca puede tener también campos de
-metainformación. Estos campos se guardan en las líneas que comienzan con un
-asterisco. Actualmente, el único campo válido es \fIBuild\-Depends\-Package\fP,
-que indica el nombre del paquete «\-dev» asociado a la biblioteca, y usado
-por \fBdpkg\-shlibdeps\fP para asegurar que la dependencia generada es, al
-menos, tan estricta como la dependencia de construcción correspondiente.
+Each entry for a library can also have some fields of meta\-information.
+Those fields are stored on lines starting with an asterisk. Currently, the
+only valid fields are:
+.TP 
+\fBBuild\-Depends\-Package\fP
+It indicates the name of the "\-dev" package associated to the library and is
+used by \fBdpkg\-shlibdeps\fP to make sure that the dependency generated is at
+least as strict as the corresponding build dependency.
+.TP 
+\fBIgnore\-Blacklist\-Groups\fP
+It indicates what blacklist groups should be ignored, as a whitespace
+separated list, so that the symbols contained in those groups get included
+in the output file. This should only be necessary for toolchain packages
+providing those blacklisted symbols. The available groups are system
+dependent, for ELF and GNU\-based systems these are \fBaeabi\fP and \fBgomp\fP.
 .SH EJEMPLOS
 .SS "Fichero «symbols» simple"
 .PP

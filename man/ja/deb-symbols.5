@@ -46,14 +46,28 @@ symbols
 \fIminimal\-version\fP)"
 のようなバージョンチェックにより動的に置き換えられるか、(バージョンを明示した依存関係が不要だと判断された場合は) 空文字となる。
 .P
-エクスポートされた各シンボル (\fIname\fP@\fIversion\fP 形式で列挙。ライブラリにバージョンが存在しない場合、\fIversion\fP は
-"Base" となる) は dependency template の\fIminimal\-version\fP に関連付けられる
-(\fIid\-of\-dependency\-template\fP が存在しない場合は、\fImain\-dependency\-template\fP
-が用いられる。代替の dependency\-template の最初のものは 1 となり、次は 2 となっていく。
+Each exported \fIsymbol\fP (listed as \fIname\fP@\fIversion\fP, with \fIversion\fP being
+"Base" if the library is not versioned) is associated to a
+\fIminimal\-version\fP of its dependency template (the main dependency template
+is always used and will end up being combined with the dependency template
+referenced by \fIid\-of\-dependency\-template\fP if present). The first
+alternative dependency template is numbered 1, the second one 2, etc.
 .P
-ライブラリの各エントリには、メタ情報を示すフィールドもいくつか存在する。これらのフィールドはアスタリスクから始まる行に保存される。現在のところ有効なフィールドは、\fIBuild\-Depends\-Package\fP
-のみである。これは、ライブラリに関連する "\-dev" パッケージ名を示し、\fBdpkg\-shlibdeps\fP
-によって、生成される依存関係が、対応するビルド時の依存関係を最低限満たすことを保証するために用いられる。
+Each entry for a library can also have some fields of meta\-information.
+Those fields are stored on lines starting with an asterisk. Currently, the
+only valid fields are:
+.TP 
+\fBBuild\-Depends\-Package\fP
+It indicates the name of the "\-dev" package associated to the library and is
+used by \fBdpkg\-shlibdeps\fP to make sure that the dependency generated is at
+least as strict as the corresponding build dependency.
+.TP 
+\fBIgnore\-Blacklist\-Groups\fP
+It indicates what blacklist groups should be ignored, as a whitespace
+separated list, so that the symbols contained in those groups get included
+in the output file. This should only be necessary for toolchain packages
+providing those blacklisted symbols. The available groups are system
+dependent, for ELF and GNU\-based systems these are \fBaeabi\fP and \fBgomp\fP.
 .SH 例
 .SS "簡単な symbol ファイル"
 .PP

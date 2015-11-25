@@ -22,7 +22,7 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH dpkg\-gensymbols 1 2013\-09\-06 "Projet Debian" "Utilitaires de dpkg"
+.TH dpkg\-gensymbols 1 06\-09\-2013 "Projet Debian" "Utilitaires de dpkg"
 .SH NOM
 dpkg\-gensymbols \- création des fichiers de symboles (information destinée
 aux dépendances de bibliothèques partagées)
@@ -49,13 +49,14 @@ debian/\fIpaquet\fP.symbols
 .IP \(bu 4
 debian/symbols
 .P
-The main interest of those files is to provide the minimal version
-associated to each symbol provided by the libraries. Usually it corresponds
-to the first version of that package that provided the symbol, but it can be
-manually incremented by the maintainer if the ABI of the symbol is extended
-without breaking backwards compatibility. It's the responsibility of the
-maintainer to keep those files up\-to\-date and accurate, but
-\fBdpkg\-gensymbols\fP helps with that.
+L'intérêt principal de ces fichiers est de fournir la version minimale
+associée à chaque symbole fourni par les bibliothèques. En général, cela
+correspond à la première version du paquet qui a fourni ce symbole, mais
+cette valeur peut être augmentée manuellement par le responsable si
+l'interface binaire applicative (ABI) du symbole est étendue sans casser la
+compatibilité avec les versions précédentes. La tenue à jour de ces fichiers
+est à la charge du responsable du paquet, avec l'aide de
+\fBdpkg\-gensymbols\fP.
 .P
 Quand les fichiers de symboles créés sont différents de ceux fournis par le
 responsable, \fBdpkg\-gensymbols\fP affichera les différences entre les deux
@@ -63,17 +64,20 @@ fichiers. Si ces différences sont trop importantes, le programme peut même
 se terminer en échec (le nombre de différences tolérées peut être réglé avec
 l'option \fB\-c\fP).
 .SH "TENUE À JOUR DES FICHIERS SYMBOLES"
-The symbols files are really useful only if they reflect the evolution of
-the package through several releases. Thus the maintainer has to update them
-every time that a new symbol is added so that its associated minimal version
-matches reality. To do this properly the diffs contained in the build logs
-can be used. In most cases, the diff applies directly to the
-debian/\fIpackage\fP.symbols file. That said, further tweaks are usually
-needed: it's recommended for example to drop the Debian revision from the
-minimal version so that backports with a lower version number but the same
-upstream version still satisfy the generated dependencies.  If the Debian
-revision can't be dropped because the symbol really got added by the Debian
-specific change, then one should suffix the version with "~".
+Les fichiers de symboles deviennent réellement utiles lorsqu'ils permettent
+de suivre l'évolution du paquet sur plusieurs versions. En conséquence, le
+responsable doit les mettre à jour chaque fois qu'un nouveau symbole est
+ajouté afin que la version minimale associée corresponde à la réalité. Pour
+effectuer cette opération correctement, le fichier de différences indiqué
+dans le journal de construction peut être utilisé. Dans la plupart des cas,
+ce fichier de différences peut être appliqué tel quel au fichier
+debian/\fIpaquet\fP.symbols. Cela étant, quelques adaptations sont généralement
+nécessaires\ : il est par exemple recommandé de retirer le numéro de révision
+Debian de la version minimale afin que les paquets rétro\-portés, de numéro
+de version inférieur mais avec la même version amont continuent à répondre
+aux pré\-requis. Si le numéro de révision Debian ne peut vraiment pas être
+retiré car le nouveau symbole est la conséquence d'une modification propre à
+Debian, il est suggéré d'ajouter un suffixe «\ ~\ » au numéro de version.
 .P
 Avant d'appliquer le correctif au fichier de symboles, le responsable doit
 contrôler qu'il est correct. Les symboles publics sont supposés ne jamais
@@ -84,6 +88,16 @@ fichiers de symboles\ :\ toute ligne commençant par «\ #\ » est un commentaire
 sauf si elle commence par «\ #include\ » (voir la section \fButilisation des
 inclusions\fP). Les lignes commençant par «\ #MISSING:\ » sont des commentaires
 spéciaux qui indiquent les symboles qui peuvent avoir disparu.
+.P
+N'oubliez pas de vérifier les anciennes versions des symboles ne doivent pas
+être incrémentées. Il n'y a pas de moyen pour que \fBdpkg\-gensymbols\fP
+prévienne de cela. Appliquer aveuglement le fichier de différences ou
+supposer qu'il n'y a rien à changer, s'il n'y a pas de fichier de
+différences, sans vérifier si il de telles modifications, ce qui peut faire
+que des paquets, avec des dépendances lâches, prétendent qu'ils peuvent
+fonctionner avec des paquets plus anciens avec lesquels ils ne peuvent
+fonctionner. Cela introduira des bogues difficiles à trouver avec des mises
+à jour (partielles).
 .SS "Utilisation du remplacement de #PACKAGE#"
 .P
 Dans de rares cas, le nom de la bibliothèque dépend de l'architecture. Afin
@@ -92,7 +106,7 @@ est possible d'utiliser le marqueur \fI#PACKAGE#\fP. Il sera remplacé par le
 vrai nom du paquet lors de l'installation des fichiers de symboles. À la
 différence du marqueur \fI#MINVER#\fP, \fI#PACKAGE#\fP n'apparaîtra jamais dans le
 fichier de symboles d'un paquet binaire.
-.SS "Utilisation des étiquettes de symboles"
+.SS "Utilisation des étiquettes de symbole"
 .P
 L'étiquetage des symboles («\ symbol tagging\ ») est utile pour marquer des
 symboles qui sont particuliers d'une manière ou d'une autre. Tout symbole
@@ -100,8 +114,7 @@ peut avoir un nombre quelconque d'étiquettes associées. Bien que toutes les
 étiquettes soient analysées et conservées, seules certaines d'entre elles
 sont comprises par \fBdpkg\-gensymbols\fP et déclenchent un traitement
 spécifique des symboles. Veuillez consulter la sous\-section \fBÉtiquettes
-standard de symboles\fP pour une référence complète à propos de ces
-étiquettes.
+standard de symbole\fP pour une référence complète à propos de ces étiquettes.
 .P
 L'indication de l'étiquette vient juste avant le nom du symbole (sans
 espace). Elle commence toujours par une parenthèse ouvrante \fB(\fP, se termine
@@ -110,7 +123,7 @@ avec une parenthèse fermante \fB)\fP et doit contenir au moins une
 \fB|\fP. Chaque étiquette peut comporter optionnellement une valeur, séparée du
 nom de l'étiquette par le caractère \fB=\fP. Les noms et valeurs des étiquettes
 sont des chaînes quelconques qui ne doivent pas comporter les caractères
-\fB)\fP \fB|\fP et \fB=\fP. Les noms de symboles qui suivent une étiquette peuvent
+\fB)\fP \fB|\fP et \fB=\fP. Les noms de symbole qui suivent une étiquette peuvent
 optionnellement être mis entre guillemets avec les caractères \fB'\fP ou \fB"\fP
 afin d'y autoriser la présence d'espaces. Cependant, si aucune étiquette
 n'est utilisée, les guillemets sont alors traités comme une partie du nom du
@@ -126,17 +139,18 @@ marqué\fP et \fIétiquette avec espace\fP sans valeur. Le deuxième symbole, appel
 \fIsymbole_non_protégé\fP ne comporte que l'étiquette \fIoptional\fP. Le dernier
 symbole est un exemple de symbole normal sans étiquette.
 .P
-Since symbol tags are an extension of the \fBdeb\-symbols\fP(5) format, they can
-only be part of the symbols files used in source packages (those files
-should then be seen as templates used to build the symbols files that are
-embedded in binary packages). When \fBdpkg\-gensymbols\fP is called without the
-\fB\-t\fP option, it will output symbols files compatible to the
-\fBdeb\-symbols\fP(5) format: it fully processes symbols according to the
-requirements of their standard tags and strips all tags from the output. On
-the contrary, in template mode (\fB\-t\fP) all symbols and their tags (both
-standard and unknown ones)  are kept in the output and are written in their
-original form as they were loaded.
-.SS "Étiquettes standard de symboles"
+Comme les étiquettes de symbole sont une extension du format de
+\fBdeb\-symbols(5)\fP, elles ne peuvent apparaître que dans les fichiers de
+symboles des paquets source (ces fichiers peuvent ensuite être vus comme des
+modèles permettant de construire les fichiers de symboles inclus dans les
+paquets binaires). Lorsque \fBdpkg\-gensymbols\fP est lancé sans l'option \fB\-t\fP,
+il affiche les fichiers de symboles compatibles avec le format
+\fBdeb\-symbols(5)\fP\ : il traite entièrement les symboles d'après les exigences
+des étiquettes standard et supprime les étiquettes dans sa sortie. Au
+contraire, dans le mode modèle («\ template\ », option \fB\-t\fP), tous les
+symboles et leurs étiquettes (standard et inconnues) sont conservés dans la
+sortie et écrits dans leur forme d'origine.
+.SS "Étiquettes standard de symbole"
 .TP 
 \fBoptional\fP
 Un symbole marqué comme optionnel peut disparaître de la bibliothèque à tout
@@ -151,8 +165,8 @@ existant («\ existing\ »), sans modification de sa version minimale.
 
 Cette étiquette est utile pour les symboles qui sont privés car leur
 disparition ne provoque pas de changement d'interface applicative (ABI). Par
-exemple, la plupart des modèles d'instantiation C++ sont dans cette
-catégorie. Comme toute autre étiquette, celle\-ci peut comproter une valeur
+exemple, la plupart des modèles d'instanciation C++ sont dans cette
+catégorie. Comme toute autre étiquette, celle\-ci peut comporter une valeur
 arbitraire qui peut servir à indiquer pour quelle raison le symbole est
 optionnel.
 .TP 
@@ -179,11 +193,12 @@ contraire, tous les symboles spécifiques d'architectures (y compris ceux des
 architectures différentes) seront écrits dans le fichier de symboles, dans
 le mode «\ modèle\ ».
 
-The format of \fIarchitecture list\fP is the same as the one used in the
-\fBBuild\-Depends\fP field of \fIdebian/control\fP (except the enclosing square
-brackets []). For example, the first symbol from the list below will be
-considered only on alpha, any\-amd64 and ia64 architectures, the second only
-on linux architectures, while the third one anywhere except on armel.
+Le format de \fIliste d'architectures\fP est le même que le format utilisé dans
+les champs \fBBuild\-Depends\fP des fichiers \fIdebian/control\fP (à l'exception
+des crochets d'inclusion []). Par exemple, le premier symbole de la liste
+qui suit sera pris en compte sur les architectures alpha, n'importe quelle
+amd64 et ia64, le second uniquement sur les architectures linux et le
+troisième partout sauf sur armel.
 
  (arch=alpha any\-amd64 ia64)un_symbole_spécifique_64bit@Base 1.0
  (arch=linux\-any)un_symbole_spécifique_linux@Base 1.0
@@ -200,10 +215,11 @@ certaines bibliothèques de bas niveau telles que libgcc.
 .TP 
 \fBc++\fP
 Indique un motif de symbole \fIc++\fP. Voir la sous\-section \fBUtilisation de
-canevas de symboles\fP plus loin.
+motifs de symbole\fP plus loin.
 .TP 
 \fBsymver\fP
-Indique un motif de symbole \fIsymver\fP (version de symbole).
+Indique un motif de symbole \fIsymver\fP (version de symbole). Voir la
+sous\-section \fBUtilisation des motifs de symboles\fP plus loin.
 .TP 
 \fBregex\fP
 Indique un motif de symbole basé sur des \fIexpressions rationnelles\fP. Voir
@@ -214,25 +230,27 @@ Au contraire d'une indication normale de symbole, un motif permet de couvrir
 des symboles multiples de la bibliothèque. \fBdpkg\-gensymbols\fP essaie de
 faire correspondre chaque motif à chaque symbole qui n'est pas explicitement
 défini dans le fichier de symboles. Dès qu'un motif est trouvé qui
-corresponde au symbole, l'ensemble de ses étiquettes et propriétés sont
+correspond au symbole, l'ensemble de ses étiquettes et propriétés sont
 utilisées comme spécification de base du symbole. Si aucun des motifs ne
 correspond, le symbole sera considéré comme nouveau.
 
-A pattern is considered lost if it does not match any symbol in the
-library. By default this will trigger a \fBdpkg\-gensymbols\fP failure under
-\fB\-c1\fP or higher level. However, if the failure is undesired, the pattern
-may be marked with the \fIoptional\fP tag. Then if the pattern does not match
-anything, it will only appear in the diff as MISSING. Moreover, like any
-symbol, the pattern may be limited to the specific architectures with the
-\fIarch\fP tag. Please refer to \fBStandard symbol tags\fP subsection above for
-more information.
+Un motif est considéré comme perdu si aucun symbole ne lui correspond dans
+la bibliothèque. Par défaut, cela provoquera un échec de \fBdpkg\-gensymbols\fP
+s'il est utilisé avec l'option \fB\-c1\fP (ou une valeur plus
+élevée). Cependant, si l'échec n'est pas souhaité, le motif peut être marqué
+comme optionnel avec l'étiquette \fIoptional\fP. Dans ce cas, si le motif ne
+correspond à rien, il sera simplement mentionné dans le fichier de
+différences comme \fIMISSING\fP (manquant). De plus, comme pour tout autre
+symbole, le motif peut être limité à des architectures données avec
+l'étiquette \fIarch\fP. Veuillez consulter la sous\-section \fBÉtiquettes
+standard de symbole\fP pour plus d'informations.
 
-Patterns are an extension of the \fBdeb\-symbols\fP(5) format hence they are
-only valid in symbol file templates. Pattern specification syntax is not any
-different from the one of a specific symbol. However, symbol name part of
-the specification serves as an expression to be matched against
-\fIname@version\fP of the real symbol. In order to distinguish among different
-pattern types, a pattern will typically be tagged with a special tag.
+Les motifs sont une extension du format de \fBdeb\-symbols(5)\fP en ce sens
+qu'ils ne sont valables que dans les modèles de fichiers de
+symboles. Cependant, la partie comportant le nom de symbole est utilisée
+comme une expression à faire correspondre à \fIname@version\fP du symbole
+réel. Afin de faire la distinction entre les différents types de motifs, un
+motif sera usuellement marqué avec une étiquette spéciale.
 
 Actuellement, \fBdpkg\-gensymbols\fP gère trois types de base de motifs\ :
 .TP  3
@@ -241,14 +259,14 @@ Ce motif est repéré par l'étiquette \fIc++\fP. Il ne sera comparé qu'aux
 symboles C++ avec leur nom de symbole complet (demangled) tel qu'affiché
 avec l'utilitaire \fBc++filt\fP. Ce motif est très pratique pour faire
 correspondre les symboles dont les noms raccourcis (mangled) peuvent
-différer selon les architectures bien que leurs noms complet restent les
+différer selon les architectures bien que leurs noms complets restent les
 mêmes. Un tel groupe de symboles sont les \fInon\-virtual thunks\fP pour
 lesquels les décalages (offsets) spécifiques d'architectures sont inclus
-dans leur nom court. Une manifestation  usuelle de ce cas est le destructeur
+dans leur nom court. Une manifestation usuelle de ce cas est le destructeur
 virtuel qui, dans le contexte d'un «\ problème du diamant\ », a besoin d'un
 symbole de transition spécial (ou «\ thunk\ ») non virtuel. Par exemple, même
-si _ZThn8_N3NSB6ClassDD1Ev@Base sur une architecture 32bit est identique à
-_ZThn16_N3NSB6ClassDD1Ev@Base sur une architecture 64bit, les deux peuvent
+si _ZThn8_N3NSB6ClassDD1Ev@Base sur une architecture 32\ bits est identique à
+_ZThn16_N3NSB6ClassDD1Ev@Base sur une architecture 64\ bits, les deux peuvent
 être indiqués avec le même motif \fIc++\fP\ :
 .RS
 .PP
@@ -352,16 +370,15 @@ il est déconseillé d'abuser des motifs génériques.
 Lorsque plusieurs motifs correspondent pour le même symbole réel, les alias
 (d'abord \fIc++\fP, puis \fIsymver\fP) sont privilégiés par rapport aux motifs
 génériques. Ceux\-ci sont essayés dans l'ordre où ils apparaissent dans le
-modèle de fichier de symbole, en s'arrêtant à la première
+modèle de fichier de symboles, en s'arrêtant à la première
 correspondance. Veuillez noter, cependant, que la modification manuelle de
 l'ordre des entrées de fichiers n'est pas recommandée car \fBdpkg\-gensymbols\fP
-crée des fichiers de différences d'après l'ordre alphabético\-numérique de
-leur nom.
+crée des fichiers de différences d'après l'ordre alphanumérique de leur nom.
 .SS "Utilisation des inclusions"
 .P
 Lorsqu'un jeu de symboles exportés varie selon les architectures, il est
 souvent peu efficace d'utiliser un seul fichier de symboles. Pour couvrir
-ces cas, une directive d'inclusion peut devenir utile dans certains cas.
+ces cas, une directive d'inclusion peut devenir utile dans certains cas\ :
 .IP \(bu 4
 Il est possible de factoriser la partie commune dans un fichier externe
 donné et l'inclure dans le fichier \fIpaquet\fP.symbols.\fIarch\fP avec une
@@ -387,12 +404,12 @@ de symboles spécifiques des architectures\ :
 Les fichiers de symboles sont lus ligne par ligne et les directives
 d'inclusion sont traitées dès qu'elles sont trouvées. En conséquence, le
 contenu du fichier d'inclusion peut remplacer une définition qui précède
-l'inclusion et que ce qui suit l'inclusion peut remplacer une définition
-qu'elle ajoutait. Tout symbole (ou même une autre directive d'inclusion)
-dans le fichier inclus peut définir des étiquettes supplémentaires ou
-remplacer les valeurs d'étiquettes héritées, dans sa définition
-d'étiquettes. Cependant, pour un symbole donné, il n'existe pas de méthode
-permettant de remplacer une de ses étiquettes héritées.
+l'inclusion et ce qui suit l'inclusion peut remplacer une définition qu'elle
+ajoutait. Tout symbole (ou même une autre directive d'inclusion) dans le
+fichier inclus peut définir des étiquettes supplémentaires ou remplacer les
+valeurs d'étiquettes héritées, dans sa définition d'étiquettes. Cependant,
+pour un symbole donné, il n'existe pas de méthode permettant de remplacer
+une de ses étiquettes héritées.
 .P
 Un fichier inclus peut reprendre la ligne d'en\-tête qui contient le
 «\ SONAME\ » de la bibliothèque. Dans ce cas, cela remplace toute ligne
@@ -415,7 +432,7 @@ stabilité de l'interface applicative binaire (ABI) malgré ses modifications
 internes et l'extension de son API\ ;
 .IP \(bu 4
 elle n'exporte pas les symboles privés (afin de contourner cela, de tels
-symboles peuvent être étiquetés comme optionnels)
+symboles peuvent être étiquetés comme optionnels).
 .P
 En maintenant le fichier de symboles, il est facile d'en voir apparaître et
 disparaître. Cependant, il est plus difficile de contrôler la présence
@@ -440,52 +457,58 @@ de debian/changelog. Ce paramètre est requis si le programme est lancé en
 dehors de l'arborescence source d'un paquet.
 .TP 
 \fB\-e\fP\fIfichier\-bibliothèque\fP
-Only analyze libraries explicitly listed instead of finding all public
-libraries. You can use shell patterns used for pathname expansions (see the
-\fBFile::Glob\fP(3perl) manual page for details) in \fIlibrary\-file\fP to match
-multiple libraries with a single argument (otherwise you need multiple
-\fB\-e\fP).
+N'analyse que les bibliothèques explicitement mentionnées au lieu de
+rechercher toutes les bibliothèques publiques. Les motifs du shell peuvent
+être utilisés pour l'expansion des chemins d'accès (voir la page de manuel
+de \fBFile::Glob\fP(3perl) pour plus d'informations) dans
+\fIfichier\-bibliothèque\fP pour établir une correspondance avec plusieurs
+bibliothèques avec un seul paramètre (afin d'éviter d'utiliser plusieurs
+options \fB\-e\fP).
 .TP 
 \fB\-I\fP\fInom\-de\-fichier\fP
 Utilise \fInom\-de\-fichier\fP comme fichier de référence pour créer le fichier
 de symboles à intégrer dans le paquet lui\-même.
 .TP 
-\fB\-O\fP[\fIfilename\fP]
-Print the generated symbols file to standard output or to \fIfilename\fP if
-specified, rather than to \fBdebian/tmp/DEBIAN/symbols\fP (or
-\fIpackage\-build\-dir\fP\fB/DEBIAN/symbols\fP if \fB\-P\fP was used). If \fIfilename\fP is
-pre\-existing, its contents are used as basis for the generated symbols
-file.  You can use this feature to update a symbols file so that it matches
-a newer upstream version of your library.
+\fB\-O\fP[\fInom\-de\-fichier\fP]
+Affiche le fichier de symboles créé sur la sortie standard ou dans le
+\fInom\-de\-fichier\fP, si spécifié, plutôt que dans \fBdebian/tmp/DEBIAN/symbols\fP
+(ou \fIrépertoire\-construction\-paquet\fP\fB/DEBIAN/symbols\fP si \fB\-P\fP est
+présent). Si \fInom\-de\-fichier\fP existe déjà, son contenu sera utilisé comme
+base pour le fichier créé. Cette fonctionnalité permet de mettre à jour le
+fichier de symboles pour qu'il corresponde à une nouvelle version amont de
+la bibliothèque.
 .TP 
 \fB\-t\fP
-Write the symbol file in template mode rather than the format compatible
-with \fBdeb\-symbols\fP(5). The main difference is that in the template mode
-symbol names and tags are written in their original form contrary to the
-post\-processed symbol names with tags stripped in the compatibility mode.
-Moreover, some symbols might be omitted when writing a standard
-\fBdeb\-symbols\fP(5) file (according to the tag processing rules) while all
-symbols are always written to the symbol file template.
+Écrit le fichier de symboles en mode modèle plutôt que dans un format
+compatible avec \fBdeb\-symbols(5)\fP. La différence majeure réside dans le fait
+que les noms de symboles et les étiquettes sont écrits dans leur forme
+d'origine au lieu d'être interprétés, avec réduction des étiquettes en mode
+de compatibilité. De plus, certains symboles peuvent être omis lors de
+l'écriture d'un fichier \fBdeb\-symbols(5)\fP standard (selon les règles de
+traitement des étiquettes) alors que tous les symboles sont écrits lors de
+la création d'un modèle de fichier de symboles.
 .TP 
 \fB\-c\fP\fI[0\-4]\fP
 Définit les contrôles à effectuer lors de la comparaison des symboles créés
 en utilisant le fichier de modèle comme point de départ. Le niveau par
 défaut est 1. Plus le niveau est augmenté, plus le nombre de contrôles
-effectués est important. Chaque niveau de contrôle  comporte les contrôles
+effectués est important. Chaque niveau de contrôle comporte les contrôles
 effectués pour les niveaux inférieurs. Le niveau 0 n'échoue jamais. Le
 niveau 1 échoue si certains symboles ont disparu. Le niveau 2 échoue si de
 nouveaux symboles ont été ajoutés. Le niveau 3 échoue si certaines
 bibliothèques ont disparu. Le niveau 4 échoue si des bibliothèques ont été
 ajoutées.
 
-This value can be overridden by the environment variable
-\fBDPKG_GENSYMBOLS_CHECK_LEVEL\fP.
+Cette valeur peut être remplacée par la valeur de la variable
+d'environnement \fBDPKG_GENSYMBOLS_CHECK_LEVEL\fP.
 .TP 
 \fB\-q\fP
-Keep quiet and never generate a diff between generated symbols file and the
-template file used as starting point or show any warnings about new/lost
-libraries or new/lost symbols. This option only disables informational
-output but not the checks themselves (see \fB\-c\fP option).
+Fonctionne en mode silencieux et ne crée jamais de fichier de différences
+entre le fichier de symboles créé et le fichier modèle utilisé comme point
+de départ. N'affiche également aucun avertissement à propos de bibliothèques
+nouvelles ou disparues ou de symboles nouveaux ou disparus. Cette option ne
+désactive que l'affichage informatif, mais pas les contrôles eux\-mêmes (voir
+l'option \fB\-c\fP).
 .TP 
 \fB\-a\fP\fIarch\fP
 Définit \fIarch\fP comme architecture lors du traitement des fichiers de
@@ -494,11 +517,11 @@ de différences pour n'importe quelle architecture, à condition que les
 fichiers binaires correspondants soient déjà disponibles.
 .TP 
 \fB\-d\fP
-Active le mode verbeux. De nombreux messages sont affichés pour expliquer ce
+Active le mode bavard. De nombreux messages sont affichés pour expliquer ce
 que \fBdpkg\-gensymbols\fP fait.
 .TP 
 \fB\-V\fP
-Active le mode verbeux. Le fichier de symboles créé contiendra les symboles
+Active le mode bavard. Le fichier de symboles créé contiendra les symboles
 dépréciés sous forme de commentaires. De plus, en mode modèle, les motifs de
 symboles seront suivis de commentaires affichant les symboles réels qui
 correspondent au motif.

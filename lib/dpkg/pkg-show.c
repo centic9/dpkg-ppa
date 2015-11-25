@@ -3,7 +3,7 @@
  * pkg-show.c - primitives for pkg information display
  *
  * Copyright © 1995,1996 Ian Jackson <ian@chiark.greenend.org.uk>
- * Copyright © 2008-2012 Guillem Jover <guillem@debian.org>
+ * Copyright © 2008-2014 Guillem Jover <guillem@debian.org>
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,13 +37,13 @@ pkgbin_name_needs_arch(const struct pkgbin *pkgbin,
 	case pnaw_never:
 		break;
 	case pnaw_foreign:
-		if (pkgbin->arch->type == arch_native ||
-		    pkgbin->arch->type == arch_all ||
-		    pkgbin->arch->type == arch_none)
+		if (pkgbin->arch->type == DPKG_ARCH_NATIVE ||
+		    pkgbin->arch->type == DPKG_ARCH_ALL ||
+		    pkgbin->arch->type == DPKG_ARCH_NONE)
 			break;
 		return true;
 	case pnaw_nonambig:
-		if (pkgbin->multiarch != multiarch_same)
+		if (pkgbin->multiarch != PKG_MULTIARCH_SAME)
 			break;
 	/* Fall through. */
 	case pnaw_always:
@@ -165,6 +165,61 @@ int
 pkg_abbrev_eflag(const struct pkginfo *pkg)
 {
 	return " R"[pkg->eflag];
+}
+
+/**
+ * Return a string representation of the package want status name.
+ *
+ * @param pkg The package to consider.
+ *
+ * @return The string representation.
+ */
+const char *
+pkg_want_name(const struct pkginfo *pkg)
+{
+	return wantinfos[pkg->want].name;
+}
+
+/**
+ * Return a string representation of the package eflag status name.
+ *
+ * @param pkg The package to consider.
+ *
+ * @return The string representation.
+ */
+const char *
+pkg_eflag_name(const struct pkginfo *pkg)
+{
+	return eflaginfos[pkg->eflag].name;
+}
+
+/**
+ * Return a string representation of the package current status name.
+ *
+ * @param pkg The package to consider.
+ *
+ * @return The string representation.
+ */
+const char *
+pkg_status_name(const struct pkginfo *pkg)
+{
+	return statusinfos[pkg->status].name;
+}
+
+/**
+ * Return a string representation of the package priority name.
+ *
+ * @param pkg The package to consider.
+ *
+ * @return The string representation.
+ */
+const char *
+pkg_priority_name(const struct pkginfo *pkg)
+{
+	if (pkg->priority == PKG_PRIO_OTHER)
+		return pkg->otherpriority;
+	else
+		return priorityinfos[pkg->priority].name;
 }
 
 /**

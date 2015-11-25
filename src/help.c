@@ -3,7 +3,7 @@
  * help.c - various helper routines
  *
  * Copyright © 1995 Ian Jackson <ian@chiark.greenend.org.uk>
- * Copyright © 2007-2012 Guillem Jover <guillem@debian.org>
+ * Copyright © 2007-2014 Guillem Jover <guillem@debian.org>
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -41,14 +41,14 @@
 #include "main.h"
 
 const char *const statusstrings[]= {
-  [stat_notinstalled]    = N_("not installed"),
-  [stat_configfiles]     = N_("not installed but configs remain"),
-  [stat_halfinstalled]   = N_("broken due to failed removal or installation"),
-  [stat_unpacked]        = N_("unpacked but not configured"),
-  [stat_halfconfigured]  = N_("broken due to postinst failure"),
-  [stat_triggersawaited] = N_("awaiting trigger processing by another package"),
-  [stat_triggerspending] = N_("triggered"),
-  [stat_installed]       = N_("installed")
+  [PKG_STAT_NOTINSTALLED]    = N_("not installed"),
+  [PKG_STAT_CONFIGFILES]     = N_("not installed but configs remain"),
+  [PKG_STAT_HALFINSTALLED]   = N_("broken due to failed removal or installation"),
+  [PKG_STAT_UNPACKED]        = N_("unpacked but not configured"),
+  [PKG_STAT_HALFCONFIGURED]  = N_("broken due to postinst failure"),
+  [PKG_STAT_TRIGGERSAWAITED] = N_("awaiting trigger processing by another package"),
+  [PKG_STAT_TRIGGERSPENDING] = N_("triggered"),
+  [PKG_STAT_INSTALLED]       = N_("installed")
 };
 
 struct filenamenode *
@@ -204,7 +204,7 @@ void clear_istobes(void) {
   it = pkg_db_iter_new();
   while ((pkg = pkg_db_iter_next_pkg(it)) != NULL) {
     ensure_package_clientdata(pkg);
-    pkg->clientdata->istobe= itb_normal;
+    pkg->clientdata->istobe = PKG_ISTOBE_NORMAL;
     pkg->clientdata->replacingfilesandsaid= 0;
   }
   pkg_db_iter_free(it);
@@ -227,7 +227,7 @@ dir_has_conffiles(struct filenamenode *file, struct pkginfo *pkg)
       if (conff->obsolete)
         continue;
       if (strncmp(file->name, conff->name, namelen) == 0 &&
-          conff->name[namelen] == '/') {
+          strlen(conff->name) > namelen && conff->name[namelen] == '/') {
 	debug(dbg_veryverbose, "directory %s has conffile %s from %s",
 	      file->name, conff->name, pkg_name(pkg, pnaw_always));
 	return true;
@@ -257,6 +257,7 @@ dir_is_used_by_others(struct filenamenode *file, struct pkginfo *pkg)
     if (other_pkg == pkg)
       continue;
 
+    filepackages_iter_free(iter);
     debug(dbg_veryverbose, "dir_is_used_by_others yes");
     return true;
   }
@@ -286,6 +287,7 @@ dir_is_used_by_pkg(struct filenamenode *file, struct pkginfo *pkg,
           node->namenode->name);
 
     if (strncmp(file->name, node->namenode->name, namelen) == 0 &&
+        strlen(node->namenode->name) > namelen &&
         node->namenode->name[namelen] == '/') {
       debug(dbg_veryverbose, "dir_is_used_by_pkg yes");
       return true;
@@ -326,8 +328,8 @@ void oldconffsetflags(const struct conffile *searchconff) {
     namenode->flags |= fnnf_old_conff;
     if (!namenode->oldhash)
       namenode->oldhash= searchconff->hash;
-    debug(dbg_conffdetail, "oldconffsetflags '%s' namenode %p flags %o",
-          searchconff->name, namenode, namenode->flags);
+    debug(dbg_conffdetail, "oldconffsetflags '%s' namenode '%s' flags %o",
+          searchconff->name, namenode->name, namenode->flags);
     searchconff= searchconff->next;
   }
 }
@@ -392,7 +394,7 @@ void ensure_pathname_nonexisting(const char *pathname) {
   }
   debug(dbg_eachfile, "ensure_pathname_nonexisting running rm -rf '%s'",
         pathname);
-  subproc_wait_check(pid, "rm cleanup", 0);
+  subproc_reap(pid, _("rm command for cleanup"), 0);
 }
 
 void

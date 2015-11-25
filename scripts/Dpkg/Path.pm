@@ -19,7 +19,7 @@ package Dpkg::Path;
 use strict;
 use warnings;
 
-our $VERSION = '1.02';
+our $VERSION = '1.04';
 
 use Exporter qw(import);
 use File::Spec;
@@ -199,14 +199,15 @@ sub resolve_symlink($) {
 
 =item my $cmdpath = find_command($command)
 
-Return the path of the command if available on an absolute or relative
-path or on the $PATH, undef otherwise.
+Return the path of the command if defined and available on an absolute or
+relative path or on the $PATH, undef otherwise.
 
 =cut
 
 sub find_command($) {
     my $cmd = shift;
 
+    return if not $cmd;
     if ($cmd =~ m{/}) {
 	return "$cmd" if -x "$cmd";
     } else {
@@ -274,6 +275,10 @@ sub find_build_file($) {
 
 =head1 CHANGES
 
+=head2 Version 1.04
+
+Update semantics: find_command() now handles an empty or undef argument.
+
 =head2 Version 1.03
 
 New function: find_build_file()
@@ -285,6 +290,10 @@ New function: get_control_path()
 =head2 Version 1.01
 
 New function: find_command()
+
+=head2 Version 1.00
+
+Mark the module as public.
 
 =head1 AUTHOR
 

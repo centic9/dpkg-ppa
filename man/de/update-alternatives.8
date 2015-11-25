@@ -28,7 +28,7 @@
 .\"
 .\"*******************************************************************
 .TH update\-alternatives 8 2012\-07\-31 Debian\-Projekt dpkg\-Hilfsprogramme
-.SH NAME
+.SH BEZEICHNUNG
 update\-alternatives \- Verwaltung symbolischer Links zur Bestimmung von
 Standardwerten für Befehle
 .
@@ -73,8 +73,8 @@ Für jedes Paket, das eine Datei mit einer bestimmten Funktionalität
 bereitstellt, wird bei der Installation, der Änderung oder der Entfernung
 \fBupdate\-alternatives\fP aufgerufen, um die Informationen über diese Datei im
 Alternativ\-System zu aktualisieren. \fBupdate\-alternatives\fP wird gewöhnlich
-vom Skript \fBpostinst\fP (configure) oder \fBprerm\fP (install) eines
-Debian\-Paketes aufgerufen.
+vom Skript \fBpostinst\fP (configure) oder \fBprerm\fP (remove und deconfigure)
+eines Debian\-Paketes aufgerufen.
 .PP
 Es ist oft sinnvoll, dass eine Reihe von Alternativen synchronisiert werden,
 so dass sie als Gruppe geändert werden; wenn beispielsweise mehrere
@@ -301,7 +301,7 @@ Erzeuge keine Kommentare, es sei denn, ein Fehler tritt auf.
 Die angeforderte Aktion wurde erfolgreich ausgeführt.
 .TP 
 \fB2\fP
-Beim Lesen der Kommandozeile oder beim Ausführen der Aktion traten Probleme
+Beim Lesen der Befehlszeile oder beim Ausführen der Aktion traten Probleme
 auf.
 .
 .SH UMGEBUNG
@@ -432,7 +432,7 @@ Sie folgendes als Root aus:
 .RE
 .
 .SH ÜBERSETZUNG
-Die deutsche Übersetzung wurde 2004, 2006-2013 von Helge Kreutzmann
+Die deutsche Übersetzung wurde 2004, 2006-2015 von Helge Kreutzmann
 <debian@helgefjell.de>, 2007 von Florian Rehnisch <eixman@gmx.de> und
 2008 von Sven Joachim <svenjoac@gmx.de>
 angefertigt. Diese Übersetzung ist Freie Dokumentation; lesen Sie die

@@ -92,11 +92,8 @@ prepare_rm_conffile() {
 	local old_md5sum="$(dpkg-query -W -f='${Conffiles}' $PACKAGE | \
 		sed -n -e "\' $CONFFILE ' { s/ obsolete$//; s/.* //; p }")"
 	if [ "$md5sum" != "$old_md5sum" ]; then
-		echo "Obsolete conffile $CONFFILE has been modified by you."
-		echo "Saving as $CONFFILE.dpkg-bak ..."
 		mv -f "$CONFFILE" "$CONFFILE.dpkg-backup"
 	else
-		echo "Moving obsolete conffile $CONFFILE out of the way..."
 		mv -f "$CONFFILE" "$CONFFILE.dpkg-remove"
 	fi
 }
@@ -105,6 +102,8 @@ finish_rm_conffile() {
 	local CONFFILE="$1"
 
 	if [ -e "$CONFFILE.dpkg-backup" ]; then
+		echo "Obsolete conffile $CONFFILE has been modified by you."
+		echo "Saving as $CONFFILE.dpkg-bak ..."
 		mv -f "$CONFFILE.dpkg-backup" "$CONFFILE.dpkg-bak"
 	fi
 	if [ -e "$CONFFILE.dpkg-remove" ]; then
@@ -253,8 +252,9 @@ symlink_to_dir() {
 		error "environment variable DPKG_MAINTSCRIPT_NAME is required"
 	[ -n "$PACKAGE" ] || error "cannot identify the package"
 	[ -n "$SYMLINK" ] || error "symlink parameter is missing"
+	[ "${SYMLINK#/}" = "$SYMLINK" ] && \
+		error "symlink pathname is not an absolute path"
 	[ -n "$SYMLINK_TARGET" ] || error "original symlink target is missing"
-	[ -n "$LASTVERSION" ] || error "last version is missing"
 	[ -n "$1" ] || error "maintainer script parameters are missing"
 
 	debug "Executing $0 symlink_to_dir in $DPKG_MAINTSCRIPT_NAME" \
@@ -266,7 +266,7 @@ symlink_to_dir() {
 	preinst)
 		if [ "$1" = "install" -o "$1" = "upgrade" ] &&
 		   [ -n "$2" ] && [ -h "$SYMLINK" ] &&
-		   [ "$(readlink -f $SYMLINK)" = "$SYMLINK_TARGET" ] &&
+		   symlink_match "$SYMLINK" "$SYMLINK_TARGET" &&
 		   dpkg --compare-versions "$2" le-nl "$LASTVERSION"; then
 			mv -f "$SYMLINK" "${SYMLINK}.dpkg-backup"
 		fi
@@ -277,7 +277,7 @@ symlink_to_dir() {
 		# have been unpacked, then upgraded with an unpack and thus
 		# never been configured before.
 		if [ "$1" = "configure" ] && [ -h "${SYMLINK}.dpkg-backup" ] &&
-		   [ "$(readlink -f ${SYMLINK}.dpkg-backup)" = "$SYMLINK_TARGET" ]
+		   symlink_match "${SYMLINK}.dpkg-backup" "$SYMLINK_TARGET"
 		then
 			rm -f "${SYMLINK}.dpkg-backup"
 		fi
@@ -289,7 +289,7 @@ symlink_to_dir() {
 		if [ "$1" = "abort-install" -o "$1" = "abort-upgrade" ] &&
 		   [ -n "$2" ] &&
 		   [ ! -e "$SYMLINK" ] && [ -h "${SYMLINK}.dpkg-backup" ] &&
-		   [ "$(readlink -f ${SYMLINK}.dpkg-backup)" = "$SYMLINK_TARGET" ] &&
+		   symlink_match "${SYMLINK}.dpkg-backup" "$SYMLINK_TARGET" &&
 		   dpkg --compare-versions "$2" le-nl "$LASTVERSION"; then
 			echo "Restoring backup of $SYMLINK ..."
 			mv "${SYMLINK}.dpkg-backup" "$SYMLINK"
@@ -327,8 +327,9 @@ dir_to_symlink() {
 		error "environment variable DPKG_MAINTSCRIPT_NAME is required"
 	[ -n "$PACKAGE" ] || error "cannot identify the package"
 	[ -n "$PATHNAME" ] || error "directory parameter is missing"
+	[ "${PATHNAME#/}" = "$PATHNAME" ] && \
+		error "directory parameter is not an absolute path"
 	[ -n "$SYMLINK_TARGET" ] || error "new symlink target is missing"
-	[ -n "$LASTVERSION" ] || error "last version is missing"
 	[ -n "$1" ] || error "maintainer script parameters are missing"
 
 	debug "Executing $0 dir_to_symlink in $DPKG_MAINTSCRIPT_NAME" \
@@ -367,7 +368,8 @@ dir_to_symlink() {
 		   [ \( ! -h "$PATHNAME" -a -d "$PATHNAME" -a \
 		        -f "$PATHNAME/.dpkg-staging-dir" \) -o \
 		     \( -h "$PATHNAME" -a \
-		        "$(readlink -f $PATHNAME)" = "$SYMLINK_TARGET" \) ] &&
+		        \( "$(readlink $PATHNAME)" = "$SYMLINK_TARGET" -o \
+		           "$(readlink -f $PATHNAME)" = "$SYMLINK_TARGET" \) \) ] &&
 		   dpkg --compare-versions "$2" le-nl "$LASTVERSION"; then
 			abort_dir_to_symlink "$PATHNAME"
 		fi
@@ -396,9 +398,9 @@ prepare_dir_to_symlink()
 		package="$1"
 		file="$2"
 		if ! dpkg-query -L "$package" | grep -q -x "$file"; then
-			return 1
+			exit 1
 		fi
-		return 0
+		exit 0
 	' check-files-ownership "$PACKAGE" || \
 		error "directory '$PATHNAME' contains files not owned by" \
 		      "package $PACKAGE, cannot switch to symlink"
@@ -432,9 +434,15 @@ finish_dir_to_symlink()
 	# Move the contents of the staging directory to the symlink target,
 	# as those are all new files installed between this package being
 	# unpacked and configured.
+	local ABS_SYMLINK_TARGET
+	if [ "${SYMLINK_TARGET#/}" = "$SYMLINK_TARGET" ]; then
+		ABS_SYMLINK_TARGET="$(dirname "$PATHNAME")/$SYMLINK_TARGET"
+	else
+		ABS_SYMLINK_TARGET="$SYMLINK_TARGET"
+	fi
 	rm "$PATHNAME/.dpkg-staging-dir"
 	find "$PATHNAME" -mindepth 1 -print0 | \
-		xargs -0 -i% mv -f "%" "$SYMLINK_TARGET/"
+		xargs -0 -i% mv -f "%" "$ABS_SYMLINK_TARGET/"
 
 	# Remove the staging directory.
 	rmdir "$PATHNAME"
@@ -475,6 +483,15 @@ ensure_package_owns_file() {
 		return 1
 	fi
 	return 0
+}
+
+symlink_match()
+{
+	local SYMLINK="$1"
+	local SYMLINK_TARGET="$2"
+
+	[ "$(readlink $SYMLINK)" = "$SYMLINK_TARGET" ] || \
+	[ "$(readlink -f $SYMLINK)" = "$SYMLINK_TARGET" ]
 }
 
 debug() {

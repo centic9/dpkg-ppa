@@ -6,7 +6,7 @@
 .\" Copyright Â© 2000-2003 Adam Heath <doogie@debian.org>
 .\" Copyright Â© 2002 Josip Rodin
 .\" Copyright Â© 2004-2005 Scott James Remnant <keybuk@debian.org>
-.\" Copyright Â© 2006-2013 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2006-2014 Guillem Jover <guillem@debian.org>
 .\" Copyright Â© 2007-2008 Ian Jackson <ian@davenant.greenend.org.uk>
 .\" Copyright Â© 2008-2011 RaphaÃ«l Hertzog <hertzog@debian.org>
 .\"
@@ -28,7 +28,7 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH dpkg 1 2013\-07\-28 "Projet Debian" "suite dpkg"
+.TH dpkg 1 16\-08\-2014 "Projet Debian" "suite dpkg"
 .SH NOM
 dpkg \- un gestionnaire de paquet pour Debian
 .
@@ -53,10 +53,10 @@ commande comporte exactement une action et zéro ou plusieurs options. Le
 paramètre «\ action\ » dit ce que \fBdpkg\fP doit faire et les options modifient
 l'action d'une manière ou d'une autre.
 
-\fBdpkg\fP peut également être utilisé en interface pour \fBdpkg\-deb\fP(1) et
+\fBdpkg\fP peut également être utilisé comme interface pour \fBdpkg\-deb\fP(1) et
 \fBdpkg\-query\fP(1). La liste des actions gérées est indiquée dans la section
-\fBACTIONS\fP. Si cette section est présente, \fBdpkg\fP n'exécute \fBdpkg\-deb\fP ou
-\fBdpkg\-query\fP avec les paramètres qui lui sont passés, mais aucune action
+\fBACTIONS\fP. Si cette section est présente, \fBdpkg\fP n'exécute que \fBdpkg\-deb\fP
+ou \fBdpkg\-query\fP avec les paramètres qui lui sont passés, mais aucune action
 spécifique ne leur est communiquée. Pour utiliser cela, il est nécessaire
 d'appeler le programme directement.
 .
@@ -65,7 +65,7 @@ d'appeler le programme directement.
 Cette information est divisée en trois classes\ : les états, les états de la
 sélection et les drapeaux. La modification de ces valeurs est principalement
 dévolue à \fBdselect\fP.
-.SS "Package states"
+.SS "États du paquet\ :"
 .TP 
 \fBnot\-installed\fP
 Le paquet n'est pas installé sur le système.
@@ -92,8 +92,8 @@ autre paquet.
 Une action différée de ce paquet a été activée, il reste à l'exécuter.
 .TP 
 \fBinstalled\fP
-Le paquet est dépaqueté et correctement configuré.
-.SS "Package selection states"
+Le paquet est correctement dépaqueté et configuré.
+.SS "États de sélection des paquets"
 .TP 
 \fBinstall\fP
 Le paquet est sélectionné pour être installé.
@@ -103,13 +103,14 @@ Le paquet est sélectionné pour être installé.
 avec l'option de forçage \fB\-\-force\-hold\fP.
 .TP 
 \fBdeinstall\fP
-Le paquet est sélectionné pour être désinstallé (c.\-à\-d. qu'on veut
+Le paquet est sélectionné pour être désinstallé (c'est\-à\-dire qu'on veut
 supprimer tous les fichiers à l'exception des fichiers de configuration).
 .TP 
 \fBpurge\fP
-Le paquet est sélectionné pour être purgé (c.\-à\-d. qu'on veut tout supprimer
-dans les répertoire du système, même les fichiers de configuration).
-.SS "Package flags"
+Le paquet est sélectionné pour être purgé (c'est\-à\-dire qu'on veut tout
+supprimer dans les répertoire du système, même les fichiers de
+configuration).
+.SS "Drapeaux du paquet\ :"
 .TP 
 \fBreinst\-required\fP
 Un paquet marqué \fBreinst\-required\fP est défectueux et demande une
@@ -173,29 +174,20 @@ restaurer si quelque chose se passe mal.
 .TP 
 \fB\-\-triggers\-only\fP \fIpaquet\fP ...|\fB\-a\fP | \fB\-\-pending\fP
 N'exécute que les actions différées. Toutes les actions différées en attente
-seront traitées. Si des noms des paquets sont fournis, les actions différées
+seront traitées. Si des noms de paquets sont fournis, les actions différées
 de ces paquets seront traitées, une fois chacune lorsque
 nécessaire. L'utilisation de cette option peut laisser des paquets dans les
 états incorrects de \fBtriggers\-awaited\fP et de \fBtriggers\-pending\fP. Cela peut
 être corrigé plus tard en exécutant\ : \fBdpkg \-\-configure \-\-pending\fP.
 .TP 
-\fB\-r\fP, \fB\-\-remove\fP, \fB\-P\fP, \fB\-\-purge \fP\fIpaquet\fP...|\fB\-a\fP|\fB\-\-pending\fP
-Supprime un paquet installé. L'action \fB\-r\fP ou \fB\-\-remove\fP supprime tout
-sauf les fichiers de configuration. Cela peut éviter la reconfiguration du
-paquet lors d'une réinstallation. Les fichiers de configuration sont les
-fichiers répertoriés dans le fichier de contrôle
-\fIdebian/conffiles\fP. L'option \fB\-P\fP ou \fB\-\-purge\fP supprime tout, y compris
-les fichiers de configuration. Si l'on donne l'option \fB\-a\fP ou \fB\-\-pending\fP
-à la place d'un nom de paquet, tous les paquets non dépaquetés, mais qui
-sont marqués comme devant être supprimés ou purgés dans le fichier
-\fI/var/lib/dpkg/status\fP, sont respectivement supprimés ou
-purgés. Note\ :\ certains fichiers de configuration peuvent être inconnus de
-\fBdpkg\fP car ils sont créés et gérés à part, via les scripts de
-configuration. Dans ce cas, \fBdpkg\fP ne les supprimera pas lui\-même et le
-script \fIpostrm\fP du paquet (qui est appelé par \fBdpkg\fP) doit s'occuper de
-leur suppression. Bien entendu, cela ne s'applique qu'aux fichiers situés
-dans les répertoires du système, pas à ceux existant dans les répertoires
-personnels des utilisateurs.
+\fB\-r\fP, \fB\-\-remove\fP \fIpaquet\fP\fB...|\-al\-\-pending\fP
+Supprimer un paquet installé. Supprime tout à l'exception des fichiers de
+configuration, ce qui évite d'avoir à reconfigurer le paquet s'il était
+réinstallé par la suite (ces fichiers sont les fichiers de configuration
+listés dans le fichier de contrôle \fIDEBIAN/conffiles\fP). Si \fB\-a\fP ou
+\fB\-\-pending\fP est indiqué à la place d'un nom de paquet, alors tous les
+paquets dépaquetés mais marqués pour suppression dans le fichier
+\fI/var/lib/dpkg/status\fP seront supprimés.
 
 La suppression d'un paquet comporte les étapes suivantes\ :
 .br
@@ -208,25 +200,64 @@ La suppression d'un paquet comporte les étapes suivantes\ :
 
 \fB3.\fP lancement du script \fIpostrm\fP
 .br
-.TP 
-\fB\-V\fP, \fB\-\-verify\fP [\fIpackage\-name\fP...]
-Verifies the integrity of \fIpackage\-name\fP or all packages if omitted, by
-comparing information from the installed paths with the database metadata.
 
-The output format is selectable with the \fB\-\-verify\-format\fP option, which by
-default uses the \fBrpm\fP format, but that might change in the future, and as
-such programs parsing this command output should be explicit about the
-format they expect.
 .TP 
-\fB\-\-update\-avail\fP, \fB\-\-merge\-avail\fP \fIfichier\-Paquets\fP
+\fB\-P\fP, \fB\-\-purge\fP\fIpaquet\fP...|\fB\-a\fP|\fB\-\-pending\fP
+Purger un paquet installé ou déjà supprimé. L'action supprime tout, y
+compris les fichiers de configuration. Si \fB\-a\fP ou \fB\-\-pending\fP est indiqué
+à la place d'un nom de paquet, tous les paquets dépaquetés ou supprimés mais
+marqués dans le fichier \fI/var/lib/dpkg/status\fP comme devant être purgés
+seront purgés.
+
+Note\ : certains fichiers de configuration peuvent être inconnus de \fBdpkg\fP
+car ils sont créés et gérés séparement par le biais de scripts de
+configuration. En ce cas, \fBdpkg\fP ne les supprimera pas lui\-même et le
+script \fIpostrm\fP du paquet devra s'en charger durant l'opération de
+purge. Cela ne s'applique bien entendu qu'aux fichiers situés dans les
+répertoires systèmes et non aux fichiers de configuration créés dans les
+répertoires «\ home\ » des utilisateurs.
+
+La suppression d'un paquet comporte les étapes suivantes\ :
+.br
+
+\fB1.\fP Supprime le paquet s'il n'est pas déjà supprimé. Voir \fB\-\-remove\fP pour
+plus de détails sur la façon dont cela est fait.
+.br
+
+\fB2.\fP Exécuter le script \fIpostrm\fP.
+.br
+.TP 
+\fB\-V\fP, \fB\-\-verify\fP \fInom\-du\-paquet\fP...
+Vérifie l'intégrité du \fInom\-du\-paquet\fP ou tous les paquets, si omis, en
+comparant l'information des fichiers installés par un paquet avec
+l'information des métadonnées des fichiers stockée dans la base de données
+de \fBdpkg\fP. L'origine de l'information des métadonnées des fichiers dans la
+base de données, ce sont les paquets binaires eux\-mêmes. Ces métadonnées
+sont collectées au moment du dépaquetage des paquets durant le processus
+d'installation.
+
+Actuellement la seule vérification fonctionnelle effectuée est une
+comparaison des sommes de contrôle MD5 des fichiers par rapport aux valeurs
+stockées dans la base de données des fichiers. La vérification n'a lieu que
+si la base de données contient les informations nécessaires. Pour vérifier
+si des méta\-données manquent dans la base de données, la commande \fB\-\-audit\fP
+peut être employée.
+
+On peut choisir le format de sortie avec l'option \fB\-\-verify\-format\fP, par
+défaut c'est le format \fBrpm\fP, mais cela pourrait changer dans le futur, et
+selon le format que les programmes analysant cette sortie de commande
+pourraient explicitement attendre.
+.TP 
+\fB\-\-update\-avail\fP, \fB\-\-merge\-avail\fP [\fIfichier\-Paquets\fP]
 Met à jour l'information de \fBdpkg\fP et de \fBdselect\fP sur les paquets
 disponibles. L'action \fB\-\-merge\-avail\fP combine les informations anciennes
 avec celles qui proviennent du fichier \fIfichier\-Packages\fP. L'action
 \fB\-\-update\-avail\fP remplace les informations anciennes par celles qui
 proviennent du fichier \fIfichier\-Packages\fP. Le fichier \fIfichier\-Packages\fP
-distribué avec Debian est appelé simplement \fIPackages\fP. \fBdpkg\fP garde son
-propre enregistrement des paquets disponibles dans
-\fI/var/lib/dpkg/available\fP.
+distribué avec Debian est appelé simplement \fIPackages\fP. Si le paramètre
+\fIfichier\- Packages\fP est manquant ou est nommé \fB\-\fP, alors, il sera lu à
+partir de l'entrée standard (depuis dpkg 1.17.7). \fBdpkg\fP garde son propre
+enregistrement des paquets disponibles dans \fI/var/lib/dpkg/available\fP.
 
 Une simple commande permettant de récupérer et mettre à jour le fichier
 \fIavailable\fP est \fBdselect update\fP. Veuillez noter que ce fichier est à peu
@@ -247,14 +278,17 @@ paquets désinstallés qui ne sont pas disponibles.
 \fB\-\-clear\-avail\fP
 Efface les renseignements existants sur les paquets disponibles.
 .TP 
-\fB\-C\fP, \fB\-\-audit\fP
-Recherche les paquets qui n'ont été que partiellement installés sur le
-système. \fBdpkg\fP suggère une manière de les faire fonctionner.
+\fB\-C\fP, \fB\-\-audit\fP \fInom\-paquet\fP...
+Effectue une vérification de et de consistance sur le \fInom\-paquet\fP ou sur
+tous les paquets si omis. Par exemple, recherche les paquets qui n'ont été
+que partiellement installés sur le système ou qui ont des données de
+contrôle ou des fichiers manquants, incorrects ou obsolètes. \fBdpkg\fP suggère
+une manière de les faire fonctionner.
 .TP 
-\fB\-\-get\-selections\fP [\fImotif\-nom\-paquet\fP...]
-Get list of package selections, and write it to stdout. Without a pattern,
-non\-installed packages (i.e. those which have been previously purged) will
-not be shown.
+\fB\-\-get\-selections\fP [\fImotif\-de\-nom\-de\-paquet\fP...]
+Obtenir la liste des sélections de paquets et l'envoie sur la sortie
+standard. Sans un motif, les paquets non installés (c'est\-à\-dire ceux qui
+ont été précédemment purgés) ne seront pas affichés.
 .TP 
 \fB\-\-set\-selections\fP
 Modifie la liste des sélections des paquets en lisant un fichier sur
@@ -263,18 +297,19 @@ l'entrée standard. Le format de ce fichier doit être de la forme «\ \fIpaquet\fP
 lignes vides ou les lignes de commentaires débutant par «\ #\ » sont
 autorisées.
 
-The \fIavailable\fP file needs to be up\-to\-date for this command to be useful,
-otherwise unknown packages will be ignored with a warning. See the
-\fB\-\-update\-avail\fP and \fB\-\-merge\-avail\fP commands for more information.
+Le fichier \fIavailable\fP doit être à jour pour que cette commande soit utile,
+autrement des paquets inconnus seront ignorés avec un
+avertissement. Veuillez consultez les commandes \fB\-\-update\-avail\fP and
+\fB\-\-merge\-avail\fP pour plus d'informations.
 .TP 
 \fB\-\-clear\-selections\fP
-Set the requested state of every non\-essential package to deinstall.  This
-is intended to be used immediately before \fB\-\-set\-selections\fP, to deinstall
-any packages not in list given to \fB\-\-set\-selections\fP.
+Met l'état de chaque paquet non essentiel à «\ deinstall\ ». Il faut utiliser
+cette option juste avant \fB\-\-set\-selections\fP, pour désinstaller les paquets
+qui ne sont pas affichés par \fB\-\-set\-selections\fP.
 .TP 
 \fB\-\-yet\-to\-unpack\fP
-Recherche les paquets qui ont été sélectionnés pour l'installation, mais qui
-pour une raison quelconque, ne sont pas encore installés.
+Recherche les paquets qui ont été sélectionnés pour l'installation, mais
+qui, pour une raison quelconque, ne sont pas encore installés.
 .TP 
 \fB\-\-add\-architecture \fP\fIarchitecture\fP
 Ajoute \fIarchitecture\fP à la liste d'architectures pour lesquelles les
@@ -344,7 +379,7 @@ suivantes.
 \fB\-f\fP, \fB\-\-field\fP \fInom\-de\-fichier\fP [\fIchamp de contrôle\fP] ...
     Affiche le(s) champ(s) de contrôle d'un paquet.
 \fB\-\-fsys\-tarfile\fP \fIarchive\fP
-    Affiche le contenu du fichier «\ tar\ » d'un paquet Debian.
+    Affiche le contenu du fichier tar d'un paquet Debian.
 \fB\-I\fP, \fB\-\-info\fP \fInom\-de\-fichier\fP [\fIfichier de contrôle\fP]
     Affiche des renseignements sur un paquet.
 .fi
@@ -356,11 +391,11 @@ suivantes.
 
 .nf
 
-\fB\-l\fP, \fB\-\-list\fP \fImotif\-du\-nom\-du\-paquet\fP ...
+\fB\-l\fP, \fB\-\-list\fP \fImotif\-du\-nom\-de\-paquet\fP ...
     Affiche la liste des paquets qui correspondent au motif.
 \fB\-s\fP, \fB\-\-status\fP \fInom\-du\-paquet\fP ...
     Donne l'état du paquet indiqué.
-\fB\-L\fP, \fB\-\-listfiles\fP \fInom\-paquet\fP ...
+\fB\-L\fP, \fB\-\-listfiles\fP \fInom\-du\-paquet\fP ...
     Affiche la liste des fichiers installés qui appartiennent
     à \fIpaquet\fP.
 \fB\-S\fP, \fB\-\-search\fP \fImotif\-du\-fichier\-à\-rechercher\fP ...
@@ -372,12 +407,13 @@ suivantes.
 .fi
 .
 .SH OPTIONS
-All options can be specified both on the command line and in the \fBdpkg\fP
-configuration file \fI/etc/dpkg/dpkg.cfg\fP or fragment files (with names
-matching this shell pattern \(aq[0\-9a\-zA\-Z_\-]*\(aq) on the configuration
-directory \fI/etc/dpkg/dpkg.cfg.d/\fP. Each line in the configuration file is
-either an option (exactly the same as the command line option but without
-leading hyphens) or a comment (if it starts with a \fB#\fP).
+On peut spécifier toutes les options à la fois sur la ligne de commande,
+dans le fichier de configuration de \fBdpkg\fP, \fI/etc/dpkg/dpkg.cfg\fP ou dans
+les fragments de fichiers du répertoire de configuration
+\fI/etc/dpkg/dpkg.cfg.d/\fP (avec un nom qui respecte le motif
+\(aq[0\-9a\-zA\-Z_\-]*\(aq)). Chaque ligne de ce fichier est soit une option
+(identique à une option en ligne de commande mais sans tirets initiaux),
+soit un commentaire, commençant par \fB#\fP.
 .br
 .TP 
 \fB\-\-abort\-after=\fP\fInombre\fP
@@ -411,7 +447,7 @@ valeurs pourront changer dans les prochaines versions). \fB\-Dh\fP ou
 10000   Sortie sur l'activation et le traitement des actions différées
 20000   De nombreuses sorties sur les actions différées
 40000   Quantité stupide de sorties sur les actions différées
- 1000   Beaucoup de radotage à ppropos du répertoire
+ 1000   Beaucoup de radotage à propos du répertoire
         dpkg/info
  2000   Quantité stupide de radotage
 .TP 
@@ -422,7 +458,7 @@ faire quelque chose. \fIquelque\-chose\fP est une liste d'actions séparées par
 des virgules, décrites ci\-après. \fB\-\-force\-help\fP affiche un message qui les
 décrit. Les actions marquées d'un (*) sont forcées par défaut.
 
-\fIAvertissement\ : Ces options sont principalement destinées aux experts. Un
+\fIAvertissement\ : ces options sont principalement destinées aux experts. Un
 usage auquel manque la pleine compréhension de leurs effets peut casser le
 système entier.\fP
 
@@ -431,11 +467,12 @@ système entier.\fP
 \fBdowngrade\fP(*)\ : Installe un paquet, même si une version plus récente du
 paquet est déjà installée.
 
-\fIWarning: At present \fP\fBdpkg\fP\fI does not do any dependency checking on
-downgrades and therefore will not warn you if the downgrade breaks the
-dependency of some other package. This can have serious side effects,
-downgrading essential system components can even make your whole system
-unusable. Use with care.\fP
+\fIAvertissement\ : pour l'instant,\fP \fBdpkg\fP \fIne recherche pas les
+dépendances lors d'un retour à une version inférieure d'un paquet\ ; il ne
+vous préviendra pas si la version choisie casse les dépendances d'un autre
+paquet. Cela peut avoir de sérieuses conséquences\ ;\ et si l'on revient à des
+versions antérieures des programmes essentiels du système, cela peut rendre
+votre système inutilisable. N'utiliser qu'avec précaution.\fP
 
 \fBconfigure\-any\fP\ : Configure aussi les paquets dépaquetés mais non
 configurés dont dépend le paquet en question.
@@ -584,14 +621,16 @@ Ne pas installer le paquet si la même version du paquet est déjà installée.
 \fB\-\-pre\-invoke=\fP\fIcommande\fP
 .TQ
 \fB\-\-post\-invoke=\fP\fIcommande\fP
-Set an invoke hook \fIcommand\fP to be run via \*(lqsh \-c\*(rq before or after the
-\fBdpkg\fP run for the \fIunpack\fP, \fIconfigure\fP, \fIinstall\fP, \fItriggers\-only\fP,
-\fIremove\fP and \fIpurge\fP \fBdpkg\fP actions. This option can be specified
-multiple times. The order the options are specified is preserved, with the
-ones from the configuration files taking precedence.  The environment
-variable \fBDPKG_HOOK_ACTION\fP is set for the hooks to the current \fBdpkg\fP
-action. Note: front\-ends might call \fBdpkg\fP several times per invocation,
-which might run the hooks more times than expected.
+Programme l'exécution de \fIcommande\fP à l'aide «\ sh \-c\ » avant ou après
+l'exécution de \fBdpkg\fP pour les actions \fIunpack\fP, \fIconfigure\fP, \fIinstall\fP,
+\fItriggers\-only\fP, \fIremove\fP, \fIpurge\fP, \fIadd\-architecture\fP et
+\fIremove\-architecture\fP. Cette option peut être utilisée plusieurs
+fois. L'ordre dans lequel les options multiples sont indiquées sera préservé
+et celles indiquées dans le fichier de configuration auront la priorité. La
+variable d'environnement \fBDPKG_HOOK_ACTION\fP est utilisée pour indiquer aux
+scripts utilisés quelle est l'action actuelle de \fBdpkg\fP. Note\ :\ les
+interfaces de \fBdpkg\fP peuvent l'appeler plusieurs fois à chaque invocation,
+ce qui peut provoquer l'exécution des «\ hooks\ » plus souvent que prévu.
 .TP 
 \fB\-\-path\-exclude=\fP\fImotif\-global\fP
 .TQ
@@ -601,7 +640,7 @@ ré\-incluant des chemins précédemment exclus, correspondant au motif indiqué,
 pendant l'installation.
 
 \fIAttention\ :\ dépendre des chemins exclus peut entièrement casser le
-système. Ce réglage soit donc être utilisé avec précautions.\fP
+système. Ce réglage doit donc être utilisé avec précautions.\fP
 
 Les motifs globaux utilisent les mêmes caractères joker que le
 shell\ où\ «\ *\ » correspond à une séquence quelconque de caractères, y compris
@@ -613,7 +652,7 @@ caractères, séries de caractères ou compléments de séries. Veuillez
 consulter \fBglob\fP(7) pour plus d'informations à propos des correspondances
 globales. Note\ :\ l'implémentation actuelle pourrait ré\-inclure plus de
 répertoires et liens symboliques que nécessaire, par souci de sécurité et
-pour éviter des éches possibles de décompression. Des modifications à venir
+pour éviter des échecs possibles de décompression. Des modifications à venir
 pourraient changer cela.
 
 Cela peut servir à exclure tous les chemins sauf certains spécifiques. Un
@@ -632,17 +671,19 @@ Ces deux options peuvent être utilisées plusieurs fois et éventuellement
 dernière règle correspondant à un fichier donné est alors celle qui sera
 utilisée.
 .TP 
-\fB\-\-verify\-format\fP\fI format\-name\fP
-Sets the output format for the \fB\-\-verify\fP command.
+\fB\-\-verify\-format\fP\fI nom\-de\-format\fP
+Définit le format de sortie de la commande \fB\-\-verify\fP.
 
-The only currently supported output format is \fBrpm\fP, which consists of a
-line for every path that failed any check. The lines start with 9 characters
-to report the specific check results, a '\fB?\fP' implies the check could not
-be done (lack of support, file permissions, etc), '\fB.\fP' implies the check
-passed, and an alphanumeric character implies a specific check failed; the
-only functional check is an md5sum verification denoted with a '\fB5\fP' on the
-third character. The line is followed by a space and an attribute character
-(currently '\fBc\fP' for conffiles), another space and the pathname.
+Le seul format de sortie géré actuellement est \fBrpm\fP, qui consiste en une
+ligne par chemin dont la vérification a échoué. Les lignes débutent par 9
+caractères pour signaler les résultats d'une vérification spécifique, un
+«\ \fB?\fP\ » implique que la vérification ne peut être réalisée (absence de
+prise en charge, droit d'accès de fichier,\ etc), «\ \fB.\fP\ » implique que la
+vérification est passée et un caractère alphanumérique implique qu'une
+vérification spécifique a échoué\ ; la vérification md5sum est identifiée par
+un «\ \fB5\fP\ » en troisième caractère. La ligne continue par une espace et un
+caractère d'attribut (comme «\ \fBc\fP\ » pour conffiles \- fichiers de
+configuration), une autre espace et le nom de chemin.
 .TP 
 \fB\-\-status\-fd \fP\fIn\fP
 Envoie un état du paquet compréhensible par la machine et met à jour cette
@@ -727,7 +768,7 @@ formaté. Seule l'action \fB\-l\fP se sert actuellement de cette variable.
 \fBDPKG_SHELL_REASON\fP
 Cette variable définit l'invite du shell lancé par \fBdpkg\fP lorsqu'il lui est
 demandé d'«\ examiner la situation\ » lors du traitement des fichiers de
-configuration. La valeur actuellement valable est\ :\ \fBconffile\-prompt\fP/
+configuration. La valeur actuellement valable est\ : \fBconffile\-prompt\fP/
 .TP 
 \fBDPKG_CONFFILE_OLD\fP
 Cette variable est définie pour le shell lancé par \fBdpkg\fP lorsqu'il lui est
@@ -745,13 +786,15 @@ responsable. Elle contient la version de l'instance de \fBdpkg\fP en cours
 d'exécution.
 .TP 
 \fBDPKG_MAINTSCRIPT_PACKAGE\fP
-Defined by \fBdpkg\fP on the maintainer script environment to the
-(non\-arch\-qualified) package name being handled.
+Définie par \fBdpkg\fP dans l'environnement du script du responsable, cette
+variable contient le nom du paquet (sans qualification d'architecture) en
+cours de traitement.
 .TP 
 \fBDPKG_MAINTSCRIPT_PACKAGE_REFCOUNT\fP
-Defined by \fBdpkg\fP on the maintainer script environment to the package
-reference count, i.e. the number of package instances with a state greater
-than \fBnot\-installed\fP. Since dpkg 1.17.2.
+Définie par \fBdpkg\fP dans l'environnement du script du responsable, cette
+variable contient le compte de référence du paquet, c'est\-à\-dire le nombre
+d'instances de paquet avec un état plus élevé que \fBnot\-installed\fP. Géré à
+partir de dpkg 1.17.2.
 .TP 
 \fBDPKG_MAINTSCRIPT_ARCH\fP
 Définie par \fBdpkg\fP dans l'environnement du script du responsable, cette
@@ -775,8 +818,8 @@ Fichier journal standard. Voyez \fI/etc/dpkg/dpkg.cfg\fP(5) et l'option
 \fB\-\-log\fP.
 .P
 Les autres fichiers répertoriés ici sont dans leur répertoire par défaut,
-voyez l'option \fB\-\-admindir\fP pour savoir changer l'emplacement de ces
-fichiers.
+voyez l'option \fB\-\-admindir\fP pour savoir comment changer l'emplacement de
+ces fichiers.
 .TP 
 \fI/var/lib/dpkg/available\fP
 Liste des paquets disponibles.
@@ -809,9 +852,9 @@ des informations supplémentaires\ :
 L'option \fB\-\-no\-act\fP ne donne pas assez d'informations utiles.
 .
 .SH EXEMPLES
-To list installed packages related to the editor \fBvi\fP(1) (note that
-\fBdpkg\-query\fP does not load the \fIavailable\fP file anymore by default, and
-the \fBdpkg\-query\fP \fB\-\-load\-avail\fP option should be used instead for that):
+Affichage des paquets installés liés à l'éditeur \fBvi\fP(1) (noter que
+\fBdpkg\-query\fP ne charge plus le fichier \fIavailable\fP par défaut, sauf si
+l'option \fBdpkg\-query\fP \fB\-\-load\-avail\fP est utilisée)\ :
 .br
     \fBdpkg \-l \(aq*vi*\(aq\fP
 .br
@@ -832,8 +875,9 @@ Pour supprimer le paquet installé elvis\ :
     \fBdpkg \-r elvis\fP
 .br
 
-To install a package, you first need to find it in an archive or CDROM. The
-\fIavailable\fP file shows that the vim package is in section "editors":
+Pour installer un paquet, vous devez d'abord le trouver dans une archive ou
+sur un CD. Le fichier \fIavailable\fP montre que le paquet vim se trouve dans
+la section «\ editors\ »\ :
 .br
      \fBcd /media/cdrom/pool/main/v/vim\fP
      \fBdpkg \-i vim_4.5\-3.deb\fP
@@ -844,16 +888,21 @@ Pour faire une copie locale des états de sélection des paquets\ :
     \fBdpkg \-\-get\-selections >myselections\fP
 .br
 
-You might transfer this file to another computer, and after having updated
-the \fIavailable\fP file there with your package manager frontend of choice
-(see https://wiki.debian.org/Teams/Dpkg/FAQ for more details), for example:
+Vous pourriez transférer ce fichier sur un autre ordinateur, et après avoir
+mis à jour le fichier \fIavailable\fP avec l'interface de gestion de paquets de
+votre choix (voir https://wiki.debian.org/Teams/Dpkg/FAQ pour plus de
+détails), par exemple\ :
+.br
+     \fBapt\-cache dumpavail | dpkg \-\-merge\-avail\fP
+.br
+ou avec dpkg 1.17.6 et les versions antérieures :
 .br
      \fBavail=`mktemp`\fP
      \fBapt\-cache dumpavail >"$avail"\fP
      \fBdpkg \-\-merge\-avail "$avail"\fP
      \fBrm "$avail"\fP
 .br
-you can install it with:
+vous pouvez l'installer de cette manière\ :
 .br
     \fBdpkg \-\-clear\-selections\fP
     \fBdpkg \-\-set\-selections <myselections\fP

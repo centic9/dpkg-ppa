@@ -85,13 +85,13 @@ sub getblk {
     my %flds;
     my $fld;
     while (<$fh>) {
-	if ( ! /^$/ ) {
+	if (length != 0) {
 	    FLDLOOP: while (1) {
 		if ( /^(\S+):\s*(.*)\s*$/ ) {
 		    $fld = lc($1);
 		    $flds{$fld} = $2;
 		    while (<$fh>) {
-			if ( /^$/ ) {
+			if (length == 0) {
 			    return %flds;
 			} elsif ( /^(\s.*)$/ ) {
 			    $flds{$fld} = $flds{$fld} . "\n" . $1;
@@ -369,15 +369,13 @@ sub download() {
               #Try to find another file or this package
 	      print "Looking for another version of the package...\n";
 	      my ($dir, $package) = ($fn =~ m{^(.*)/([^/]+)_[^/]+.deb$});
-	      my $protected = $package;
-	      $protected =~ s/\+/\\\+/g;
 	      my $list = $ftp->ls("$pre$dir");
 	      if ($ftp->ok() && ref($list)) {
-                foreach (@{$list}) {
-                  if (m/($dir\/${protected}_[^\/]+.deb)/i) {
-		    print "Package found : $_\n";
-		    print "getting: $_ (size not known)\n";
-                    $res = $ftp->get($_, "$dldir/$1");
+		foreach my $file (@{$list}) {
+		  if ($file =~ m/($dir\/\Q$package\E_[^\/]+.deb)/i) {
+		    print "Package found : $file\n";
+		    print "getting: $file (size not known)\n";
+		    $res = $ftp->get($file, "$dldir/$1");
 		    if (! $res) {
                       $r = $ftp->code();
 		      print $ftp->message() . "\n";
@@ -474,14 +472,13 @@ sub getdebinfo($) {
 	close($pkgfile_fh);
 	$pkg = $fields{'package'};
 	$ver = $fields{'version'};
-	if($fields{'package_revision'}) { $ver .= '-' . $fields{'package_revision'}; }
 	return $pkg, $ver;
     } elsif ( $type == 2) {
 	open(my $pkgfile_fh, '-|', "dpkg-split --info $fn")
 	    or die "cannot create pipe for 'dpkg-split --info $fn'";
 	while (<$pkgfile_fh>) {
-	    /Part of package:\s*(\S+)/ and $pkg = $+;
-	    /\.\.\. version:\s*(\S+)/ and $ver = $+;
+	    /Part of package:\s*(\S+)/ and $pkg = $1;
+	    /\.\.\. version:\s*(\S+)/ and $ver = $1;
 	}
 	close($pkgfile_fh);
 	return $pkg, $ver;
@@ -564,10 +561,10 @@ if (yesno('y', "\nDo you want to install the files fetched")) {
     #Installing pre-dependent package before !
     my (@flds, $package, @filename, $r);
     while (@flds = `dpkg --predep-package`, $? == 0) {
-      foreach (@flds) {
-        s/\s*\n//;
-	$package= $_ if s/^Package: //i;
-	@filename= split(/ +/,$_) if s/^Filename: //i;
+      foreach my $field (@flds) {
+        $field =~ s/\s*\n//;
+        $package = $field if $field =~ s/^Package: //i;
+        @filename = split / +/, $field if $field =~ s/^Filename: //i;
       }
       @filename = map { "$dldir/$_" } @filename;
       next if (! @filename);
@@ -622,9 +619,9 @@ if (yesno('n', "\nDo you want to remove $dldir directory?")) {
 }
 
 #Store useful md5sums
-foreach (keys %md5sums) {
-  next if (-f $_);
-  delete $md5sums{$_};
+foreach my $file (keys %md5sums) {
+  next if -f $file;
+  delete $md5sums{$file};
 }
 open(my $md5sums_fh, '>', "$methdir/md5sums")
   or die "can't open $methdir/md5sums in write mode: $!\n";

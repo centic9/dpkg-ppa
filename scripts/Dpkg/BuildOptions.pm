@@ -180,7 +180,7 @@ set to the variable is also returned.
 
 sub export {
     my ($self, $var) = @_;
-    $var = $self->{envvar} unless defined $var;
+    $var //= $self->{envvar};
     my $content = $self->output();
     Dpkg::BuildEnv::set($var, $content);
     return $content;
@@ -194,6 +194,10 @@ sub export {
 
 Enable to use another environment variable instead of DEB_BUILD_OPTIONS.
 Thus add support for the "envvar" option at creation time.
+
+=head2 Version 1.00
+
+Mark the module as public.
 
 =head1 AUTHOR
 

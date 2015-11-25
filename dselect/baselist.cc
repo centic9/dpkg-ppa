@@ -99,6 +99,44 @@ void baselist::setupsigwinch() {
     ohshite(_("failed to set new SIGWINCH sigact"));
 }
 
+void
+baselist::add_column(column &col, const char *title, int width)
+{
+  col.title = title;
+  col.x = col_cur_x;
+  col.width = width;
+
+  col_cur_x += col.width + gap_width;
+}
+
+void
+baselist::end_column(column &col, const char *title)
+{
+  col.title = title;
+  col.x = col_cur_x;
+  col.width = total_width - col.x;
+
+  col_cur_x += col.width + gap_width;
+}
+
+void
+baselist::draw_column_head(column &col)
+{
+  mvwaddnstr(colheadspad, 0, col.x, col.title, col.width);
+}
+
+void
+baselist::draw_column_sep(column &col, int y)
+{
+  mvwaddch(listpad, y, col.x - 1, ' ');
+}
+
+void
+baselist::draw_column_item(column &col, int y, const char *item)
+{
+  mvwprintw(listpad, y, col.x, "%-*.*s", col.width, col.width, item);
+}
+
 void baselist::setheights() {
   int y= ymax - (title_height + colheads_height + thisstate_height);
   assert(y>=1);
@@ -218,6 +256,7 @@ void baselist::enddisplay() {
   delwin(infopad);
   wmove(stdscr,ymax,0); wclrtoeol(stdscr);
   listpad = nullptr;
+  col_cur_x = 0;
 }
 
 void baselist::redrawall() {
@@ -241,6 +280,7 @@ baselist::baselist(keybindings *kb) {
   bindings= kb;
   nitems= 0;
 
+  col_cur_x = 0;
   gap_width = 1;
   total_width = max(TOTAL_LIST_WIDTH, COLS);
 
@@ -272,6 +312,7 @@ void baselist::itd_keys() {
     if (x >= givek) y++;
     mvwaddstr(infopad, y,givek, ta[0]);
     waddch(infopad,'\n');
+    delete [] ta;
   }
 }
 
@@ -363,7 +404,7 @@ void baselist::wordwrapinfo(int offset, const char *m) {
         if (l <= 0) break;
         waddch(infopad,'\n');
       }
-      wrapping = false;
+      wrapping = true;
     }
     if (!p) break;
     if (getcury(infopad) == (MAX_DISPLAY_INFO - 1)) {

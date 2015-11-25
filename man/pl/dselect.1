@@ -4,7 +4,7 @@
 .\" Copyright Â© 2000 Josip Rodin
 .\" Copyright Â© 2001 Joost Kooij
 .\" Copyright Â© 2001 Wichert Akkerman <wakkerma@debian.org>
-.\" Copyright Â© 2010-2011 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2010-2014 Guillem Jover <guillem@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH dselect 1 2012\-04\-07 "Projekt Debian" Debian
+.TH dselect 1 2014\-08\-11 "Projekt Debian" Debian
 .SH NAZWA
 dselect \- konsolowe narzêdzie zarz±dzania pakietami Debiana
 .
@@ -123,12 +123,12 @@ U¿ywane do wy¶wietlania linii zapytañ.
 \fBhelpscreen\fP
 Kolor ekranów pomocy.
 .RE
-.P
+.IP
 Po czê¶ci ekranu nastêpuje dwukropek i specyfikacja koloru. Mo¿na okre¶liæ
 kolor czcionek, kolor t³a albo oba te kolory, uniewa¿niaj±c domy¶lne
 warto¶ci kolorów. Nale¿y u¿ywaæ standardowych nazw kolorów z biblioteki
 curses.
-.P
+.IP
 Opcjonalnie, po specyfikacji kolorów mo¿na dodaæ jeszcze jeden dwukropek, a
 po nim opis atrybutów. Jest to lista zawieraj±ca jeden lub wiêcej atrybutów
 oddzielonych znakami plusa ("+"). Dostêpne atrybuty (nie wszystkie dzia³aj±
@@ -205,7 +205,7 @@ zostan± rozwi±zane. Je¶li problem pozostaje lub przeprowadzona instalacja
 by³a nieprawid³owa, prosimy o zbadanie przyczyn problemu i okoliczno¶ci jego
 wyst±pienia i o wys³anie reportu o b³êdzie do systemu ¶ledzenia b³êdów
 Debiana. Instrukcje, jak to zrobiæ, mo¿na znale¼æ pod adresem
-http://bugs.debian.org/ albo w dokumentacji programów \fBbug\fP(1) lub
+https://bugs.debian.org/ albo w dokumentacji programów \fBbug\fP(1) lub
 \fBreportbug\fP(1), je¿eli s± zainstalowane.
 .sp
 Szczegó³y dotycz±ce akcji instalacji zale¿± od implementacji metody
@@ -282,13 +282,14 @@ W g³ównym ekranie wyboru pakietów wy¶wietlona jest lista wszystkich pakietów
 znanych systemowi zarz±dzania pakietami Debiana. S± to zarówno pakiety
 zainstalowane w systemie, jak i pakiety zawarte w bazie dostêpnych pakietów.
 .sp
-Dla ka¿dego pakietu pokazane s±: jego stan, priorytet, sekcja, numer wersji
-zainstalowanej i numer wersji dostêpnej, nazwa pakietu oraz krótki opis \-
-wszystko w jednej linii. Naciskaj±c klawisz \fB"V"\fP, mo¿na w³±czaæ i wy³±czaæ
-wy¶wietlanie informacji o numerze zainstalowanej i dostêpnej wersji
-pakietu. Naci¶niêcie klawisza \fB"v"\fP powoduje prze³±czanie pomiêdzy
-wy¶wietlaniem rozwlek³ego i skróconego opisu stanu pakietu. Skrócony opis
-stanu jest wy¶wietlany domy¶lnie.
+For every package, the list shows the package's status, priority, section,
+installed and available architecture, installed and available versions, the
+package name and its short description, all in one line.  By pressing the
+\&\fB'A'\fP key, the display of the installed and available architecture can be
+toggled between on an off.  By pressing the \fB'V'\fP key, the display of the
+installed and available version can be toggled between on an off.  By
+pressing the \fB'v'\fP key, the package status display is toggled between
+verbose and shorthand.  Shorthand display is the default.
 .sp
 Na skrócony opis stanu pakietu sk³adaj± siê cztery czê¶ci: flaga b³êdu,
 która normalnie powinna byæ czysta, obecny stan zainstalowania pakietu,

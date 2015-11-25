@@ -44,11 +44,14 @@ parse_error_msg(struct parsedb_state *ps, const char *fmt)
 
   str_escape_fmt(filename, ps->filename, sizeof(filename));
 
-  if (ps->pkg && ps->pkg->set->name)
+  if (ps->pkg && ps->pkg->set->name) {
+    char pkgname[256];
+
+    str_escape_fmt(pkgname, pkgbin_name(ps->pkg, ps->pkgbin, pnaw_nonambig),
+                   sizeof(pkgname));
     sprintf(msg, _("parsing file '%.255s' near line %d package '%.255s':\n"
-                   " %.255s"), filename, ps->lno,
-                   pkgbin_name(ps->pkg, ps->pkgbin, pnaw_nonambig), fmt);
-  else
+                   " %.255s"), filename, ps->lno, pkgname, fmt);
+  } else
     sprintf(msg, _("parsing file '%.255s' near line %d:\n"
                    " %.255s"), filename, ps->lno, fmt);
 
@@ -74,57 +77,29 @@ parse_warn(struct parsedb_state *ps, const char *fmt, ...)
   va_end(args);
 }
 
-const struct namevalue booleaninfos[] = {
-  NAMEVALUE_DEF("no",  false),
-  NAMEVALUE_DEF("yes", true),
-  { .name = NULL }
-};
+const struct fieldinfo *
+find_field_info(const struct fieldinfo *fields, const char *fieldname)
+{
+  const struct fieldinfo *field;
 
-const struct namevalue multiarchinfos[] = {
-  NAMEVALUE_DEF("no",      multiarch_no),
-  NAMEVALUE_DEF("same",    multiarch_same),
-  NAMEVALUE_DEF("allowed", multiarch_allowed),
-  NAMEVALUE_DEF("foreign", multiarch_foreign),
-  { .name = NULL }
-};
+  for (field = fields; field->name; field++)
+    if (strcasecmp(field->name, fieldname) == 0)
+      return field;
 
-const struct namevalue priorityinfos[] = {
-  NAMEVALUE_DEF("required",                      pri_required),
-  NAMEVALUE_DEF("important",                     pri_important),
-  NAMEVALUE_DEF("standard",                      pri_standard),
-  NAMEVALUE_DEF("optional",                      pri_optional),
-  NAMEVALUE_DEF("extra",                         pri_extra),
-  NAMEVALUE_FALLBACK_DEF("this is a bug - please report", pri_other),
-  NAMEVALUE_DEF("unknown",                       pri_unknown),
-  { .name = NULL }
-};
+  return NULL;
+}
 
-const struct namevalue statusinfos[] = {
-  NAMEVALUE_DEF("not-installed",    stat_notinstalled),
-  NAMEVALUE_DEF("config-files",     stat_configfiles),
-  NAMEVALUE_DEF("half-installed",   stat_halfinstalled),
-  NAMEVALUE_DEF("unpacked",         stat_unpacked),
-  NAMEVALUE_DEF("half-configured",  stat_halfconfigured),
-  NAMEVALUE_DEF("triggers-awaited", stat_triggersawaited),
-  NAMEVALUE_DEF("triggers-pending", stat_triggerspending),
-  NAMEVALUE_DEF("installed",        stat_installed),
-  { .name = NULL }
-};
+const struct arbitraryfield *
+find_arbfield_info(const struct arbitraryfield *arbs, const char *fieldname)
+{
+  const struct arbitraryfield *arbfield;
 
-const struct namevalue eflaginfos[] = {
-  NAMEVALUE_DEF("ok",        eflag_ok),
-  NAMEVALUE_DEF("reinstreq", eflag_reinstreq),
-  { .name = NULL }
-};
+  for (arbfield = arbs; arbfield; arbfield = arbfield->next)
+    if (strcasecmp(arbfield->name, fieldname) == 0)
+      return arbfield;
 
-const struct namevalue wantinfos[] = {
-  NAMEVALUE_DEF("unknown",   want_unknown),
-  NAMEVALUE_DEF("install",   want_install),
-  NAMEVALUE_DEF("hold",      want_hold),
-  NAMEVALUE_DEF("deinstall", want_deinstall),
-  NAMEVALUE_DEF("purge",     want_purge),
-  { .name = NULL }
-};
+  return NULL;
+}
 
 const char *
 pkg_name_is_illegal(const char *p)
@@ -213,12 +188,13 @@ parseversion(struct dpkg_version *rversion, const char *string,
   char *hyphen, *colon, *eepochcolon;
   const char *end, *ptr;
 
-  if (!*string)
-    return dpkg_put_error(err, _("version string is empty"));
-
   /* Trim leading and trailing space. */
   while (*string && isblank(*string))
     string++;
+
+  if (!*string)
+    return dpkg_put_error(err, _("version string is empty"));
+
   /* String now points to the first non-whitespace char. */
   end = string;
   /* Find either the end of the string, or a whitespace char. */

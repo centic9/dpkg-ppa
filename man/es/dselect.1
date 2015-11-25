@@ -4,7 +4,7 @@
 .\" Copyright Â© 2000 Josip Rodin
 .\" Copyright Â© 2001 Joost Kooij
 .\" Copyright Â© 2001 Wichert Akkerman <wakkerma@debian.org>
-.\" Copyright Â© 2010-2011 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2010-2014 Guillem Jover <guillem@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH dselect 1 "7 de abril del 2012" "Proyecto Debian" Debian
+.TH dselect 1 2014\-08\-11 "Proyecto Debian" Debian
 .SH NOMBRE
 dselect \- Interfaz para la gestión de paquetes de Debian
 .
@@ -124,12 +124,12 @@ Se usa para mostrar líneas de consulta.
 \fBhelpscreen\fP
 Color de las pantallas de ayuda.
 .RE
-.P
+.IP
 A continuación de la parte de la pantalla aparecen dos puntos y la
 definición del color. Puede definir el color del primer plano, el color de
 fondo, o ambos evitando los colores predefinidos. Se deben utilizar nombres
 estándar de colores de la biblioteca curses.
-.P
+.IP
 Opcionalmente, a continuación de la especificación de colores hay otros dos
 puntos, y la especificación de los atributos. Ésta es una lista de uno o más
 atributos, separados por un signo de suma «+». Los atributos disponibles
@@ -209,7 +209,7 @@ desaparecerán o bien se resolverán. Si el problema persiste o la instalación
 se ejecutó de forma incorrecta, le rogamos investigue las causas y
 circunstancias del problema, y remita un informe de fallos al sistema de
 seguimiento de fallos de Debian. Puede encontrar las instrucciones
-correspondientes en «http://bugs.debian.org/», o bien leyendo la
+correspondientes en «https://bugs.debian.org/», o bien leyendo la
 documentación de los programas \fBbug(1)\fP o \fBreportbug(1)\fP, si es que están
 instalados.
 .sp
@@ -291,12 +291,14 @@ el sistema de gestión de paquetes de Debian. Esto incluye los paquetes
 instalados en el sistema y también aquellos conocidos mediante la base de
 datos de paquetes disponibles.
 .sp
-Para cada paquete, la lista muestra el estado, prioridad, sección, las
-versiones instalada y disponible, el nombre del paquete y su descripción
-corta, todo esto en una sola línea. Pulsar la tecla \fB«V»\fP conmuta la
-aparición de la versión instalada, o la disponible. La tecla \fB«v»\fP modifica
-la pantalla del estado del paquete a la forma breve o informativa. La forma
-breve es la opción predefinido.
+For every package, the list shows the package's status, priority, section,
+installed and available architecture, installed and available versions, the
+package name and its short description, all in one line.  By pressing the
+\&\fB'A'\fP key, the display of the installed and available architecture can be
+toggled between on an off.  By pressing the \fB'V'\fP key, the display of the
+installed and available version can be toggled between on an off.  By
+pressing the \fB'v'\fP key, the package status display is toggled between
+verbose and shorthand.  Shorthand display is the default.
 .sp
 La forma breve del estado consiste de cuatro partes: una marca de fallo, la
 cual normalmente debería estar vacía, el estado actual, el estado de la

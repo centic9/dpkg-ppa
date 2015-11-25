@@ -81,6 +81,7 @@ sub parse {
     my $entry = Dpkg::Changelog::Entry::Debian->new();
     my @blanklines = ();
     my $unknowncounter = 1; # to make version unique, e.g. for using as id
+    local $_;
 
     while (<$fh>) {
 	chomp;
@@ -101,7 +102,7 @@ sub parse {
 	    }
 	    $expect= START_CHANGES;
 	    @blanklines = ();
-	} elsif (m/^(;;\s*)?Local variables:/io) {
+	} elsif (m/^(?:;;\s*)?Local variables:/io) {
 	    last; # skip Emacs variables at end of file
 	} elsif (m/^vim:/io) {
 	    last; # skip vim variables at end of file
@@ -111,11 +112,11 @@ sub parse {
 	    next; # skip comments, even that's not supported
 	} elsif (m{^/\*.*\*/}o) {
 	    next; # more comments
-	} elsif (m/^(\w+\s+\w+\s+\d{1,2} \d{1,2}:\d{1,2}:\d{1,2}\s+[\w\s]*\d{4})\s+(.*)\s+(<|\()(.*)(\)|>)/o
-		 || m/^(\w+\s+\w+\s+\d{1,2},?\s*\d{4})\s+(.*)\s+(<|\()(.*)(\)|>)/o
-		 || m/^(\w[-+0-9a-z.]*) \(([^\(\) \t]+)\)\;?/io
-		 || m/^([\w.+-]+)(-| )(\S+) Debian (\S+)/io
-		 || m/^Changes from version (.*) to (.*):/io
+	} elsif (m/^(?:\w+\s+\w+\s+\d{1,2} \d{1,2}:\d{1,2}:\d{1,2}\s+[\w\s]*\d{4})\s+(?:.*)\s+[<\(](?:.*)[\)>]/o
+		 || m/^(?:\w+\s+\w+\s+\d{1,2},?\s*\d{4})\s+(?:.*)\s+[<\(](?:.*)[\)>]/o
+		 || m/^(?:\w[-+0-9a-z.]*) \((?:[^\(\) \t]+)\)\;?/io
+		 || m/^(?:[\w.+-]+)[- ](?:\S+) Debian (?:\S+)/io
+		 || m/^Changes from version (?:.*) to (?:.*):/io
 		 || m/^Changes for [\w.+-]+-[\w.+-]+:?\s*$/io
 		 || m/^Old Changelog:\s*$/io
 		 || m/^(?:\d+:)?\w[\w.+~-]*:?\s*$/o) {
@@ -139,7 +140,7 @@ sub parse {
 	    $expect = NEXT_OR_EOF;
 	} elsif (m/^ \-\-/) {
 	    $self->parse_error($file, $., _g('badly formatted trailer line'), "$_");
-	} elsif (m/^\s{2,}(\S)/) {
+	} elsif (m/^\s{2,}(?:\S)/) {
 	    unless ($expect eq START_CHANGES or $expect eq CHANGES_OR_TRAILER) {
 		$self->parse_error($file, $., sprintf(_g('found change data' .
 		    ' where expected %s'), $expect), "$_");
@@ -198,7 +199,13 @@ __END__
 Dpkg::Changelog
 
 Description of the Debian changelog format in the Debian policy:
-L<http://www.debian.org/doc/debian-policy/ch-source.html#s-dpkgchangelog>.
+L<https://www.debian.org/doc/debian-policy/ch-source.html#s-dpkgchangelog>.
+
+=head1 CHANGES
+
+=head2 Version 1.00
+
+Mark the module as public.
 
 =head1 AUTHORS
 

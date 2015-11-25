@@ -39,9 +39,10 @@ Avslutar med \fB0\fP om den aktuella återförsäljaren är \fIåterförsäljare\fP. I
 annat fall avslutas programmet med icke\-noll.
 .TP 
 \fB\-\-derives\-from\fP\fI återförsäljare\fP
-Exits with \fB0\fP if the current vendor distribution is a derivative of
-\fIvendor\fP, otherwise exits with non\-zero. It uses the \fBParent\fP field to
-browse all ancestors of the current vendor.
+Avslutar med \fB0\fP om den aktuella återförsäljardistributionen är härledd
+från \fIåterförsäljare\fP. I annat fall avslutas programmet med
+icke\-noll. Använder fältet \fBParent\fP för att bläddra genom alla föräldrar
+till den aktuella återförsäljaren.
 .TP 
 \fB\-\-query\fP \fIfält\fP
 Skriver värdet för det återförsäljarspecifika fältet \fIfält\fP för den

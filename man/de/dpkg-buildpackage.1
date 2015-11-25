@@ -25,7 +25,7 @@
 .\"
 .\"*******************************************************************
 .TH dpkg\-buildpackage 1 2013\-12\-12 Debian\-Projekt dpkg\-Hilfsprogramme
-.SH NAME
+.SH BEZEICHNUNG
 dpkg\-buildpackage \- baue Binär\- oder Quellpakete aus Quellen
 .
 .SH ÜBERSICHT
@@ -36,41 +36,61 @@ dpkg\-buildpackage \- baue Binär\- oder Quellpakete aus Quellen
 Debian\-Paketes automatisiert. Es besteht aus den folgenden Schritten:
 .IP \fB1.\fP 3
 Es bereitet die Bauumgebung vor, indem verschiedene Umgebungsvariablen
-gesetzt werden (siehe \fBUMGEBUNG\fP) und ruft \fBdpkg\-source \-\-before\-build\fP
-auf (es sei denn, \fB\-T\fP oder \fB\-\-target\fP wurde verwandt).
+gesetzt werden (siehe \fBUMGEBUNG\fP), führt den \fBinit\fP\-Hook aus und ruft
+\fBdpkg\-source \-\-before\-build\fP auf (es sei denn, \fB\-T\fP oder \fB\-\-target\fP wurde
+verwandt).
 .IP \fB2.\fP 3
 Es prüft, dass Bauabhängigkeiten und \-konflikte erfüllt sind (falls \fB\-d\fP
 nicht angegeben ist).
 .IP \fB3.\fP 3
 Falls ein spezielles Ziel mit der Option \fB\-T\fP oder \fB\-\-target\fP ausgewählt
-wurde, ruft es diese Ziel auf und endet hier. Andernfalls ruft es \fBfakeroot
-debian/ rules clean\fP auf, um den Bau\-Baum zu bereinigen (falls \fB\-nc\fP nicht
-angegeben ist).
+wurde, ruft es dieses Ziel auf und endet hier. Andernfalls führt es den Hook
+\fBpreclean\fP aus und ruft \fBfakeroot debian/ rules clean\fP auf, um den
+Bau\-Baum zu bereinigen (falls \fB\-nc\fP nicht angegeben ist).
 .IP \fB4.\fP 3
-Es ruft \fBdpkg\-source \-b\fP auf, um das Quellpaket zu erstellen (falls nicht
-mit \fB\-b\fP, \fB\-B\fP oder \fB\-A\fP ein rein\-binärer Bau erbeten wurde).
+Es führt den Hook \fBsource\fP aus und ruft \fBdpkg\-source \-b\fP auf, um das
+Quellpaket zu erstellen (falls nicht mit \fB\-b\fP, \fB\-B\fP oder \fB\-A\fP ein
+rein\-binärer Bau erbeten wurde).
 .IP \fB5.\fP 3
-Es ruft \fBdebian/rules\fP \fIBauziel\fP, gefolgt von \fBfakeroot debian/rules\fP
+Es führt den Hook \fBbuild\fP aus und ruft \fBdebian/rules\fP \fIBauziel\fP auf. Dann
+führt es den Hook \fBbinary\fP aus, gefolgt von \fBfakeroot debian/rules\fP
 \fIBinärziel\fP auf (falls nicht ein reiner Quellbau mit \fB\-S\fP erbeten
 wurde). Beachten Sie, dass \fIBauziel\fP und \fIBinärziel\fP entweder \fBbuild\fP und
 \fBbinary\fP (Standardfall, oder falls \fB\-b\fP angegeben ist) oder \fBbuild\-arch\fP
-und \fBbinary\-arch\fP (falls \fB\-B\fP angegeben ist) oder \fBbuild\-indep\fP und
-\fBbinary\-indep\fP (falls \fB\-A\fP angegeben ist) lauten.
+und \fBbinary\-arch\fP (falls \fB\-B\fP oder \fB\-G\fP angegeben ist) oder
+\fBbuild\-indep\fP und \fBbinary\-indep\fP (falls \fB\-A\fP oder \fB\-g\fP angegeben ist)
+lauten.
 .IP \fB6.\fP 3
-It calls \fBgpg2\fP or \fBgpg\fP to sign the \fB.dsc\fP file (if any, unless \fB\-us\fP
-is specified or on UNRELEASED builds).
+Es führt den Hook \fBchanges\fP aus und ruft \fBdpkg\-genchanges\fP auf, um eine
+\&\fB.changes\fP\-Datei zu erstellen. Viele Optionen von \fBdpkg\-buildpackage\fP
+werden an \fBdpkg\-genchanges\fP weitergeleitet.
 .IP \fB7.\fP 3
-Es ruft \fBdpkg\-genchanges\fP auf, um eine \fB.changes\fP\-Datei zu
-erstellen. Viele Optionen von \fBdpkg\-buildpackage\fP werden an
-\fBdpkg\-genchanges\fP weitergeleitet.
+Es führt den Hook \fBpostclean\fP aus und, falls \fB\-tc\fP angegeben ist, ruft
+erneut \fBfakeroot debian/rules clean\fP auf.
 .IP \fB8.\fP 3
-It calls \fBgpg2\fP or \fBgpg\fP to sign the \fB.changes\fP file (unless \fB\-uc\fP is
-specified or on UNRELEASED builds).
+\fBdpkg\-source \-\-after\-build\fP wird aufgerufen.
 .IP \fB9.\fP 3
-Falls \fB\-tc\fP angegeben ist, wird \fBfakeroot debian/rules clean\fP erneut
-aufgerufen. Schließlich ruft es \fBdpkg\-source \-\-after\-build\fP auf.
+Es führt den Hook \fBcheck\fP aus und ruft einen Paketprüfer für die Datei
+\&\fB.changes\fP auf (falls ein Befehl in \fBDEB_CHECK_COMMAND\fP oder mit
+\fB\-\-check\-command\fP angegeben ist).
+.IP \fB10.\fP 3
+Es führt den Hook \fBsign\fP aus und ruft \fBgpg2\fP oder \fBgpg\fP auf, um die
+\&\fB.dsc\fP\-Datei (falls vorhanden und \fB\-us\fP nicht angegeben wurde oder es sich
+um einen »UNRELEASED«\-Bau handelt) und die \fB.changes\fP\-Datei (falls
+vorhanden und \fB\-uc\fP nicht angegeben wurde oder es sich um einen
+»UNRELEASED«\-Bau handelt) zu signieren.
+.IP \fB11.\fP 3
+Es führt den Hook \fBdone\fP aus.
 .
 .SH OPTIONEN
+.TP 
+\fB\-g\fP
+Spezifiziert einen auf die Quellen und architekturunabhängige Pakete
+beschränkten Bau. Wird an \fBdpkg\-genchanges\fP weitergegeben.
+.TP 
+\fB\-G\fP
+Spezifiziert einen auf die Quellen und architektur\-spezifische Pakete
+beschränkten Bau. Wird an \fBdpkg\-genchanges\fP weitergegeben.
 .TP 
 \fB\-b\fP
 Spezifiziert einen rein binären Bau, keine Quelldateien sollen gebaut
@@ -125,34 +145,50 @@ Root\-Rechten ausgeführt wird.
 Wird unverändert an \fBdpkg\-genchanges\fP weitergegeben. Lesen Sie dessen
 Handbuchseite.
 .TP 
-\fB\-a\fP\fIArchitektur\fP
+\fB\-a\fP, \fB\-\-host\-arch\fP \fIArchitektur\fP
 Spezifiziert die Debian\-Architektur, für die gebaut wird. Die Architektur
 der Maschine, auf der gebaut wird, wird automatisch bestimmt, und ist auch
 die Voreinstellung für die Gastgebermaschine (»host machine«).
 .TP 
-\fB\-t\fP\fIGNU\-Systemtyp\fP
-Spezifiziere den GNU\-Systemtyp, für den wir bauen. Er kann anstelle von \-a
-oder als Ergänzung verwandt werden, um den Standard GNU\-Systemtyp der
-Ziel\-Debian\-Architektur zu überschreiben.
+\fB\-t\fP, \fB\-\-host\-type\fP \fIGNU\-Systemtyp\fP
+Spezifiziere den GNU\-Systemtyp, für den wir bauen. Er kann anstelle von
+\-\-host\-arch oder als Ergänzung verwandt werden, um den Standard
+GNU\-Systemtyp der Host\-Debian\-Architektur außer Kraft zu setzen.
+.TP 
+\fB\-\-target\-arch\fP \fIArchitektur\fP
+Spezifiziert die Debian\-Architektur, für die die gebauten Programme bauen
+werden. Die Voreinstellung ist die Host\-Maschine.
+.TP 
+\fB\-\-target\-type\fP \fIGNU\-Systemtyp\fP
+Spezifiziere den GNU\-Systemtyp, für den die gebauten Programme bauen
+werden. Er kann anstelle von \-\-target\-arch oder als Ergänzung verwandt
+werden, um den Standard GNU\-Systemtyp der Ziel\-Debian\-Architektur zu
+überschreiben.
 .TP 
 \fB\-P\fP\fIProfil\fP[\fB,\fP?]
-Gibt als Kommata\-getrennte Liste (ohne den Namensraum\-Präfix »\fBprofile.\fP«)
-die zu bauenden Profile an. Standardmäßig wird für kein bestimmtes Profil
-gebaut. Fügt sie auch (als durch Leerzeichen getrennte Liste) zu der
-Umgebungsvariablen \fBDEB_BUILD_PROFILES\fP hinzu. Dies erlaubt beispielsweise
-\fBdebian/rules\fP\-Dateien, diese Information für den Bau unter bestimmten
-Bedingungen zu nutzen.
+Gibt als Kommata\-getrennte Liste die zu bauenden Profile an. Standardmäßig
+wird für kein bestimmtes Profil gebaut. Setzt sie auch (als durch
+Leerzeichen getrennte Liste) in die Umgebungsvariable
+\fBDEB_BUILD_PROFILES\fP. Dies erlaubt beispielsweise \fBdebian/rules\fP\-Dateien,
+diese Information für den Bau unter bestimmten Bedingungen zu nutzen.
 .TP 
-\fB\-j\fP\fIAufträge\fP
-Anzahl an Aufträgen, die simultan laufen dürfen, äquivalent zu der Option
-von \fBmake\fP(1) mit dem gleichen Namen. Fügt sich selbst zu der
-Umgebungsvariablen \fBMAKEFLAGS\fP hinzu, was dazu führen sollte, dass alle
-folgenden Aufrufe von make diese Option erben werden. Fügt auch
-\fBparallel=\fP\fIAufträge\fP zu der Umgebungsvariablen \fBDEB_BUILD_OPTIONS\fP
-hinzu, was es debian/rules\-Dateien erlaubt, diese Information für eigene
-Zwecke zu verwenden. Der Eintrag \fBparallel=\fP\fIAufträge\fP in der
-Umgebungsvariablen \fBDEB_BUILD_OPTIONS\fP überschreibt den Wert von \fB\-j\fP,
-falls diese Option angegeben ist.
+\fB\-j\fP[\fIAufträge\fP|\fBauto\fP]
+Anzahl an Aufträgen, die simultan laufen dürfen, Anzahl von Aufträgen, die
+zur Anzahl der verfügbaren Prozessoren passt, falls \fBauto\fP angegeben ist
+oder eine unbegrenzte Anzahl, falls \fIAufträge\fP nicht angegeben ist,
+äquivalent zu der Option von \fBmake\fP(1) mit dem gleichen Namen. Fügt sich
+selbst zu der Umgebungsvariablen \fBMAKEFLAGS\fP hinzu, was dazu führen sollte,
+dass alle folgenden Aufrufe von make diese Option erben werden. Fügt auch
+\fBparallel=\fP\fIAufträge\fP oder \fBparallel=\fP zu der Umgebungsvariablen
+\fBDEB_BUILD_OPTIONS\fP hinzu, was es debian/rules\-Dateien erlaubt, diese
+Information für eigene Zwecke zu verwenden. Die Option
+\fBparallel=\fP\fIAufträge\fP oder \fBparallel=\fP in der Umgebungsvariablen
+\fBDEB_BUILD_OPTIONS\fP überschreibt den Wert von \fB\-j\fP, falls diese Option
+angegeben ist. Beachten Sie, dass der Wert \fBauto\fP durch die tatsächliche
+Anzahl der derzeitig aktiven Prozessoren ersetzt wird und somit nicht an
+irgendeinen Kindprozess weitergegeben wird. Falls die Anzahl der verfügbaren
+Prozessoren nicht ermittelt werden kann, fällt der Code auf eine unbegrenzte
+Anzahl zurück.
 .TP 
 \fB\-D\fP
 Prüfe Bauabhängigkeiten und \-konflikte; Abbruch falls diese nicht erfüllt
@@ -163,7 +199,7 @@ sind. Dies ist das Standardverhalten.
 .TP 
 \fB\-nc\fP
 Bereinige den Quellbaum nicht (impliziert \fB\-b\fP, falls ansonsten nichts aus
-\fB\-B\fP, \fB\-A\fP oder \fB\-S\fP gewählt wurde).
+\fB\-F\fP, \fB\-g\fP, \fB\-G\fP, \fB\-B\fP, \fB\-A\fP oder \fB\-S\fP gewählt wurde).
 .TP 
 \fB\-tc\fP
 Den Quellbaum säubern (verwendet \fIroot\-werde\-Befehl\fP \fBdebian/rules clean\fP)
@@ -192,13 +228,63 @@ werden). Alternativ kann die Standard\-debian/rules\-Datei mit einem anderen
 Make\-Programm ausgeführt werden (zum Beispiel durch die Verwendung von
 \fB/usr/local/bin/make \-f debian/rules\fP als \fIrules\-Datei\fP).
 .TP 
+\fB\-\-check\-command=\fP\fIPrüfbefehl\fP
+Befehl, der zum Prüfen der \fB.changes\fP\-Datei selbst und sämtlichen in der
+Datei referenzierten Artefakten verwandt wird. Der Befehl sollte den
+Pfadnamen der \fB.changes\fP als Argument erhalten. Dieser Befehl ist
+normalerweise \fBlintian\fP.
+.TP 
+\fB\-\-check\-option=\fP\fIOpt\fP
+Option \fIOpt\fP an den \fIPrüfbefehl\fP, der mit \fBDEB_CHECK_COMMAND\fP oder
+\fB\-\-check\-command\fP spezifiziert wurde, übergeben. Kann mehrfach verwandt
+werden.
+.TP 
+\fB\-\-hook\-\fP\fIHook\-Name\fP\fB=\fP\fIHook\-Befehl\fP
+Setzt den angegebenen Shell\-Code \fIHook\-Befehl\fP als den Hook \fIHook\-Name\fP,
+der an den Zeitpunkten läuft, die in den Ablaufschritten angegeben sind. Die
+Hooks werden immer ausgeführt, selbst falls die folgende Aktion nicht
+durchgeführt wird (außer beim Hook \fBbinary\fP).
+
+Hinweis: Hooks können den Bauprozess beeinflussen und zu Baufehlern führen,
+falls ihre Befehle fehlschlagen. Passen Sie daher auf ungeplante
+Konsequenzen auf.
+
+Die derzeit unterstützten \fIHook\-Name\fPn sind:
+
+\fBinit preclean source build binary changes postclean check sign done\fP
+
+Der \fIHook\-Befehl\fP unterstützt die folgende Ersetzungsformatzeichenkette,
+die vor seiner Ausführung angewandt wird:
+
+.RS
+.TP 
+\fB%%\fP
+Ein einzelnes %\-Zeichen.
+.TP 
+\fB%a\fP
+Ein logischer Wert (0 oder 1), der darstellt, ob die folgende Aktion
+ausgeführt wird oder nicht.
+.TP 
+\fB%p\fP
+Der Quellpaketname.
+.TP 
+\fB%v\fP
+Die Quellpaket\-Version.
+.TP 
+\fB%s\fP
+Die Quellpaket\-Version (ohne die Epoche).
+.TP 
+\fB%u\fP
+Die Original\- (Upstream\-)Version.
+.RE
+.TP 
 \fB\-p\fP\fIsignier\-Befehl\fP
-When \fBdpkg\-buildpackage\fP needs to execute GPG to sign a source control
-(\fB.dsc\fP) file or a \fB.changes\fP file it will run \fIsign\-command\fP (searching
-the \fBPATH\fP if necessary) instead of \fBgpg2\fP or \fBgpg\fP. \fIsign\-command\fP will
-get all the arguments that \fBgpg2\fP or \fBgpg\fP would have
-gotten. \fIsign\-command\fP should not contain spaces or any other shell
-metacharacters.
+Wenn \fBdpkg\-buildpackage\fP GPG zum Signieren einer Quellsteuerdatei (\fB.dsc\fP)
+oder einer \fB.changes\fP\-Datei benötigt, wird es statt \fBgpg\fP oder \fBgpg2\fP den
+\fIsignier\-Befehl\fP ausführen (und dabei falls notwendig den \fBPATH\fP
+durchsuchen). \fIsignier\-Befehl\fP wird alle Argumente erhalten, die \fBgpg\fP
+oder \fBgpg2\fP erhalten hätte. \fIsignier\-Befehl\fP sollte keine Leerzeichen oder
+andere Metazeichen der Shell enthalten.
 .TP 
 \fB\-k\fP\fISchlüssel\-id\fP
 Geben Sie die Schlüssel\-ID zur Signatur von Paketen an.
@@ -213,7 +299,7 @@ Die \fB.changes\fP\-Datei nicht signieren.
 Das Unterschreiben der entstehenden Dateien erzwingen (seit Dpkg 1.17.0),
 unabhängig von \fB\-us\fP oder \fB\-uc\fP oder anderen internen Heuristiken.
 .TP 
-\fB\-i\fP[\fIRegex\fP]
+\fB\-i\fP[\fIRegAus\fP]
 .TQ
 \fB\-I\fP[\fIMuster\fP]
 .TQ
@@ -224,10 +310,11 @@ Wird unverändert an \fBdpkg\-source\fP weitergegeben. Lesen Sie dessen
 Handbuchseite.
 .TP 
 \fB\-\-source\-option=\fP\fIOpt\fP
-Option \fIOpt\fP an \fBdpkg\-source\fP weitergeben.
+Option \fIOpt\fP an \fBdpkg\-source\fP weitergeben. Kann mehrfach verwandt werden.
 .TP 
 \fB\-\-changes\-option=\fP\fIOpt\fP
-Option \fIOpt\fP an \fBdpkg\-genchanges\fP weitergeben.
+Option \fIOpt\fP an \fBdpkg\-genchanges\fP weitergeben. Kann mehrfach verwandt
+werden.
 .TP 
 \fB\-\-admindir=\fP\fIVerz\fP
 .TQ
@@ -243,15 +330,22 @@ Gebe die Version aus und beende sich.
 .
 .SH UMGEBUNG
 .TP 
+\fBDEB_CHECK_COMMAND\fP
+Falls gesetzt, wird er zum Prüfen der \fB.changes\fP\-Datei verwandt. Wird durch
+die Option \fB\-\-check\-command\fP außer Kraft gesetzt.
+.TP 
 \fBDEB_SIGN_KEYID\fP
 Falls gesetzt, wird sie zum Signieren der \fB.changes\fP\- und \fB.dsc\fP\-Dateien
 verwandt. Wird durch die Option \fB\-k\fP außer Kraft gesetzt.
 .TP 
+\fBDEB_BUILD_OPTIONS\fP
+Falls gesetzt und falls sie \fBnocheck\fP enthält, wird die Variable
+\fBDEB_CHECK_COMMAND\fP ignoriert.
+.TP 
 \fBDEB_BUILD_PROFILES\fP
 Falls gesetzt, wird sie als aktive(s) Bau\-Profil(e) für das zu bauende Paket
-verwandt. Es ist eine durch Leerzeichen getrennte Liste von Profilnamen ohne
-den Namensraum\-Präfix »\fBprofile\fP«. Wird durch die Option \fB\-P\fP außer Kraft
-gesetzt.
+verwandt. Es ist eine durch Leerzeichen getrennte Liste von
+Profilnamen. Wird durch die Option \fB\-P\fP außer Kraft gesetzt.
 
 .SS "Vertrauen auf exportierte Umgebungsvariablen"
 Selbst falls \fBdpkg\-buildpackage\fP einige Variablen exportiert, sollte
@@ -276,11 +370,11 @@ existierenden Paketen zu vermeiden und um den Übergang zu erleichtern, wird
 es auf das Ziel \fBbuild\fP zurückfallen, falls \fBmake \-f debian/rules \-qn\fP
 \fIBauziel\fP den Rückgabewert 2 liefert.
 .SH FEHLER
-Es sollte möglich sein, Leerzeichen und Metazeichen der Shell in und
+Es sollte möglich sein, Leerzeichen und Metazeichen der Shell und
 Anfangsargumente für \fIroot\-werde\-Befehl\fP und \fIsignier\-Befehl\fP anzugeben.
 .
 .SH ÜBERSETZUNG
-Die deutsche Übersetzung wurde 2004, 2006-2013 von Helge Kreutzmann
+Die deutsche Übersetzung wurde 2004, 2006-2015 von Helge Kreutzmann
 <debian@helgefjell.de>, 2007 von Florian Rehnisch <eixman@gmx.de> und
 2008 von Sven Joachim <svenjoac@gmx.de>
 angefertigt. Diese Übersetzung ist Freie Dokumentation; lesen Sie die
@@ -290,4 +384,4 @@ Es gibt KEINE HAFTUNG.
 .ad l
 .nh
 \fBdpkg\-source\fP(1), \fBdpkg\-architecture\fP(1), \fBdpkg\-buildflags\fP(1),
-\fBdpkg\-genchanges\fP(1), \fBfakeroot\fP(1), \fBgpg2\fP(1), \fBgpg\fP(1).
+\fBdpkg\-genchanges\fP(1), \fBfakeroot\fP(1), \fBlintian\fP(1), \fBgpg2\fP(1), \fBgpg\fP(1).

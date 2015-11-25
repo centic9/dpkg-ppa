@@ -3,7 +3,7 @@
 .\" Copyright Â© 1995-1996 Ian Jackson <ian@chiark.chu.cam.ac.uk>
 .\" Copyright Â© 1999 Wichert Akkerman <wakkerma@debian.org>
 .\" Copyright Â© 2006 Frank Lichtenheld <djpig@debian.org>
-.\" Copyright Â© 2007-2012 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2007-2014 Guillem Jover <guillem@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH dpkg\-deb 1 2013\-03\-27 "Projet Debian" "suite dpkg"
+.TH dpkg\-deb 1 20\-08\-2014 "Projet Debian" "suite dpkg"
 .SH NOM
 dpkg\-deb \- outil pour la manipulation des archives (.deb) des paquets Debian
 .
@@ -128,6 +128,13 @@ nommé DEBIAN de ce répertoire.
 Le répertoire cible est créé si nécessaire (mais pas ses répertoires
 parents).
 .TP 
+\fB\-\-ctrl\-tarfile\fP \fIarchive\fP
+Extrait les données de contrôle d'un paquet binaire et les envoie sur la
+sortie standard dans le format propre à la commande \fBtar\fP (depuis dpkg
+1.17.14). En combinant cette option avec la commande \fBtar\fP(1), on peut
+ainsi extraire un fichier de contrôle précis d'une archive de
+paquet. L'archive d'entrée sera toujours traitée séquentiellement.
+.TP 
 \fB\-\-fsys\-tarfile\fP \fIarchive\fP
 Extrait les données de l'arborescence d'un paquet binaire et les envoie sur
 la sortie standard dans le format propre à la commande \fBtar\fP. En combinant
@@ -175,31 +182,40 @@ niveau 1 pour bzip2. Avant la version 1.16.2, la valeur 0 correspondait à
 «\ aucune compression\ » pour tous les logiciels de compression.
 .TP 
 \fB\-S\fP\fIstratégie\-compression\fP
-Specify which compression strategy to use on the compressor backend, when
-building a package (since dpkg 1.16.2). Allowed values are \fInone\fP (since
-dpkg 1.16.4), \fIfiltered\fP, \fIhuffman\fP, \fIrle\fP and \fIfixed\fP for gzip (since
-dpkg 1.17.0) and \fIextreme\fP for xz.
+Indique la stratégie de compression à fournir au logiciel de compression
+appelé en sous\-main lors de la construction du paquet (depuis dpkg
+1.16.2). Les valeurs autorisées sont \fInone\fP (depuis dpkg 1.16.4),
+\fIfiltered\fP, \fIhuffman\fP, \fIrle\fP et \fIfixed\fP pour gzip (since dpkg 1.17.0) et
+\fIextreme\fP pour xz.
 .TP 
 \fB\-Z\fP\fItype_compression\fP
-Specify which compression type to use when building a package. Allowed
-values are \fIgzip\fP, \fIxz\fP, \fIbzip2\fP, \fIlzma\fP, and \fInone\fP (default is
-\fIxz\fP).
+Indique le type de compression à utiliser lors de la construction d'un
+paquet. Les valeurs autorisées sont \fIgzip\fP, \fIxz\fP, \fIbzip2\fP (déconseillée),
+\fIlzma\fP (déconseillée) et \fInone\fP (\fIxz\fP est la valeur par défaut).
+.TP 
+\fB\-\-uniform\-compression\fP
+Indique que les mêmes paramètres de compression doivent être utilisés pour
+tous les membres de l'archive (c'est\-à\-dire \fBcontrol.tar\fP et
+\fBdata.tar\fP). Sinon, seul le membre \fBdata.tar\fP utilisera ces
+paramètres. \fInone\fP, \fIgzip\fP et \fIxz\fP sont les seuls types de compression
+pris en charge pour cette option d'uniformité.
 .TP 
 \fB\-\-deb\-format=\fP\fIformat\fP
-Set the archive format version used when building (since dpkg 1.17.0).
-Allowed values are \fI2.0\fP for the new format, and \fI0.939000\fP for the old
-one (default is \fI2.0\fP).
+Indique la version du format d'archive utilisé lors de la construction. Les
+valeurs autorisées sont \fI2.0\fP pour le nouveau format et \fI0.939000\fP pour
+l'ancien (la valeur par défaut est \fI2.0\fP).
 
-The old archive format is less easily parsed by non\-Debian tools and is now
-obsolete; its only use is when building packages to be parsed by versions of
-dpkg older than 0.93.76 (September 1995), which was released as i386 a.out
-only.
+L'ancien format d'archive, moins facilement compris par les outils
+non\-Debian, est maintenant dépassé. On l'utilise seulement quand on
+construit des paquets qui doivent être analysés par des versions de dpkg
+plus anciennes que la version 0.93.76 (septembre 1995), qui fut produite
+uniquement pour le format «\ i386 a.out\ ».
 .TP 
 \fB\-\-new\fP
-This is a legacy alias for \fB\-\-deb\-format=2.0\fP.
+C'est un ancien alias pour \fB\-\-deb\-format=2.0\fP.
 .TP 
 \fB\-\-old\fP
-This is a legacy alias for \fB\-\-deb\-format=0.939000\fP.
+C'est un ancien alias pour \fB\-\-deb\-format=0.939000\fP.
 .TP 
 \fB\-\-nocheck\fP
 Empêche les vérifications normales de \fBdpkg\-deb \-\-build\fP quant au contenu
@@ -207,7 +223,7 @@ proposé d'une archive. De cette façon, on peut construire n'importe quelle
 archive, aussi défectueuse soit\-elle.
 .TP 
 \fB\-v\fP, \fB\-\-verbose\fP
-Active l'affichage verbeux. Cela n'affecte actuellement que \fB\-\-extract\fP et
+Active l'affichage bavard. Cela n'affecte actuellement que \fB\-\-extract\fP et
 le rend analogue à \fB\-\-vextract\fP.
 .TP 
 \fB\-D\fP, \fB\-\-debug\fP
@@ -217,10 +233,10 @@ Permet les messages de débogage. Ce n'est pas très intéressant.
 .TP 
 \fBTMPDIR\fP
 Si cette option est utilisée, \fBdpkg\fP l'utilisera comme répertoire pour
-créer les fichiers et répertoire temporaires.
+créer les fichiers et répertoires temporaires.
 .
 .SH NOTES
-N'essayez pas d'installer un logiciel avec \fBdpkg\-deb\ !\fP Vous devez utiliser
+N'essayez pas d'installer un logiciel avec \fBdpkg\-deb\fP\ ! Vous devez utiliser
 \fBdpkg\fP pour être sûr que tous ses fichiers sont correctement mis en place,
 que les scripts du paquet sont exécutés et que son contenu et son état sont
 enregistrés.

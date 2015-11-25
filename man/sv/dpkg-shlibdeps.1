@@ -68,8 +68,8 @@ binärpaket.
 system. \fIarkitektur\fP är det aktuella systemets arkitektur (hämtas från
 \fBdpkg\-architecture \-qDEB_HOST_ARCH\fP).
 .IP "Utdata från \(rq\fBdpkg\-query \-\-control\-path\fP \fIpackage\fP symbols\(rq"
-Package\-provided shared library dependency information.  Unless overridden
-by \fB\-\-admindir\fP, those files are located in /var/lib/dpkg.
+Paketlokal överstyrande beroendeinformation för delade bibliotek. Filerna
+befinner sig i /var/lib/dpkg om inte överstyrt med \fB\-\-admindir\fP.
 .P
 \fBdpkg\-shlibs\fP kommer ihåg den (största) minimala version som behövs av
 varje bibliotek när den söker genom de symboler som används av alla
@@ -77,11 +77,11 @@ binärfilerna. När proceduren är avslutad kan den visa det minsta beroende
 som behövs av alla bibliotek som används (så tillvida informationen i
 \fIsymbols\fP\-filerna är korrekt).
 .P
-As a safe\-guard measure, a symbols file can provide a
-\fBBuild\-Depends\-Package\fP meta\-information field and \fBdpkg\-shlibdeps\fP will
-extract the minimal version required by the corresponding package in the
-\fBBuild\-Depends\fP field and use this version if it's higher than the minimal
-version computed by scanning symbols.
+Som en säkerhetsåtgärd kan en symbols\-fil innehålla metainformationsfältet
+\fIBuild\-Depends\-Package\fP, varpå \fBdpkg\-shlibdeps\fP hämtar vilken minsta
+version som behövs för paketet ur \fBBuild\-Depends\fP\-fältet och använder denna
+version om den är högre än den minsta version som beräknats genom att söka
+genom symbolerna.
 .SS Shlibs\-filer
 Shlibs\-filer associerar ett bibliotek direkt till ett beroende (utan att se
 på symbolerna). Det är därför oftare starkare än vad som egentligen behövs,
@@ -99,8 +99,8 @@ som också anropade \fBdpkg\-shlibdeps\fP. De genereras av
 \fBdpkg\-gensymbols\fP(1). De används bara om biblioteket finns i paketets
 byggträd. Filen shlibs i byggträdet går före shlibs\-filer från andra paket.
 .IP "Utdata från \(rq\fBdpkg\-query \-\-control\-path\fP \fIpackage\fP shlibs\(rq"
-Package\-provided shared library dependency information.  Unless overridden
-by \fB\-\-admindir\fP, those files are located in /var/lib/dpkg.
+Paketlokal överstyrande beroendeinformation för delade bibliotek. Filerna
+befinner sig i /var/lib/dpkg om inte överstyrt med \fB\-\-admindir\fP.
 .IP /etc/dpkg/shlibs.default
 Systemspecifik standardberoendeinformation för delade bibliotek.
 .P
@@ -112,17 +112,18 @@ beroende).
 filer, precis som om de angivits som \fB\-e\fP\fIprogramfil\fP.
 .TP 
 \fB\-e\fP\fIprogramfil\fP
-Include dependencies appropriate for the shared libraries required by
-\fIexecutable\fP.  This option can be used multiple times.
+Ta med beroenden som är passar för delade bibliotek som krävs för
+\fIprogramfil\fP. Flaggan kan användas flera gånger.
 .TP 
-\fB\-l\fP\fIdirectory\fP
-Add \fIdirectory\fP to the list of directories to search for private shared
-libraries (since dpkg 1.17.0). This option can be used multiple times.
+\fB\-l\fP\fIkatalog\fP
+Lägg till \fIkatalog\fP till listan över kataloger som skall eftersökas efter
+privata delade bibliotek (sedan dpkg 1.17.0). Flaggan kan användas flera
+gånger.
 
-Note: Use this option instead of setting \fBLD_LIBRARY_PATH\fP, as that
-environment variable is used to control the run\-time linker and abusing it
-to set the shared library paths at build\-time can be problematic when
-cross\-compiling for example.
+Observera: Använd den här flaggan istället för att sätta \fBLD_LIBRARY_PATH\fP,
+eftersom miljövariabeln används för att styra körtidslänkaren, och genom att
+utnyttja det för att ange sökvägen till delade bibliotek vid kompilering kan
+det uppstå problem, till exempel vid korskompilering.
 .TP 
 \fB\-d\fP\fIberoendefält\fP
 Lägg till beroenden som skall läggas till till control\-filens beroendefält
@@ -145,10 +146,10 @@ Inled substitueringsvariabler med \fIvariabelnamnsprefix\fP\fB:\fP i stället för
 inleds med \fIvariabelnamnsprefix\fP\fB:\fP (i stället för \fBshlibs:\fP) att tas
 bort från substitueringsvariabelfilen.
 .TP 
-\fB\-O\fP[\fIfilename\fP]
-Print substitution variable settings to standard output (or \fIfilename\fP if
-specified), rather than being added to the substitution variables file
-(\fBdebian/substvars\fP by default).
+\fB\-O\fP[\fIfilnamn\fP]
+Skriv substitueringsvariabelinställningar på standard ut (eller \fIfilnamn\fP
+om angivet), i stället för att försöka lägga till dem i
+substitueringsvariabelfilen (som standard \fBdebian/substvars\fP).
 .TP 
 \fB\-t\fP\fItyp\fP
 Föredra information om delade bibliotek som märkts för den givna
@@ -208,7 +209,7 @@ Visar hjälpskärm och avslutar.
 Visar version och avslutar.
 .
 .SH DIAGNOSTIK
-.SS Warnings
+.SS Varningar
 Eftersom \fBdpkg\-shlibdeps\fP analyserar mängden symboler som används av varje
 binärfil i det genererade paketet, kan det i flera fall skriva ut
 varningsmeddelanden. De visar på saker som kan förbättras i paketet. I de
@@ -248,7 +249,7 @@ Men genom att inte länka biblioteket mot binären kan man uppnå en mindre
 prestandaförbättring. Varningen kontrollerar samma information som den
 föregående, men gör det för varje binär istället för att utföra kontrollen
 globalt på alla analyserade binärer.
-.SS Errors
+.SS Fel
 \fBdpkg\-shlibdeps\fP kommer att misslyckas om det inte hittar ett öppet
 bibliotek som en av binärerna använder, eller om biblioteket saknar
 associerad beroendeinformation (antingen en shlibs\-fil eller en
@@ -258,24 +259,23 @@ insticksprogram) bör inte ha något SONAMN och behöver inte vara
 versionshanterat.
 .TP 
 \fBhittade inte biblioteket\fP \fIbibliotek\-sonamn\fP \fBsom behövs för\fP \fIbinär\fP \fB(dess RPATH är "\fP\fIrpath\fP\fB")\fP
-The \fIbinary\fP uses a library called \fIlibrary\-soname\fP but \fBdpkg\-shlibdeps\fP
-has been unable to find the library.  \fBdpkg\-shlibdeps\fP creates a list of
-directories to check as following: directories listed in the RPATH of the
-binary, directories listed in /etc/ld.so.conf, directories added by the
-\fB\-l\fP option, directories listed in the \fBLD_LIBRARY_PATH\fP environment
-variable, and standard public directories (/lib, /usr/lib, /lib32,
-/usr/lib32, /lib64, /usr/lib64). Then it checks those directories in the
-package's build tree of the binary being analyzed, in the packages' build
-trees indicated with the \fB\-S\fP command\-line option, in other packages' build
-trees that contains a DEBIAN/shlibs or DEBIAN/symbols file and finally in
-the root directory.  If the library is not found in any of those
-directories, then you get this error.
+\fIBinär\fP använder ett bibliotek som heter \fIbibliotek\-sonamn\fP, men
+\fBdpkg\-shlibdeps\fP kunde inte hitta biblioteket. \fBdpkg\-shlibdeps\fP skapar en
+lista över kataloger det ser i på följande sätt: katalogerna som beskrivs i
+RPATH i binären, kataloger som beskrivs i /etc/ld.so.conf, kataloger i
+miljövariabeln \fBLD_LIBRARY_PATH\fP, och vanliga öppna kataloger (/lib,
+/usr/lib, /lib32, /usr/lib32, /lib64, /usr/lib64). Därefter ser det i
+motsvarande kataloger i byggträdet för paketet som innehåller binären som
+analyseras, i paketbyggträdet som anges med kommandoradsflaggan \fB\-S\fP, i
+andra pakets byggträd som innehåller en DEBIAN/shlibs\-fil och slutligen i
+rotkatalogen. Om biblioteket inte hittas i någon av dessa kataloger får du
+det här felmeddelandet.
 
-If the library not found is in a private directory of the same package, then
-you want to add the directory with \fB\-l\fP. If it's in another binary package
-being built, you want to make sure that the shlibs/symbols file of this
-package is already created and that \fB\-l\fP contains the appropriate directory
-if it also is in a private directory.
+Om biblioteket som inte hittades ligger i en privat katalog i samma paket
+bör du lägga till katalogen med \fB\-l\fP. Om det finns i ett annat binärpaket
+som byggs bör du se till att shlibs\- eller symbols\-filen för paketet redan
+har skapats och att \fB\-l\fP innehåller korrekt katalog som det också ligger i
+en privat katalog.
 .TP 
 \fBhittade ingen beroendeinformation för\fP \fIbiblioteksfil\fP \fB(använd av\fP \fIbinär\fP\fB).\fP
 Biblioteket som behövs av \fIbinär\fP hittades i \fIbiblioteksfil\fP av
@@ -298,9 +298,9 @@ kanoniskt namn (med \fBrealpath\fP(3)), men det fungerar kanske inte
 alltid. Det är alltid bäst att städa upp RPATH i binären för att undvika
 problem.
 
-Calling \fBdpkg\-shlibdeps\fP in verbose mode (\fB\-v\fP) will provide much more
-information about where it tried to find the dependency information. This
-might be useful if you don't understand why it's giving you this error.
+Om du anropar \fBdpkg\-shlibdeps\fP i pratsamt läge (\fB\-v\fP) kommer det ge mycket
+mer information om var det försökte hitta beroendeinformationen. Det kan
+vara användbart om du inte förstår varför du får felmeddelandet.
 .SH "SE ÄVEN"
 \fBdeb\-shlibs\fP(5), \fBdeb\-symbols\fP(5), \fBdpkg\-gensymbols\fP(1).
 .SH ÖVERSÄTTNING

@@ -3,7 +3,7 @@
 .\" Copyright Â© 1995-1996 Ian Jackson <ian@chiark.chu.cam.ac.uk>
 .\" Copyright Â© 1999 Wichert Akkerman <wakkerma@debian.org>
 .\" Copyright Â© 2006 Frank Lichtenheld <djpig@debian.org>
-.\" Copyright Â© 2007-2012 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2007-2014 Guillem Jover <guillem@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH dpkg\-deb 1 2013\-03\-27 Debianprojektet Dpkg\-sviten
+.TH dpkg\-deb 1 2014\-08\-20 Debianprojektet Dpkg\-sviten
 .SH NAMN
 dpkg\-deb \- Debians manipuleringsverktyg för paketarkiv (.deb)
 .
@@ -121,6 +121,12 @@ katalogen.
 
 Målkatalogen (men inte dess föräldrar) kommer att skapas om nödvändigt.
 .TP 
+\fB\-\-ctrl\-tarfile\fP \fIarkiv\fP
+Extraherar kontrolldata från ett binärt paket och sänder det till standard
+ut i \fBtar\fP\-format (sedan dpkg 1.17.14). Tillsammans med \fBtar\fP(1) kan det
+användas för att hämta ut en specifik kontrollfil från ett
+paketarkiv. Indataarkiven behandlas alltid i den ordning de anges.
+.TP 
 \fB\-\-fsys\-tarfile\fP \fIarkiv\fP
 Extraherar filsystemsträdsdata från ett binärt paket och sänder det till
 standard ut i \fBtar\fP\-format. Tillsammans med \fBtar\fP(1) kan det användas för
@@ -164,31 +170,37 @@ och till 1 för bzip2. Före dpkg 1.16.2 var nivå 0 komprimeraren ingen för
 alla komprimerare.
 .TP 
 \fB\-S\fP\fIkomprimeringsstrategi\fP
-Specify which compression strategy to use on the compressor backend, when
-building a package (since dpkg 1.16.2). Allowed values are \fInone\fP (since
-dpkg 1.16.4), \fIfiltered\fP, \fIhuffman\fP, \fIrle\fP and \fIfixed\fP for gzip (since
-dpkg 1.17.0) and \fIextreme\fP for xz.
+Anger vilken komprimeringsstrategi som skall användas i
+komprimeringsfunktionen när paketet byggs (sedan dpkg 1.16.2). Tillåtet
+värde är \fInone\fP (sedan dpkg 1.16.4), \fIfiltered\fP, \fIhuffman\fP, \fIrle\fP och
+\fIfixed\fP för gzip (sedan dpkg 1.17.0) och \fIextreme\fP för xz.
 .TP 
 \fB\-Z\fP\fIkomprimeringstyp\fP
-Specify which compression type to use when building a package. Allowed
-values are \fIgzip\fP, \fIxz\fP, \fIbzip2\fP, \fIlzma\fP, and \fInone\fP (default is
-\fIxz\fP).
+Ange vilken komprimeringstyp som skall användas när ett paket
+byggs. Tillåtna värden är \fIgzip\fP, \fIxz\fP, \fIbzip2\fP (avråds), \fIlzma\fP
+(avråds) och \fInone\fP (förval är \fIxz\fP).
+.TP 
+\fB\-\-uniform\-compression\fP
+Ange att samma komprimeringsparametrar skall användas för alla
+arkivmedlemmar (dvs. \fBcontrol.tar\fP och \fBdata.tar\fP). I annat fall kommer
+endast medlemmen \fBdata.tar\fP att använda parametrarna. De enda
+komprimeringstyper som kan användas enhetligt är \fInone\fP, \fIgzip\fP och \fIxz\fP.
 .TP 
 \fB\-\-deb\-format=\fP\fIformat\fP
-Set the archive format version used when building (since dpkg 1.17.0).
-Allowed values are \fI2.0\fP for the new format, and \fI0.939000\fP for the old
-one (default is \fI2.0\fP).
+Väljer vilket arkivformat som skal användas i bygget (sedan dpkg
+1.17.0). Tillåtna värden är \fI2.0\fP för det nya formatet och \fI0.939000\fP för
+det gamla (förval är \fI2.0\fP).
 
-The old archive format is less easily parsed by non\-Debian tools and is now
-obsolete; its only use is when building packages to be parsed by versions of
-dpkg older than 0.93.76 (September 1995), which was released as i386 a.out
-only.
+Det gamla arkivformatet är mer svårtolkat av icke\-Debianverktyg och är nu
+utgånget; dess enda användningsområde är för att bygga paket som skall
+tolkas av versioner av dpkg äldre än 0.93.76 (september 1995), vilka endast
+släpptes som i386\-a.out.
 .TP 
 \fB\-\-new\fP
-This is a legacy alias for \fB\-\-deb\-format=2.0\fP.
+Detta är ett gammalt alias för \fB\-\-deb\-format=2.0\fP.
 .TP 
 \fB\-\-old\fP
-This is a legacy alias for \fB\-\-deb\-format=0.939000\fP.
+Detta är ett gammalt alias för \fB\-\-deb\-format=0.939000\fP.
 .TP 
 \fB\-\-nocheck\fP
 Förhindrar \fBdpkg\-deb \-\-build s\fP normala tester på det föreslagna innehållet

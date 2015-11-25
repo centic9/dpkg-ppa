@@ -5,7 +5,7 @@
 .\" Copyright Â© 2000-2001 Wichert Akkerman <wakkerma@debian.org>
 .\" Copyright Â© 2002-2003 Adam Heath <doogie@debian.org>
 .\" Copyright Â© 2004 Scott James Remnant <keybuk@debian.org>
-.\" Copyright Â© 2008-2012 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2008-2014 Guillem Jover <guillem@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH start\-stop\-daemon 8 2012\-06\-17 Debianprojektet dpkg\-verktygen
+.TH start\-stop\-daemon 8 2014\-03\-26 Debianprojektet dpkg\-verktygen
 .SH NAMN
 start\-stop\-daemon \- startar och stoppar bakgrundsprocesser
 .
@@ -38,13 +38,14 @@ skapas och avslutas. Med hjälp av en av sökflaggorna kan
 \fBstart\-stop\-daemon\fP ställas in att hitta befintliga instanser av en körande
 process.
 .PP
-Observera att om inte \fB\-\-pidfile\fP anges kommer \fBstart\-stop\-daemon\fP att
-jobba på ett sätt som liknar \fBkillall(1).\fP \fBstart\-stop\-daemon\fP kommer att
-söka i processtabellen efter processer med motsvarande namn på processen,
-användar\-id och/eller grupp\-id (om sådant anges). Alla processer som stämmer
-överens kommer tillsändas signalen TERM (eller den som anges med \fB\-\-signal\fP
-eller \fB\-\-retry\fP) om \fB\-\-stop\fP anges. För processer som har långlivade barn
-som måste överleva en \fB\-\-stop\fP, måste du ange en pidfil.
+Observera att om inte \fB\-\-pid\fP eller \fB\-\-pidfile\fP anges kommer
+\fBstart\-stop\-daemon\fP att jobba på ett sätt som liknar \fBkillall(1).\fP
+\fBstart\-stop\-daemon\fP kommer att söka i processtabellen efter processer med
+motsvarande namn på processen, användar\-id och/eller grupp\-id (om sådant
+anges). Alla processer som stämmer överens kommer tillsändas signalen TERM
+(eller den som anges med \fB\-\-signal\fP eller \fB\-\-retry\fP) om \fB\-\-stop\fP
+anges. För processer som har långlivade barn som måste överleva en
+\fB\-\-stop\fP, måste du ange en pidfil.
 .
 .SH KOMMANDON
 .TP 
@@ -74,7 +75,15 @@ Visa hjälpskärm och avsluta.
 Visa programversion och avsluta.
 .
 .SH FLAGGOR
-.SS "Matching options"
+.SS Matchingsflaggor
+.TP 
+\fB\-\-pid\fP \fIpid\fP
+Se efter en process med angiven \fIpid\fP. \fIpid\fP måste vara ett tal större än
+0.
+.TP 
+\fB\-\-ppid\fP \fIppid\fP
+Se efter en process med angiven \fIppid\fP (föräldra\-pid). \fIppid\fP måste vara
+ett tal större än 0.
 .TP 
 \fB\-p\fP, \fB\-\-pidfile\fP \fIpidfil\fP
 Kontrollera om en process har skapat filen \fIpidfil\fP. Observera: om flaggan
@@ -100,7 +109,7 @@ Se efter processer som ägs av användaren som anges av \fIanvändarnamn\fP eller
 \fIanvänder\-id\fP. Observera: om den här flaggan används på egen hand träffas
 alla processer som motsvarar användaren.
 .
-.SS "Generic options"
+.SS "Generiska flaggor"
 .TP 
 \fB\-g\fP, \fB\-\-group\fP \fIgrupp\fP|\fIgrupp\-id\fP
 Byt till \fIgrupp\fP eller \fIgrupp\-id\fP när processen startas.
@@ -162,10 +171,9 @@ Byt katalog och rot till \fBrot\fP innan processen startas. Observera att även
 pidfilen skrivs efter chroot har utförts.
 .TP 
 \fB\-d\fP, \fB\-\-chdir\fP \fIsökväg\fP
-Chdir to \fIpath\fP before starting the process. This is done after the chroot
-if the \fB\-r\fP|\fB\-\-chroot\fP option is set. When not specified,
-\fBstart\-stop\-daemon\fP will chdir to the root directory before starting the
-process.
+Byt katalog till \fIsökväg\fP innan processen startas. Detta görs efter byte av
+rot om \fB\-r\fP|\fB\-\-chroot\fP\-flaggan anges. Om flaggan inte anges kommer
+\fBstart\-stop\-daemon\fP byta till rotkatalogen innan processen startas.
 .TP 
 \fB\-b\fP, \fB\-\-background\fP
 Används typiskt med program som inte kopplar loss sig av sig själva. Flagga
@@ -206,11 +214,16 @@ Ställer in umaskvärdet på processen innan den startas.
 Används när ett program som inte skapar sin egen pidfil startas. Flaggan
 kommer att få \fBstart\-stop\-daemon\fP att skapa filen som anges med
 \fB\-\-pidfile\fP och lägga process\-id i den precis innan processen
-startas. Observera att den inte kommer att tas bort när programmet
-stoppas. \fBOBSERVERA:\fP Funktionen kanske inte alltid fungerar. Framförallt
-inte när programmet som startas förgrenar sig (fork) från sin
-huvudprocess. Därför är flaggan oftast bara användbar i samband med flaggan
-\fB\-\-background\fP.
+startas. Observera att den endast kommer att tas bort när programmet stoppas
+om \fB\-\-remove\-pidfile\fP används. \fBOBSERVERA:\fP Funktionen kanske inte alltid
+fungerar. Framförallt inte när programmet som startas förgrenar sig (fork)
+från sin huvudprocess. Därför är flaggan oftast bara användbar i samband med
+flaggan \fB\-\-background\fP.
+.TP 
+\fB\-\-remove\-pidfile\fP
+Används när ett program som inte tar bort sin egen pid\-fil stoppas. Flaggan
+gör att \fBstart\-stop\-daemon\fP tar bort filen som anges med \fB\-\-pidfile\fP efter
+att processen stoppats.
 .TP 
 \fB\-v\fP, \fB\-\-verbose\fP
 Skriv ut pratsamma informationsmeddelanden.

@@ -58,7 +58,7 @@ sub run_hook {
         if (defined($fields->{'Version'}) and defined($fields->{'Maintainer'}) and
            $fields->{'Version'} =~ /ubuntu/) {
            if ($fields->{'Maintainer'} !~ /ubuntu/i) {
-               if (defined ($ENV{DEBEMAIL}) and $ENV{DEBEMAIL} =~ /\@ubuntu\.com/) {
+               if (length $ENV{DEBEMAIL} and $ENV{DEBEMAIL} =~ /\@ubuntu\.com/) {
                    error(_g('Version number suggests Ubuntu changes, but Maintainer: does not have Ubuntu address'));
                } else {
                    warning(_g('Version number suggests Ubuntu changes, but Maintainer: does not have Ubuntu address'));
@@ -88,7 +88,7 @@ sub run_hook {
         my $fields = shift @params;
 
         # Add Launchpad-Bugs-Fixed field
-        my $bugs = find_launchpad_closes($fields->{'Changes'} || '');
+        my $bugs = find_launchpad_closes($fields->{'Changes'} // '');
         if (scalar(@$bugs)) {
             $fields->{'Launchpad-Bugs-Fixed'} = join(' ', @$bugs);
         }
@@ -99,7 +99,8 @@ sub run_hook {
 
 	if (!$build_opts->has('noopt')) {
 	    if (debarch_eq(get_host_arch(), 'ppc64el')) {
-		for my $flag (qw(CFLAGS CXXFLAGS GCJFLAGS FFLAGS)) {
+		for my $flag (qw(CFLAGS CXXFLAGS OBJCFLAGS OBJCXXFLAGS GCJFLAGS
+		                 FFLAGS FCFLAGS)) {
 		    $flags->set($flag, '-g -O3', 'vendor');
 		}
 	    }
@@ -169,8 +170,8 @@ sub find_launchpad_closes {
     my %closes;
 
     while ($changes &&
-          ($changes =~ /lp:\s+\#\d+(?:,\s*\#\d+)*/ig)) {
-        $closes{$_} = 1 foreach($& =~ /\#?\s?(\d+)/g);
+          ($changes =~ /lp:\s+\#\d+(?:,\s*\#\d+)*/pig)) {
+        $closes{$_} = 1 foreach (${^MATCH} =~ /\#?\s?(\d+)/g);
     }
 
     my @closes = sort { $a <=> $b } keys %closes;
@@ -179,6 +180,12 @@ sub find_launchpad_closes {
 }
 
 =back
+
+=head1 CHANGES
+
+=head2 Version 0.xx
+
+This is a semi-private module. Only documented functions are public.
 
 =cut
 

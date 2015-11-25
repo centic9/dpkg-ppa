@@ -53,21 +53,21 @@ my ($k, $v);
 open(my $header_fh, '<', $ARGV[1]) or die $!;
 while (<$header_fh>) {
     s/\s+$//;
-    m/#define KEY_(\w+)\s+\d+\s+/ || next;
-    my $rhs = $';
+    m/#define KEY_(\w+)\s+\d+\s+/p || next;
+    my $rhs = ${^POSTMATCH};
     $k= "KEY_$1";
-    $_= $1;
-    capit();
-    $base{$k}= $_;
-    $_= $rhs;
-    s/(\w)[\(\)]/$1/g;
-    s/\w+ \((\w+)\)/$1/;
-    next unless m{^/\* (\w[\w ]+\w) \*/$};
-    $_= $1;
-    s/ key$//;
-    next if s/^shifted /shift / ? m/ .* .* / : m/ .* /;
-    capit();
-    $name{$k}= $_;
+    $base{$k} = capit($1);
+    $rhs =~ s/(\w)[\(\)]/$1/g;
+    $rhs =~ s/\w+ \((\w+)\)/$1/;
+    next unless $rhs =~ m{^/\* (\w[\w ]+\w) \*/$};
+    my $name = $1;
+    $name =~ s/ key$//;
+    if ($name =~ s/^shifted /shift /) {
+        next if $name =~ m/ .* .* /;
+    } else {
+        next if $name =~ m/ .* /;
+    }
+    $name{$k} = capit($name);
 }
 close($header_fh);
 
@@ -119,22 +119,27 @@ close(STDOUT) or die $!;
 exit(0);
 
 sub capit {
+    my $str = shift;
     my $o = '';
-    y/A-Z/a-z/;
-    $_ = " $_";
-    while (m/ (\w)/) {
-        $o .= $`.' ';
-        $_ = $1;
-        y/a-z/A-Z/;
-        $o .= $_;
-        $_ = $';
+
+    $str =~ y/A-Z/a-z/;
+    $str = " $str";
+    while ($str =~ m/ (\w)/p) {
+        $o .= ${^PREMATCH} . ' ';
+        $str = $1;
+        $str =~ y/a-z/A-Z/;
+        $o .= $str;
+        $str = ${^POSTMATCH};
     }
-    $_= $o.$_; s/^ //;
+    $str = $o . $str;
+    $str =~ s/^ //;
+
+    return $str;
 }
 
 sub p {
     my ($k, $v) = @_;
 
-    $v =~ s/["\\]/\\$&/g;
+    $v =~ s/(["\\])/\\$1/g;
     printf("  { %-15s \"%-20s },\n", $k . ',', $v . '"') or die $!;
 }

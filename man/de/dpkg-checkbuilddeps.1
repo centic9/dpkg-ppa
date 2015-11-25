@@ -23,7 +23,7 @@
 .\"
 .\"*******************************************************************
 .TH dpkg\-checkbuilddeps 1 2013\-09\-17 Debian\-Projekt dpkg\-Hilfsprogramme
-.SH NAME
+.SH BEZEICHNUNG
 dpkg\-checkbuilddeps \- überprüfe Bauabhängigkeiten und \-konflikte
 .
 .SH ÜBERSICHT
@@ -36,7 +36,7 @@ sind. Falls welche davon nicht erfüllt sind, zeigt es diese an und beendet
 sich mit einem von Null verschiedenen Rückgabewert.
 .P
 Standardmäßig wird \fBdebian/control\fP gelesen, aber ein alternativer
-Steuerdateiname kann auf der Kommandozeile angegeben werden.
+Steuerdateiname kann auf der Befehlszeile angegeben werden.
 .
 .SH OPTIONEN
 .TP 
@@ -70,8 +70,7 @@ Architektur des aktuellen Systems gebaut werden soll.
 \fB\-P \fP\fIProfil\fP[\fB,\fP?]
 Überprüfe Bauabhängigkeiten/\-konflikte unter der Annahme, dass das Paket in
 der Datei »control« für das/die angegebene(n) Bauprofile gebaut werden
-soll. Das Argument ist eine Kommata\-getrennte Liste von Profilnamen ohne den
-Namensraum\-Präfix »\fBprofile.\fP«.
+soll. Das Argument ist eine Kommata\-getrennte Liste von Profilnamen.
 .TP 
 \fB\-?\fP, \fB\-\-help\fP
 Zeige den Bedienungshinweis und beende.
@@ -83,11 +82,10 @@ Gebe die Version aus und beende sich.
 .TP 
 \fBDEB_BUILD_PROFILES\fP
 Falls gesetzt, wird sie als aktive(s) Bau\-Profil(e) für das zu bauende Paket
-verwandt. Es ist eine durch Leerzeichen getrennte Liste von Profilnamen ohne
-den Namensraum\-Präfix »\fBprofile\fP«. Wird durch die Option \fB\-P\fP außer Kraft
-gesetzt.
+verwandt. Es ist eine durch Leerzeichen getrennte Liste von
+Profilnamen. Wird durch die Option \fB\-P\fP außer Kraft gesetzt.
 .SH ÜBERSETZUNG
-Die deutsche Übersetzung wurde 2004, 2006-2013 von Helge Kreutzmann
+Die deutsche Übersetzung wurde 2004, 2006-2015 von Helge Kreutzmann
 <debian@helgefjell.de>, 2007 von Florian Rehnisch <eixman@gmx.de> und
 2008 von Sven Joachim <svenjoac@gmx.de>
 angefertigt. Diese Übersetzung ist Freie Dokumentation; lesen Sie die

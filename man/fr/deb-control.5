@@ -3,7 +3,7 @@
 .\" Copyright Â© 1995 Raul Miller, Ian Jackson, Ian Murdock
 .\" Copyright Â© 1999 Ben Collins <bcollins@debian.org>
 .\" Copyright Â© 2000 Wichert Akkerman <wakkerma@debian.org>
-.\" Copyright Â© 2007-2011 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2007-2011, 2013 Guillem Jover <guillem@debian.org>
 .\" Copyright Â© 2008-2012 RaphaÃ«l Hertzog <hertzog@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
@@ -24,7 +24,7 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH deb\-control 5 14\-08\-2011 "Projet Debian" Debian
+.TH deb\-control 5 20\-12\-2013 "Projet Debian" Debian
 .SH NOM
 deb\-control \- Format du fichier principal de contrôle dans les paquets
 Debian
@@ -55,7 +55,7 @@ choisie par l'auteur du programme. Il peut y avoir aussi un numéro de
 révision Debian (pour les paquets non natifs). Le format exact et
 l'algorithme de tri sont décrits dans \fBdeb\-version\fP(5).
 .TP 
-\fBMaintainer:\fP\fI nom\-complet\-adresse\-électronique\fP
+\fBMaintainer:\fP\fI nom\-complet\-et\-adresse\-électronique\fP
 Le format de ce champ sera «\ Jean Dupont <jdupont@foo.com>\ »\ ; et
 c'est bien sûr le créateur du paquet, par opposition à l'auteur du programme
 mis en paquet.
@@ -67,20 +67,20 @@ Le format de la description du paquet est un résumé bref sur la première
 ligne (après le champ «\ Description\ »). Les lignes suivantes peuvent servir
 à une description plus longue et plus détaillée. Chaque ligne de cette
 description longue doit être précédée d'une espace\ ; quand c'est une ligne
-blanche, elle doit contenir un seul «\ .\ » après cet espace.
+blanche, elle doit contenir un seul «\ .\ » après cette espace.
 .
 .SH "CHAMPS OPTIONNELS"
 .TP 
 \fBSection:\fP \fI section\fP
-C'est un champ général qui indique la catégorie d'un paquet\ ; cette
-catégorie est fondée sur le programme que ce paquet installe. «\ utils\ »,
-«\ net\ », «\ mail\ », «\ text\ », «\ x11\ », etc. représentent quelques catégories
+Champ général qui indique la catégorie d'un paquet\ ; cette catégorie est
+fondée sur le programme que ce paquet installe. «\ utils\ », «\ net\ »,
+«\ mail\ », «\ text\ », «\ x11\ », etc., représentent quelques catégories
 habituelles.
 .TP 
 \fBPriority:\fP\fI priorité\fP
 Définit l'importance du paquet à l'intérieur du système
-général. «\ required\ », «\ standard\ », «\ optional\ », «\ extra\ »,
-etc. représentent des priorités habituelles.
+général. «\ required\ », «\ standard\ », «\ optional\ », «\ extra\ », etc.,
+représentent des priorités habituelles.
 .LP
 Les champs \fBSection\fP et \fBPriority\fP possèdent un ensemble défini de valeurs
 acceptées, tiré de la Charte Debian («\ Debian Policy\ »). On peut en trouver
@@ -88,7 +88,7 @@ une liste dans la version la plus récente du paquet \fBdebian\-policy\fP.
 .TP 
 \fBEssential:\fP \fByes\fP|\fBno\fP
 On se sert habituellement de ce champ uniquement si la réponse est
-\fByes\fP. Il signifie que ce paquet est exigé pour un fonctionnement correct
+\fByes\fP. Cela signifie que ce paquet est exigé pour un fonctionnement correct
 du système. Dpkg et les autres outils d'installation interdisent la
 suppression d'un paquet \fBEssential\fP (du moins tant qu'une des options de
 forçage n'est pas utilisée).
@@ -97,8 +97,9 @@ forçage n'est pas utilisée).
 L'architecture précise pour quel type de matériel le paquet a été
 compilé. Voici quelques architectures habituelles\ : «\ i386\ », «\ m68k\ »,
 «\ sparc\ », «\ alpha\ », «\ powerpc\ », etc. Remarquez que l'option \fBall\fP
-signifie que le paquet est indépendant de toute architecture. Les scripts
-shell ou Perl, ainsi que la documentation sont dans ce cas.
+signifie que le paquet est indépendant de toute architecture. C'est le cas,
+par exemple, des scripts d'interpréteur de commandes (shell) ou Perl, ainsi
+que de la documentation.
 .TP 
 \fBOrigin:\fP\fI nom\fP
 Nom de la distribution dont ce paquet provient.
@@ -116,16 +117,18 @@ Liste d'étiquettes décrivant les qualités du paquet. La description et la
 liste des étiquettes («\ tags\ ») gérées peut être trouvée dans le paquet
 \fBdebtags\fP.
 .TP 
-\fBMulti\-Arch:\fP \fBsame\fP|\fBforeign\fP|\fBallowed\fP
+\fBMulti\-Arch:\fP \fBsame\fP|\fBforeign\fP|\fBallowed\fP|\fBno\fP
 Ce champ sert à indiquer comment ce paquet se comporte sur des installations
-multi\-architectures. La valeur \fBsame\fP indique que le paquet peut être
+multiarchitectures. La valeur \fBsame\fP indique que le paquet peut être
 co\-installé avec lui\-même, mais ne doit pas être utilisé pour satisfaire une
 dépendance d'un paquet d'une architecture différente de la sienne. La valeur
 \fBforeign\fP indique que le paquet ne peut pas être co\-installé avec lui\-même,
 mais peut permettre de satisfaire les dépendances d'un paquet d'une
 architecture différente de la sienne. La valeur \fBallowed\fP permet aux
 dépendances inverses d'indiquer dans leur champ Depends qu'elles acceptent
-un paquet d'une autre architecture, et n'a pas d'autres effets.
+un paquet d'une autre architecture, et n'a pas d'autres effets. La valeur
+\fBno\fP est la valeur par défaut quand le champ est omis\ ; dans ce cas,
+ajouter le champ avec une valeur \fBno\fP explicite est généralement inutile.
 .TP 
 \fBSource:\fP\fI nom\-du\-source\fP
 Le nom du paquet source d'où provient le paquet binaire, s'il y a une
@@ -144,14 +147,14 @@ nécessaires. Veuillez consulter
 
 .TP 
 \fBDepends:\fP\fI liste\-de\-paquets\fP
-C'est la liste des paquets exigés pour que ce paquet arrive à fonctionner de
-manière non triviale. Le programme de maintenance des paquets interdit
-l'installation d'un paquet quand les paquets répertoriés dans le champ
-\fBDepends\fP ne sont pas installés (du moins tant qu'une option de forçage
-n'est pas utilisée)\ ; il lance les scripts «\ postinst\ » des paquets
+C'est la liste des paquets exigés pour que ce paquet procure un nombre
+important de fonctionnalités. Le programme de maintenance des paquets
+interdit l'installation d'un paquet quand les paquets répertoriés dans le
+champ \fBDepends\fP ne sont pas installés (du moins tant qu'une option de
+forçage n'est pas utilisée)\ ; il lance les scripts «\ postinst\ » des paquets
 répertoriés dans les champs «\ Depends:\ » avant les scripts «\ postinst\ » des
-paquets qui dépendent d'eux. À l'inverse, lors d'une suppression les scripts
-«\ prerm\ » des paquets sont lancés avant ceux de leurs dépendances.
+paquets qui dépendent d'eux. À l'inverse, lors d'une suppression, les
+scripts «\ prerm\ » des paquets sont lancés avant ceux de leurs dépendances.
 .TP 
 \fBPre\-Depends:\fP\fI liste\-de\-paquets\fP
 C'est la liste des paquets qui doivent être installés \fBet\fP configurés avant
@@ -190,7 +193,7 @@ versions\ : «\ >>\ » pour supérieur à, «\ <<\ » pour inférieur à,
 \fBBreaks:\fP\fI liste\-de\-paquets\fP
 C'est une liste de paquets que ce paquet «\ casse\ », par exemple en révélant
 des bogues quand les paquets concernés dépendent de celui\-ci. Le programme
-de maintenance des paquets interdit la configuration de paquets cassés\ ;\ une
+de maintenance des paquets interdit la configuration de paquets cassés\ ; une
 méthode usuelle de résolution est la mise à jour des paquets mentionnés dans
 le champ \fBBreaks\fP.
 .TP 
@@ -208,31 +211,31 @@ les fichiers de ces autres paquets\ ; on se sert pour cela du champ
 possède aussi les mêmes fichiers que le paquet en conflit.
 .TP 
 \fBProvides:\fP\fI liste\-de\-paquets\fP
-C'est une liste de paquets virtuels que ce paquet «\ remplit\ ». On s'en sert
-habituellement pour des paquets qui offrent le même service. Par exemple,
-sendmail et exim sont des serveurs de courrier, et donc ils «\ remplissent\ »
-chacun le paquet «\ mail\-transport\-agent\ »\ ; ainsi les autres paquets peuvent
-dépendre de ce paquet virtuel. Sendmail et exim peuvent ainsi chacun
-satisfaire la dépendance. Les paquets qui dépendent d'un serveur de courrier
-n'ont pas à connaître les noms de tous les serveurs de courrier et n'ont pas
-à utiliser «\ |\ » comme séparateur de liste.
+C'est une liste de paquets virtuels que ce paquet procure. On s'en
+serthabituellement pour des paquets qui offrent le même service. Par
+exemple, sendmail et exim sont des serveurs de courrier, et donc ils
+procurent chacun le paquet «\ mail\-transport\-agent\ »\ ; ainsi les autres
+paquets peuvent dépendre de ce paquet virtuel. Sendmail et exim peuvent
+ainsi chacun satisfaire la dépendance. Les paquets qui dépendent d'un
+serveur de courrier n'ont pas à connaître les noms de tous les serveurs de
+courrier et n'ont pas à utiliser «\ |\ » comme séparateur de liste.
 .LP
 La syntaxe des champs \fBBreaks\fP, \fBConflicts\fP, \fBReplaces\fP et \fBProvides\fP
 est une liste de noms de paquets, séparés par des virgules (et des espaces
-facultatifs). Dans les champs \fBBreaks\fP et \fBConflicts\fP la virgule sera lue
+facultatives). Dans les champs \fBBreaks\fP et \fBConflicts\fP la virgule sera lue
 comme un «\ OU\ ». On peut donner une version optionnelle de la même façon que
 ci\-dessus dans les champs \fBBreaks\fP, \fBConflicts\fP et \fBReplaces\fP.
 .
 .TP 
 \fBBuilt\-Using:\fP\fI liste\-de\-paquets\fP
 Ce champ affiche les paquets source supplémentaires utilisés lors de la
-construction du paquet binaire. Il permet d'indiquer aux logiciels de
-gestion de l'archive que des paquets source supplémentaires doivent être
-conservées tant que le paquet binaire est maintenu. Ce champ doit être une
-liste de paquets source avec des références strictes de version
-(=). Veuillez noter que les logiciels de gestion de l'archive risque de ne
-pas accepter un envoi qui déclare une relation \fBBuilt\-Using\fP qui ne peut
-pas être satisfaite dans l'archive.
+construction du paquet binaire. Il permet d'indiquer au logiciel de gestion
+de l'archive que des paquets source supplémentaires doivent être conservés
+tant que le paquet binaire est maintenu. Ce champ doit être une liste de
+paquets source avec des références strictes de version (=). Veuillez noter
+que le logiciel de gestion de l'archive risque de ne pas accepter un envoi
+qui déclare une relation \fBBuilt\-Using\fP qui ne peut pas être satisfaite dans
+l'archive.
 .
 .SH EXEMPLE
 .\" .RS

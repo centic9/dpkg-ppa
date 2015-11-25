@@ -111,6 +111,10 @@ our %FIELDS = (
         dependency => 'normal',
         dep_order => 3,
     },
+    'Build-Profiles' => {
+        allowed => CTRL_INFO_PKG,
+        separator => FIELD_SEP_SPACE,
+    },
     'Built-For-Profiles' => {
         allowed => ALL_PKG | CTRL_FILE_CHANGES,
         separator => FIELD_SEP_SPACE,
@@ -277,6 +281,10 @@ our %FIELDS = (
     'Task' => {
         allowed => ALL_PKG,
     },
+    'Testsuite' => {
+        allowed => ALL_SRC,
+        separator => FIELD_SEP_COMMA,
+    },
     'Triggers-Awaited' => {
         allowed => CTRL_FILE_STATUS,
         separator => FIELD_SEP_SPACE,
@@ -350,7 +358,7 @@ our %FIELD_ORDER = (
         qw(Format Source Binary Architecture Version Origin Maintainer
         Uploaders Homepage Standards-Version Vcs-Browser
         Vcs-Arch Vcs-Bzr Vcs-Cvs Vcs-Darcs Vcs-Git Vcs-Hg Vcs-Mtn
-        Vcs-Svn), &field_list_src_dep(), qw(Package-List),
+        Vcs-Svn Testsuite), &field_list_src_dep(), qw(Package-List),
         @checksum_fields, qw(Files)
     ],
     CTRL_FILE_CHANGES() => [
@@ -420,7 +428,9 @@ Returns true if the field is official and known.
 =cut
 
 sub field_is_official($) {
-    return exists $FIELDS{field_capitalize($_[0])};
+    my $field = field_capitalize(shift);
+
+    return exists $FIELDS{$field};
 }
 
 =item field_is_allowed_in($fname, @types)
@@ -581,7 +591,8 @@ Breaks, ...). Returns undef for fields which are not dependencies.
 =cut
 
 sub field_get_dep_type($) {
-    my $field = field_capitalize($_[0]);
+    my $field = field_capitalize(shift);
+
     return unless field_is_official($field);
     return $FIELDS{$field}{dependency} if exists $FIELDS{$field}{dependency};
     return;
@@ -595,7 +606,7 @@ FIELD_SEP_SPACE, FIELD_SEP_COMMA or FIELD_SEP_LINE.
 =cut
 
 sub field_get_sep_type($) {
-    my $field = field_capitalize($_[0]);
+    my $field = field_capitalize(shift);
 
     return $FIELDS{$field}{separator} if exists $FIELDS{$field}{separator};
     return FIELD_SEP_UNKNOWN;
@@ -650,6 +661,12 @@ sub field_insert_before($$@) {
 }
 
 =back
+
+=head1 CHANGES
+
+=head2 Version 1.00
+
+Mark the module as public.
 
 =head1 AUTHOR
 

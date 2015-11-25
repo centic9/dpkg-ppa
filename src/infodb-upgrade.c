@@ -3,7 +3,7 @@
  * infodb-upgrade.c - package control information database format upgrade
  *
  * Copyright © 1995 Ian Jackson <ian@chiark.greenend.org.uk>
- * Copyright © 2011 Guillem Jover <guillem@debian.org>
+ * Copyright © 2011-2014 Guillem Jover <guillem@debian.org>
  * Copyright © 2011 Linaro Limited
  * Copyright © 2011 Raphaël Hertzog <hertzog@debian.org>
  *
@@ -117,7 +117,7 @@ pkg_infodb_link_multiarch_files(void)
 
 		set = pkg_db_find_set(pkgname.buf);
 		for (pkg = &set->pkg; pkg; pkg = pkg->arch_next)
-			if (pkg->status != stat_notinstalled)
+			if (pkg->status != PKG_STAT_NOTINSTALLED)
 				break;
 		if (!pkg) {
 			warning(_("info file %s/%s not associated to any package"),
@@ -126,7 +126,7 @@ pkg_infodb_link_multiarch_files(void)
 		}
 
 		/* Does it need to be upgraded? */
-		if (pkg->installed.multiarch != multiarch_same)
+		if (pkg->installed.multiarch != PKG_MULTIARCH_SAME)
 			continue;
 
 		/* Skip past the full stop. */
@@ -246,7 +246,7 @@ pkg_infodb_upgrade(void)
 	if (modstatdb_get_status() < msdbrw_write)
 		return;
 
-	if (db_format < pkg_infodb_format_multiarch ||
+	if (db_format < PKG_INFODB_FORMAT_MULTIARCH ||
 	    pkg_infodb_is_upgrading())
 		pkg_infodb_upgrade_to_multiarch();
 }

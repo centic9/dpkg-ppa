@@ -56,7 +56,7 @@ sub run_hook {
         my ($textref, $ch_info) = @params;
 	if ($ch_info->{'Closes'}) {
 	    foreach my $bug (split(/\s+/, $ch_info->{'Closes'})) {
-		$$textref .= "Bug-Debian: http://bugs.debian.org/$bug\n";
+		$$textref .= "Bug-Debian: https://bugs.debian.org/$bug\n";
 	    }
 	}
 
@@ -67,13 +67,108 @@ sub run_hook {
 	    $$textref .= "Bug-Ubuntu: https://bugs.launchpad.net/bugs/$bug\n";
 	}
     } elsif ($hook eq 'update-buildflags') {
-	$self->add_hardening_flags(@params);
+	$self->_add_qa_flags(@params);
+	$self->_add_reproducible_flags(@params);
+	$self->_add_hardening_flags(@params);
     } else {
         return $self->SUPER::run_hook($hook, @params);
     }
 }
 
-sub add_hardening_flags {
+sub _parse_build_options {
+    my ($self, $variable, $area, $use_feature) = @_;
+
+    # Adjust features based on user or maintainer's desires.
+    my $opts = Dpkg::BuildOptions->new(envvar => $variable);
+    foreach my $feature (split(/,/, $opts->get($area) // '')) {
+	$feature = lc($feature);
+	if ($feature =~ s/^([+-])//) {
+	    my $value = ($1 eq '+') ? 1 : 0;
+	    if ($feature eq 'all') {
+		$use_feature->{$_} = $value foreach keys %{$use_feature};
+	    } else {
+		if (exists $use_feature->{$feature}) {
+		    $use_feature->{$feature} = $value;
+		} else {
+		    warning(_g('unknown %s feature in %s variable: %s'),
+		            $area, $variable, $feature);
+		}
+	    }
+	} else {
+	    warning(_g('incorrect value in %s option of %s variable: %s'),
+	            $area, $variable, $feature);
+	}
+    }
+}
+
+sub _parse_feature_area {
+    my ($self, $area, $use_feature) = @_;
+
+    $self->_parse_build_options('DEB_BUILD_OPTIONS', $area, $use_feature);
+    $self->_parse_build_options('DEB_BUILD_MAINT_OPTIONS', $area, $use_feature);
+}
+
+sub _add_qa_flags {
+    my ($self, $flags) = @_;
+
+    # Default feature states.
+    my %use_feature = (
+        bug => 0,
+        canary => 0,
+    );
+
+    # Adjust features based on user or maintainer's desires.
+    $self->_parse_feature_area('qa', \%use_feature);
+
+    # Warnings that detect actual bugs.
+    if ($use_feature{bug}) {
+        foreach my $warnflag (qw(array-bounds clobbered volatile-register-var
+                                 implicit-function-declaration)) {
+            $flags->append('CFLAGS', "-Werror=$warnflag");
+            $flags->append('CXXFLAGS', "-Werror=$warnflag");
+        }
+    }
+
+    # Inject dummy canary options to detect issues with build flag propagation.
+    if ($use_feature{canary}) {
+        require Digest::MD5;
+        my $id = Digest::MD5::md5_hex(int rand 4096);
+
+        foreach my $flag (qw(CPPFLAGS CFLAGS OBJCFLAGS CXXFLAGS OBJCXXFLAGS)) {
+            $flags->append($flag, "-D__DEB_CANARY_${flag}_${id}__");
+        }
+        $flags->append('LDFLAGS', "-Wl,-z,deb-canary-${id}");
+    }
+
+    # Store the feature usage.
+    while (my ($feature, $enabled) = each %use_feature) {
+        $flags->set_feature('qa', $feature, $enabled);
+    }
+}
+
+sub _add_reproducible_flags {
+    my ($self, $flags) = @_;
+
+    # Default feature states.
+    my %use_feature = (
+        timeless => 0,
+    );
+
+    # Adjust features based on user or maintainer's desires.
+    $self->_parse_feature_area('reproducible', \%use_feature);
+
+    # Warn when the __TIME__, __DATE__ and __TIMESTAMP__ macros are used.
+    if ($use_feature{timeless}) {
+       $flags->append('CPPFLAGS', '-Wdate-time');
+    }
+
+    # Store the feature usage.
+    while (my ($feature, $enabled) = each %use_feature) {
+       $flags->set_feature('reproducible', $feature, $enabled);
+    }
+}
+
+sub _add_hardening_flags {
     my ($self, $flags) = @_;
     my $arch = get_host_arch();
     my ($abi, $os, $cpu) = debarch_to_debtriplet($arch);
@@ -83,53 +178,36 @@ sub add_hardening_flags {
         ($abi, $os, $cpu) = ('', '', '');
     }
 
-    # Features enabled by default for all builds.
+    # Default feature states.
     my %use_feature = (
 	pie => 0,
 	stackprotector => 1,
+	stackprotectorstrong => 1,
 	fortify => 1,
 	format => 1,
 	relro => 1,
 	bindnow => 0,
     );
 
-    # Adjust features based on Maintainer's desires.
-    my $opts = Dpkg::BuildOptions->new(envvar => 'DEB_BUILD_MAINT_OPTIONS');
-    foreach my $feature (split(/,/, $opts->get('hardening') // '')) {
-	$feature = lc($feature);
-	if ($feature =~ s/^([+-])//) {
-	    my $value = ($1 eq '+') ? 1 : 0;
-	    if ($feature eq 'all') {
-		$use_feature{$_} = $value foreach keys %use_feature;
-	    } else {
-		if (exists $use_feature{$feature}) {
-		    $use_feature{$feature} = $value;
-		} else {
-		    warning(_g('unknown hardening feature: %s'), $feature);
-		}
-	    }
-	} else {
-	    warning(_g('incorrect value in hardening option of ' .
-	               'DEB_BUILD_MAINT_OPTIONS: %s'), $feature);
-	}
-    }
+    # Adjust features based on user or maintainer's desires.
+    $self->_parse_feature_area('hardening', \%use_feature);
 
     # Mask features that are not available on certain architectures.
-    if ($os !~ /^(linux|knetbsd|hurd)$/ or
-	$cpu =~ /^(hppa|mips|mipsel|avr32)$/) {
+    if ($os !~ /^(?:linux|knetbsd|hurd)$/ or
+	$cpu =~ /^(?:hppa|avr32)$/) {
 	# Disabled on non-linux/knetbsd/hurd (see #430455 and #586215).
-	# Disabled on hppa, mips/mipsel (#532821), avr32
+	# Disabled on hppa, avr32
 	#  (#574716).
 	$use_feature{pie} = 0;
     }
-    if ($cpu =~ /^(ia64|alpha|mips|mipsel|hppa)$/ or $arch eq 'arm') {
-	# Stack protector disabled on ia64, alpha, mips, mipsel, hppa.
+    if ($cpu =~ /^(?:ia64|alpha|hppa)$/ or $arch eq 'arm') {
+	# Stack protector disabled on ia64, alpha, hppa.
 	#   "warning: -fstack-protector not supported for this target"
 	# Stack protector disabled on arm (ok on armel).
 	#   compiler supports it incorrectly (leads to SEGV)
 	$use_feature{stackprotector} = 0;
     }
-    if ($cpu =~ /^(ia64|hppa|avr32)$/) {
+    if ($cpu =~ /^(?:ia64|hppa|avr32)$/) {
 	# relro not implemented on ia64, hppa, avr32.
 	$use_feature{relro} = 0;
     }
@@ -146,22 +224,43 @@ sub add_hardening_flags {
 	# hardening ability without relro and may incur load penalties.
 	$use_feature{bindnow} = 0;
     }
+    if ($use_feature{stackprotector} == 0) {
+	# Disable stackprotectorstrong if stackprotector is disabled.
+	$use_feature{stackprotectorstrong} = 0;
+    }
 
     # PIE
     if ($use_feature{pie}) {
-	$flags->append('CFLAGS', '-fPIE');
-	$flags->append('FFLAGS', '-fPIE');
-	$flags->append('CXXFLAGS', '-fPIE');
-	$flags->append('GCJFLAGS', '-fPIE');
+	my $flag = '-fPIE';
+	$flags->append('CFLAGS', $flag);
+	$flags->append('OBJCFLAGS',  $flag);
+	$flags->append('OBJCXXFLAGS', $flag);
+	$flags->append('FFLAGS', $flag);
+	$flags->append('FCFLAGS', $flag);
+	$flags->append('CXXFLAGS', $flag);
+	$flags->append('GCJFLAGS', $flag);
 	$flags->append('LDFLAGS', '-fPIE -pie');
     }
 
     # Stack protector
-    if ($use_feature{stackprotector}) {
-	$flags->append('CFLAGS', '-fstack-protector --param=ssp-buffer-size=4');
-	$flags->append('FFLAGS', '-fstack-protector --param=ssp-buffer-size=4');
-	$flags->append('CXXFLAGS', '-fstack-protector --param=ssp-buffer-size=4');
-	$flags->append('GCJFLAGS', '-fstack-protector --param=ssp-buffer-size=4');
+    if ($use_feature{stackprotectorstrong}) {
+	my $flag = '-fstack-protector-strong';
+	$flags->append('CFLAGS', $flag);
+	$flags->append('OBJCFLAGS', $flag);
+	$flags->append('OBJCXXFLAGS', $flag);
+	$flags->append('FFLAGS', $flag);
+	$flags->append('FCFLAGS', $flag);
+	$flags->append('CXXFLAGS', $flag);
+	$flags->append('GCJFLAGS', $flag);
+    } elsif ($use_feature{stackprotector}) {
+	my $flag = '-fstack-protector --param=ssp-buffer-size=4';
+	$flags->append('CFLAGS', $flag);
+	$flags->append('OBJCFLAGS', $flag);
+	$flags->append('OBJCXXFLAGS', $flag);
+	$flags->append('FFLAGS', $flag);
+	$flags->append('FCFLAGS', $flag);
+	$flags->append('CXXFLAGS', $flag);
+	$flags->append('GCJFLAGS', $flag);
     }
 
     # Fortify Source
@@ -171,8 +270,11 @@ sub add_hardening_flags {
 
     # Format Security
     if ($use_feature{format}) {
-	$flags->append('CFLAGS', '-Wformat -Werror=format-security');
-	$flags->append('CXXFLAGS', '-Wformat -Werror=format-security');
+	my $flag = '-Wformat -Werror=format-security';
+	$flags->append('CFLAGS', $flag);
+	$flags->append('CXXFLAGS', $flag);
+	$flags->append('OBJCFLAGS', $flag);
+	$flags->append('OBJCXXFLAGS', $flag);
     }
 
     # Read-only Relocations
@@ -190,5 +292,13 @@ sub add_hardening_flags {
 	$flags->set_feature('hardening', $feature, $enabled);
     }
 }
+
+=head1 CHANGES
+
+=head2 Version 0.xx
+
+This is a private module.
+
+=cut
 
 1;

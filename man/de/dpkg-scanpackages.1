@@ -2,7 +2,7 @@
 .\"
 .\" Copyright Â© 1996 Michael Shields <shields@crosslink.net>
 .\" Copyright Â© 2006 Frank Lichtenheld <djpig@debian.org>
-.\" Copyright Â© 2007 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2007, 2009, 2011-2014 Guillem Jover <guillem@debian.org>
 .\" Copyright Â© 2009 RaphaÃ«l Hertzog <hertzog@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
@@ -24,12 +24,12 @@
 .\"
 .\"*******************************************************************
 .TH dpkg\-scanpackages 1 2012\-05\-07 Debian\-Projekt dpkg\-Hilfsprogramme
-.SH NAME
+.SH BEZEICHNUNG
 dpkg\-scanpackages \- erstelle Packages\-Index\-Dateien
 .
 .SH ÜBERSICHT
 \fBdpkg\-scanpackages\fP [\fIOption\fP ?] \fIBinär\-Verz\fP [\fIoverride\-Datei\fP
-[\fIPfad\-Präfix\fP]] \fB>\fP \fIPakete\fP
+[\fIPfad\-Präfix\fP]] \fB>\fP \fIPackages\fP
 .
 .SH BESCHREIBUNG
 \fBdpkg\-scanpackages\fP schaut durch einen Baum von Debian\-Binärpaketen und
@@ -41,10 +41,11 @@ auch auf den Debian\-Archiv\-Sites und CD\-ROMs vorliegen. Sie können selbst
 Paketen zur Installation auf einem Cluster von Maschinen anlegen.
 .PP
 \fBHinweis:\fP Falls Sie auf die erzeugte Packages\-Datei mit \fBapt\fP zugreifen
-wollen, werden Sie wahrscheinlich die Datei mit \fBbzip2\fP(1) komprimieren
-müssen (und damit ein Packages.bz2\-Datei erstellen). Apt ignoriert \-
-abgesehen von lokalem Zugriff (d.h. über \fBfile://\fP\-Quellen) \-
-unkomprimierte Packages\-Dateien.
+wollen, werden Sie wahrscheinlich die Datei mit \fBbzip2\fP(1) (und damit ein
+Packages.bz2\-Datei erstellen) oder mit \fBgzip\fP(1) (und damit ein
+Packages.gz\-Datei erstellen) komprimieren müssen. Apt ignoriert \- abgesehen
+von lokalem Zugriff (d.h. über \fBfile://\fP\-Quellen) \- unkomprimierte
+Packages\-Dateien.
 .PP
 \fIBinär\-Verz\fP ist der Name des zu verarbeitenden Baums von Binärpaketen
 (beispielsweise \fBcontrib/binary\-i386\fP). Am besten wird dies relativ zur
@@ -76,6 +77,11 @@ Informationen über deren Format.
 Verwende ein Muster, das aus \fI*_all.deb\fP und \fI*_arch.deb\fP besteht, statt
 nach allen Debs zu suchen.
 .TP 
+\fB\-h\fP, \fB\-\-hash\fP \fIHash\-Liste\fP
+Datei\-Hashes nur für angegebene, durch Kommata\-getrennte Liste
+erzeugen. Standardmäßig werden alle derzeit unterstützten Hashes
+erstellt. Unterstützte Werte: \fBmd5\fP, \fBsha1\fP, \fBsha256\fP.
+.TP 
 \fB\-m\fP, \fB\-\-multiversion\fP
 Nimm alle gefundenen Pakete in der Ausgabe auf.
 .TP 
@@ -98,7 +104,7 @@ Override\-Datei fehlen oder für die Betreuer\-Substitutionen vorliegen, die
 keinen Effekt haben.
 .
 .SH ÜBERSETZUNG
-Die deutsche Übersetzung wurde 2004, 2006-2013 von Helge Kreutzmann
+Die deutsche Übersetzung wurde 2004, 2006-2015 von Helge Kreutzmann
 <debian@helgefjell.de>, 2007 von Florian Rehnisch <eixman@gmx.de> und
 2008 von Sven Joachim <svenjoac@gmx.de>
 angefertigt. Diese Übersetzung ist Freie Dokumentation; lesen Sie die

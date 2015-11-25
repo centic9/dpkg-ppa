@@ -12,7 +12,8 @@ AM_CPPFLAGS = \
 
 EXTRA_DIST = \
 	README.alternatives \
-	$(test_cases)
+	$(test_scripts) \
+	$(nil)
 
 bin_PROGRAMS =
 
@@ -24,7 +25,7 @@ update_alternatives_SOURCES = \
 	update-alternatives.c
 
 update_alternatives_LDADD = \
-	../lib/compat/libcompat.a \
+	../lib/compat/libcompat.la \
 	$(LIBINTL) \
 	$(UA_LIBS)
 
@@ -37,7 +38,7 @@ start_stop_daemon_SOURCES = \
 	start-stop-daemon.c
 
 start_stop_daemon_LDADD = \
-	../lib/compat/libcompat.a \
+	../lib/compat/libcompat.la \
 	$(SSD_LIBS)
 endif
 
@@ -54,9 +55,9 @@ uninstall-local:
 TEST_ENV_VARS = DPKG_DATADIR=$(top_srcdir)
 
 test_tmpdir = t.tmp
-test_cases = \
-	t/100_update_alternatives.t
+test_scripts = \
+	t/update_alternatives.t
 
-include $(top_srcdir)/Makecheck.am
+include $(top_srcdir)/check.am
 
 clean-local: check-clean

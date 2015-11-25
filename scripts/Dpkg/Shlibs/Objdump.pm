@@ -82,52 +82,6 @@ sub has_object {
     return exists $self->{objects}{$objid};
 }
 
-sub is_armhf {
-    my ($file) = @_;
-    my ($output, %opts, $pid, $res);
-    my $hf = 0;
-    my $sf = 0;
-    $pid = spawn(exec => [ "readelf", "-h", "--", $file ],
-		 env => { "LC_ALL" => "C" },
-		 to_pipe => \$output, %opts);
-    while (<$output>) {
-	chomp;
-	if (/0x5000402/) {
-	    $hf = 1;
-	    last;
-	}
-	if (/0x5000202/) {
-	    $sf = 1;
-	    last;
-	}
-    }
-    close($output);
-    wait_child($pid, nocheck => 1);
-    if ($?) {
-	subprocerr("readelf");
-    }
-    if(($hf) || ($sf)) {
-	return $hf;
-    }
-    undef $output;
-    $pid = spawn(exec => [ "readelf", "-A", "--", $file ],
-		 env => { "LC_ALL" => "C" },
-		 to_pipe => \$output, %opts);
-    while (<$output>) {
-	chomp;
-	if (/Tag_ABI_VFP_args: VFP registers/) {
-	    $hf = 1;
-	    last;
-	}
-    }
-    close($output);
-    wait_child($pid, nocheck => 1);
-    if ($?) {
-	subprocerr("readelf");
-    }
-    return $hf;
-}
-
 {
     my %format; # Cache of result
     sub get_format {
@@ -139,6 +93,8 @@ sub is_armhf {
 	    return $format{$file};
 	} else {
 	    my ($output, %opts, $pid, $res);
+	    local $_;
+
 	    if ($objdump ne 'objdump') {
 		$opts{error_to_file} = '/dev/null';
 	    }
@@ -158,14 +114,6 @@ sub is_armhf {
 	    if ($?) {
 		subprocerr('objdump') if $objdump eq 'objdump';
 		$res = get_format($file, 'objdump');
-	    }
-	    if ($res eq "elf32-littlearm") {
-		if (is_armhf($file)) {
-		    $res = "elf32-littlearm-hfabi";
-		} else {
-		    $res = "elf32-littlearm-sfabi";
-		}
-		$format{$file} = $res;
 	    }
 	    return $res;
 	}
@@ -190,7 +138,7 @@ use Dpkg::ErrorHandling;
 
 sub new {
     my $this = shift;
-    my $file = shift || '';
+    my $file = shift // '';
     my $class = ref($this) || $this;
     my $self = {};
     bless $self, $class;
@@ -243,7 +191,7 @@ sub parse_objdump_output {
     my ($self, $fh) = @_;
 
     my $section = 'none';
-    while (defined($_ = <$fh>)) {
+    while (<$fh>) {
 	chomp;
 	next if /^\s*$/;
 
@@ -289,22 +237,17 @@ sub parse_objdump_output {
                 # RUNPATH takes precedence over RPATH but is
                 # considered after LD_LIBRARY_PATH while RPATH
                 # is considered before (if RUNPATH is not set).
-                $self->{RPATH} = [ split (/:/, $1) ];
+                my $runpath = $1;
+                $self->{RPATH} = [ split /:/, $runpath ];
 	    } elsif (/^\s*RPATH\s+(\S+)/) {
+                my $rpath = $1;
                 unless (scalar(@{$self->{RPATH}})) {
-                    $self->{RPATH} = [ split (/:/, $1) ];
+                    $self->{RPATH} = [ split /:/, $rpath ];
                 }
 	    }
 	} elsif ($section eq 'none') {
 	    if (/^\s*.+:\s*file\s+format\s+(\S+)\s*$/) {
 		$self->{format} = $1;
-		if (($self->{format} eq "elf32-littlearm") && $self->{file}) {
-		    if (Dpkg::Shlibs::Objdump::is_armhf($self->{file})) {
-			$self->{format} = "elf32-littlearm-hfabi";
-		    } else {
-			$self->{format} = "elf32-littlearm-sfabi";
-		    }
-		}
 	    } elsif (/^architecture:\s*\S+,\s*flags\s*\S+:\s*$/) {
 		# Parse 2 lines of "-f"
 		# architecture: i386, flags 0x00000112:
@@ -370,7 +313,7 @@ sub parse_dynamic_symbol {
 
 	my $symbol = {
 		name => $name,
-		version => defined($ver) ? $ver : '',
+		version => $ver // '',
 		section => $sect,
 		dynamic => substr($flags, 5, 1) eq 'D',
 		debug => substr($flags, 5, 1) eq 'd',
@@ -378,7 +321,7 @@ sub parse_dynamic_symbol {
 		weak => substr($flags, 1, 1) eq 'w',
 		local => substr($flags, 0, 1) eq 'l',
 		global => substr($flags, 0, 1) eq 'g',
-		visibility => defined($vis) ? $vis : '',
+		visibility => $vis // '',
 		hidden => '',
 		defined => $sect ne '*UND*'
 	    };

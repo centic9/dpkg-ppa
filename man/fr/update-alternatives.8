@@ -71,7 +71,8 @@ Chaque fois qu'un paquet, proposant un fichier pour une fonction déterminée,
 est installé, modifié ou désinstallé, \fBupdate\-alternatives\fP est appelé pour
 mettre à jour les informations concernant ce fichier dans le système des
 «\ alternatives\ ». En général, \fBupdate\-alternatives\fP est appelé dans les
-scripts \fBpostinst\fP (configure) et \fBprerm\fP (install) des paquets Debian.
+scripts \fBpostinst\fP (configure) et \fBprerm\fP (remove and deconfigure) des
+paquets Debian.
 .PP
 Il est souvent utile de synchroniser certaines alternatives, de manière à
 pouvoir les manipuler globalement\ ; par exemple, quand plusieurs versions de
@@ -148,12 +149,12 @@ C'est un ensemble de liens symboliques corrélés, de manière qu'on puisse les
 mettre à jour en une seule fois.
 .TP 
 lien principal
-Dans un groupe de liens, le lient alternatif est le lien qui détermine
-comment sont configurés les autres liens du groupe.
+Dans un groupe de liens, c'est le lien alternatif qui détermine comment sont
+configurés les autres liens du groupe.
 .TP 
 lien secondaire («\ slave\ »)
-Un lien alternatif est un groupe de liens contrôlés par le réglage du lien
-principal.
+Dans un groupe de liens, c'est un lien alternatif contrôlé par la
+configuration du lien principal.
 .TP 
 mode automatique
 Quand un groupe de liens est en mode automatique, le système des
@@ -194,7 +195,7 @@ Ajoute le programme \fIchemin\fP comme alternative pour \fInom\fP. C'est
 un script.
 .TP 
 \fB\-\-remove\fP \fInom chemin\fP
-Enlève une alternative et tous ses liens secondaires associés. \fInom\fP est un
+Enlève une alternative et tous les liens secondaires associés. \fInom\fP est un
 nom dans le répertoire des «\ alternatives\ », et \fIchemin\fP est un nom de
 fichier auquel \fInom\fP peut être lié. Quand \fInom\fP est en effet lié à
 \fIchemin\fP, \fInom\fP est mis à jour et pointe vers une autre alternative
@@ -208,7 +209,7 @@ Supprime toutes les alternatives et tous les liens secondaires
 associés. \fInom\fP est un nom dans le répertoire des alternatives.
 .TP 
 \fB\-\-all\fP
-Utilise \fB\-\-call\fP sur toutes les alternatives. Cette option peut être
+Utilise \fB\-\-config\fP sur toutes les alternatives. Cette option peut être
 combinée avec \fB\-\-skip\-auto\fP pour revoir et configurer toutes les
 alternatives qui ne sont pas en mode automatique. Les alternatives erronées
 sont aussi affichées. Ainsi, une méthode simple pour corriger les
@@ -216,24 +217,25 @@ alternatives cassées est d'utiliser \fByes \[aq]\[aq] | update\-alternatives
 \-\-force \-\-all\fP.
 .TP 
 \fB\-\-auto\fP \fInom\fP
-Passe le lien symbolique principal \fInom\fP en mode automatique. En même
-temps, le lien symbolique principal et ses liens secondaires sont mis à jour
-et pointent vers les alternatives avec les priorités les plus élevées.
+Passe le groupe de liens suivant l'alternative de \fInom\fP en mode
+automatique. En même temps, le lien symbolique principal et ses liens
+secondaires sont mis à jour et pointent vers les alternatives avec les
+priorités les plus élevées.
 .TP 
 \fB\-\-display\fP \fInom\fP
 Affiche des renseignements sur le groupe de liens. L'information affichée
 comprend le mode du groupe (auto ou manuel), vers quelle alternative le lien
-symbolique pointe actuellement, quelles autres alternatives sont disponibles
+principal pointe actuellement, quelles autres alternatives sont disponibles
 (et les liens secondaires associés), et l'alternative actuellement installée
 qui possède la priorité la plus élevée.
 .TP 
 \fB\-\-get\-selections\fP
 Affiche tous les noms principaux d'alternatives (ceux qui contrôlent un
 groupe de liens) ainsi que leur état. Chaque ligne comporte jusqu'à trois
-champs (séparés par un ou plusieurs espaces). Le premier est le nom de
+champs (séparés par une ou plusieurs espaces). Le premier est le nom de
 l'alternative, le second est son état («\ auto\ » ou «\ manual\ ») et le dernier
-montre le choix actuel pour l'alternative (il s'agit d'un nom de fichier,
-qui peut contenir des espaces).
+montre le choix actuel pour l'alternative (il s'agit d'un nom de fichier
+etdonc peut contenir des espaces).
 .TP 
 \fB\-\-set\-selections\fP
 Lit la configuration des alternatives sur l'entrée standard, dans le format
@@ -283,7 +285,7 @@ configurées en mode automatique. Cette option n'est pertinente qu'avec
 \fB\-\-config\fP ou \fB\-\-all\fP.
 .TP 
 \fB\-\-verbose\fP
-produit plus de commentaires sur ce que fait \fBupdate\-alternatives\fP.
+Produit plus de commentaires sur ce que fait \fBupdate\-alternatives\fP.
 .TP 
 \fB\-\-quiet\fP
 Ne crée pas de commentaire à moins qu'une erreur ne survienne.
@@ -320,17 +322,17 @@ RFC822. Il est constitué de \fIn\fP+1 blocs où \fIn\fP est le nombre
 d'alternatives disponibles dans le groupe de liens interrogé. Le premier
 bloc contient les champs suivants\ :
 .TP 
-\fBName:\fP\fI name\fP
+\fBName:\fP\fI nom\fP
 Nom de l'alternative dans le répertoire des alternatives.
 .TP 
 \fBLink:\fP\fI lien\fP
 Nom générique de l'alternative.
 .TP 
-\fBReplaces:\fP \fI liste\-des\-liens\-secondaires\fP
+\fBSlaves:\fP \fI liste\-des\-liens\-secondaires\fP
 Lorsque cet en\-tête est présent, les lignes \fBsuivantes\fP contiennent tous
 les liens secondaires associés au lien principal de cette alternative, à
-raison d'un lien secondaire par ligne. Chaque ligne comporte un espace, le
-nom de l'alternative secondaire, un espace et le chemin vers le lien
+raison d'un lien secondaire par ligne. Chaque ligne comporte une espace, le
+nom de l'alternative secondaire, une espace et le chemin vers le lien
 secondaire.
 .TP 
 \fBStatus:\fP\fI état\fP
@@ -351,13 +353,14 @@ Les autres blocs décrivent les alternatives disponibles dans le groupe de liens 
 Chemin vers l'alternative de ce bloc
 .TP 
 \fBPriority:\fP \fI valeur\-de\-la\-priorité\fP
-Valeur de la priorité alternative.
+Valeur de la priorité de cette alternative.
 .TP 
-\fBReplaces:\fP \fI liste\-des\-liens\-secondaires\fP
-When this field is present, the \fBnext\fP lines hold all slave alternatives
-associated to the master link of the alternative. There is one slave per
-line. Each line contains one space, the generic name of the slave
-alternative, another space, and the path to the slave alternative.
+\fBSlaves:\fP \fI liste\-des\-liens\-secondaires\fP
+Lorsque ce champ est présent, les lignes \fBsuivantes\fP contiennent toutes les
+alternatives secondaires associées au lien principal de cette alternative, à
+raison d'une alternative secondaire par ligne. Chaque ligne comporte une
+espace, le nom de l'alternative secondaire, une espace et le chemin vers
+l'alternative secondaire.
 .
 .TP 
 \fBExemple\fP
@@ -411,15 +414,16 @@ paramétrage actuel, on peut utiliser l'action \fB\-\-display\fP\ :
 \fBupdate\-alternatives \-\-display vi\fP
 .RE
 .PP
-Pour choisir une implémentation particulière de \fBvi\fP on peut utiliser cette
-commande en tant que superutilisateur et choisir un nombre dans la liste\ :
+Pour choisir une implémentation particulière de \fBvi\fP, on peut utiliser
+cette commande en tant que superutilisateur et choisir un nombre dans la
+liste\ :
 .RS
 .PP
 \fBupdate\-alternatives \-\-config vi\fP
 .RE
 .PP
-Pour retrouver l'implémentation par défaut de \fBvi\fP on peut utiliser cette
-commande en tant que super\-utilisateur\ :
+Pour retrouver l'implémentation par défaut de \fBvi\fP, on peut utiliser cette
+commande en tant que superutilisateur\ :
 .RS
 .PP
 \fBupdate\-alternatives \-\-auto vi\fP

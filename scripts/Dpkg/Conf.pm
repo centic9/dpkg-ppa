@@ -95,12 +95,15 @@ Parse options from a file handle. Return the number of options parsed.
 sub parse {
     my ($self, $fh, $desc) = @_;
     my $count = 0;
+    local $_;
+
     while (<$fh>) {
 	chomp;
 	s/^\s+//; s/\s+$//;   # Strip leading/trailing spaces
 	s/\s+=\s+/=/;         # Remove spaces around the first =
 	s/\s+/=/ unless m/=/; # First spaces becomes = if no =
-	next if /^#/ or /^$/; # Skip empty lines and comments
+	# Skip empty lines and comments
+	next if /^#/ or length == 0;
 	if (/^-[^-]/ and not $self->{allow_short}) {
 	    warning(_g('short option not allowed in %s, line %d'), $desc, $.);
 	    next;
@@ -174,6 +177,16 @@ sub output {
 }
 
 =back
+
+=head1 CHANGES
+
+=head2 Version 1.01
+
+New method: $conf->filter()
+
+=head2 Version 1.00
+
+Mark the module as public.
 
 =head1 AUTHOR
 

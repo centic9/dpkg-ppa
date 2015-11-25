@@ -69,7 +69,7 @@ När ett paket som tillhandahåller en fil med en specifik funktionalitet
 installeras, ändras eller tas bort, anropas \fBupdate\-alternatives\fP för att
 uppdatera information om filen i alternativsystemet. \fBupdate\-alternatives\fP
 anropas normalt från \fBpostinst\fP\- (configure) eller \fBprerm\fP\-skripten
-(install) i Debianpaket.
+(remove och deconfigure) i Debianpaket.
 .PP
 Det är ofta lämpligt för ett antal alternativ att vara synkroniserade, så
 att de ändras i grupp. Till exempel, om det är flera versioner av
@@ -338,10 +338,11 @@ Sökväg till alternativet som beskrivs i blocket.
 Värdet för prioriteten på alternativet.
 .TP 
 \fBSlaves:\fP\fI lista\-över\-slavar\fP
-When this field is present, the \fBnext\fP lines hold all slave alternatives
-associated to the master link of the alternative. There is one slave per
-line. Each line contains one space, the generic name of the slave
-alternative, another space, and the path to the slave alternative.
+När detta fält anges innehåller \fBnext\fP\-raderna alla slavalternativ som
+kopplas till huvudlänken för alternativet. Varje rad beskriver en
+slav. Varje rad innehåller ett blanksteg, det generiska namnet på
+slavalternativet, ytterligare ett blanksteg, och sökvägen till
+slavalternativet.
 .
 .TP 
 \fBExempel\fP

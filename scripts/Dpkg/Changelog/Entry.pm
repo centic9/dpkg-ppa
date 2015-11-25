@@ -290,12 +290,18 @@ in the output format of C<dpkg-parsechangelog>.
 
 sub get_dpkg_changes {
     my ($self) = @_;
-    my $header = $self->get_part('header') || '';
+    my $header = $self->get_part('header') // '';
     $header =~ s/\s+$//;
     return "\n$header\n\n" . join("\n", @{$self->get_part('changes')});
 }
 
 =back
+
+=head1 CHANGES
+
+=head2 Version 1.00
+
+Mark the module as public.
 
 =head1 AUTHOR
 

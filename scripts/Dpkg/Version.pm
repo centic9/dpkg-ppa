@@ -379,7 +379,9 @@ return ("1", ".", "024", "~beta", "1", "+svn", "234").
 =cut
 
 sub version_split_digits($) {
-    return split(/(?<=\d)(?=\D)|(?<=\D)(?=\d)/, $_[0]);
+    my $version = shift;
+
+    return split /(?<=\d)(?=\D)|(?<=\D)(?=\d)/, $version;
 }
 
 =item my ($ok, $msg) = version_check($version)
@@ -433,6 +435,10 @@ sub version_check($) {
 New argument: Accept an options argument in $v->as_string().
 
 New method: $v->is_native().
+
+=head2 Version 1.00
+
+Mark the module as public.
 
 =head1 AUTHOR
 

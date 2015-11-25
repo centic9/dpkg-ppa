@@ -65,8 +65,11 @@ wielko¶æ tolerowanej ró¿nicy, patrz opcja \fB\-c\fP).
 The symbols files are really useful only if they reflect the evolution of
 the package through several releases. Thus the maintainer has to update them
 every time that a new symbol is added so that its associated minimal version
-matches reality. To do this properly the diffs contained in the build logs
-can be used. In most cases, the diff applies directly to the
+matches reality.  The diffs contained in the build logs can be used as a
+starting point, but the maintainer, additionally, has to make sure that the
+behaviour of those symbols has not changed in a way that would make anything
+using those symbols and linking against the new version, stop working with
+the old version.  In most cases, the diff applies directly to the
 debian/\fIpackage\fP.symbols file. That said, further tweaks are usually
 needed: it's recommended for example to drop the Debian revision from the
 minimal version so that backports with a lower version number but the same
@@ -83,6 +86,13 @@ wiersz zaczynaj±cy siê od "#", z wyj±tkiem "#include" (patrz rozdzia³
 \fBU¿ywanie include (do³±czeñ)\fP), jest komentarzem. Wiersze zaczynaj±ce siê
 od "#MISSING:" s± specjalnymi komentarzami dokumentuj±cymi symbole które
 zniknê³y.
+.P
+Do not forget to check if old symbol versions need to be increased.  There
+is no way \fBdpkg\-gensymbols\fP can warn about this. Blindly applying the diff
+or assuming there is nothing to change if there is no diff, without checking
+for such changes, can lead to packages with loose dependencies that claim
+they can work with older packages they cannot work with. This will introduce
+hard to find bugs with (partial)  upgrades.
 .SS "U¿ywanie podstawieñ #PACKAGE#"
 .P
 W niektórych rzadkich przypadkach, nazwa biblioteki ró¿ni siê miêdzy
@@ -93,12 +103,11 @@ markera \fI#MINVER#\fP, \fI#PACKAGE#\fP nigdy nie pojawi siê w pliku symboli
 wewn±trz pakietu binarnego.
 .SS "U¿ywanie znaczników symboli"
 .P
-Tagowanie symboli jest przydatne do oznaczania symboli, które s± w jaki¶
-sposób specjalne. Ka¿dy symbol mo¿e mieæ dowoln± liczbê znaczników z nim
-powi±zanych. Podczas gdy wszystkie znaczniki s± przetwarzane i
-przechowywane, jedynie niektóre z nich s± rozumiane przez \fBdpkg\-gensymbols\fP
-i wyzwalaj± specjaln± obs³ugê tych symboli. Patrz podsekcja \fBStandardowe
-znaczniki symboli\fP, aby siê z nimi zapoznaæ.
+Symbol tagging is useful for marking symbols that are special in some way.
+Any symbol can have an arbitrary number of tags associated with it. While
+all tags are parsed and stored, only some of them are understood by
+\fBdpkg\-gensymbols\fP and trigger special handling of the symbols. See
+subsection \fBStandard symbol tags\fP for reference of these tags.
 .P
 Okre¶lenie znacznika powinno znale¼æ siê zaraz przed nazw± symbolu (nie ma
 pomiêdzy nimi spacji). Zawsze rozpoczyna siê nawiasem otwieraj±cym \fB(\fP,

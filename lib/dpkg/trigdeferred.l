@@ -4,6 +4,7 @@
  *
  * Copyright © 2007 Canonical Ltd
  * written by Ian Jackson <ian@chiark.greenend.org.uk>
+ * Copyright © 2008-2014 Guillem Jover <guillem@debian.org>
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -40,7 +41,8 @@
 
 %{
 #include <sys/stat.h>
-#include <sys/fcntl.h>
+
+#include <fcntl.h>
 
 #include <dpkg/i18n.h>
 #include <dpkg/dpkg.h>
@@ -111,31 +113,28 @@ constructfn(struct varbuf *vb, const char *dir, const char *tail)
  * Start processing of the triggers deferred file.
  *
  * @retval -1 Lock ENOENT with O_CREAT (directory does not exist).
- * @retval -2 Unincorp empty, tduf_writeifempty unset.
- * @retval -3 Unincorp ENOENT, tduf_writeifenoent unset.
- * @retval  1 Unincorp ENOENT, tduf_writeifenoent set.
+ * @retval -2 Unincorp empty, TDUF_WRITE_IF_EMPTY unset.
+ * @retval -3 Unincorp ENOENT, TDUF_WRITE_IF_ENOENT unset.
+ * @retval  1 Unincorp ENOENT, TDUF_WRITE_IF_ENOENT set.
  * @retval  2 Ok.
  *
  * For positive return values the caller must call trigdef_update_done!
  */
 enum trigdef_update_status
-trigdef_update_start(enum trigdef_updateflags uf)
+trigdef_update_start(enum trigdef_update_flags uf)
 {
-	struct stat stab;
-	int r;
-
 	triggersdir = dpkg_db_get_path(TRIGGERSDIR);
 
-	if (uf & tduf_write) {
+	if (uf & TDUF_WRITE) {
 		constructfn(&fn, triggersdir, TRIGGERSLOCKFILE);
 		if (lock_fd == -1) {
 			lock_fd = open(fn.buf, O_RDWR | O_CREAT | O_TRUNC, 0600);
 			if (lock_fd == -1) {
-				if (!(errno == ENOENT && (uf & tduf_nolockok)))
+				if (!(errno == ENOENT && (uf & TDUF_NO_LOCK_OK)))
 					ohshite(_("unable to open/create "
 					          "triggers lockfile `%.250s'"),
 					        fn.buf);
-				return tdus_error_no_dir;
+				return TDUS_ERROR_NO_DIR;
 			}
 		}
 
@@ -146,17 +145,6 @@ trigdef_update_start(enum trigdef_updateflags uf)
 	}
 
 	constructfn(&fn, triggersdir, TRIGGERSDEFERREDFILE);
-	r = stat(fn.buf, &stab);
-	if (r) {
-		if (errno != ENOENT)
-			ohshite(_("unable to stat triggers deferred file `%.250s'"),
-			        fn.buf);
-	} else if (!stab.st_size) {
-		if (!(uf & tduf_writeifempty)) {
-			pop_cleanup(ehflag_normaltidy);
-			return tdus_error_empty_deferred;
-		}
-	}
 
 	if (old_deferred)
 		fclose(old_deferred);
@@ -165,13 +153,28 @@ trigdef_update_start(enum trigdef_updateflags uf)
 		if (errno != ENOENT)
 			ohshite(_("unable to open triggers deferred file `%.250s'"),
 			        fn.buf);
-		if (!(uf & tduf_writeifenoent)) {
+		if (!(uf & TDUF_WRITE_IF_ENOENT)) {
 			pop_cleanup(ehflag_normaltidy);
-			return tdus_error_no_deferred;
+			return TDUS_ERROR_NO_DEFERRED;
+		}
+	} else {
+		struct stat stab;
+		int rc;
+
+		setcloexec(fileno(old_deferred), fn.buf);
+
+		rc = fstat(fileno(old_deferred), &stab);
+		if (rc < 0)
+			ohshite(_("unable to stat triggers deferred file `%.250s'"),
+			        fn.buf);
+
+		if (stab.st_size == 0 && !(uf & TDUF_WRITE_IF_EMPTY)) {
+			pop_cleanup(ehflag_normaltidy);
+			return TDUS_ERROR_EMPTY_DEFERRED;
 		}
 	}
 
-	if (uf & tduf_write) {
+	if (uf & TDUF_WRITE) {
 		constructfn(&newfn, triggersdir, TRIGGERSDEFERREDFILE ".new");
 		if (trig_new_deferred)
 			fclose(trig_new_deferred);
@@ -179,15 +182,17 @@ trigdef_update_start(enum trigdef_updateflags uf)
 		if (!trig_new_deferred)
 			ohshite(_("unable to open/create new triggers deferred file `%.250s'"),
 			        newfn.buf);
+
+		setcloexec(fileno(trig_new_deferred), newfn.buf);
 	}
 
 	if (!old_deferred)
-		return tdus_no_deferred;
+		return TDUS_NO_DEFERRED;
 
 	trigdef_yyrestart(old_deferred);
 	BEGIN(0);
 
-	return tdus_ok;
+	return TDUS_OK;
 }
 
 void

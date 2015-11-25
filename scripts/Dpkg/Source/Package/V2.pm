@@ -1,4 +1,5 @@
 # Copyright © 2008-2011 Raphaël Hertzog <hertzog@debian.org>
+# Copyright © 2008-2014 Guillem Jover <guillem@debian.org>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,6 +27,7 @@ use Dpkg;
 use Dpkg::Gettext;
 use Dpkg::ErrorHandling;
 use Dpkg::File;
+use Dpkg::Path qw(find_command);
 use Dpkg::Compression;
 use Dpkg::Source::Archive;
 use Dpkg::Source::Patch;
@@ -35,6 +37,7 @@ use Dpkg::Vendor qw(run_vendor_hook);
 use Dpkg::Control;
 use Dpkg::Changelog::Parse;
 
+use List::Util qw(first);
 use POSIX qw(:errno_h);
 use Cwd;
 use File::Basename;
@@ -49,60 +52,55 @@ our $CURRENT_MINOR_VERSION = '0';
 sub init_options {
     my ($self) = @_;
     $self->SUPER::init_options();
-    $self->{options}{include_removal} = 0
-        unless exists $self->{options}{include_removal};
-    $self->{options}{include_timestamp} = 0
-        unless exists $self->{options}{include_timestamp};
-    $self->{options}{include_binaries} = 0
-        unless exists $self->{options}{include_binaries};
-    $self->{options}{preparation} = 1
-        unless exists $self->{options}{preparation};
-    $self->{options}{skip_patches} = 0
-        unless exists $self->{options}{skip_patches};
-    $self->{options}{unapply_patches} = 'auto'
-        unless exists $self->{options}{unapply_patches};
-    $self->{options}{skip_debianization} = 0
-        unless exists $self->{options}{skip_debianization};
-    $self->{options}{create_empty_orig} = 0
-        unless exists $self->{options}{create_empty_orig};
-    $self->{options}{auto_commit} = 0
-        unless exists $self->{options}{auto_commit};
+    $self->{options}{include_removal} //= 0;
+    $self->{options}{include_timestamp} //= 0;
+    $self->{options}{include_binaries} //= 0;
+    $self->{options}{preparation} //= 1;
+    $self->{options}{skip_patches} //= 0;
+    $self->{options}{unapply_patches} //= 'auto';
+    $self->{options}{skip_debianization} //= 0;
+    $self->{options}{create_empty_orig} //= 0;
+    $self->{options}{auto_commit} //= 0;
+    $self->{options}{ignore_bad_version} //= 0;
 }
 
 sub parse_cmdline_option {
     my ($self, $opt) = @_;
-    if ($opt =~ /^--include-removal$/) {
+    if ($opt eq '--include-removal') {
         $self->{options}{include_removal} = 1;
         return 1;
-    } elsif ($opt =~ /^--include-timestamp$/) {
+    } elsif ($opt eq '--include-timestamp') {
         $self->{options}{include_timestamp} = 1;
         return 1;
-    } elsif ($opt =~ /^--include-binaries$/) {
+    } elsif ($opt eq '--include-binaries') {
         $self->{options}{include_binaries} = 1;
         return 1;
-    } elsif ($opt =~ /^--no-preparation$/) {
+    } elsif ($opt eq '--no-preparation') {
         $self->{options}{preparation} = 0;
         return 1;
-    } elsif ($opt =~ /^--skip-patches$/) {
+    } elsif ($opt eq '--skip-patches') {
         $self->{options}{skip_patches} = 1;
         return 1;
-    } elsif ($opt =~ /^--unapply-patches$/) {
+    } elsif ($opt eq '--unapply-patches') {
         $self->{options}{unapply_patches} = 'yes';
         return 1;
-    } elsif ($opt =~ /^--no-unapply-patches$/) {
+    } elsif ($opt eq '--no-unapply-patches') {
         $self->{options}{unapply_patches} = 'no';
         return 1;
-    } elsif ($opt =~ /^--skip-debianization$/) {
+    } elsif ($opt eq '--skip-debianization') {
         $self->{options}{skip_debianization} = 1;
         return 1;
-    } elsif ($opt =~ /^--create-empty-orig$/) {
+    } elsif ($opt eq '--create-empty-orig') {
         $self->{options}{create_empty_orig} = 1;
         return 1;
-    } elsif ($opt =~ /^--abort-on-upstream-changes$/) {
+    } elsif ($opt eq '--abort-on-upstream-changes') {
         $self->{options}{auto_commit} = 0;
         return 1;
-    } elsif ($opt =~ /^--auto-commit$/) {
+    } elsif ($opt eq '--auto-commit') {
         $self->{options}{auto_commit} = 1;
+        return 1;
+    } elsif ($opt eq '--ignore-bad-version') {
+        $self->{options}{ignore_bad_version} = 1;
         return 1;
     }
     return 0;
@@ -117,17 +115,24 @@ sub do_extract {
     my $basename = $self->get_basename();
     my $basenamerev = $self->get_basename(1);
 
-    my ($tarfile, $debianfile, %origtar, %seen);
+    my ($tarfile, $debianfile, %addonfile, %seen);
+    my ($tarsign, %addonsign);
     my $re_ext = compression_get_file_extension_regex();
     foreach my $file ($self->get_files()) {
-        (my $uncompressed = $file) =~ s/\.$re_ext$//;
-        error(_g('duplicate files in %s source package: %s.*'), 'v2.0',
+        my $uncompressed = $file;
+        $uncompressed =~ s/\.$re_ext$/.*/;
+        $uncompressed =~ s/\.$re_ext\.asc$/.*.asc/;
+        error(_g('duplicate files in %s source package: %s'), 'v2.0',
               $uncompressed) if $seen{$uncompressed};
         $seen{$uncompressed} = 1;
         if ($file =~ /^\Q$basename\E\.orig\.tar\.$re_ext$/) {
             $tarfile = $file;
+        } elsif ($file =~ /^\Q$basename\E\.orig\.tar\.$re_ext\.asc$/) {
+            $tarsign = $file;
         } elsif ($file =~ /^\Q$basename\E\.orig-([[:alnum:]-]+)\.tar\.$re_ext$/) {
-            $origtar{$1} = $file;
+            $addonfile{$1} = $file;
+        } elsif ($file =~ /^\Q$basename\E\.orig-([[:alnum:]-]+)\.tar\.$re_ext\.asc$/) {
+            $addonsign{$1} = $file;
         } elsif ($file =~ /^\Q$basenamerev\E\.debian\.tar\.$re_ext$/) {
             $debianfile = $file;
         } else {
@@ -138,6 +143,18 @@ sub do_extract {
 
     unless ($tarfile and $debianfile) {
         error(_g('missing orig.tar or debian.tar file in v2.0 source package'));
+    }
+    if ($tarsign and $tarfile ne substr $tarsign, 0, -4) {
+        error(_g('mismatched orig.tar %s for signature %s in source package'),
+              $tarfile, $tarsign);
+    }
+    foreach my $name (keys %addonsign) {
+        error(_g('missing addon orig.tar for signature %s in source package'),
+              $addonsign{$name})
+            if not exists $addonfile{$name};
+        error(_g('mismatched addon orig.tar %s for signature %s in source package'),
+              $addonfile{$name}, $addonsign{$name})
+            if $addonfile{$name} ne substr $addonsign{$name}, 0, -4;
     }
 
     erasedir($newdirectory);
@@ -153,8 +170,8 @@ sub do_extract {
     # that would be blindly followed when applying the patches
 
     # Extract additional orig tarballs
-    foreach my $subdir (keys %origtar) {
-        my $file = $origtar{$subdir};
+    foreach my $subdir (sort keys %addonfile) {
+        my $file = $addonfile{$subdir};
         info(_g('unpacking %s'), $file);
         if (-e "$newdirectory/$subdir") {
             warning(_g("required removal of `%s' installed by original tarball"), $subdir);
@@ -175,7 +192,7 @@ sub do_extract {
     # symlink
     my @exclude_symlinks;
     my $wanted = sub {
-        return if not -l $_;
+        return if not -l;
         my $fn = File::Spec->abs2rel($_, $newdirectory);
         push @exclude_symlinks, '--exclude', $fn;
     };
@@ -309,7 +326,8 @@ sub prepare_build {
         # No main orig.tar, create a dummy one
         my $filename = $self->get_basename() . '.orig.tar.' .
                        $self->{options}{comp_ext};
-        my $tar = Dpkg::Source::Archive->new(filename => $filename);
+        my $tar = Dpkg::Source::Archive->new(filename => $filename,
+                                             compression_level => $self->{options}{comp_level});
         $tar->create();
         $tar->finish();
     }
@@ -331,22 +349,22 @@ sub generate_patch {
     $basedirname =~ s/_/-/;
 
     # Identify original tarballs
-    my ($tarfile, %origtar);
+    my ($tarfile, %addonfile);
     my $comp_ext_regex = compression_get_file_extension_regex();
     my @origtarballs;
-    foreach (sort $self->find_original_tarballs()) {
-        if (/\.orig\.tar\.$comp_ext_regex$/) {
+    foreach my $file (sort $self->find_original_tarballs()) {
+        if ($file =~ /\.orig\.tar\.$comp_ext_regex$/) {
             if (defined($tarfile)) {
                 error(_g('several orig.tar files found (%s and %s) but only ' .
-                         'one is allowed'), $tarfile, $_);
+                         'one is allowed'), $tarfile, $file);
             }
-            $tarfile = $_;
-            push @origtarballs, $_;
-            $self->add_file($_);
-        } elsif (/\.orig-([[:alnum:]-]+)\.tar\.$comp_ext_regex$/) {
-            $origtar{$1} = $_;
-            push @origtarballs, $_;
-            $self->add_file($_);
+            $tarfile = $file;
+            push @origtarballs, $file;
+            $self->add_file($file);
+        } elsif ($file =~ /\.orig-([[:alnum:]-]+)\.tar\.$comp_ext_regex$/) {
+            $addonfile{$1} = $file;
+            push @origtarballs, $file;
+            $self->add_file($file);
         }
     }
 
@@ -367,8 +385,8 @@ sub generate_patch {
     $tar->extract($tmp);
 
     # Extract additional orig tarballs
-    foreach my $subdir (keys %origtar) {
-        my $file = $origtar{$subdir};
+    foreach my $subdir (keys %addonfile) {
+        my $file = $addonfile{$subdir};
         $tar = Dpkg::Source::Archive->new(filename => $file);
         $tar->extract("$tmp/$subdir");
     }
@@ -438,7 +456,7 @@ sub do_build {
     my $binaryfiles = Dpkg::Source::Package::V2::BinaryFiles->new($dir);
     my $unwanted_binaries = 0;
     my $check_binary = sub {
-        if (-f $_ and is_binary($_)) {
+        if (-f and is_binary($_)) {
             my $fn = File::Spec->abs2rel($_, $dir);
             $binaryfiles->new_binary_found($fn);
             unless ($include_binaries or $binaryfiles->binary_is_allowed($fn)) {
@@ -486,15 +504,16 @@ sub do_build {
 
     # Handle modified binary files detected by the auto-patch generation
     my $handle_binary = sub {
-        my ($self, $old, $new) = @_;
-        my $relfn = File::Spec->abs2rel($new, $dir);
-        $binaryfiles->new_binary_found($relfn);
-        unless ($include_binaries or $binaryfiles->binary_is_allowed($relfn)) {
-            errormsg(_g('cannot represent change to %s: %s'), $relfn,
+        my ($self, $old, $new, %opts) = @_;
+
+        my $file = $opts{filename};
+        $binaryfiles->new_binary_found($file);
+        unless ($include_binaries or $binaryfiles->binary_is_allowed($file)) {
+            errormsg(_g('cannot represent change to %s: %s'), $file,
                      _g('binary file contents changed'));
             errormsg(_g('add %s in debian/source/include-binaries if you want ' .
                         'to store the modified binary in the debian tarball'),
-                     $relfn);
+                     $file);
             $self->register_error();
         }
     };
@@ -531,7 +550,8 @@ sub do_build {
     # Create the debian.tar
     my $debianfile = "$basenamerev.debian.tar." . $self->{options}{comp_ext};
     info(_g('building %s in %s'), $sourcepackage, $debianfile);
-    my $tar = Dpkg::Source::Archive->new(filename => $debianfile);
+    my $tar = Dpkg::Source::Archive->new(filename => $debianfile,
+                                         compression_level => $self->{options}{comp_level});
     $tar->create(options => \@tar_ignore, chdir => $dir);
     $tar->add_directory('debian');
     foreach my $binary ($binaryfiles->get_seen_binaries()) {
@@ -577,7 +597,7 @@ are templates for supplementary fields that you might want to add:
 
 Origin: <vendor|upstream|other>, <url of original patch>
 Bug: <url in upstream bugtracker>
-Bug-Debian: http://bugs.debian.org/<bugnumber>
+Bug-Debian: https://bugs.debian.org/<bugnumber>
 Bug-Ubuntu: https://launchpad.net/bugs/<bugnumber>
 Forwarded: <no|not-needed|url proving that it has been forwarded>
 Reviewed-By: <name and email of someone who approved the patch>
@@ -634,7 +654,7 @@ sub do_commit {
 
     my $binaryfiles = Dpkg::Source::Package::V2::BinaryFiles->new($dir);
     my $handle_binary = sub {
-        my ($self, $old, $new) = @_;
+        my ($self, $old, $new, %opts) = @_;
         my $fn = File::Spec->abs2rel($new, $dir);
         $binaryfiles->new_binary_found($fn);
     };
@@ -653,14 +673,21 @@ sub do_commit {
     while (_is_bad_patch_name($dir, $patch_name)) {
         # Ask the patch name interactively
         print _g('Enter the desired patch name: ');
-        chomp($patch_name = <STDIN>);
+        $patch_name = <STDIN>;
+        next unless defined $patch_name;
+        chomp $patch_name;
         $patch_name =~ s/\s+/-/g;
         $patch_name =~ s/\///g;
     }
     mkpath(File::Spec->catdir($dir, 'debian', 'patches'));
     my $patch = $self->register_patch($dir, $tmpdiff, $patch_name);
-    system('sensible-editor', $patch);
-    subprocerr('sensible-editor') if $?;
+    my @editors = ('sensible-editor', $ENV{VISUAL}, $ENV{EDITOR}, 'vi');
+    my $editor = first { find_command($_) } @editors;
+    if (not $editor) {
+        error(_g('cannot find an editor'));
+    }
+    system($editor, $patch);
+    subprocerr($editor) if $?;
     unlink($tmpdiff) or syserr(_g('cannot remove %s'), $tmpdiff);
     pop_exit_handler();
     info(_g('local changes have been recorded in a new patch: %s'), $patch);
@@ -701,9 +728,9 @@ sub load_allowed_binaries {
     if (-f $incbin_file) {
         open(my $incbin_fh, '<', $incbin_file)
             or syserr(_g('cannot read %s'), $incbin_file);
-        while (defined($_ = <$incbin_fh>)) {
+        while (<$incbin_fh>) {
             chomp; s/^\s*//; s/\s*$//;
-            next if /^#/ or /^$/;
+            next if /^#/ or length == 0;
             $self->{allowed_binaries}{$_} = 1;
         }
         close($incbin_fh);

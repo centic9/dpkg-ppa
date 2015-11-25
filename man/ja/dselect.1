@@ -4,7 +4,7 @@
 .\" Copyright 息 2000 Josip Rodin
 .\" Copyright 息 2001 Joost Kooij
 .\" Copyright 息 2001 Wichert Akkerman <wakkerma@debian.org>
-.\" Copyright 息 2010-2011 Guillem Jover <guillem@debian.org>
+.\" Copyright 息 2010-2014 Guillem Jover <guillem@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH dselect 1 2012\-04\-07 "Debian Project" Debian
+.TH dselect 1 2014\-08\-11 "Debian Project" Debian
 .SH 名前
 dselect \- Debian パッケージ管理フロントエンド
 .
@@ -105,10 +105,10 @@ dpkg が使用する `\fIstatus\fP' ファイルや `\fIavailable\fP' ファイルなどを置くデ
 \fBhelpscreen\fP
 ヘルプ画面の色
 .RE
-.P
+.IP
 画面の部位を示すキーワードの後に、コロンに続き色設定を記述する。前景色、背景色、あるいは両方を指定でき、コンパイル時に指定した色設定に優先する。標準の
 curses 色名称を使用すること。
-.P
+.IP
 色設定の後に、コロンに続き、オプションで属性を設定してもよい。これはプラス("+")文字によって区切られた、1
 つ以上の属性のリストである。利用可能な属性を以下に示す(すべての属性がすべての端末で有効とは限らない): normal, standout,
 underline, reverse, blink, bright, dim, bold
@@ -161,7 +161,7 @@ underline, reverse, blink, bright, dim, bold
 を用いてインストールを行う。インストール前にパッケージをすべて取得するか、必要な時に取得するかは、アクセス方式の実装によって異なる。アクセス方式によって、削除マークをつけたパッケージの削除を行う場合もある。
 .sp
 インストール中にエラーが発生した場合は、通常インストールを再度行うことを推奨する。大半の場合、問題は再発しないか解決されるが、問題が解決しなかったりインストールが適切に行われていなかったりする場合は、原因や環境を調べて、Debian
-バグ追跡システムへバグ報告をしていただきたい。バグ報告の方法は、http://bugs.debian.org/ や、\fBbug\fP(1) や
+バグ追跡システムへバグ報告をしていただきたい。バグ報告の方法は、https://bugs.debian.org/ や、\fBbug\fP(1) や
 \fBreportbug\fP(1) がインストールされていれば、それらの文書を参照のこと。
 .sp
 導入アクションの詳細はアクセス方式の実装に依存する。パッケージのインストール、設定、削除中に、ユーザに対する確認が発生したり、入力が要求されたりする場合もある。これはパッケージのメンテナスクリプトに依存する。パッケージによっては、\fBdebconf\fP(1)
@@ -215,9 +215,14 @@ underline, reverse, blink, bright, dim, bold
 主たる選択画面には、Debian
 パッケージ管理システムが認識しているすべてのパッケージがリストされる。これには、システムにインストール済のパッケージと、取得可能パッケージのデータベースが認識しているパッケージが含まれる。
 .sp
-リストにはパッケージごとに、パッケージの状況、優先度、セクション、インストール済、取得可能バージョン、パッケージ名、短い説明文が 1 行で表示される。
-\&\fB'V'\fP キーを押すと、インストール済バージョンと取得可能バージョンの表示、非表示を切り替える。 \fB'v'\fP
-キーを押すと、パッケージ状況の詳細表示と簡略表示を切り替える。簡略表示がデフォルトである。
+For every package, the list shows the package's status, priority, section,
+installed and available architecture, installed and available versions, the
+package name and its short description, all in one line.  By pressing the
+\&\fB'A'\fP key, the display of the installed and available architecture can be
+toggled between on an off.  By pressing the \fB'V'\fP key, the display of the
+installed and available version can be toggled between on an off.  By
+pressing the \fB'v'\fP key, the package status display is toggled between
+verbose and shorthand.  Shorthand display is the default.
 .sp
 簡略表示における状況は、エラーフラグ (通常クリアされている)、現在の状況、現在の選択状況、新規の選択状況の 4 パートからなる。始めの 2
 つはパッケージの現在の状況を表し、後の 2 つはユーザが設定した選択状況を示している。

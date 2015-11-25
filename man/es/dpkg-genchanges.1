@@ -2,7 +2,7 @@
 .\"
 .\" Copyright Â© 1995-1996 Ian Jackson <ian@chiark.chu.cam.ac.uk>
 .\" Copyright Â© 2000 Wichert Akkerman <wakkerma@debian.org>
-.\" Copyright Â© 2006-2012 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2006-2014 Guillem Jover <guillem@debian.org>
 .\" Copyright Â© 2008-2010 RaphaÃ«l Hertzog <hertzog@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
@@ -23,7 +23,7 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH dpkg\-genchanges 1 "4 de mayo del 2012" "Proyecto Debian" "Herramientas de dpkg"
+.TH dpkg\-genchanges 1 2014\-09\-24 "Proyecto Debian" "Herramientas de dpkg"
 .SH NOMBRE
 dpkg\-genchanges \- Generación de ficheros de Debian «.changes»
 .
@@ -37,6 +37,14 @@ desempaquetado y construido, así como de los ficheros que ha generado, y
 crea un fichero de control de subida de Debian, el fichero \fB.changes\fP.
 .
 .SH OPCIONES
+.TP 
+\fB\-g\fP
+Specifies that only source and architecture independent packages should be
+uploaded (no architecture specific packages will be included).
+.TP 
+\fB\-G\fP
+Specifies that only source and architecture specific packages should be
+uploaded (no architecture independent packages will be included).
 .TP 
 \fB\-b\fP, \fB\-B\fP, \fB\-A\fP
 Define que sólo se va a realizar una construcción binaria (no se incluyen

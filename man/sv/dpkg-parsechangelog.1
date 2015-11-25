@@ -39,8 +39,9 @@ maskinläsbar form.
 .SH FLAGGOR
 .TP 
 \fB\-l\fP\fIändringsloggfil\fP
-Specifies the changelog file to read information from. A '\-' can be used to
-specify reading from standard input. The default is \fBdebian/changelog\fP.
+Anger ändringsloggfilen som information skall läsas från. Ett "\-" kan
+användas för att ange läsning från stadnard in. Standardvärdet är
+\fBdebian/changelog\fP.
 .TP 
 \fB\-F\fP\fIändringsloggformat\fP
 Anger format på ändringsloggen. Som standard läses formatet från en speciell
@@ -52,9 +53,9 @@ Ange en ytterligare katalog att söka i efter parserskript. Katalogen söks
 genom innan standardkatalogerna, vilka för närvarande är
 \fB/usr/local/lib/dpkg/parsechangelog\fP och \fB/usr/lib/dpkg/parsechangelog\fP.
 .TP 
-\fB\-S\fP, \fB\-\-show\-field\fP \fIfield\fP
-Specifies the name of the field to show (since dpkg 1.17.0).  The field name
-is not printed, only its value.
+\fB\-S\fP, \fB\-\-show\-field\fP \fIfält\fP
+Anger namnet på ett fält att visa (sedan dpkg 1.17.0). Fältnamnet visas
+inte, endast dess värde.
 .TP 
 \fB\-?\fP, \fB\-\-help\fP
 Visar hjälpskärm och avslutar.
@@ -62,16 +63,16 @@ Visar hjälpskärm och avslutar.
 \fB\-\-version\fP
 Visar version och avslutar.
 .SS Parserflaggor
-The following options can be used to influence the output of the changelog
-parser, e.g. the range of entries or the format of the output. They need to
-be supported by the parser script in question. See also \fBNOTES\fP.
+Följande flaggor kan användas för att styra utdata från ändringsloggparsern,
+t.ex. omfånget av poster eller formatet på utdata. De måste stödas av
+parserskriptet i fråga. Se även \fBANMÄRKNINGAR\fP.
 .TP 
-\fB\-\-file\fP\fI file\fP
-Set the changelog filename to parse. Default is '\-' (standard input).
+\fB\-\-file\fP\fI fil\fP
+Ange ändringsloggfilnamnet som skall läsas. Standard är "\-" (standard in).
 .TP 
-\fB\-l\fP, \fB\-\-label\fP \fIfile\fP
-Set the name of the changelog file to use in error messages, instead of
-using the name from the \fB\-\-file\fP option, or its default value.
+\fB\-l\fP, \fB\-\-label\fP \fIfil\fP
+Ange ändringsloggfilnamnet som skall användas i felmeddelanden, istället för
+att använda namnet från flaggan \fB\-\-file\fP, eller dess standardvärde.
 .TP 
 \fB\-\-format\fP \fIutdataformat\fP
 Välj utdataformat. Stödda format är för närvarande \fIdpkg\fP och
@@ -131,8 +132,8 @@ ta med \fIantal\fP ändringar från början (eller slutet om \fIantal\fP är lägre ä
 0).
 .TP 
 \fB\-\-offset\fP \fIantal\fP, \fB\-o\fP\fIantal\fP
-change the starting point for \fB\-\-count\fP, counted from the top (or the tail
-if \fInumber\fP is lower than 0).
+ändra startpunkt för \fB\-\-count\fP, räknat från början (eller slutet om
+\fIantal\fP är lägre än 0).
 .TP 
 \fB\-\-all\fP
 ta med alla ändringar. Observera: övriga flaggor har ingen effekt när denna
@@ -180,9 +181,9 @@ möjligen generera felaktiga utdata.
 En ändringsloggtolk kan inte på något sätt interagera med användaren.
 .
 .SH ANTECKNINGAR
-All \fBParser Options\fP except for \fB\-v\fP are only supported since dpkg
-1.14.16. Third party parsers for changelog formats other than \fIdebian\fP
-might not support all options.
+De olika \fBparserflaggorna\fP, bortsett \fB\-v\fP, stöds enbart i dpkg 1.14.16 och
+senare. Tredjepartsparsrar för andra ändringsloggformat än \fIdebian\fP kanske
+inte stöder alla flaggor.
 .
 .SH FILER
 .TP 

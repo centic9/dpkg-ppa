@@ -38,14 +38,14 @@ connus par la base de données de \fBdpkg\fP.
 .TP 
 \fB\-l\fP, \fB\-\-list\fP [\fImotif\-de\-nom\-de\-paquet\fP...]
 Affiche les paquets correspondant au motif donné. Si aucun
-\fInom\-paquet\-motif\fP n'est indiqué, affiche tous les paquets de
+\fImotif\-de\-nom\-de\-paquet\fP n'est indiqué, affiche tous les paquets de
 \fI/var/lib/dpkg/status\fP, sauf ceux qui ne sont pas installés (c'est\-à\-dire
 ceux qui ont été précédemment purgés). Les métacaractères ordinaires de
-l'interpréteur de commandes sont autorisés dans \fInom\-paquet\-motif\fP. Il
-faudra sans doute mettre \fInom\-paquet\-motif\fP entre apostrophes pour éviter
-l'expansion des noms de fichier par l'interpréteur de commandes. Par
-exemple, tous les paquets dont le nom commence par «\ libc6\ » seront affichés
-par la commande\ :
+l'interpréteur de commandes sont autorisés dans
+\fImotif\-de\-nom\-de\-paquet\fP. Il faudra sans doute mettre
+\fImotif\-de\-nom\-de\-paquet\fP entre apostrophes pour éviter l'expansion des noms
+de fichier par l'interpréteur de commandes. Par exemple, tous les paquets
+dont le nom commence par «\ libc6\ » seront affichés par la commande\ :
 
 .nf
 \fBdpkg\-query \-l \(aqlibc6*\(aq\fP
@@ -77,8 +77,8 @@ Action souhaitée\ :
 
 Drapeaux d'erreur\ :
 .nf
-  <empty> = (none)
-  R = Reinst\-required
+  <empty> = (aucun)
+  R = Réinstallation requise (Reinst\-required)
 .fi
 
 Un état en majuscules ou une lettre d'erreur indiquent que le paquet peut
@@ -91,60 +91,67 @@ et la machine le lit mal. Voyez \fB\-W\fP (\fB\-\-show\fP) et \fB\-\-showformat\
 une possible configuration de ce format.
 .TP 
 \fB\-W\fP, \fB\-\-show\fP [\fImotif\-de\-nom\-de\-paquet\fP...]
-Just like the \fB\-\-list\fP option this will list all packages matching the
-given pattern. However the output can be customized using the
-\fB\-\-showformat\fP option.  The default output format gives one line per
-matching package, each line having the name (extended with the architecture
-qualifier for \fBMulti\-Arch\fP \fBsame\fP packages) and installed version of the
-package, separated by a tab.
+Tout comme l'option \fB\-\-list\fP, cette option affiche la liste des paquets qui
+correspondent au motif donné. La sortie peut cependant être formatée en
+utilisant l'option \fB\-\-showformat\fP. Le format de sortie par défaut est le
+suivant\ : une ligne pour chaque paquet, avec le nom (éventuellement complété
+par l'identifiant d'architecture pour les paquets \fBMulti\-Arch\fP \fBsame\fP) et
+la version installée, séparés par une tabulation.
 .TP 
-\fB\-s\fP, \fB\-\-status\fP \fInom\-paquet\fP ...
+\fB\-s\fP, \fB\-\-status\fP \fInom\-du\-paquet\fP ...
 Donne l'état du paquet indiqué. C'est simplement l'affichage de l'entrée de
 la base de données concernant les états des paquets installés. Lorsque des
 \fInoms\-de\-paquets\fP multiples sont indiqués, les entrées d'état demandées
 sont séparées par une ligne vide et sont dans l'ordre utilisé pour la liste
 de paramètres.
 .TP 
-\fB\-L\fP, \fB\-\-listfiles\fP \fInom\-paquet\fP...
-Affiche la liste des fichiers du \fInom\-paquet\fP installés sur le
-système. Lorsque plusieurs \fInom\-paquet\fP sont indiqués, les différentes
+\fB\-L\fP, \fB\-\-listfiles\fP \fInom\-du\-paquet\fP...
+Affiche la liste des fichiers du \fInom\-du\-paquet\fP installés sur le
+système. Lorsque plusieurs \fInom\-du\-paquet\fP sont indiqués, les différentes
 listes de fichiers sont séparées par une ligne vide et elles sont fournies
 dans l'ordre de la liste de paramètres. Il faut remarquer cependant que les
 fichiers créés par les scripts d'installation propres aux paquets ne sont
 pas affichés.
 .TP 
-\fB\-\-control\-list\fP \fInom\-de\-paquet\fP
+\fB\-\-control\-list\fP \fInom\-du\-paquet\fP
 Affiche les fichiers de contrôle installés sur le système à partir de
-\fInom\-de\-paquet\fP. Ceux\-ci peuvent être utilisés en paramètres d'entrée de
+\fInom\-du\-paquet\fP. Ceux\-ci peuvent être utilisés en paramètres d'entrée de
 \fB\-\-control\-show\fP.
 .TP 
-\fB\-\-control\-show\fP \fInom\-de\-paquet\fP \fIfichier\-de\-contrôle\fP
+\fB\-\-control\-show\fP \fInom\-du\-paquet\fP \fIfichier\-de\-contrôle\fP
 Affiche sur la sortie standard le \fIfichier\-de\-contrôle\fP installé sur le
-système pour \fInom\-de\-paquet\fP.
+système pour \fInom\-du\-paquet\fP.
 .TP 
-\fB\-c\fP, \fB\-\-control\-path\fP \fInom\-paquet\fP [\fIfichier\-contrôle\fP]
+\fB\-c\fP, \fB\-\-control\-path\fP \fInom\-du\-paquet\fP [\fIfichier\-contrôle\fP]
 Affiche les chemins pour les fichiers de contrôle installés sur votre
-système pour \fInom\-paquet\fP. Si \fIfichier\-contrôle\fP est indiqué, seul le
-chemin pour ce fichier de contrôle sera affiché, s'il est
-présent. \fBAttention\fP\ :\ cette commande est obsolète et il est conseillé
-d'utiliser \fB\-\-control\-list\fP et \fB\-\-control\-show\fP à la place.
+système pour \fInom\-du\-paquet\fP. Si \fIfichier\-contrôle\fP est indiqué, seul le
+chemin pour ce fichier de contrôle sera affiché, s'il est présent.
+
+\fBAttention\fP\ :\ cette commande est obsolète parce qu'elle donne un accès
+direct à la base de données interne de dpkg, et il est conseillé d'utiliser
+\fB\-\-control\-list\fP et \fB\-\-control\-show\fP à la place dans tous les cas où ces
+commandes peuvent donner le même résultat. Néanmoins,aussi longtemps qu'il y
+a un cas au moins où cette commande est nécessaire (c'est\-à\-dire quand il
+faut supprimer le script d'un responsable endommageant postrm), et tant
+qu'il n'y aura pas de bonne solution pour cela, cette commande ne sera pas
+supprimée.
 .TP 
-\fB\-S\fP, \fB\-\-search\fP \fImotif\-de\-nom\-a\-rechercher\fP...
+\fB\-S\fP, \fB\-\-search\fP \fImotif\-de\-nom\-à\-rechercher\fP...
 Recherche les paquets propriétaires de fichiers dont le nom correspond au
 motif indiqué. On peut utiliser dans le motif tous les métacaractères de
 l'interpréteur de commandes. Cette commande ne donne pas les fichiers
 supplémentaires créés par les scripts du responsable de paquet, ni les
 alternatives.
 .TP 
-\fB\-p\fP, \fB\-\-print\-avail\fP \fInom\-paquet\fP...
-Affiche les détails relatifs à \fInom\-paquet\fP, tels que présents dans
+\fB\-p\fP, \fB\-\-print\-avail\fP \fInom\-du\-paquet\fP...
+Affiche les détails relatifs à \fInom\-du\-paquet\fP, tels que présents dans
 \fI/var/lib/dpkg/available\fP. Si des \fInom\-paquet\fP multiples sont indiqués,
 les entrées \fIavailable\fP correspondantes seront séparées par des lignes
 vides et apparaîtront dans l'ordre de la liste de paramètres.
 
 Les utilisateurs des outils basés sur APT devraient plutôt utiliser la
-commande \fBapt\-cache show\fP \fInom\-paquet\fP car le fichier \fIavailable\fP n'est
-tenu à jour que lorsque \fBdselect\fP est utilisé.
+commande \fBapt\-cache show\fP \fInom\-du\-paquet\fP car le fichier \fIavailable\fP
+n'est tenu à jour que lorsque \fBdselect\fP est utilisé.
 .TP 
 \fB\-?\fP, \fB\-\-help\fP
 Affiche un message d'aide puis quitte.
@@ -159,15 +166,15 @@ Change l'endroit où se trouve la base de données de \fBdpkg\fP. Par défaut,
 c'est \fI/var/lib/dpkg\fP.
 .TP 
 \fB\-\-load\-avail\fP
-Charge également le fichier available à l'utilisation des commandes
+Charge également le fichier \fIavailable\fP à l'utilisation des commandes
 \fB\-\-show\fP et \fB\-\-list\fP, ce qui désormais revient à n'interroger que le
-fichier status.
+fichier d'état.
 .TP 
 \fB\-f\fP, \fB\-\-showformat=\fP\fIformat\fP
 Cette option sert à spécifier le format de sortie de l'option \fB\-\-show\fP. Ce
 format sera utilisé pour chaque paquet listé.
 
-Dans la chaîne, \(lq\fB\e\fP\(rq déspécifie le caractère
+Dans la chaîne, \(lq\fB\e\fP\(rq déspécifie le caractère\ :
 
 .nf
     \fB\en\fP  nouvelle ligne
@@ -223,25 +230,50 @@ conservés avec le paquet binaire le sont)\ :
 .fi
 
 Les champs suivants sont virtuels, créés par \fBdpkg\-query\fP à partir des
-valeurs d'autres champs (veuillez noter qu'il utilisent des noms qui ne sont
-pas valables comme noms de champs dans le fichiers de contrôle)\ :
-
-.nf
-    \fBbinary:Package\fP
-    \fBbinary:Summary\fP
-    \fBdb:Status\-Abbrev\fP
-    \fBsource:Package\fP
-    \fBsource:Version\fP
-.fi
-
-The default format string is \(lq\fB${binary:Package}\et${Version}\en\fP\(rq.
-Actually, all other fields found in the status file (i.e. user defined
-fields) can be requested, too. They will be printed as\-is, though, no
-conversion nor error checking is done on them. \fBbinary:Package\fP is a
-special field that will print the package name with an architecture
-qualifier (like "libc6:amd64") if the package has a \fBMulti\-Arch\fP field with
-a value of \fBsame\fP, and as such its name could be ambiguous.  To get the
-name of the \fBdpkg\fP maintainer and the installed version, you could run:
+valeurs d'autres champs (veuillez noter qu'ils utilisent des noms qui ne
+sont pas valables comme noms de champs dans le fichiers de contrôle)\ :
+.RS
+.TP 
+\fBbinary:Package\fP
+Contient le nom du paquet binaire avec éventuellement le type d'architecture
+tel que «\ libc6:amd64\ » (depuis dpkg 1.16.2). Le type d'architecture sera
+présent uniquement si le champ \fBMulti\-Arch\fP du paquet a la valeur
+\fBsame\fP. Le nom du paquet est ainsi non ambigu.
+.TP 
+\fBbinary:Summary\fP
+Il contient la description courte du paquet (depuis dpkg 1.16.2).
+.TP 
+\fBdb:Status\-Abbrev\fP
+Il contient le statut du paquet dans sa forme abrégée comme \(lqii\(rq
+(depuis dpkg 1.16.2).
+.TP 
+\fBdb:Status\-Want\fP
+Il contient le statut désiré du paquet, extrait du champ Status (depuis dpkg
+1.17.11).
+.TP 
+\fBdb:Status\-Status\fP
+Il contient le statut actuel du paquet, extrait du champ Status (depuis dpkg
+1.17.11).
+.TP 
+\fBdb:Status\-Eflag\fP
+Il contient le drapeau d'erreur du statut du paquet, extrait du champ Status
+(depuis dpkg 1.17.11).
+.TP 
+\fBsource:Package\fP
+Il contient le nom du paquet source de ce paquet binaire (depuis dpkg
+1.16.2).
+.TP 
+\fBsource:Version\fP
+Il contient la version du paquet source de ce paquet binaire (depuis dpkg
+1.16.2).
+.RE
+.IP
+Le format par défaut est le suivant\ :
+\(lq\fB${binary:Package}\et${Version}\en\fP\(rq. Tous les autres champs du
+fichier d'état, par exemple des champs définis par l'utilisateur, peuvent
+être demandés. Ils seront affichés mais sans aucune mise en forme et aucune
+conversion ou vérification n'est faite. Pour obtenir le nom du responsable
+de \fBdpkg\fP et la version installée, exécutez par exemple\ :
 
 .nf
   \fBdpkg\-query \-W \-f=\(aq${binary:Package} ${Version}\et${Maintainer}\en\(aq dpkg\fP
@@ -253,15 +285,16 @@ name of the \fBdpkg\fP maintainer and the installed version, you could run:
 La requête demandée s'est correctement déroulée.
 .TP 
 \fB1\fP
-Problems were encountered while parsing the command line or performing the
-query, including no file or package being found (except for
-\fB\-\-control\-path\fP).
+Des problèmes sont survenus lors de l'analyse de la ligne de commande ou
+bien pendant l'exécution de la requête. Cela peut être une absence de
+fichier ou de paquet (sauf pour \fB\-\-control\-path\fP).
 .
 .SH ENVIRONNEMENT
 .TP 
 \fBDPKG_ADMINDIR\fP
-If set and the \fB\-\-admindir\fP option has not been specified, it will be used
-as the \fBdpkg\fP data directory.
+Si cette variable est positionnée et que l'option \fB\-\-admindir\fP n'est pas
+précisée, ce répertoire sera utilisé comme répertoire de données pour
+\fBdpkg\fP.
 .TP 
 \fBCOLUMNS\fP
 Ce réglage influence la sortie de l'option \fB\-\-list\fP en modifiant la largeur

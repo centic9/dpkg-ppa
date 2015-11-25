@@ -64,8 +64,9 @@ flera paket hamnar i katalogen "no\-section". Använd den här flaggan med
 tillförsikt, den kan vara rörig.
 .TP 
 \fB\-c\fP, \fB\-\-create\-dir\fP
-This option can used together with the \fB\-s\fP option. If a target directory
-isn't found it will be created automatically.  \fBUse this option with care.\fP
+Flaggan kan användas tillsammans med \fB\-s\fP\-flaggan. Om en målkatalog inte
+existerar kommer den att skapas automatiskt. \fBAnvänd denna flagga
+försiktigt.\fP
 .TP 
 \fB\-?\fP, \fB\-\-help\fP
 Visar hjälpskärm och avslutar.
@@ -74,11 +75,11 @@ Visar hjälpskärm och avslutar.
 Visar version och avslutar.
 .
 .SH PROGRAMFEL
-Some packages don't follow the name structure
-\fIpackage\fP\fB_\fP\fIversion\fP\fB_\fP\fIarchitecture\fP\fB.deb\fP.  Packages renamed by
-\fBdpkg\-name\fP will follow this structure. Generally this will have no impact
-on how packages are installed by \fBdselect\fP(1)/\fBdpkg\fP(1), but other
-installation tools might depend on this naming structure.
+Vissa paket följer inte namnstrukturen
+\fIpaket\fP\fB_\fP\fIversion\fP\fB_\fP\fIarkitektur\fP\fB.deb\fP. Paket vars namn ändrats med
+\fBdpkg\-name\fP kommer följa denna struktur. Normalt påverkar detta inte hur
+\fBdselect\fP(1)/\fBdpkg\fP(1) installerar paket, men vissa andra
+installationsverktyg kan vara beroende av denna namngivningsstruktur.
 .
 .SH EXEMPEL
 .TP 
@@ -88,9 +89,9 @@ eller något liknande (beroende på vilken information som hittas i styrdelen
 av "bar\-foo.deb").
 .TP 
 \fBfind /root/debian/ \-name \(aq*.deb\(aq | xargs \-n 1 dpkg\-name \-a\fP
-All files with the extension `deb' in the directory /root/debian and its
-subdirectory's will be renamed by \fBdpkg\-name\fP if required into names with
-no architecture information.
+Alla filer med ändelsen "deb" i katalogen /root/debian och dess
+underkataloger kommer att få sina namn ersatta med \fBdpkg\-name\fP, om så
+behövs, till namn utan arkitekturinformation.
 .TP 
 \fBfind \-name \(aq*.deb\(aq | xargs \-n 1 dpkg\-name \-a \-o \-s \-c\fP
 \fBGör inte så här.\fP Ditt arkiv kommer att röras till helt och hållet

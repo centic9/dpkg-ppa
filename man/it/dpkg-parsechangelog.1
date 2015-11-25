@@ -24,7 +24,7 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH dpkg\-parsechangelog 1 2013\-07\-06 "Progetto Debian" "utilità dpkg"
+.TH dpkg\-parsechangelog 1 "6 luglio 2013" "Progetto Debian" "utilità dpkg"
 .SH NOME
 dpkg\-parsechangelog \- analizza i file changelog Debian
 .
@@ -38,11 +38,12 @@ informazioni che contiene in una forma leggibile da macchina.
 .
 .SH OPZIONI
 .TP 
-\fB\-l\fP\fIchangelog\-file\fP
-Specifies the changelog file to read information from. A '\-' can be used to
-specify reading from standard input. The default is \fBdebian/changelog\fP.
+\fB\-l\fP\fIfile\-changelog\fP
+Specifica il file changelog da cui leggere le informazioni. Si può usare un
+«\-» per specificare la lettura dallo standard input. Il valore predefinito è
+\fBdebian/changelog\fP.
 .TP 
-\fB\-F\fP\fIchangelog\-format\fP
+\fB\-F\fP\fIformato\-changelog\fP
 Specifica il formato del file changelog. In modo predefinito, il formato
 viene letto da una riga speciale vicino alla fine del file changelog o, se
 ciò non ha successo, viene usato in modo predefinito il formato \fIdebian\fP
@@ -54,26 +55,28 @@ ricerca viene fatta in questa directory prima che nelle directory
 predefinite che attualmente sono \fB/usr/local/lib/dpkg/parsechangelog\fP e
 \fB/usr/lib/dpkg/parsechangelog\fP.
 .TP 
-\fB\-S\fP, \fB\-\-show\-field\fP \fIfield\fP
-Specifies the name of the field to show (since dpkg 1.17.0).  The field name
-is not printed, only its value.
+\fB\-S\fP, \fB\-\-show\-field\fP \fIcampo\fP
+Specifica il nome del campo da mostrare (a partire da dpkg 1.17.0). Il nome
+del campo non viene stampato, solo il suo valore.
 .TP 
 \fB\-?\fP, \fB\-\-help\fP
-Show the usage message and exit.
+Mostra il messaggio sull'uso ed esce.
 .TP 
 \fB\-\-version\fP
-Show the version and exit.
+Mostra la versione ed esce.
 .SS "Opzioni di analisi"
-The following options can be used to influence the output of the changelog
-parser, e.g. the range of entries or the format of the output. They need to
-be supported by the parser script in question. See also \fBNOTES\fP.
+Le seguenti opzioni possono essere usate per influenzare l'output
+dell'analizzatore di file changelog, ad esempio l'intervallo di voci o il
+formato di output. È necessario che siano supportate dallo script di analisi
+in questione. Vedere anche \fBNOTE\fP.
 .TP 
 \fB\-\-file\fP\fI file\fP
-Set the changelog filename to parse. Default is '\-' (standard input).
+Imposta il nome di file del changelog da analizzare. Il valore predefinito è
+«\-» (standard input).
 .TP 
 \fB\-l\fP, \fB\-\-label\fP \fIfile\fP
-Set the name of the changelog file to use in error messages, instead of
-using the name from the \fB\-\-file\fP option, or its default value.
+Imposta il nome del file changelog da usare nei messaggi di errore, invece
+di usare il nome dall'opzione \fB\-\-file\fP o il suo valore predefinito.
 .TP 
 \fB\-\-format\fP\fI formato\-di\-output\fP
 Imposta il formato di output. I valori attualmente supportati sono \fIdpkg\fP e
@@ -135,8 +138,8 @@ include \fInumero\fP voci a partire dall'inizio (o dalla fine se \fInumero\fP è
 minore di 0).
 .TP 
 \fB\-\-offset\fP \fInumero\fP, \fB\-o\fP\fInumero\fP
-change the starting point for \fB\-\-count\fP, counted from the top (or the tail
-if \fInumber\fP is lower than 0).
+cambia il punto di inizio per \fB\-\-count\fP, contato a partire dall'inizio (o
+dalla fine se \fInumero\fP è minore di 0).
 .TP 
 \fB\-\-all\fP
 include tutte le modifiche. Nota: quando viene usata questa opzione, le
@@ -188,9 +191,9 @@ arrangiarsi in qualche modo ed eventualmente generare output non corretto.
 Un analizzatore di changelog non può interagire in nessun caso con l'utente.
 .
 .SH NOTE
-All \fBParser Options\fP except for \fB\-v\fP are only supported since dpkg
-1.14.16. Third party parsers for changelog formats other than \fIdebian\fP
-might not support all options.
+Tutte le \fBOpzioni di analisi\fP tranne \fB\-v\fP sono gestite solamente a partire
+da \fBdpkg\fP 1.14.16. Gli analizzatori di terze parti per i formati di
+changelog diversi da \fIdebian\fP possono non supportare tutte le opzioni.
 .
 .SH FILE
 .TP 

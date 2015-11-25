@@ -2,7 +2,7 @@
 .\"
 .\" Copyright Â© 1995-1996 Ian Jackson <ian@chiark.chu.cam.ac.uk>
 .\" Copyright Â© 2000 Wichert Akkerman <wakkerma@debian.org>
-.\" Copyright Â© 2006-2012 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2006-2014 Guillem Jover <guillem@debian.org>
 .\" Copyright Â© 2008-2010 RaphaÃ«l Hertzog <hertzog@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
@@ -23,7 +23,7 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH dpkg\-genchanges 1 04\-05\-2012 "Projet Debian" "Utilitaires de dpkg"
+.TH dpkg\-genchanges 1 24\-09\-2014 "Projet Debian" "Utilitaires de dpkg"
 .SH NOM
 dpkg\-genchanges \- Créer des fichiers «\ .changes\ ».
 .
@@ -39,6 +39,16 @@ Debian (c'est le fichier \fB.changes\fP).
 .
 .SH OPTIONS
 .TP 
+\fB\-g\fP
+Spécifie que seuls les paquets source ou indépendants d'une architecture
+doivent être téléversés (aucun paquet propre à une architecture ne sera
+inclus).
+.TP 
+\fB\-G\fP
+Spécifie que seuls les paquets source ou propres à une architecture doivent
+être téléversés (aucun paquet indépendant d'une architecture ne sera
+inclus).
+.TP 
 \fB\-b\fP, \fB\-B\fP, \fB\-A\fP
 Précise que l'on veut uniquement une construction du binaire (les fichiers
 sources ne seront pas inclus). Il n'y a pas de distinction entre \fB\-b\fP,
@@ -49,14 +59,14 @@ créés par les cibles \fBbinary\-*\fP du paquet en cours de construction.
 Ne construit que le paquet source (aucun paquet binaire ne sera construit).
 .PP
 Les options \fB\-s\fP\fIx\fP contrôlent si l'archive source d'origine est incluse
-dans l'installation produite si un paquet source est créé (c.\-à\-d. que les
-options \fB\-b\fP ou \fB\-B\fP n'ont pas été utilisées).
+dans l'installation produite si un paquet source est créé (c'est\-à\-dire que
+les options \fB\-b\fP ou \fB\-B\fP n'ont pas été utilisées).
 .TP 
 \fB\-si\fP
 Par défaut, ou quand l'option est indiquée, les sources d'origine sont
-incluses uniquement si le numéro de version majeur (c.\-à\-d. la version sans
-les parties epoch et «\ révision Debian\ ») diffère de la version précédente
-indiquée dans le fichier de changelog.
+incluses uniquement si le numéro de version majeur (c'est\-à\-dire la version
+sans les parties epoch et «\ révision Debian\ ») diffère de la version
+précédente indiquée dans le fichier de changelog.
 .TP 
 \fB\-sa\fP
 Force l'inclusion des sources d'origine.
@@ -93,7 +103,7 @@ pour une discussion sur la valeur de substitution.
 \fB\-T\fP\fIfichier/substvars\fP
 Lecture des variables de substitution depuis \fIsubstvarsfile\fP\ ; la valeur
 par défaut est \fBdebian/substvars\fP. Aucune substitution de variable n'est
-faite sur les champs de sorties, cependant la variable spéciale \fIFormat\fP
+faite sur les champs de sortie, cependant la variable spéciale \fIFormat\fP
 remplacera le champ qui porte le même nom. Cette option peut être utilisée
 plusieurs fois pour lire les variables de substitution depuis plusieurs
 fichiers.
@@ -141,7 +151,7 @@ Affiche le numéro de version puis quitte.
 .SH FICHIERS
 .TP 
 \fBdebian/files\fP
-La liste des fichiers créés qui seront installés sur le
+La liste des fichiers créés qui seront envoyés sur le
 serveur. \fBdpkg\-genchanges\fP lit dans ce fichier les données nécessaires à la
 création du fichier \fB.changes\fP.
 .SH TRADUCTION

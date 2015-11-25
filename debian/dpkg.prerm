@@ -147,7 +147,7 @@ case "$1" in
             ensure_no_triggers_noawait
         fi
         # Downgrade the multiarch db to a “monoarch” db layout
-        if dpkg --compare-versions "$2" lt 1.16.0~; then
+        if dpkg --compare-versions "$2" lt 1.16.2; then
             downgrade_multiarch_infodb
         fi
         ;;

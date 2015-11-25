@@ -34,13 +34,13 @@ dpkg\-divert \- överstyr ett pakets version av en fil
 \fBdpkg\-divert\fP är verktyget som används för att ställa in och uppdatera
 listan över omdirigeringar.
 .PP
-File \fIdiversions\fP are a way of forcing \fBdpkg\fP(1)  not to install a file
-into its location, but to a \fIdiverted\fP location. Diversions can be used
-through the Debian package scripts to move a file away when it causes a
-conflict. System administrators can also use it to override some package's
-configuration file, or whenever some files (which aren't marked as
-\&'conffiles') need to be preserved by \fBdpkg\fP, when installing a newer
-version of a package which contains those files.
+Filen \fIdiversions\fP är ett sätt att tvinga \fBdpkg\fP(1) att inte installera en
+fil på sin plats, utan på en \fIomdirigerad\fP plats. Omdirigeringar kan
+användas i skript i Debianpaket för att flytta bort en fil när den orsakar
+en konflikt. Systemadministratörer kan också använda det för att överstyra
+några pakets konfigurationsfiler, eller när några filer (som inte markerats
+som konfigurationsfiler) måste bibehållas av \fBdpkg\fP när en nyare version av
+ett paket som innehåller de filerna installeras.
 .sp
 .SH KOMMANDON
 .TP 
@@ -63,7 +63,7 @@ Visa det riktiga namnet på en omdirigerad fil.
 .SH FLAGGOR
 .TP 
 \fB\-\-admindir\fP\fI katalog\fP
-Set the \fBdpkg\fP data directory to \fIdirectory\fP (default: \fI/var/lib/dpkg\fP).
+Ställ \fBdpkg\fP:s datakatalog till \fIkatalog\fP (standard: \fI/var/lib/dpkg\fP).
 .TP 
 \fB\-\-divert\fP\fI omdirigera\-till\fP
 \fIomdirigera\-till\fP är platsen där de versioner av \fIfil\fP som tillhandahålls
@@ -99,8 +99,8 @@ Visar version och avslutar.
 .SH MILJÖVARIABLER
 .TP 
 \fBDPKG_ADMINDIR\fP
-If set and the \fB\-\-admindir\fP option has not been specified, it will be used
-as the \fBdpkg\fP data directory.
+Om satt, och flaggan \fB\-\-admindir\fP inte har angivits, används värdet som
+datakatalog för \fBdpkg\fP.
 .TP 
 \fBDPKG_MAINTSCRIPT_PACKAGE\fP
 Om satt, och flaggorna \fB\-\-local\fP och \fB\-\-package\fP inte har angivits, kommer
@@ -109,9 +109,9 @@ Om satt, och flaggorna \fB\-\-local\fP och \fB\-\-package\fP inte har angivits, 
 .SH FILER
 .TP 
 \fI/var/lib/dpkg/diversions\fP
-File which contains the current list of diversions of the system. It is
-located in the \fBdpkg\fP administration directory, along with other files
-important to \fBdpkg\fP, such as \fIstatus\fP or \fIavailable\fP.
+Filen som innehåller den aktuella listan med systemets omdirigeringar. Den
+är placerad i \fBdpkg\fP:s administrativa katalog, tillsammans med andra filer
+som är viktiga för \fBdpkg\fP, till exempel \fIstatus\fP och \fIavailable\fP.
 .br
 Observera: \fBdpkg\-divert\fP behåller den gamla versionen av filen, med
 filtillägget \fIold\fP, innan den ersätter den med den nya.
@@ -123,11 +123,12 @@ och \fB\-\-divert\fP matcha om de anges.
 
 Kataloger kan inte omdirigeras med \fBdpkg\-divert\fP.
 
-Care should be taken when diverting shared libraries, \fBldconfig\fP(8)
-creates a symbolic link based on the DT_SONAME field embedded in the
-library.  Because \fBldconfig\fP doesn't honour diverts (only \fBdpkg\fP does),
-the symlink may end up pointing at the diverted library, if a diverted
-library has the same SONAME as the undiverted one.
+Se upp när du omdirigerar delade bibliotek. \fBldconfig\fP(8) skapar en
+symbolisk länk baserad på DT_SONAME\-fältet som är inbyggt i
+biblioteket. Eftersom \fBldconfig\fP inte följer omdirigeringar (bara \fBdpkg\fP
+gör det) kan den symboliska länken komma att peka på det omdirigerade
+biblioteket om ett omdirigerat bibliotek har samma SONAMN som det ej
+omdirigerade.
 .
 .SH EXEMPEL
 För att omdirigera alla exemplar av en \fI/usr/bin/exempel\fP till

@@ -24,9 +24,11 @@
 #include <stdio.h>
 #include <gettext.h>
 
+#include "compat.h"
+
 #define _(str) gettext(str)
 
-#ifndef HAVE_DECL_SYS_SIGLIST
+#if !HAVE_DECL_SYS_SIGLIST
 const char *const sys_siglist[] = {
 	NULL,		/* 0 */
 	"SIGHUP",	/* 1 */
@@ -61,7 +63,7 @@ strsignal(int s)
 {
 	static char buf[100];
 
-	if (s > 0 && s < sizeof(sys_siglist) / sizeof(sys_siglist[0]))
+	if (s > 0 && s < (int)(sizeof(sys_siglist) / sizeof(sys_siglist[0])))
 		return sys_siglist[s];
 
 	sprintf(buf, _("Unknown signal %d"), s);

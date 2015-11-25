@@ -68,8 +68,8 @@ sub sanity_check {
     }
     my $abs_srcdir = Cwd::abs_path($srcdir);
     find(sub {
-        if (-l $_) {
-            if (Cwd::abs_path(readlink($_)) !~ /^\Q$abs_srcdir\E(\/|$)/) {
+        if (-l) {
+            if (Cwd::abs_path(readlink) !~ /^\Q$abs_srcdir\E(?:\/|$)/) {
                 error(_g('%s is a symlink to outside %s'),
                       $File::Find::name, $srcdir);
             }
@@ -111,6 +111,8 @@ sub do_build {
 
     my $old_cwd = getcwd();
     chdir($dir) or syserr(_g("unable to chdir to `%s'"), $dir);
+
+    local $_;
 
     # Check for uncommitted files.
     # To support dpkg-source -i, remove any ignored files from the

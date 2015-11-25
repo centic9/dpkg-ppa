@@ -3,7 +3,7 @@
 .\" Copyright Â© 1995-1996 Ian Jackson <ian@chiark.chu.cam.ac.uk>
 .\" Copyright Â© 1999 Wichert Akkerman <wakkerma@debian.org>
 .\" Copyright Â© 2006 Frank Lichtenheld <djpig@debian.org>
-.\" Copyright Â© 2007-2012 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2007-2014 Guillem Jover <guillem@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH dpkg\-deb 1 2013\-03\-27 "Projekt Debian" "u¿ytki dpkg"
+.TH dpkg\-deb 1 2014\-08\-20 "Projekt Debian" "u¿ytki dpkg"
 .SH NAZWA
 dpkg\-deb \- narzêdzie obs³ugi plików archiwum Debiana (.deb)
 .
@@ -121,6 +121,12 @@ kontrolnych do podkatalogu DEBIAN podanego katalogu.
 
 W razie potrzeby, katalog docelowy bêdzie utworzony.
 .TP 
+\fB\-\-ctrl\-tarfile\fP \fIarchive\fP
+Extracts the control data from a binary package and sends it to standard
+output in \fBtar\fP format (since dpkg 1.17.14). Together with \fBtar\fP(1)  this
+can be used to extract a particular control file from a package archive.
+The input archive will always be processed sequentially.
+.TP 
 \fB\-\-fsys\-tarfile\fP \fIarchiwum\fP
 Rozpakowuje pliki z archiwum i wysy³a je na standardowe wyj¶cie w postaci
 formatu polecenia \fBtar\fP. Gdy ta operacja zostanie po³±czona z \fBtar\fPem,
@@ -172,8 +178,14 @@ dpkg 1.17.0) and \fIextreme\fP for xz.
 .TP 
 \fB\-Z\fP\fItyp\-kompresji\fP
 Specify which compression type to use when building a package. Allowed
-values are \fIgzip\fP, \fIxz\fP, \fIbzip2\fP, \fIlzma\fP, and \fInone\fP (default is
-\fIxz\fP).
+values are \fIgzip\fP, \fIxz\fP, \fIbzip2\fP (deprecated), \fIlzma\fP (deprecated), and
+\fInone\fP (default is \fIxz\fP).
+.TP 
+\fB\-\-uniform\-compression\fP
+Specify that the same compression parameters should be used for all archive
+members (i.e. \fBcontrol.tar\fP and \fBdata.tar\fP). Otherwise only the
+\fBdata.tar\fP member will use those parameters. The only supported compression
+types allowed to be uniformly used are \fInone\fP, \fIgzip\fP and \fIxz\fP.
 .TP 
 \fB\-\-deb\-format=\fP\fIformat\fP
 Set the archive format version used when building (since dpkg 1.17.0).

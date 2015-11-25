@@ -95,13 +95,13 @@ sub changelog_parse {
     }
 
     # Set a default filename
-    if (not exists $options{file}) {
-	$options{file} = 'debian/changelog';
-    }
+    $options{file} //= 'debian/changelog';
     my $changelogfile = $options{file};
 
     # Extract the format from the changelog file if possible
-    unless($force or ($changelogfile eq '-')) {
+    unless ($force or ($changelogfile eq '-')) {
+	local $_;
+
 	open(my $format_fh, '-|', 'tail', '-n', '40', $changelogfile)
 	    or syserr(_g('cannot create pipe for %s'), 'tail');
 	while (<$format_fh>) {
@@ -126,15 +126,15 @@ sub changelog_parse {
 
     # Create the arguments for the changelog parser
     my @exec = ($parser, "-l$changelogfile");
-    foreach (keys %options) {
-	if (m/^-/) {
+    foreach my $option (keys %options) {
+	if ($option =~ m/^-/) {
 	    # Options passed untouched
-	    push @exec, $_;
+	    push @exec, $option;
 	} else {
 	    # Non-options are mapped to long options
-	    push @exec, "--$_";
+	    push @exec, "--$option";
 	}
-	push @exec, $options{$_} if defined($options{$_});
+	push @exec, $options{$option} if defined $options{$option};
     }
 
     # Fork and call the parser
@@ -161,6 +161,12 @@ sub changelog_parse {
 }
 
 =back
+
+=head1 CHANGES
+
+=head2 Version 1.00
+
+Mark the module as public.
 
 =cut
 

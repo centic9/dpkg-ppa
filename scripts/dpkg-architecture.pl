@@ -4,7 +4,7 @@
 #
 # Copyright © 1999-2001 Marcus Brinkmann <brinkmd@debian.org>
 # Copyright © 2004-2005 Scott James Remnant <scott@netsplit.com>,
-# Copyright © 2006-2012 Guillem Jover <guillem@debian.org>
+# Copyright © 2006-2014 Guillem Jover <guillem@debian.org>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@ use warnings;
 
 use Dpkg ();
 use Dpkg::Gettext;
+use Dpkg::Getopt;
 use Dpkg::ErrorHandling;
 use Dpkg::Arch qw(get_raw_build_arch get_raw_host_arch get_gcc_host_gnu_type
                   debarch_to_cpuattrs
@@ -46,43 +47,78 @@ sub usage {
     printf _g(
 'Usage: %s [<option>...] [<command>]')
     . "\n\n" . _g(
-'Options:
-  -a<debian-arch>    set current Debian architecture.
-  -t<gnu-system>     set current GNU system type.
-  -L                 list valid architectures.
-  -f                 force flag (override variables set in environment).')
-    . "\n\n" . _g(
 'Commands:
-  -l                 list variables (default).
-  -e<debian-arch>    compare with current Debian architecture.
-  -i<arch-alias>     check if current Debian architecture is <arch-alias>.
-  -q<variable>       prints only the value of <variable>.
-  -s                 print command to set environment variables.
-  -u                 print command to unset environment variables.
-  -c <command>       set environment and run the command in it.
-  -?, --help         show this help message.
-      --version      show the version.
-'), $Dpkg::PROGNAME;
+  -l, --list                list variables (default).
+  -L, --list-known          list valid architectures (matching some criteria).
+  -e, --equal <arch>        compare with host Debian architecture.
+  -i, --is <arch-wildcard>  match against host Debian architecture.
+  -q, --query <variable>    prints only the value of <variable>.
+  -s, --print-set           print command to set environment variables.
+  -u, --print-unset         print command to unset environment variables.
+  -c, --command <command>   set environment and run the command in it.
+  -?, --help                show this help message.
+      --version             show the version.')
+    . "\n\n" . _g(
+'Options:
+  -a, --host-arch <arch>    set host Debian architecture.
+  -t, --host-type <type>    set host GNU system type.
+  -A, --target-arch <arch>  set target Debian architecture.
+  -T, --target-type <type>  set target GNU system type.
+  -W, --match-wildcard <arch-wildcard>
+                            restrict architecture list matching <arch-wildcard>.
+  -B, --match-bits <arch-bits>
+                            restrict architecture list matching <arch-bits>.
+  -E, --match-endian <arch-endian>
+                            restrict architecture list matching <arch-endian>.
+  -f, --force               force flag (override variables set in environment).')
+    . "\n", $Dpkg::PROGNAME;
 }
 
-sub list_arches()
+sub check_arch_coherency
 {
-    foreach my $arch (get_valid_arches()) {
-	print "$arch\n";
+    my ($arch, $gnu_type) = @_;
+
+    if ($arch ne '' && $gnu_type eq '') {
+        $gnu_type = debarch_to_gnutriplet($arch);
+        error(_g('unknown Debian architecture %s, you must specify ' .
+                 'GNU system type, too'), $arch)
+            unless defined $gnu_type;
     }
+
+    if ($gnu_type ne '' && $arch eq '') {
+        $arch = gnutriplet_to_debarch($gnu_type);
+        error(_g('unknown GNU system type %s, you must specify ' .
+                 'Debian architecture, too'), $gnu_type)
+            unless defined $arch;
+    }
+
+    if ($gnu_type ne '' && $arch ne '') {
+        my $dfl_gnu_type = debarch_to_gnutriplet($arch);
+        error(_g('unknown default GNU system type for Debian architecture %s'),
+              $arch)
+            unless defined $dfl_gnu_type;
+        warning(_g('default GNU system type %s for Debian arch %s does not ' .
+                   'match specified GNU system type %s'), $dfl_gnu_type,
+                $arch, $gnu_type)
+            if $dfl_gnu_type ne $gnu_type;
+    }
+
+    return ($arch, $gnu_type);
 }
 
 use constant {
     DEB_NONE => 0,
     DEB_BUILD => 1,
     DEB_HOST => 2,
+    DEB_TARGET => 64,
     DEB_ARCH_INFO => 4,
     DEB_ARCH_ATTR => 8,
     DEB_MULTIARCH => 16,
     DEB_GNU_INFO => 32,
 };
 
-use constant DEB_ALL => DEB_BUILD | DEB_HOST | DEB_ARCH_INFO | DEB_ARCH_ATTR |
+use constant DEB_ALL => DEB_BUILD | DEB_HOST | DEB_TARGET |
+                        DEB_ARCH_INFO | DEB_ARCH_ATTR |
                         DEB_MULTIARCH | DEB_GNU_INFO;
 
 my %arch_vars = (
@@ -104,15 +140,29 @@ my %arch_vars = (
     DEB_HOST_GNU_CPU => DEB_HOST | DEB_GNU_INFO,
     DEB_HOST_GNU_SYSTEM => DEB_HOST | DEB_GNU_INFO,
     DEB_HOST_GNU_TYPE => DEB_HOST | DEB_GNU_INFO,
+    DEB_TARGET_ARCH => DEB_TARGET,
+    DEB_TARGET_ARCH_OS => DEB_TARGET | DEB_ARCH_INFO,
+    DEB_TARGET_ARCH_CPU => DEB_TARGET | DEB_ARCH_INFO,
+    DEB_TARGET_ARCH_BITS => DEB_TARGET | DEB_ARCH_ATTR,
+    DEB_TARGET_ARCH_ENDIAN => DEB_TARGET | DEB_ARCH_ATTR,
+    DEB_TARGET_MULTIARCH => DEB_TARGET | DEB_MULTIARCH,
+    DEB_TARGET_GNU_CPU => DEB_TARGET | DEB_GNU_INFO,
+    DEB_TARGET_GNU_SYSTEM => DEB_TARGET | DEB_GNU_INFO,
+    DEB_TARGET_GNU_TYPE => DEB_TARGET | DEB_GNU_INFO,
 );
 
 my $req_vars = DEB_ALL;
 my $req_host_arch = '';
 my $req_host_gnu_type = '';
+my $req_target_arch = '';
+my $req_target_gnu_type = '';
 my $req_eq_arch = '';
 my $req_is_arch = '';
+my $req_match_wildcard = '';
+my $req_match_bits = '';
+my $req_match_endian = '';
 my $req_variable_to_print;
-my $action = 'l';
+my $action = 'list';
 my $force = 0;
 
 sub action_needs($) {
@@ -120,49 +170,63 @@ sub action_needs($) {
   return (($req_vars & $bits) == $bits);
 }
 
+@ARGV = normalize_options(@ARGV);
+
 while (@ARGV) {
-    $_=shift(@ARGV);
-    if (m/^-a/) {
-	$req_host_arch = "$'";
-    } elsif (m/^-t/) {
-	$req_host_gnu_type = "$'";
-    } elsif (m/^-e/) {
-	$req_eq_arch = "$'";
+    my $arg = shift;
+
+    if ($arg eq '-a' or $arg eq '--host-arch') {
+	$req_host_arch = shift;
+    } elsif ($arg eq '-t' or $arg eq '--host-type') {
+	$req_host_gnu_type = shift;
+    } elsif ($arg eq '-A' or $arg eq '--target-arch') {
+	$req_target_arch = shift;
+    } elsif ($arg eq '-T' or $arg eq '--target-type') {
+	$req_target_gnu_type = shift;
+    } elsif ($arg eq '-W' or $arg eq '--match-wildcard') {
+	$req_match_wildcard = shift;
+    } elsif ($arg eq '-B' or $arg eq '--match-bits') {
+	$req_match_bits = shift;
+    } elsif ($arg eq '-E' or $arg eq '--match-endian') {
+	$req_match_endian = shift;
+    } elsif ($arg eq '-e' or $arg eq '--equal') {
+	$req_eq_arch = shift;
 	$req_vars = $arch_vars{DEB_HOST_ARCH};
-	$action = 'e';
-    } elsif (m/^-i/) {
-	$req_is_arch = "$'";
+	$action = 'equal';
+    } elsif ($arg eq '-i' or $arg eq '--is') {
+	$req_is_arch = shift;
 	$req_vars = $arch_vars{DEB_HOST_ARCH};
-	$action = 'i';
-    } elsif (m/^-u$/) {
+	$action = 'is';
+    } elsif ($arg eq '-u' or $arg eq '--print-unset') {
 	$req_vars = DEB_NONE;
-	$action = 'u';
-    } elsif (m/^-[ls]$/) {
-	$action = $_;
-	$action =~ s/^-//;
-    } elsif (m/^-f$/) {
+	$action = 'print-unset';
+    } elsif ($arg eq '-l' or $arg eq '--list') {
+	$action = 'list';
+    } elsif ($arg eq '-s' or $arg eq '--print-set') {
+	$action = 'print-set';
+    } elsif ($arg eq '-f' or $arg eq '--force') {
         $force=1;
-    } elsif (m/^-q/) {
-	my $varname = "$'";
+    } elsif ($arg eq '-q' or $arg eq '--query') {
+	my $varname = shift;
 	error(_g('%s is not a supported variable name'), $varname)
 	    unless (exists $arch_vars{$varname});
 	$req_variable_to_print = "$varname";
 	$req_vars = $arch_vars{$varname};
-        $action = 'q';
-    } elsif (m/^-c$/) {
-       $action = 'c';
+        $action = 'query';
+    } elsif ($arg eq '-c' or $arg eq '--command') {
+       $action = 'command';
        last;
-    } elsif (m/^-L$/) {
-        list_arches();
-        exit unless @ARGV;
-    } elsif (m/^-(\?|-help)$/) {
+    } elsif ($arg eq '-L' or $arg eq '--list-known') {
+        $req_vars = 0;
+        $action = 'list-known';
+    } elsif ($arg eq '-?' or $arg eq '--help') {
         usage();
        exit 0;
-    } elsif (m/^--version$/) {
+    } elsif ($arg eq '--version') {
         version();
        exit 0;
     } else {
-	usageerr(_g("unknown option \`%s'"), $_);
+        usageerr(_g("unknown option \`%s'"), $arg);
     }
 }
 
@@ -194,40 +258,12 @@ if (action_needs(DEB_BUILD | DEB_GNU_INFO)) {
 
 # First perform some sanity checks on the host arguments passed.
 
-if ($req_host_arch ne '' && $req_host_gnu_type eq '') {
-    $req_host_gnu_type = debarch_to_gnutriplet($req_host_arch);
-    error(_g('unknown Debian architecture %s, you must specify ' .
-             'GNU system type, too'), $req_host_arch)
-        unless defined $req_host_gnu_type;
-}
-
-if ($req_host_gnu_type ne '' && $req_host_arch eq '') {
-    $req_host_arch = gnutriplet_to_debarch($req_host_gnu_type);
-    error(_g('unknown GNU system type %s, you must specify ' .
-             'Debian architecture, too'), $req_host_gnu_type)
-        unless defined $req_host_arch;
-}
-
-if ($req_host_gnu_type ne '' && $req_host_arch ne '') {
-    my $dfl_host_gnu_type = debarch_to_gnutriplet($req_host_arch);
-    error(_g('unknown default GNU system type for Debian architecture %s'),
-          $req_host_arch)
-	unless defined $dfl_host_gnu_type;
-    warning(_g('default GNU system type %s for Debian arch %s does not ' .
-               'match specified GNU system type %s'), $dfl_host_gnu_type,
-            $req_host_arch, $req_host_gnu_type)
-        if $dfl_host_gnu_type ne $req_host_gnu_type;
-}
+($req_host_arch, $req_host_gnu_type) = check_arch_coherency($req_host_arch, $req_host_gnu_type);
 
 # Proceed to compute the host variables if needed.
 
-if (action_needs(DEB_HOST)) {
-    if ($req_host_arch eq '') {
-        $v{DEB_HOST_ARCH} = get_raw_host_arch();
-    } else {
-        $v{DEB_HOST_ARCH} = $req_host_arch;
-    }
-}
+$v{DEB_HOST_ARCH} = $req_host_arch || get_raw_host_arch()
+    if (action_needs(DEB_HOST));
 ($abi, $v{DEB_HOST_ARCH_OS}, $v{DEB_HOST_ARCH_CPU}) = debarch_to_debtriplet($v{DEB_HOST_ARCH})
     if (action_needs(DEB_HOST | DEB_ARCH_INFO));
 ($v{DEB_HOST_ARCH_BITS}, $v{DEB_HOST_ARCH_ENDIAN}) = debarch_to_cpuattrs($v{DEB_HOST_ARCH})
@@ -252,29 +288,68 @@ if (action_needs(DEB_HOST | DEB_GNU_INFO)) {
         if ($gcc ne '') && ($gcc ne $v{DEB_HOST_GNU_TYPE});
 }
 
+#
+# Set target variables
+#
 
-for my $k (keys %arch_vars) {
-    $v{$k} = $ENV{$k} if (defined ($ENV{$k}) && !$force);
+# First perform some sanity checks on the target arguments passed.
+
+($req_target_arch, $req_target_gnu_type) = check_arch_coherency($req_target_arch, $req_target_gnu_type);
+
+# Proceed to compute the target variables if needed.
+
+$v{DEB_TARGET_ARCH} = $req_target_arch || $req_host_arch || get_raw_host_arch()
+    if (action_needs(DEB_TARGET));
+($abi, $v{DEB_TARGET_ARCH_OS}, $v{DEB_TARGET_ARCH_CPU}) = debarch_to_debtriplet($v{DEB_TARGET_ARCH})
+    if (action_needs(DEB_TARGET | DEB_ARCH_INFO));
+($v{DEB_TARGET_ARCH_BITS}, $v{DEB_TARGET_ARCH_ENDIAN}) = debarch_to_cpuattrs($v{DEB_TARGET_ARCH})
+    if (action_needs(DEB_TARGET | DEB_ARCH_ATTR));
+
+$v{DEB_TARGET_MULTIARCH} = debarch_to_multiarch($v{DEB_TARGET_ARCH})
+    if (action_needs(DEB_TARGET | DEB_MULTIARCH));
+
+if (action_needs(DEB_TARGET | DEB_GNU_INFO)) {
+    if ($req_target_gnu_type eq '') {
+        $v{DEB_TARGET_GNU_TYPE} = debarch_to_gnutriplet($v{DEB_TARGET_ARCH});
+    } else {
+        $v{DEB_TARGET_GNU_TYPE} = $req_target_gnu_type;
+    }
+    ($v{DEB_TARGET_GNU_CPU}, $v{DEB_TARGET_GNU_SYSTEM}) = split(/-/, $v{DEB_TARGET_GNU_TYPE}, 2);
 }
 
-if ($action eq 'l') {
+
+for my $k (keys %arch_vars) {
+    $v{$k} = $ENV{$k} if (length $ENV{$k} && !$force);
+}
+
+if ($action eq 'list') {
     foreach my $k (sort keys %arch_vars) {
 	print "$k=$v{$k}\n";
     }
-} elsif ($action eq 's') {
+} elsif ($action eq 'print-set') {
     foreach my $k (sort keys %arch_vars) {
 	print "$k=$v{$k}; ";
     }
     print 'export ' . join(' ', sort keys %arch_vars) . "\n";
-} elsif ($action eq 'u') {
+} elsif ($action eq 'print-unset') {
     print 'unset ' . join(' ', sort keys %arch_vars) . "\n";
-} elsif ($action eq 'e') {
+} elsif ($action eq 'equal') {
     exit !debarch_eq($v{DEB_HOST_ARCH}, $req_eq_arch);
-} elsif ($action eq 'i') {
+} elsif ($action eq 'is') {
     exit !debarch_is($v{DEB_HOST_ARCH}, $req_is_arch);
-} elsif ($action eq 'c') {
+} elsif ($action eq 'command') {
     @ENV{keys %v} = values %v;
     exec @ARGV;
-} elsif ($action eq 'q') {
+} elsif ($action eq 'query') {
     print "$v{$req_variable_to_print}\n";
+} elsif ($action eq 'list-known') {
+    foreach my $arch (get_valid_arches()) {
+        my ($bits, $endian) = debarch_to_cpuattrs($arch);
+
+        next if $req_match_endian and $endian ne $req_match_endian;
+        next if $req_match_bits and $bits ne $req_match_bits;
+        next if $req_match_wildcard and not debarch_is($arch, $req_match_wildcard);
+
+        print "$arch\n";
+    }
 }

@@ -5,7 +5,7 @@
 .\" Copyright Â© 2000-2001 Wichert Akkerman <wakkerma@debian.org>
 .\" Copyright Â© 2002-2003 Adam Heath <doogie@debian.org>
 .\" Copyright Â© 2004 Scott James Remnant <keybuk@debian.org>
-.\" Copyright Â© 2008-2012 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2008-2014 Guillem Jover <guillem@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH start\-stop\-daemon 8 2012\-06\-17 "Projekt Debian" "programy pomocnicze dpkg"
+.TH start\-stop\-daemon 8 2014\-03\-26 "Projekt Debian" "programy pomocnicze dpkg"
 .SH NAZWA
 start\-stop\-daemon \- uruchamia i zatrzymuje demony systemowe
 .
@@ -38,16 +38,14 @@ i zatrzymywanych podczas prze³±czania trybów pracy. Przez u¿ycie jednej z
 opcji dopasowywania, mo¿na skonfigurowaæ \fBstart\-stop\-daemon\fP do
 wyszukiwania istniej±cych instancji dzia³aj±cego procesu.
 .PP
-Proszê zauwa¿yæ, ¿e je¿eli nie podano opcji \fB\-\-pidfile\fP, to
-\fBstart\-stop\-daemon\fP zachowuje siê podobnie do
-\fBkillall\fP(1). \fBstart\-stop\-daemon\fP przejrzy tabelê procesów, szukaj±c
-jakiegokolwiek procesu o zgodnej nazwie, identyfikatorze u¿ytkownika i/lub
-grupy (je¿eli je podano). Znalezienie jakiegokolwiek pasuj±cego procesu
-spowoduje, ¿e \fB\-\-start\fP nie uruchomi procesu. W wypadku opcji \fB\-\-stop\fP do
-wszystkich pasuj±cych procesów zostanie wys³any sygna³ TERM (lub inny,
-okre¶lony w opcji \fB\-\-signal\fP lub \fB\-\-retry\fP). Dla procesów maj±cych d³ugo
-¿yj±ce procesy potomne, które musz± prze¿yæ operacjê \fB\-\-stop\fP, nale¿y
-okre¶liæ plik pidfile.
+Note: unless \fB\-\-pid\fP or \fB\-\-pidfile\fP are specified, \fBstart\-stop\-daemon\fP
+behaves similar to \fBkillall\fP(1).  \fBstart\-stop\-daemon\fP will scan the
+process table looking for any processes which match the process name, parent
+pid, uid, and/or gid (if specified). Any matching process will prevent
+\fB\-\-start\fP from starting the daemon. All matching processes will be sent the
+TERM signal (or the one specified via \fB\-\-signal\fP or \fB\-\-retry\fP) if
+\fB\-\-stop\fP is specified. For daemons which have long\-lived children which
+need to live through a \fB\-\-stop\fP, you must specify a pidfile.
 .
 .SH POLECENIA
 .TP 
@@ -79,6 +77,14 @@ Wy¶wietla informacjê o wersji programu i koñczy dzia³anie.
 .
 .SH OPCJE
 .SS "Matching options"
+.TP 
+\fB\-\-pid\fP \fIpid\fP
+Check for a process with the specified \fIpid\fP. The \fIpid\fP must be a number
+greater than 0.
+.TP 
+\fB\-\-ppid\fP \fIppid\fP
+Check for a process with the specified \fIppid\fP (parent pid).  The \fIppid\fP
+must be a number greater than 0.
 .TP 
 \fB\-p\fP, \fB\-\-pidfile\fP \fIplik\-pid\fP
 Sprawdza, czy proces utworzy³ plik \fIplik\-pid\fP. Uwaga: u¿ywaj±c wy³±cznie
@@ -213,14 +219,19 @@ zawsze równy 7. Aktualnie wspierane warto¶ci dla \fIklasy\fP to \fBidle\fP,
 Ustawia maskê praw dostêpu (umask) procesu przed jego uruchomieniem.
 .TP 
 \fB\-m\fP, \fB\-\-make\-pidfile\fP
-Opcja u¿ywana, gdy program sam nie tworzy w³asnego pliku pid. Wykorzystanie
-tej opcji spowoduje, ¿e \fBstart\-stop\-daemon\fP utworzy plik, który zosta³
-podany w opcji \fB\-\-pidfile\fP i umie¶ci w nim numer pid tu¿ przed
-uruchomieniem procesu. Nale¿y zauwa¿yæ, ¿e ta opcja nie skasuje tego pliku
-po zatrzymaniu programu. \fBUWAGA:\fP Ta opcja mo¿e nie zadzia³aæ w ka¿dym
-przypadku. Nie zadzia³a przede wszystkim wtedy, gdy uruchamiany program
-utworzy proces potomny. Z tego powodu opcja jest u¿yteczna jedynie wraz z
-opcj± \fB\-\-background\fP.
+Used when starting a program that does not create its own pid file. This
+option will make \fBstart\-stop\-daemon\fP create the file referenced with
+\fB\-\-pidfile\fP and place the pid into it just before executing the
+process. Note, the file will only be removed when stopping the program if
+\fB\-\-remove\-pidfile\fP is used.  \fBNOTE:\fP This feature may not work in all
+cases. Most notably when the program being executed forks from its main
+process. Because of this, it is usually only useful when combined with the
+\fB\-\-background\fP option.
+.TP 
+\fB\-\-remove\-pidfile\fP
+Used when stopping a program that does not remove its own pid file. This
+option will make \fBstart\-stop\-daemon\fP remove the file referenced with
+\fB\-\-pidfile\fP after terminating the process.
 .TP 
 \fB\-v\fP, \fB\-\-verbose\fP
 Wy¶wietlane s± dodatkowe komunikaty.

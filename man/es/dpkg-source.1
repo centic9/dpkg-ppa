@@ -42,14 +42,14 @@ argumento separado.
 .
 .SH ÓRDENES
 .TP 
-\fB\-x \fP\fIfichero\fP\fB.dsc \fP[\fIdirectorio\-salida\fP]
-Extrae un paquete fuente. Se debe suministrar un argumento que no sea una
-opción, el nombre del fichero de control de fuente de Debian
-(\fB.dsc\fP). Puede introducir un segundo argumento que no sea una opción para
-definir el directorio en el que extraer el paquete fuente, el cual no debe
-existir. En caso de no definir ningún directorio, el paquete fuente se
-extraerá en un directorio llamado \fIfuente\fP\-\fIversión\fP dentro del directorio
-actual.
+\fB\-x\fP, \fB\-\-extract\fP \fIfilename\fP.dsc [\fIoutput\-directory\fP]
+Extract a source package.  The \fB\-\-extract\fP alias was added in dpkg
+1.17.14.  One non\-option argument must be supplied, the name of the Debian
+source control file (\fB.dsc\fP).  An optional second non\-option argument may
+be supplied to specify the directory to extract the source package to, this
+must not exist. If no output directory is specified, the source package is
+extracted into a directory named \fIsource\fP\-\fIversion\fP under the current
+working directory.
 
 \fBdpkg\-source\fP lee los nombres de los demás ficheros que componen el paquete
 fuente desde el fichero de control; se asume que están en el mismo
@@ -68,12 +68,12 @@ que las siguientes construcciones del paquete fuente usen el mismo formato
 por omisión.
 
 .TP 
-\fB\-b\fP \fIdirectorio\fP [\fIparámetros\-específicos\-formato\fP]
-Construye un paquete fuente. El primer argumento, que no opción, se toma
-como el nombre del directorio que contiene el árbol de fuentes «debianizado»
-(por ejemplo, con un subdirectorio «debian/», y puede que cambios en los
-ficheros originales). Puede especificar parámetros adicionales, dependiendo
-del formato de paquete fuente usado en la construcción del paquete.
+\fB\-b\fP, \fB\-\-build\fP \fIdirectory\fP [\fIformat\-specific\-parameters\fP]
+Build a source package.  The \fB\-\-build\fP alias was added in dpkg 1.17.14.
+The first non\-option argument is taken as the name of the directory
+containing the debianized source tree (i.e. with a debian sub\-directory and
+maybe changes to the original files).  Depending on the source package
+format used to build the package, additional parameters might be accepted.
 
 \fBdpkg\-source\fP construirá el paquete fuente con el primer formato posible de
 esta lista, y en este orden: el formato indicado con la opción de línea de
@@ -86,9 +86,9 @@ paquete fuente.
 
 .TP 
 \fB\-\-print\-format\fP \fIdirectorio\fP
-Muestra el formato de fuentes a utilizar en la construcción del paquete
-fuente si se ejecutó \fBdpkg\-source \-b \fP\fIdirectorio\fP (con las mismas
-condiciones y los mismos parámetros).
+Print the source format that would be used to build the source package if
+\fBdpkg\-source \-\-build \fP\fIdirectory\fP was called (in the same conditions and
+with the same parameters).
 
 .TP 
 \fB\-\-before\-build\fP \fIdirectorio\fP
@@ -166,7 +166,8 @@ Elimina un campo del fichero de control de salida.
 Specify the compression to use for created files (tarballs and diffs).  Note
 that this option will not cause existing tarballs to be recompressed, it
 only affects new files. Supported values are: \fIgzip\fP, \fIbzip2\fP, \fIlzma\fP and
-\fIxz\fP.  \fIgzip\fP is the default. \fIxz\fP is only supported since dpkg 1.15.5.
+\fIxz\fP.  The default is \fIxz\fP for formats 2.0 and newer, and \fIgzip\fP for
+format 1.0. \fIxz\fP is only supported since dpkg 1.15.5.
 .TP 
 \fB\-z\fP\fIlevel\fP, \fB\-\-compression\-level\fP=\fInivel\fP
 El nivel de compresión a utilizar. Al igual que \fB\-Z\fP, sólo afecta a los
@@ -243,6 +244,11 @@ que se verifica o bien con el anillo de claves de usuario
 o uno de los anillos de claves oficiales de Debian,
 \fI/usr/share/keyrings/debian\-keyring.gpg\fP y
 \fI/usr/share/keyrings/debian\-maintainers.gpg\fP.
+.TP 
+\fB\-\-ignore\-bad\-version\fP
+Turns the bad source package version check into a non\-fatal warning.  This
+option should only be necessary when extracting ancient source packages with
+broken versions, just for backwards compatibility.
 
 .SH "FORMATOS DE PAQUETE FUENTE"
 Si no sabe qué formato de fuentes usar, debería seleccionar o bien «3.0
@@ -276,7 +282,7 @@ archivo tar original en otro directorio «.orig», regenerando el \fB.diff.gz\fP
 por comparación del \fIdirectorio\fP del paquete fuente con el directorio
 «.orig».
 
-\fBOpciones de construcción (con \-b):\fP
+\fBBuild options (with \-\-build):\fP
 
 Si hay un segundo argumento, debería ser el nombre del directorio de
 fuentes, del fichero tar original o la cadena vacía, si el paquete es
@@ -340,8 +346,9 @@ El procesa dará fallo si el «diff» generado contiene cambios realizados a
 ficheros fuera del subdirectorio «debian». Esta opción no se puede utilizar
 en \fBdebian/source/options\fP pero se puede utilizar en
 \fBdebian/source/local\-options\fP.
+.PP
 
-\fBOpciones de extracción (con \-x):\fP
+\fBExtract options (with \-\-extract):\fP
 
 En todos los casos cualquier árbol de fuentes original será eliminado.
 .TP 
@@ -453,13 +460,12 @@ files as well as many temporary files (see default value associated to \fB\-i\fP
 option in the \fB\-\-help\fP output). In particular, the \fB.pc\fP directory used by
 \fBquilt\fP is ignored during generation of the automatic patch.
 
-Nota: \fBdpkg\-source\fP \fB\-\-before\-build\fP (y \fB\-b\fP) comprueban que los parches
-enumerados en el fichero «series» se han aplicado, para así garantizar que
-la construcción del paquete siempre tenga todos los parches aplicados. Para
-ello, encuentra la lista de parches no aplicados (listados en el fichero
-\fBseries\fP pero no en \fB.pc/applied\-patches\fP) y si aplica el primer parche
-del conjunto sin problemas, procederá a aplicar el resto. Puede utilizar la
-opción \fB\-\-no\-preparation\fP para desactivar este comportamiento.
+Note: \fBdpkg\-source\fP \fB\-\-before\-build\fP (and \fB\-\-build\fP) will ensure that all
+patches listed in the series file are applied so that a package build always
+has all patches applied. It does this by finding unapplied patches (they are
+listed in the \fBseries\fP file but not in \fB.pc/applied\-patches\fP), and if the
+first patch in that set can be applied without errors, it will apply them
+all. The option \fB\-\-no\-preparation\fP can be used to disable this behavior.
 
 .PP
 \fBRegistrar cambios\fP
@@ -479,10 +485,10 @@ cambios contenidos en el fichero de parche debe estar aplicado en el árbol,
 y que los ficheros modificados por el parche no deben contener cambios
 adicionales sin registrar.
 
-Si la generación del parche detecta ficheros binarios modificados, se añaden
-de forma automática a \fBdebian/source/include\-binaries\fP para que se incluyan
-en el fichero tar de debian (al igual que realiza \fBdpkg\-source
-\-\-include\-binaries \-b\fP).
+If the patch generation detects modified binary files, they will be
+automatically added to \fBdebian/source/include\-binaries\fP so that they end up
+in the debian tarball (exactly like \fBdpkg\-source \-\-include\-binaries
+\-\-build\fP would do).
 .PP
 \fBOpciones de construcción\fP
 .TP 
@@ -682,10 +688,10 @@ deberían incluir en el archivo tar «debian». Se eliminan los espacios vacíos
 al principio y final de la línea. Las líneas que comienzan con «#» son
 comentarios, y por tanto, se omiten. Se ignorarán líneas vacías.
 .SS debian/source/options
-Este fichero contiene una lista de opciones largas que se deberían anexar al
-conjunto de las opciones de línea de órdenes de una ejecución a
-\fBdpkg\-source \-b\fP o \fBdpkg\-source \-\-print\-format\fP. Las opciones como
-\fB\-\-compression\fP y \fB\-\-compression\-level\fP son adecuadas con este fichero.
+This file contains a list of long options that should be automatically
+prepended to the set of command line options of a \fBdpkg\-source \-\-build\fP or
+\fBdpkg\-source \-\-print\-format\fP call. Options like \fB\-\-compression\fP and
+\fB\-\-compression\-level\fP are well suited for this file.
 .P
 Cada opción debería aparecer en una línea separada. Se ignorarán las líneas
 vacías, y aquellas que comienzan con «#». Los guiones «\-\-» al principio de
@@ -708,7 +714,7 @@ Idéntico a \fBdebian/source/options\fP, a excepción de que el fichero no se
 incluye en el paquete fuente generado. Puede ser útil para guardar una
 preferencia ligada al mantenedor a al repositorio del sistema de control de
 versiones dónde el paquete es mantenido.
-.SS "debian/source/local\-patch\-header and debian/source/patch\-header"
+.SS "debian/source/local\-patch\-header \fRand\fP debian/source/patch\-header"
 Texto con formato libre que se inserta al inicio del parche generado de
 forma automática con los formatos «2.0» o «3.0
 quilt)». \fBlocal\-patch\-header\fP no se incluye en las fuentes generadas,

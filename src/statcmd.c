@@ -2,7 +2,7 @@
  * dpkg-statoverride - override ownership and mode of files
  *
  * Copyright © 2000, 2001 Wichert Akkerman <wakkerma@debian.org>
- * Copyright © 2006-2012 Guillem Jover <guillem@debian.org>
+ * Copyright © 2006-2014 Guillem Jover <guillem@debian.org>
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -122,7 +122,13 @@ statdb_node_new(const char *user, const char *group, const char *mode)
 	filestat = nfmalloc(sizeof(*filestat));
 
 	filestat->uid = statdb_parse_uid(user);
+	if (filestat->uid == (uid_t)-1)
+		ohshit(_("user '%s' does not exist"), user);
+	filestat->uname = NULL;
 	filestat->gid = statdb_parse_gid(group);
+	if (filestat->gid == (gid_t)-1)
+		ohshit(_("group '%s' does not exist"), group);
+	filestat->gname = NULL;
 	filestat->mode = statdb_parse_mode(mode);
 
 	return filestat;
@@ -174,12 +180,16 @@ statdb_node_print(FILE *out, struct filenamenode *file)
 	pw = getpwuid(filestat->uid);
 	if (pw)
 		fprintf(out, "%s ", pw->pw_name);
+	else if (filestat->uname)
+		fprintf(out, "%s ", filestat->uname);
 	else
 		fprintf(out, "#%d ", filestat->uid);
 
 	gr = getgrgid(filestat->gid);
 	if (gr)
 		fprintf(out, "%s ", gr->gr_name);
+	else if (filestat->gname)
+		fprintf(out, "%s ", filestat->gname);
 	else
 		fprintf(out, "#%d ", filestat->gid);
 
@@ -195,7 +205,7 @@ statdb_write(void)
 	struct filenamenode *file;
 
 	dbname = dpkg_db_get_path(STATOVERRIDEFILE);
-	dbfile = atomic_file_new(dbname, aff_backup);
+	dbfile = atomic_file_new(dbname, ATOMIC_FILE_BACKUP);
 	atomic_file_open(dbfile);
 
 	iter = files_db_iter_new();
@@ -356,7 +366,7 @@ main(int argc, const char *const *argv)
 		badusage(_("need an action option"));
 
 	filesdbinit();
-	ensure_statoverrides();
+	ensure_statoverrides(STATDB_PARSE_LAX);
 
 	ret = cipaction->action(argv);
 

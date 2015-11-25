@@ -4,7 +4,7 @@
  *
  * Copyright © 2007 Canonical Ltd
  * Written by Ian Jackson <ian@chiark.greenend.org.uk>
- * Copyright © 2008-2012 Guillem Jover <guillem@debian.org>
+ * Copyright © 2008-2014 Guillem Jover <guillem@debian.org>
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -84,7 +84,7 @@ static struct trig_hooks trigh;
 static void
 trig_record_activation(struct pkginfo *pend, struct pkginfo *aw, const char *trig)
 {
-	if (pend->status < stat_triggersawaited)
+	if (pend->status < PKG_STAT_TRIGGERSAWAITED)
 		return; /* Not interested then. */
 
 	if (trig_note_pend(pend, trig))
@@ -93,10 +93,10 @@ trig_record_activation(struct pkginfo *pend, struct pkginfo *aw, const char *tri
 	if (trigh.enqueue_deferred)
 		trigh.enqueue_deferred(pend);
 
-	if (aw && pend->status > stat_configfiles)
+	if (aw && pend->status > PKG_STAT_CONFIGFILES)
 		if (trig_note_aw(pend, aw)) {
-			if (aw->status > stat_triggersawaited)
-				pkg_set_status(aw, stat_triggersawaited);
+			if (aw->status > PKG_STAT_TRIGGERSAWAITED)
+				pkg_set_status(aw, PKG_STAT_TRIGGERSAWAITED);
 			modstatdb_note_ifwrite(aw);
 		}
 }
@@ -116,11 +116,11 @@ trig_clear_awaiters(struct pkginfo *notpend)
 		if (!aw)
 			continue;
 		LIST_UNLINK_PART(aw->trigaw, ta, sameaw.);
-		if (!aw->trigaw.head && aw->status == stat_triggersawaited) {
+		if (!aw->trigaw.head && aw->status == PKG_STAT_TRIGGERSAWAITED) {
 			if (aw->trigpend_head)
-				pkg_set_status(aw, stat_triggerspending);
+				pkg_set_status(aw, PKG_STAT_TRIGGERSPENDING);
 			else
-				pkg_set_status(aw, stat_installed);
+				pkg_set_status(aw, PKG_STAT_INSTALLED);
 			modstatdb_note(aw);
 		}
 	}
@@ -306,6 +306,10 @@ trk_explicit_activate_awaiter(struct pkginfo *aw)
 			noawait = true;
 			*slash = '\0';
 		}
+		if (slash && strcmp("/await", slash) == 0) {
+			noawait = false;
+			*slash = '\0';
+		}
 
 		pend = pkg_spec_parse_pkg(buf, &err);
 		if (pend == NULL)
@@ -333,9 +337,9 @@ trk_explicit_interest_change(const char *trig,  struct pkginfo *pkg,
 
 	while (trk_explicit_f && trk_explicit_fgets(buf, sizeof(buf)) >= 0) {
 		const char *pkgname = pkgbin_name(pkg, pkgbin, pnaw_nonambig);
-		int len = strlen(pkgname);
+		size_t len = strlen(pkgname);
 
-		if (strncmp(buf, pkgname, len) == 0 &&
+		if (strncmp(buf, pkgname, len) == 0 && len < sizeof(buf) &&
 		    (buf[len] == '\0' || buf[len] == '/'))
 			continue;
 		fprintf(file->fp, "%s\n", buf);
@@ -344,7 +348,7 @@ trk_explicit_interest_change(const char *trig,  struct pkginfo *pkg,
 	if (signum > 0) {
 		fprintf(file->fp, "%s%s\n",
 		        pkgbin_name(pkg, pkgbin, pnaw_nonambig),
-		        (opts == trig_noawait) ? "/noawait" : "");
+		        (opts == TRIG_NOAWAIT) ? "/noawait" : "");
 		empty = false;
 	}
 
@@ -459,7 +463,7 @@ trig_file_interests_update(void)
 	for (tfi = filetriggers.head; tfi; tfi = tfi->inoverall.next)
 		fprintf(file->fp, "%s %s%s\n", trigh.namenode_name(tfi->fnn),
 		        pkgbin_name(tfi->pkg, tfi->pkgbin, pnaw_nonambig),
-		        (tfi->options == trig_noawait) ? "/noawait" : "");
+		        (tfi->options == TRIG_NOAWAIT) ? "/noawait" : "");
 
 	atomic_file_sync(file);
 	atomic_file_close(file);
@@ -506,7 +510,7 @@ trig_file_interests_ensure(void)
 	while (fgets_checked(linebuf, sizeof(linebuf), f, triggersfilefile) >= 0) {
 		struct dpkg_error err;
 		char *slash;
-		enum trig_options trig_opts = trig_await;
+		enum trig_options trig_opts = TRIG_AWAIT;
 		space = strchr(linebuf, ' ');
 		if (!space || linebuf[0] != '/')
 			ohshit(_("syntax error in file triggers file `%.250s'"),
@@ -515,7 +519,11 @@ trig_file_interests_ensure(void)
 
 		slash = strchr(space, '/');
 		if (slash && strcmp("/noawait", slash) == 0) {
-			trig_opts = trig_noawait;
+			trig_opts = TRIG_NOAWAIT;
+			*slash = '\0';
+		}
+		if (slash && strcmp("/await", slash) == 0) {
+			trig_opts = TRIG_AWAIT;
 			*slash = '\0';
 		}
 
@@ -549,7 +557,7 @@ trig_file_activate(struct filenamenode *trig, struct pkginfo *aw)
 
 	for (tfi = *trigh.namenode_interested(trig); tfi;
 	     tfi = tfi->samefile_next)
-		trig_record_activation(tfi->pkg, (tfi->options == trig_noawait) ?
+		trig_record_activation(tfi->pkg, (tfi->options == TRIG_NOAWAIT) ?
 		                       NULL : aw, trigh.namenode_name(trig));
 }
 
@@ -647,7 +655,7 @@ trig_cicb_statuschange_activate(const char *trig, struct pkginfo *pkg,
 	struct pkginfo *aw = pkg;
 
 	trig_activate_start(trig);
-	dtki->activate_awaiter((opts == trig_noawait) ? NULL : aw);
+	dtki->activate_awaiter((opts == TRIG_NOAWAIT) ? NULL : aw);
 	dtki->activate_done();
 }
 
@@ -699,14 +707,16 @@ trig_parse_ci(const char *file, trig_parse_cicb *interest,
 		*spc++ = '\0';
 		while (cisspace(*spc))
 			spc++;
-		if (strcmp(cmd, "interest") == 0) {
-			parse_ci_call(file, cmd, interest, spc, pkg, pkgbin, trig_await);
+		if (strcmp(cmd, "interest") == 0 ||
+		    strcmp(cmd, "interest-await") == 0) {
+			parse_ci_call(file, cmd, interest, spc, pkg, pkgbin, TRIG_AWAIT);
 		} else if (strcmp(cmd, "interest-noawait") == 0) {
-			parse_ci_call(file, cmd, interest, spc, pkg, pkgbin, trig_noawait);
-		} else if (strcmp(cmd, "activate") == 0) {
-			parse_ci_call(file, cmd, activate, spc, pkg, pkgbin, trig_await);
+			parse_ci_call(file, cmd, interest, spc, pkg, pkgbin, TRIG_NOAWAIT);
+		} else if (strcmp(cmd, "activate") == 0 ||
+		           strcmp(cmd, "activate-await") == 0) {
+			parse_ci_call(file, cmd, activate, spc, pkg, pkgbin, TRIG_AWAIT);
 		} else if (strcmp(cmd, "activate-noawait") == 0) {
-			parse_ci_call(file, cmd, activate, spc, pkg, pkgbin, trig_noawait);
+			parse_ci_call(file, cmd, activate, spc, pkg, pkgbin, TRIG_NOAWAIT);
 		} else {
 			ohshit(_("triggers ci file contains unknown directive `%.250s'"),
 			       cmd);
@@ -752,7 +762,7 @@ void
 trig_incorporate(enum modstatdb_rw cstatus)
 {
 	enum trigdef_update_status ur;
-	enum trigdef_updateflags tduf;
+	enum trigdef_update_flags tduf;
 
 	free(triggersdir);
 	triggersdir = dpkg_db_get_path(TRIGGERSDIR);
@@ -763,15 +773,15 @@ trig_incorporate(enum modstatdb_rw cstatus)
 	trigdef_set_methods(&tdm_incorp);
 	trig_file_interests_ensure();
 
-	tduf = tduf_nolockok;
+	tduf = TDUF_NO_LOCK_OK;
 	if (cstatus >= msdbrw_write) {
-		tduf |= tduf_write;
+		tduf |= TDUF_WRITE;
 		if (trigh.transitional_activate)
-			tduf |= tduf_writeifenoent;
+			tduf |= TDUF_WRITE_IF_ENOENT;
 	}
 
 	ur = trigdef_update_start(tduf);
-	if (ur == tdus_error_no_dir && cstatus >= msdbrw_write) {
+	if (ur == TDUS_ERROR_NO_DIR && cstatus >= msdbrw_write) {
 		if (mkdir(triggersdir, 0755)) {
 			if (errno != EEXIST)
 				ohshite(_("unable to create triggers state"
@@ -783,17 +793,17 @@ trig_incorporate(enum modstatdb_rw cstatus)
 		ur = trigdef_update_start(tduf);
 	}
 	switch (ur) {
-	case tdus_error_empty_deferred:
+	case TDUS_ERROR_EMPTY_DEFERRED:
 		return;
-	case tdus_error_no_dir:
-	case tdus_error_no_deferred:
+	case TDUS_ERROR_NO_DIR:
+	case TDUS_ERROR_NO_DEFERRED:
 		if (!trigh.transitional_activate)
 			return;
 	/* Fall through. */
-	case tdus_no_deferred:
+	case TDUS_NO_DEFERRED:
 		trigh.transitional_activate(cstatus);
 		break;
-	case tdus_ok:
+	case TDUS_OK:
 		/* Read and incorporate triggers. */
 		trigdef_parse();
 		break;

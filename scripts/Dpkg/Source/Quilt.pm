@@ -18,10 +18,11 @@ package Dpkg::Source::Quilt;
 use strict;
 use warnings;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 use Dpkg::Gettext;
 use Dpkg::ErrorHandling;
+use Dpkg::Util qw(:list);
 use Dpkg::Source::Patch;
 use Dpkg::Source::Functions qw(erasedir fs_time);
 use Dpkg::Vendor qw(get_current_vendor);
@@ -85,17 +86,12 @@ sub load_db {
     $self->{applied_patches} = [ $self->read_patch_list($pc_applied) ];
 }
 
-sub write_db {
+sub save_db {
     my ($self) = @_;
 
     $self->setup_db();
     my $pc_applied = $self->get_db_file('applied-patches');
-    open(my $applied_fh, '>', $pc_applied) or
-        syserr(_g('cannot write %s'), $pc_applied);
-    foreach my $patch (@{$self->{applied_patches}}) {
-        print { $applied_fh } "$patch\n";
-    }
-    close($applied_fh);
+    $self->write_patch_list($pc_applied, $self->{applied_patches});
 }
 
 sub load_series {
@@ -120,6 +116,42 @@ sub top {
     my $count = scalar @{$self->{applied_patches}};
     return $self->{applied_patches}[$count - 1] if $count;
     return;
+}
+
+sub register {
+    my ($self, $patch_name) = @_;
+
+    return if any { $_ eq $patch_name } @{$self->{series}};
+
+    # Add patch to series files.
+    $self->setup_db();
+    $self->_file_add_line($self->get_series_file(), $patch_name);
+    $self->_file_add_line($self->get_db_file('applied-patches'), $patch_name);
+    $self->load_db();
+    $self->load_series();
+
+    # Ensure quilt meta-data is created and in sync with some trickery:
+    # Reverse-apply the patch, drop .pc/$patch, and re-apply it with the
+    # correct options to recreate the backup files.
+    $self->pop(reverse_apply => 1);
+    $self->push();
+}
+
+sub unregister {
+    my ($self, $patch_name) = @_;
+
+    return if none { $_ eq $patch_name } @{$self->{series}};
+
+    my $series = $self->get_series_file();
+
+    $self->_file_drop_line($series, $patch_name);
+    $self->_file_drop_line($self->get_db_file('applied-patches'), $patch_name);
+    erasedir($self->get_db_file($patch_name));
+    $self->load_db();
+    $self->load_series();
+
+    # Clean up empty series.
+    unlink $series if -z $series;
 }
 
 sub next {
@@ -151,7 +183,7 @@ sub push {
                                  '-B', ".pc/$patch/", '--reject-file=-' ]);
     };
     if ($@) {
-        info(_g('fuzz is not allowed when applying patches'));
+        info(_g('the patch has fuzz which is not allowed, or is malformed'));
         info(_g("if patch '%s' is correctly applied by quilt, use '%s' to update it"),
              $patch, 'quilt refresh');
         $self->restore_quilt_backup_files($patch, %opts);
@@ -159,7 +191,7 @@ sub push {
         die $@;
     }
     CORE::push @{$self->{applied_patches}}, $patch;
-    $self->write_db();
+    $self->save_db();
 }
 
 sub pop {
@@ -190,7 +222,7 @@ sub pop {
 
     erasedir($backup_dir);
     pop @{$self->{applied_patches}};
-    $self->write_db();
+    $self->save_db();
 }
 
 sub get_db_version {
@@ -251,18 +283,54 @@ sub get_patch_dir {
 
 ## METHODS BELOW ARE INTERNAL ##
 
+sub _file_load {
+    my ($self, $file) = @_;
+
+    open my $file_fh, '<', $file or syserr(_g('cannot read %s'), $file);
+    my @lines = <$file_fh>;
+    close $file_fh;
+
+    return @lines;
+}
+
+sub _file_add_line {
+    my ($self, $file, $line) = @_;
+
+    my @lines;
+    @lines = $self->_file_load($file) if -f $file;
+    CORE::push @lines, $line;
+    chomp @lines;
+
+    open my $file_fh, '>', $file or syserr(_g('cannot write %s'), $file);
+    print { $file_fh } "$_\n" foreach @lines;
+    close $file_fh;
+}
+
+sub _file_drop_line {
+    my ($self, $file, $re) = @_;
+
+    my @lines = $self->_file_load($file);
+    open my $file_fh, '>', $file or syserr(_g('cannot write %s'), $file);
+    print { $file_fh } $_ foreach grep { not /^\Q$re\E\s*$/ } @lines;
+    close $file_fh;
+}
+
 sub read_patch_list {
     my ($self, $file, %opts) = @_;
     return () if not defined $file or not -f $file;
     $opts{warn_options} //= 0;
     my @patches;
     open(my $series_fh, '<' , $file) or syserr(_g('cannot read %s'), $file);
-    while (defined($_ = <$series_fh>)) {
-        chomp; s/^\s+//; s/\s+$//; # Strip leading/trailing spaces
-        s/(^|\s+)#.*$//; # Strip comment
-        next unless $_;
-        if (/^(\S+)\s+(.*)$/) {
-            $_ = $1;
+    while (defined(my $line = <$series_fh>)) {
+        chomp $line;
+        # Strip leading/trailing spaces
+        $line =~ s/^\s+//;
+        $line =~ s/\s+$//;
+        # Strip comment
+        $line =~ s/(?:^|\s+)#.*$//;
+        next unless $line;
+        if ($line =~ /^(\S+)\s+(.*)$/) {
+            $line = $1;
             if ($2 ne '-p1') {
                 warning(_g('the series file (%s) contains unsupported ' .
                            "options ('%s', line %s); dpkg-source might " .
@@ -270,11 +338,23 @@ sub read_patch_list {
                         $file, $2, $.) if $opts{warn_options};
             }
         }
-        error(_g('%s contains an insecure path: %s'), $file, $_) if m{(^|/)\.\./};
-        CORE::push @patches, $_;
+        if ($line =~ m{(^|/)\.\./}) {
+            error(_g('%s contains an insecure path: %s'), $file, $line);
+        }
+        CORE::push @patches, $line;
     }
     close($series_fh);
     return @patches;
+}
+
+sub write_patch_list {
+    my ($self, $series, $patches) = @_;
+
+    open my $series_fh, '>', $series or syserr(_g('cannot write %s'), $series);
+    foreach my $patch (@{$patches}) {
+        print { $series_fh } "$patch\n";
+    }
+    close $series_fh;
 }
 
 sub restore_quilt_backup_files {
@@ -285,10 +365,10 @@ sub restore_quilt_backup_files {
     find({
         no_chdir => 1,
         wanted => sub {
-            return if -d $_;
+            return if -d;
             my $relpath_in_srcpkg = File::Spec->abs2rel($_, $patch_dir);
             my $target = File::Spec->catfile($self->{dir}, $relpath_in_srcpkg);
-            if (-s $_) {
+            if (-s) {
                 unlink($target);
                 make_path(dirname($target));
                 unless (link($_, $target)) {

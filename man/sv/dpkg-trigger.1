@@ -73,14 +73,18 @@ kommer inte läggas till T:s väntelista för hantering av utlösare och T:s
 status ändras inte. T kan anses vara installerat även om I kanske ännu inte
 har hanterat utlösaren.
 .TP 
+\fB\-\-await\fP
+Flaggan gör det motsatta mot \fB\-\-no\-await\fP. Det är för närvarande
+standardbetendet.
+.TP 
 \fB\-\-no\-act\fP
 Bara testa, ändra inte på någonting.
 .
 .SH MILJÖVARIABLER
 .TP 
 \fBDPKG_ADMINDIR\fP
-If set and the \fB\-\-admindir\fP option has not been specified, it will be used
-as the \fBdpkg\fP data directory.
+Om satt, och flaggan \fB\-\-admindir\fP inte har angivits, används värdet som
+datakatalog för \fBdpkg\fP.
 .
 .SH "SE ÄVEN"
 \fBdpkg\fP(1), \fBdeb\-triggers\fP(5), \fB/usr/share/doc/dpkg\-dev/triggers.txt.gz\fP.

@@ -4,7 +4,7 @@
  *
  * Copyright © 1994,1995 Ian Jackson <ian@chiark.greenend.org.uk>
  * Copyright © 2000 Wichert Akkerman <wakkerma@debian.org>
- * Copyright © 2007-2013 Guillem Jover <guillem@debian.org>
+ * Copyright © 2007-2014 Guillem Jover <guillem@debian.org>
  * Copyright © 2011 Linaro Limited
  * Copyright © 2011 Raphaël Hertzog <hertzog@debian.org>
  *
@@ -157,7 +157,7 @@ filesavespackage(struct fileinlist *file,
     /* A Multi-Arch: same package can share files and their presence in a
      * third package of the same set is not a sign that we can get rid of
      * it. */
-    if (pkgtobesaved->installed.multiarch == multiarch_same &&
+    if (pkgtobesaved->installed.multiarch == PKG_MULTIARCH_SAME &&
         thirdpkg->set == pkgtobesaved->set)
       continue;
 
@@ -196,12 +196,12 @@ md5hash_prev_conffile(struct pkginfo *pkg, char *oldhash, const char *oldname,
       continue;
     /* The hash in the Conffiles is only meaningful if the package
      * configuration has been at least tried. */
-    if (otherpkg->status < stat_unpacked)
+    if (otherpkg->status < PKG_STAT_UNPACKED)
       continue;
     /* If we are reinstalling, even if the other package is only unpacked,
      * we can always make use of the Conffiles hash value from an initial
      * installation, if that happened at all. */
-    if (otherpkg->status == stat_unpacked &&
+    if (otherpkg->status == PKG_STAT_UNPACKED &&
         dpkg_version_compare(&otherpkg->installed.version,
                              &otherpkg->configversion) != 0)
       continue;
@@ -216,7 +216,7 @@ md5hash_prev_conffile(struct pkginfo *pkg, char *oldhash, const char *oldname,
       debug(dbg_conffdetail,
             "tarobject found shared conffile, from pkg %s (%s); hash=%s",
             pkg_name(otherpkg, pnaw_always),
-            statusinfos[otherpkg->status].name, oldhash);
+            pkg_status_name(otherpkg), oldhash);
       break;
     }
   }
@@ -264,7 +264,7 @@ tarobject_skip_entry(struct tarcontext *tc, struct tar_entry *ti)
 {
   /* We need to advance the tar file to the next object, so read the
    * file data and set it to oblivion. */
-  if (ti->type == tar_filetype_file) {
+  if (ti->type == TAR_FILETYPE_FILE) {
     struct dpkg_error err;
     char fnamebuf[256];
 
@@ -326,7 +326,7 @@ tarobject_extract(struct tarcontext *tc, struct tar_entry *te,
   char *newhash;
 
   switch (te->type) {
-  case tar_filetype_file:
+  case TAR_FILETYPE_FILE:
     /* We create the file with mode 0 to make sure nobody can do anything with
      * it until we apply the proper mode, which might be a statoverride. */
     fd = open(path, O_CREAT | O_EXCL | O_WRONLY, 0);
@@ -336,6 +336,11 @@ tarobject_extract(struct tarcontext *tc, struct tar_entry *te,
     push_cleanup(cu_closefd, ehflag_bombout, NULL, 0, 1, &fd);
     debug(dbg_eachfiledetail, "tarobject file open size=%jd",
           (intmax_t)te->size);
+
+    /* We try to tell the filesystem how much disk space we are going to
+     * need to let it reduce fragmentation and possibly improve performance,
+     * as we do know the size beforehand. */
+    fd_allocate_size(fd, 0, te->size);
 
     newhash = nfmalloc(MD5HASHLEN + 1);
     if (fd_fd_copy_and_md5(tc->backendpipe, fd, newhash, te->size, &err) < 0)
@@ -367,25 +372,24 @@ tarobject_extract(struct tarcontext *tc, struct tar_entry *te,
     if (close(fd))
       ohshite(_("error closing/writing `%.255s'"), te->name);
     break;
-  case tar_filetype_fifo:
+  case TAR_FILETYPE_FIFO:
     if (mkfifo(path, 0))
       ohshite(_("error creating pipe `%.255s'"), te->name);
     debug(dbg_eachfiledetail, "tarobject fifo");
     break;
-  case tar_filetype_chardev:
+  case TAR_FILETYPE_CHARDEV:
     if (mknod(path, S_IFCHR, te->dev))
       ohshite(_("error creating device `%.255s'"), te->name);
     debug(dbg_eachfiledetail, "tarobject chardev");
     break;
-  case tar_filetype_blockdev:
+  case TAR_FILETYPE_BLOCKDEV:
     if (mknod(path, S_IFBLK, te->dev))
       ohshite(_("error creating device `%.255s'"), te->name);
     debug(dbg_eachfiledetail, "tarobject blockdev");
     break;
-  case tar_filetype_hardlink:
+  case TAR_FILETYPE_HARDLINK:
     varbuf_reset(&hardlinkfn);
     varbuf_add_str(&hardlinkfn, instdir);
-    varbuf_add_char(&hardlinkfn, '/');
     linknode = findnamenode(te->linkname, 0);
     varbuf_add_str(&hardlinkfn,
                    namenodetouse(linknode, tc->pkg, &tc->pkg->available)->name);
@@ -397,13 +401,13 @@ tarobject_extract(struct tarcontext *tc, struct tar_entry *te,
     namenode->newhash = linknode->newhash;
     debug(dbg_eachfiledetail, "tarobject hardlink hash=%s", namenode->newhash);
     break;
-  case tar_filetype_symlink:
+  case TAR_FILETYPE_SYMLINK:
     /* We've already checked for an existing directory. */
     if (symlink(te->linkname, path))
       ohshite(_("error creating symbolic link `%.255s'"), te->name);
     debug(dbg_eachfiledetail, "tarobject symlink creating");
     break;
-  case tar_filetype_dir:
+  case TAR_FILETYPE_DIR:
     /* We've already checked for an existing directory. */
     if (mkdir(path, 0))
       ohshite(_("error creating directory `%.255s'"), te->name);
@@ -418,7 +422,7 @@ static void
 tarobject_hash(struct tarcontext *tc, struct tar_entry *te,
                struct filenamenode *namenode)
 {
-  if (te->type == tar_filetype_file) {
+  if (te->type == TAR_FILETYPE_FILE) {
     struct dpkg_error err;
     char fnamebuf[256];
     char *newhash;
@@ -431,7 +435,7 @@ tarobject_hash(struct tarcontext *tc, struct tar_entry *te,
 
     namenode->newhash = newhash;
     debug(dbg_eachfiledetail, "tarobject file hash=%s", namenode->newhash);
-  } else if (te->type == tar_filetype_hardlink) {
+  } else if (te->type == TAR_FILETYPE_HARDLINK) {
     struct filenamenode *linknode;
 
     linknode = findnamenode(te->linkname, 0);
@@ -450,7 +454,7 @@ tarobject_set_mtime(struct tar_entry *te, const char *path)
   tv[1].tv_sec = te->mtime;
   tv[1].tv_usec = 0;
 
-  if (te->type == tar_filetype_symlink) {
+  if (te->type == TAR_FILETYPE_SYMLINK) {
 #ifdef HAVE_LUTIMES
     if (lutimes(path, tv) && errno != ENOSYS)
       ohshite(_("error setting timestamps of `%.255s'"), path);
@@ -464,10 +468,10 @@ tarobject_set_mtime(struct tar_entry *te, const char *path)
 static void
 tarobject_set_perms(struct tar_entry *te, const char *path, struct file_stat *st)
 {
-  if (te->type == tar_filetype_file)
+  if (te->type == TAR_FILETYPE_FILE)
     return; /* Already handled using the file descriptor. */
 
-  if (te->type == tar_filetype_symlink) {
+  if (te->type == TAR_FILETYPE_SYMLINK) {
     if (lchown(path, st->uid, st->gid))
       ohshite(_("error setting ownership of symlink `%.255s'"), path);
   } else {
@@ -587,10 +591,10 @@ tarobject_matches(struct tarcontext *tc,
   debug(dbg_eachfiledetail, "tarobject matches on-disk object?");
 
   switch (te->type) {
-  case tar_filetype_dir:
+  case TAR_FILETYPE_DIR:
     /* Nothing to check for a new directory. */
     return;
-  case tar_filetype_symlink:
+  case TAR_FILETYPE_SYMLINK:
     /* Symlinks to existing dirs have already been dealt with, only
      * reamin real symlinks where we can compare the target. */
     if (!S_ISLNK(stab->st_mode))
@@ -610,21 +614,21 @@ tarobject_matches(struct tarcontext *tc,
       free(linkname);
     }
     break;
-  case tar_filetype_chardev:
+  case TAR_FILETYPE_CHARDEV:
     if (S_ISCHR(stab->st_mode) && stab->st_rdev == te->dev)
       return;
     break;
-  case tar_filetype_blockdev:
+  case TAR_FILETYPE_BLOCKDEV:
     if (S_ISBLK(stab->st_mode) && stab->st_rdev == te->dev)
       return;
     break;
-  case tar_filetype_fifo:
+  case TAR_FILETYPE_FIFO:
     if (S_ISFIFO(stab->st_mode))
       return;
     break;
-  case tar_filetype_hardlink:
+  case TAR_FILETYPE_HARDLINK:
     /* Fall through. */
-  case tar_filetype_file:
+  case TAR_FILETYPE_FILE:
     /* Only check metadata for non-conffiles. */
     if (!(namenode->flags & fnnf_new_conff) &&
         !(S_ISREG(stab->st_mode) && te->size == stab->st_size))
@@ -673,7 +677,7 @@ void setupfnamevbs(const char *filename) {
 int
 secure_remove(const char *filename)
 {
-  int r, e;
+  int rc, e;
 
   if (!rmdir(filename)) {
     debug(dbg_eachfiledetail, "secure_remove '%s' rmdir OK", filename);
@@ -687,11 +691,13 @@ secure_remove(const char *filename)
     errno= e; return -1;
   }
 
-  r = secure_unlink(filename);
+  rc = secure_unlink(filename);
   e = errno;
   debug(dbg_eachfiledetail, "secure_remove '%s' unlink %s",
-        filename, r ? strerror(e) : "OK");
-  errno= e; return r;
+        filename, rc ? strerror(e) : "OK");
+  errno = e;
+
+  return rc;
 }
 
 struct fileinlist *addfiletolist(struct tarcontext *tc,
@@ -783,6 +789,8 @@ tarobject(void *ctx, struct tar_entry *ti)
 
   ensureobstackinit();
 
+  tar_entry_update_from_system(ti);
+
   /* Append to list of files.
    * The trailing ‘/’ put on the end of names in tarfiles has already
    * been stripped by tar_extractor(). */
@@ -825,7 +833,7 @@ tarobject(void *ctx, struct tar_entry *ti)
     st = &ti->stat;
 
   usenode = namenodetouse(nifd->namenode, tc->pkg, &tc->pkg->available);
-  usename = usenode->name + 1; /* Skip the leading '/'. */
+  usename = usenode->name;
 
   trig_file_activate(usenode, tc->pkg);
 
@@ -869,7 +877,7 @@ tarobject(void *ctx, struct tar_entry *ti)
    * a file overwriting conflict. */
   existingdir = false;
   switch (ti->type) {
-  case tar_filetype_symlink:
+  case TAR_FILETYPE_SYMLINK:
     /* If it's already an existing directory, do nothing. */
     if (!statr && S_ISDIR(stab.st_mode)) {
       debug(dbg_eachfiledetail, "tarobject symlink exists as directory");
@@ -879,18 +887,18 @@ tarobject(void *ctx, struct tar_entry *ti)
         existingdir = true;
     }
     break;
-  case tar_filetype_dir:
+  case TAR_FILETYPE_DIR:
     /* If it's already an existing directory, do nothing. */
     if (!stat(fnamevb.buf,&stabtmp) && S_ISDIR(stabtmp.st_mode)) {
       debug(dbg_eachfiledetail, "tarobject directory exists");
       existingdir = true;
     }
     break;
-  case tar_filetype_file:
-  case tar_filetype_chardev:
-  case tar_filetype_blockdev:
-  case tar_filetype_fifo:
-  case tar_filetype_hardlink:
+  case TAR_FILETYPE_FILE:
+  case TAR_FILETYPE_CHARDEV:
+  case TAR_FILETYPE_BLOCKDEV:
+  case TAR_FILETYPE_FIFO:
+  case TAR_FILETYPE_HARDLINK:
     break;
   default:
     ohshit(_("archive contained object `%.255s' of unknown type 0x%x"),
@@ -913,8 +921,8 @@ tarobject(void *ctx, struct tar_entry *ti)
        * is allowed when they are not getting in sync, otherwise the
        * file content must match the installed file. */
       if (otherpkg->set == tc->pkg->set &&
-          otherpkg->installed.multiarch == multiarch_same &&
-          tc->pkg->available.multiarch == multiarch_same) {
+          otherpkg->installed.multiarch == PKG_MULTIARCH_SAME &&
+          tc->pkg->available.multiarch == PKG_MULTIARCH_SAME) {
         if (statr == 0 && tc->pkgset_getting_in_sync)
           refcounting = true;
         debug(dbg_eachfiledetail, "tarobject ... shared with %s %s (syncing=%d)",
@@ -939,7 +947,7 @@ tarobject(void *ctx, struct tar_entry *ti)
        * not exist assume it's also a directory and skip further checks.
        * XXX: Ideally with more information about the installed files we
        * could perform more clever checks. */
-      if (statr != 0 && ti->type == tar_filetype_dir) {
+      if (statr != 0 && ti->type == TAR_FILETYPE_DIR) {
         debug(dbg_eachfile, "tarobject ... assuming shared directory");
         continue;
       }
@@ -955,11 +963,11 @@ tarobject(void *ctx, struct tar_entry *ti)
       /* Is the package with the conflicting file in the “config files only”
        * state? If so it must be a config file and we can silenty take it
        * over. */
-      if (otherpkg->status == stat_configfiles)
+      if (otherpkg->status == PKG_STAT_CONFIGFILES)
         continue;
 
       /* Perhaps we're removing a conflicting package? */
-      if (otherpkg->clientdata->istobe == itb_remove)
+      if (otherpkg->clientdata->istobe == PKG_ISTOBE_REMOVE)
         continue;
 
       /* Is the file an obsolete conffile in the other package
@@ -1117,7 +1125,7 @@ tarobject(void *ctx, struct tar_entry *ti)
     /* Don't try to back it up if it didn't exist. */
     debug(dbg_eachfiledetail,"tarobject new - no backup");
   } else {
-    if (ti->type == tar_filetype_dir || S_ISDIR(stab.st_mode)) {
+    if (ti->type == TAR_FILETYPE_DIR || S_ISDIR(stab.st_mode)) {
       /* One of the two is a directory - can't do atomic install. */
       debug(dbg_eachfiledetail,"tarobject directory, nonatomic");
       nifd->namenode->flags |= fnnf_no_atomic_overwrite;
@@ -1156,8 +1164,8 @@ tarobject(void *ctx, struct tar_entry *ti)
    * in .dpkg-new.
    */
 
-  if (ti->type == tar_filetype_file || ti->type == tar_filetype_hardlink ||
-      ti->type == tar_filetype_symlink) {
+  if (ti->type == TAR_FILETYPE_FILE || ti->type == TAR_FILETYPE_HARDLINK ||
+      ti->type == TAR_FILETYPE_SYMLINK) {
     nifd->namenode->flags |= fnnf_deferred_rename;
 
     debug(dbg_eachfiledetail, "tarobject done and installation deferred");
@@ -1189,16 +1197,14 @@ tar_writeback_barrier(struct fileinlist *files, struct pkginfo *pkg)
 
   for (cfile = files; cfile; cfile = cfile->next) {
     struct filenamenode *usenode;
-    const char *usename;
     int fd;
 
     if (!(cfile->namenode->flags & fnnf_deferred_fsync))
       continue;
 
     usenode = namenodetouse(cfile->namenode, pkg, &pkg->available);
-    usename = usenode->name + 1; /* Skip the leading '/'. */
 
-    setupfnamevbs(usename);
+    setupfnamevbs(usenode->name);
 
     fd = open(fnamenewvb.buf, O_WRONLY);
     if (fd < 0)
@@ -1223,7 +1229,6 @@ tar_deferred_extract(struct fileinlist *files, struct pkginfo *pkg)
 {
   struct fileinlist *cfile;
   struct filenamenode *usenode;
-  const char *usename;
 
   tar_writeback_barrier(files, pkg);
 
@@ -1234,9 +1239,8 @@ tar_deferred_extract(struct fileinlist *files, struct pkginfo *pkg)
       continue;
 
     usenode = namenodetouse(cfile->namenode, pkg, &pkg->available);
-    usename = usenode->name + 1; /* Skip the leading '/'. */
 
-    setupfnamevbs(usename);
+    setupfnamevbs(usenode->name);
 
     if (cfile->namenode->flags & fnnf_deferred_fsync) {
       int fd;
@@ -1282,7 +1286,7 @@ enqueue_deconfigure(struct pkginfo *pkg, struct pkginfo *pkg_removal)
   struct pkg_deconf_list *newdeconf;
 
   ensure_package_clientdata(pkg);
-  pkg->clientdata->istobe = itb_deconfigure;
+  pkg->clientdata->istobe = PKG_ISTOBE_DECONFIGURE;
   newdeconf = m_malloc(sizeof(struct pkg_deconf_list));
   newdeconf->next = deconfigure;
   newdeconf->pkg = pkg;
@@ -1375,7 +1379,7 @@ void check_breaks(struct dependency *dep, struct pkginfo *pkg,
     char action[512];
 
     ensure_package_clientdata(fixbydeconf);
-    assert(fixbydeconf->clientdata->istobe == itb_normal);
+    assert(fixbydeconf->clientdata->istobe == PKG_ISTOBE_NORMAL);
 
     sprintf(action, _("installation of %.250s"),
             pkgbin_name(pkg, &pkg->available, pnaw_nonambig));
@@ -1428,22 +1432,24 @@ void check_conflict(struct dependency *dep, struct pkginfo *pkg,
   }
   if (fixbyrm) {
     ensure_package_clientdata(fixbyrm);
-    if (fixbyrm->clientdata->istobe == itb_installnew) {
+    if (fixbyrm->clientdata->istobe == PKG_ISTOBE_INSTALLNEW) {
       fixbyrm= dep->up;
       ensure_package_clientdata(fixbyrm);
     }
     if (((pkg->available.essential && fixbyrm->installed.essential) ||
-         (((fixbyrm->want != want_install && fixbyrm->want != want_hold) ||
+         (((fixbyrm->want != PKG_WANT_INSTALL &&
+            fixbyrm->want != PKG_WANT_HOLD) ||
            does_replace(pkg, &pkg->available, fixbyrm, &fixbyrm->installed)) &&
           (!fixbyrm->installed.essential || fc_removeessential)))) {
-      assert(fixbyrm->clientdata->istobe == itb_normal || fixbyrm->clientdata->istobe == itb_deconfigure);
-      fixbyrm->clientdata->istobe= itb_remove;
+      assert(fixbyrm->clientdata->istobe == PKG_ISTOBE_NORMAL ||
+             fixbyrm->clientdata->istobe == PKG_ISTOBE_DECONFIGURE);
+      fixbyrm->clientdata->istobe = PKG_ISTOBE_REMOVE;
       notice(_("considering removing %s in favour of %s ..."),
              pkg_name(fixbyrm, pnaw_nonambig),
              pkgbin_name(pkg, &pkg->available, pnaw_nonambig));
-      if (!(fixbyrm->status == stat_installed ||
-            fixbyrm->status == stat_triggerspending ||
-            fixbyrm->status == stat_triggersawaited)) {
+      if (!(fixbyrm->status == PKG_STAT_INSTALLED ||
+            fixbyrm->status == PKG_STAT_TRIGGERSPENDING ||
+            fixbyrm->status == PKG_STAT_TRIGGERSAWAITED)) {
         notice(_("%s is not properly installed; ignoring any dependencies on it"),
                pkg_name(fixbyrm, pnaw_nonambig));
         pdep = NULL;
@@ -1486,7 +1492,7 @@ void check_conflict(struct dependency *dep, struct pkginfo *pkg,
       if (!pdep && skip_due_to_hold(fixbyrm)) {
         pdep= &flagdeppossi;
       }
-      if (!pdep && (fixbyrm->eflag & eflag_reinstreq)) {
+      if (!pdep && (fixbyrm->eflag & PKG_EFLAG_REINSTREQ)) {
         if (fc_removereinstreq) {
           notice(_("package %s requires reinstallation, but will "
                    "remove anyway as you requested"),
@@ -1507,7 +1513,7 @@ void check_conflict(struct dependency *dep, struct pkginfo *pkg,
         return;
       }
       /* Put it back. */
-      fixbyrm->clientdata->istobe = itb_normal;
+      fixbyrm->clientdata->istobe = PKG_ISTOBE_NORMAL;
     }
   }
   varbuf_end_str(&conflictwhy);
@@ -1539,14 +1545,20 @@ archivefiles(const char *const *argv)
   const char *volatile thisarg;
   const char *const *volatile argp;
   jmp_buf ejbuf;
+  enum modstatdb_rw msdbflags;
 
   trigproc_install_hooks();
 
-  modstatdb_open(f_noact ?                          msdbrw_readonly :
-                 (cipaction->arg_int == act_avail ? msdbrw_readonly :
-                  fc_nonroot ?                      msdbrw_write :
-                                                    msdbrw_needsuperuser) |
-                 msdbrw_available_write);
+  if (f_noact)
+    msdbflags = msdbrw_readonly;
+  else if (cipaction->arg_int == act_avail)
+    msdbflags = msdbrw_readonly | msdbrw_available_write;
+  else if (fc_nonroot)
+    msdbflags = msdbrw_write;
+  else
+    msdbflags = msdbrw_needsuperuser;
+
+  modstatdb_open(msdbflags);
 
   checkpath();
   pkg_infodb_upgrade();
@@ -1554,7 +1566,7 @@ archivefiles(const char *const *argv)
   log_message("startup archives %s", cipaction->olong);
 
   if (f_recursive) {
-    int pi[2], nfiles, c, i, r;
+    int pi[2], nfiles, c, i, rc;
     pid_t pid;
     FILE *pf;
     static struct varbuf findoutput;
@@ -1601,9 +1613,9 @@ archivefiles(const char *const *argv)
     }
     if (ferror(pf)) ohshite(_("error reading find's pipe"));
     if (fclose(pf)) ohshite(_("error closing find's pipe"));
-    r = subproc_wait_check(pid, "find", PROCNOERR);
-    if (r != 0)
-      ohshit(_("find for --recursive returned unhandled error %i"),r);
+    rc = subproc_reap(pid, "find", SUBPROC_RETERROR);
+    if (rc != 0)
+      ohshit(_("find for --recursive returned unhandled error %i"), rc);
 
     if (!nfiles)
       ohshit(_("searched, but found no packages (files matching *.deb)"));
@@ -1631,15 +1643,12 @@ archivefiles(const char *const *argv)
   varbuf_reset(&fnamenewvb);
 
   varbuf_add_str(&fnamevb, instdir);
-  varbuf_add_char(&fnamevb, '/');
   varbuf_add_str(&fnametmpvb, instdir);
-  varbuf_add_char(&fnametmpvb, '/');
   varbuf_add_str(&fnamenewvb, instdir);
-  varbuf_add_char(&fnamenewvb, '/');
   fnameidlu= fnamevb.used;
 
   ensure_diversions();
-  ensure_statoverrides();
+  ensure_statoverrides(STATDB_PARSE_NORMAL);
 
   while ((thisarg = *argp++) != NULL) {
     if (setjmp(ejbuf)) {
@@ -1694,9 +1703,9 @@ archivefiles(const char *const *argv)
 bool
 wanttoinstall(struct pkginfo *pkg)
 {
-  int r;
+  int rc;
 
-  if (pkg->want != want_install && pkg->want != want_hold) {
+  if (pkg->want != PKG_WANT_INSTALL && pkg->want != PKG_WANT_HOLD) {
     if (f_alsoselect) {
       printf(_("Selecting previously unselected package %s.\n"),
              pkgbin_name(pkg, &pkg->available, pnaw_nonambig));
@@ -1708,15 +1717,15 @@ wanttoinstall(struct pkginfo *pkg)
     }
   }
 
-  if (pkg->eflag & eflag_reinstreq)
+  if (pkg->eflag & PKG_EFLAG_REINSTREQ)
     return true;
-  if (pkg->status < stat_unpacked)
+  if (pkg->status < PKG_STAT_UNPACKED)
     return true;
 
-  r = dpkg_version_compare(&pkg->available.version, &pkg->installed.version);
-  if (r > 0) {
+  rc = dpkg_version_compare(&pkg->available.version, &pkg->installed.version);
+  if (rc > 0) {
     return true;
-  } else if (r == 0) {
+  } else if (rc == 0) {
     /* Same version fully installed. */
     if (f_skipsame) {
       notice(_("version %.250s of %.250s already installed, skipping"),
@@ -1743,14 +1752,18 @@ wanttoinstall(struct pkginfo *pkg)
   }
 }
 
-struct fileinlist *newconff_append(struct fileinlist ***newconffileslastp_io,
-				   struct filenamenode *namenode) {
-  struct fileinlist *newconff;
+struct fileinlist *
+filenamenode_queue_push(struct filenamenode_queue *queue,
+                        struct filenamenode *namenode)
+{
+  struct fileinlist *node;
 
-  newconff= m_malloc(sizeof(struct fileinlist));
-  newconff->next = NULL;
-  newconff->namenode= namenode;
-  **newconffileslastp_io= newconff;
-  *newconffileslastp_io= &newconff->next;
-  return newconff;
+  node = m_malloc(sizeof(*node));
+  node->next = NULL;
+  node->namenode = namenode;
+
+  *queue->tail = node;
+  queue->tail = &node->next;
+
+  return node;
 }

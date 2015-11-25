@@ -3,7 +3,7 @@
 .\" Copyright Â© 1995 Raul Miller, Ian Jackson, Ian Murdock
 .\" Copyright Â© 1999 Ben Collins <bcollins@debian.org>
 .\" Copyright Â© 2000 Wichert Akkerman <wakkerma@debian.org>
-.\" Copyright Â© 2007-2011 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2007-2011, 2013 Guillem Jover <guillem@debian.org>
 .\" Copyright Â© 2008-2012 RaphaÃ«l Hertzog <hertzog@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
@@ -24,7 +24,7 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH deb\-control 5 "14 de agosto del 2011" "Proyecto Debian" Debian
+.TH deb\-control 5 2013\-12\-20 "Proyecto Debian" Debian
 .SH NOMBRE
 deb\-control \- Formato del fichero de control maestro de paquetes de Debian
 .
@@ -112,16 +112,18 @@ Lista de etiquetas que describen las características del paquete. La lista y
 descripción de las etiquetas aceptadas se pueden encontrar en el paquete
 \fBdebtags\fP.
 .TP 
-\fBMulti\-Arch:\fP \fBsame\fP|\fBforeign\fP|\fBallowed\fP
-Este campo se utiliza para indicar el comportamiento de este paquete en
-instalaciones multiarquitectura. El valor \fBsame\fP significa que dos
-instalaciones del mismo paquete pueden coexistir, pero no se puede utilizar
-para satisfacer la dependencia de un paquete de arquitectura distinta al
-mismo. El valor \fBforeign\fP significa que no pueden coexistir dos versiones
-del mismo paquete, pero se puede utilizar para satisfacer la dependencia de
-otro paquete de arquitectura distinta. El valor \fBallowed\fP permite que las
-dependencias inversas indiquen en su campo «Depends» que necesitan un
-paquete de otro arquitectura, pero no tiene ningún otro efecto.
+\fBMulti\-Arch:\fP \fBsame\fP|\fBforeign\fP|\fBallowed\fP|\fBno\fP
+This field is used to indicate how this package should behave on a
+multi\-arch installations. The value \fBsame\fP means that the package is
+co\-installable with itself, but it must not be used to satisfy the
+dependency of any package of a different architecture from itself. The value
+\fBforeign\fP means that the package is not co\-installable with itself, but
+should be allowed to satisfy the dependency of a package of a different arch
+from itself. The value \fBallowed\fP allows reverse\-dependencies to indicate in
+their Depends field that they accept a package from a foreign architecture,
+but has no effect otherwise.  The value \fBno\fP is the default when the field
+is omitted, in which case adding the field with an explicit \fBno\fP value is
+generally not needed.
 .TP 
 \fBSource:\fP\fI nombre\-del\-código\-fuente\fP
 El nombre del paquete fuente del que proviene el paquete binario, en caso de

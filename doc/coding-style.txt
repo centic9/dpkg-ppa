@@ -6,7 +6,8 @@ C language extensions
 
 The code base assumes C89 plus the following C99 extensions:
 
- * Named initializers.
+ * Designated initializers.
+ * Compound literals.
  * Trailing comma in enum.
  * Variadic macros.
  * Working bool type in <stdbool.h>.
@@ -72,9 +73,9 @@ Examples:
  */
 enum value_list {
 	/** Value doing foo. */
-	value_a,
+	VALUE_A,
 	/** Value doing bar. */
-	value_b,
+	VALUE_B,
 };
 
 /**

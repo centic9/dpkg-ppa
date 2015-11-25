@@ -3,7 +3,7 @@
  *
  * Copyright © 1995 Ian Jackson <ian@davenant.greenend.org.uk>
  * Copyright © 2000-2002 Wichert Akkerman <wakkerma@debian.org>
- * Copyright © 2006-2012 Guillem Jover <guillem@debian.org>
+ * Copyright © 2006-2014 Guillem Jover <guillem@debian.org>
  * Copyright © 2008 Pierre Habouzit <madcoder@debian.org>
  * Copyright © 2009-2010 Raphaël Hertzog <hertzog@debian.org>
  *
@@ -252,13 +252,13 @@ pr(char const *fmt, ...)
 static void *
 xmalloc(size_t size)
 {
-	void *r;
+	void *ptr;
 
-	r = malloc(size);
-	if (!r)
+	ptr = malloc(size);
+	if (!ptr)
 		error(_("malloc failed (%zu bytes)"), size);
 
-	return r;
+	return ptr;
 }
 
 static char *
@@ -403,7 +403,7 @@ log_msg(const char *fmt, ...)
 static int
 spawn(const char *prog, const char *args[])
 {
-	pid_t pid, r;
+	pid_t pid, dead_pid;
 	int status;
 
 	pid = fork();
@@ -413,8 +413,8 @@ spawn(const char *prog, const char *args[])
 		execvp(prog, (char *const *)args);
 		syserr(_("unable to execute %s (%s)"), prog, prog);
 	}
-	while ((r = waitpid(pid, &status, 0)) == -1 && errno == EINTR) ;
-	if (r != pid)
+	while ((dead_pid = waitpid(pid, &status, 0)) == -1 && errno == EINTR) ;
+	if (dead_pid != pid)
 		error(_("wait for subprocess %s failed"), prog);
 
 	return status;
@@ -459,21 +459,19 @@ subcall(const char *prog, ...)
 static bool
 rename_mv(const char *src, const char *dst)
 {
-	struct stat st;
+	const char *args[] = { "mv", src, dst, NULL };
+	int rc;
 
-	if (lstat(src, &st) != 0)
+	if (rename(src, dst) == 0)
+		return true;
+	if (errno == ENOENT)
 		return false;
 
-	if (rename(src, dst) != 0) {
-		const char *args[] = { "mv", src, dst, NULL };
-		int r;
-		r = spawn("mv", args);
-		if (WIFEXITED(r) && WEXITSTATUS(r) == 0)
-			return true;
-		return false;
-	}
+	rc = spawn("mv", args);
+	if (WIFEXITED(rc) && WEXITSTATUS(rc) == 0)
+		return true;
 
-	return true;
+	return false;
 }
 
 static void
@@ -641,9 +639,9 @@ struct commit_operation {
 	struct commit_operation *next;
 
 	enum opcode {
-		opcode_nop,
-		opcode_rm,
-		opcode_mv,
+		OPCODE_NOP,
+		OPCODE_RM,
+		OPCODE_MV,
 	} opcode;
 
 	char *arg_a;
@@ -1056,8 +1054,8 @@ alternative_remove_choice(struct alternative *a, const char *file)
  */
 
 enum altdb_flags {
-	altdb_lax_parser = 1 << 0,
-	altdb_warn_parser = 1 << 1,
+	ALTDB_LAX_PARSER = 1 << 0,
+	ALTDB_WARN_PARSER = 1 << 1,
 };
 
 struct altdb_context {
@@ -1234,7 +1232,7 @@ alternative_parse_fileset(struct alternative *a, struct altdb_context *ctx)
 			syserr(_("cannot stat file '%s'"), master_file);
 
 		/* File not found - remove. */
-		if (ctx->flags & altdb_warn_parser)
+		if (ctx->flags & ALTDB_WARN_PARSER)
 			warning(_("alternative %s (part of link group %s) "
 			          "doesn't exist; removing from list of "
 			          "alternatives"), master_file, a->master_name);
@@ -1260,6 +1258,8 @@ alternative_parse_fileset(struct alternative *a, struct altdb_context *ctx)
 			ctx->bad_format(ctx,
 			                _("priority of %s is out of range: %s"),
 			                master_file, prio_str);
+		free(prio_str);
+
 		fs = fileset_new(master_file, prio);
 		for (sl = a->slaves; sl; sl = sl->next) {
 			fileset_add_slave(fs, xstrdup(sl->name),
@@ -1267,6 +1267,8 @@ alternative_parse_fileset(struct alternative *a, struct altdb_context *ctx)
 		}
 		alternative_add_choice(a, fs);
 	}
+	free(master_file);
+
 	return true;
 }
 
@@ -1287,28 +1289,27 @@ alternative_load(struct alternative *a, enum altdb_flags flags)
 	}
 	ctx.modified = false;
 	ctx.flags = flags;
-	if (flags & altdb_lax_parser)
+	if (flags & ALTDB_LAX_PARSER)
 		ctx.bad_format = altdb_parse_stop;
 	else
 		ctx.bad_format = altdb_parse_error;
 	xasprintf(&fn, "%s/%s", admdir, a->master_name);
 	ctx.filename = fn;
 
-	/* Verify the alternative exists */
-	if (stat(ctx.filename, &st) == -1) {
+	/* Open the alternative file. */
+	ctx.fh = fopen(ctx.filename, "r");
+	if (ctx.fh == NULL) {
 		if (errno == ENOENT)
 			return false;
-		else
-			syserr(_("cannot stat file '%s'"), ctx.filename);
-	}
-	if (st.st_size == 0) {
-		return false;
+
+		syserr(_("unable to open file '%s'"), ctx.filename);
 	}
 
-	/* Open the database file */
-	ctx.fh = fopen(ctx.filename, "r");
-	if (ctx.fh == NULL)
-		syserr(_("unable to open file '%s'"), ctx.filename);
+	/* Verify the alternative is not empty. */
+	if (fstat(fileno(ctx.fh), &st) == -1)
+		syserr(_("cannot stat file '%s'"), ctx.filename);
+	if (st.st_size == 0)
+		return false;
 
 	/* Start parsing mandatory attributes (link+status) of the alternative */
 	alternative_reset(a);
@@ -1693,12 +1694,12 @@ alternative_commit(struct alternative *a)
 
 	for (op = a->commit_ops; op; op = op->next) {
 		switch (op->opcode) {
-		case opcode_nop:
+		case OPCODE_NOP:
 			break;
-		case opcode_rm:
+		case OPCODE_RM:
 			checked_rm(op->arg_a);
 			break;
-		case opcode_mv:
+		case OPCODE_MV:
 			checked_mv(op->arg_a, op->arg_b);
 			break;
 		}
@@ -1781,7 +1782,7 @@ alternative_prepare_install_single(struct alternative *a, const char *name,
 	xasprintf(&fn, "%s/%s", altdir, name);
 	checked_rm(fntmp);
 	checked_symlink(file, fntmp);
-	alternative_add_commit_op(a, opcode_mv, fntmp, fn);
+	alternative_add_commit_op(a, OPCODE_MV, fntmp, fn);
 	free(fntmp);
 
 	if (alternative_path_needs_update(linkname, fn)) {
@@ -1789,7 +1790,7 @@ alternative_prepare_install_single(struct alternative *a, const char *name,
 		xasprintf(&fntmp, "%s" ALT_TMP_EXT, linkname);
 		checked_rm(fntmp);
 		checked_symlink(fn, fntmp);
-		alternative_add_commit_op(a, opcode_mv, fntmp, linkname);
+		alternative_add_commit_op(a, OPCODE_MV, fntmp, linkname);
 		free(fntmp);
 	}
 	free(fn);
@@ -1829,11 +1830,11 @@ alternative_prepare_install(struct alternative *a, const char *choice)
 		/* Drop unused slave. */
 		xasprintf(&fn, "%s/%s", altdir, sl->name);
 		if (alternative_path_can_remove(sl->link))
-			alternative_add_commit_op(a, opcode_rm, sl->link, NULL);
+			alternative_add_commit_op(a, OPCODE_RM, sl->link, NULL);
 		else
 			warning(_("not removing %s since it's not a symlink"),
 			        sl->link);
-		alternative_add_commit_op(a, opcode_rm, fn, NULL);
+		alternative_add_commit_op(a, OPCODE_RM, fn, NULL);
 		free(fn);
 	}
 }
@@ -1934,10 +1935,11 @@ alternative_needs_update(struct alternative *a)
 	if (current == NULL)
 		return ALT_UPDATE_LINK_BROKEN;
 
-	if (!alternative_has_choice(a, current))
-		return ALT_UPDATE_NO;
-
 	fs = alternative_get_fileset(a, current);
+
+	/* Stop if we do not have the choice. */
+	if (fs == NULL)
+		return ALT_UPDATE_NO;
 
 	/* Check slaves */
 	for (sl = a->slaves; sl; sl = sl->next) {
@@ -2008,7 +2010,7 @@ alternative_map_load_names(struct alternative_map *alt_map_obj)
 	for (i = 0; i < count; i++) {
 		struct alternative *a_new = alternative_new(table[i]->d_name);
 
-		if (!alternative_load(a_new, altdb_lax_parser)) {
+		if (!alternative_load(a_new, ALTDB_LAX_PARSER)) {
 			alternative_free(a_new);
 			continue;
 		}
@@ -2029,7 +2031,7 @@ alternative_map_load_tree(struct alternative_map *alt_map_links,
 		struct slave_link *sl;
 		struct alternative *a_new = alternative_new(table[i]->d_name);
 
-		if (!alternative_load(a_new, altdb_lax_parser)) {
+		if (!alternative_load(a_new, ALTDB_LAX_PARSER)) {
 			alternative_free(a_new);
 			continue;
 		}
@@ -2329,9 +2331,12 @@ alternative_update(struct alternative *a,
 	    (!current_choice || strcmp(new_choice, current_choice) != 0)) {
 		log_msg("link group %s updated to point to %s", a->master_name,
 		        new_choice);
-		info(_("using %s to provide %s (%s) in %s"), new_choice,
-		     a->master_link, a->master_name,
-		     alternative_status_describe(a->status));
+		if (a->status == ALT_ST_AUTO)
+			info(_("using %s to provide %s (%s) in auto mode"),
+			     new_choice, a->master_link, a->master_name);
+		else
+			info(_("using %s to provide %s (%s) in manual mode"),
+			     new_choice, a->master_link, a->master_name);
 		debug("prepare_install(%s)", new_choice);
 		alternative_prepare_install(a, new_choice);
 	} else if ((reason = alternative_needs_update(a))) {
@@ -2511,8 +2516,7 @@ main(int argc, char **argv)
 	const char *new_choice = NULL;
 	int i = 0;
 
-	if (getenv("DPKG_UNTRANSLATED_MESSAGES") == NULL)
-		setlocale(LC_ALL, "");
+	setlocale(LC_ALL, "");
 	bindtextdomain(PACKAGE, LOCALEDIR);
 	textdomain(PACKAGE);
 
@@ -2682,19 +2686,19 @@ main(int argc, char **argv)
 	    strcmp(action, "config") == 0 ||
 	    strcmp(action, "remove-all") == 0) {
 		/* Load the alternative info, stop on failure. */
-		if (!alternative_load(a, altdb_warn_parser))
+		if (!alternative_load(a, ALTDB_WARN_PARSER))
 			error(_("no alternatives for %s"), a->master_name);
 	} else if (strcmp(action, "remove") == 0) {
 		/* FIXME: Be consistent for now with the case when we
 		 * try to remove a non-existing path from an existing
 		 * link group file. */
-		if (!alternative_load(a, altdb_warn_parser)) {
+		if (!alternative_load(a, ALTDB_WARN_PARSER)) {
 			verbose(_("no alternatives for %s"), a->master_name);
 			exit(0);
 		}
 	} else if (strcmp(action, "install") == 0) {
 		/* Load the alternative info, ignore failures. */
-		alternative_load(a, altdb_warn_parser);
+		alternative_load(a, ALTDB_WARN_PARSER);
 	}
 
 	/* Handle actions. */

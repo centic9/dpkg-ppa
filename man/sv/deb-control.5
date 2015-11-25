@@ -3,7 +3,7 @@
 .\" Copyright Â© 1995 Raul Miller, Ian Jackson, Ian Murdock
 .\" Copyright Â© 1999 Ben Collins <bcollins@debian.org>
 .\" Copyright Â© 2000 Wichert Akkerman <wakkerma@debian.org>
-.\" Copyright Â© 2007-2011 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2007-2011, 2013 Guillem Jover <guillem@debian.org>
 .\" Copyright Â© 2008-2012 RaphaÃ«l Hertzog <hertzog@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
@@ -24,7 +24,7 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH deb\-control 5 2011\-08\-14 Debianprojektet Debian
+.TH deb\-control 5 2013\-12\-20 Debianprojektet Debian
 .SH NAMN
 deb\-control \- Debians filformat för paketstyrfiler
 .
@@ -110,7 +110,7 @@ URL till uppströmsprojektets hemside\-\fIurl\fP.
 Lista över märken som beskriver paketets egenskaper. En beskrivningen och
 förteckning över kända märken finns i paketet \fBdebtags\fP.
 .TP 
-\fBMulti\-Arch:\fP \fBsame\fP|\fBforeign\fP|\fBallowed\fP
+\fBMulti\-Arch:\fP \fBsame\fP|\fBforeign\fP|\fBallowed\fP|\fBno\fP
 Det här fältet används för att ange hur paketet skall fungera på en
 flerarkitektursinstallation. Värdet \fBsame\fP (samma) betyder att paket kan
 saminstalleras med sig självt, men kan inte användas för att uppfylla
@@ -119,7 +119,9 @@ beroenden för paket med en annan arkitektur än sig självt. Värdet \fBforeign\fP
 att det kan användas för att uppfylla beroenden för paket med en annan
 arkitektur än sig självt. Värdet \fBallowed\fP (tillåtet) tillåter att omvända
 beroenden kan ange i sina Depends\-fält att de behöver ett paket från en
-främmande arkitektur, men har i övrigt ingen funktion.
+främmande arkitektur, men har i övrigt ingen funktion. Värdet \fBno\fP är
+standard om fältet utesluts, i vilket fall det vanligtvis inte är nödvändigt
+att lägga till fältet med ett explicit \fBno\fP\-värde.
 .TP 
 \fBSource:\fP\fI källkodsnamn\fP
 Namnet på det källkodspaket som binärpaketet kommer från, om det skiljer sig

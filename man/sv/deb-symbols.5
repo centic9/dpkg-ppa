@@ -50,16 +50,27 @@ anses tillräckligt).
 .P
 Varje exporterad \fIsymbol\fP (anges som \fInamn\fP@\fIversion\fP, där \fIversion\fP är
 "Base" om biblioteket inte är versionsstyrt) associeras med en
-\fIminsta\-version\fP i sin beroendemall (huvudberoendemallen används om
-\fIid\-för\-beroendemall\fP inte finns). Den första alternativa beroendemallen
+\fIminsta\-version\fP i sin beroendemall (huvudberoendemallen används alltid och
+kommer att kombineras med beroendemallen som anges med
+\fIid\-för\-beroendemall\fP om den finns). Den första alternativa beroendemallen
 får nummer 1, den andra 2, osv.
 .P
 Alla poster i ett bibliotek kan även innehålla några fält med
-metainformation. Dessa fält lagras på rader som börjar med en asterisk. För
-närvarande är det enda giltiga fältet \fIBuild\-Depends\-Package\fP, vilket anger
-namnet på det "\-dev"\-paket som hör till biblioteket, och används av
+metainformation. Dessa fält lagras på rader som börjar med en asterisk. De
+enda fält som för närvarande är giltiga är:
+.TP 
+\fBBuild\-Depends\-Package\fP
+Anger namnet på det "\-dev"\-paket som hör till biblioteket, och används av
 \fBdpkg\-shlibdeps\fP för att se till att det beroende som genereras är
 åtminstone lika strikt som motsvarande byggberoende.
+.TP 
+\fBIgnore\-Blacklist\-Groups\fP
+Anger vilka svartlistegrupper som skall ignoreras, som en blankteckenavdelad
+lista, så att symbolerna som förekommer i dessa grupper tas med i
+utdatafilen. Detta bör endast vara nödvändigt för vektygskedjepaket som
+tillhandahåller dessa svartlistade symboler. Vilka grupper som är
+tillgängliga beror på systemet, för ELF\- och GNU\-baserade system är de
+\fBaeabi\fP och \fBgomp\fP.
 .SH EXEMPEL
 .SS "Enkla symbolfiler"
 .PP

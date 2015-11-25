@@ -62,6 +62,7 @@ sub usage {
 }
 
 my ($param, $action);
+my $load_config = 1;
 
 while (@ARGV) {
     $_ = shift(@ARGV);
@@ -82,7 +83,8 @@ while (@ARGV) {
         usageerr(_g('two commands specified: --%s and --%s'), $1, $action)
             if defined($action);
         $action = $1;
-    } elsif (m/^-(\?|-help)$/) {
+        $load_config = 0 if $action eq 'list';
+    } elsif (m/^-(?:\?|-help)$/) {
         usage();
         exit 0;
     } elsif (m/^--version$/) {
@@ -97,35 +99,29 @@ $action //= 'dump';
 
 my $build_flags = Dpkg::BuildFlags->new();
 
+$build_flags->load_config() if $load_config;
+
 if ($action eq 'list') {
     foreach my $flag ($build_flags->list()) {
 	print "$flag\n";
     }
-    exit(0);
-}
+} elsif ($action eq 'get') {
+    exit 1 unless $build_flags->has($param);
 
-$build_flags->load_config();
-
-if ($action eq 'get') {
-    if ($build_flags->has($param)) {
-	print $build_flags->get($param) . "\n";
-	exit(0);
-    }
+    print $build_flags->get($param) . "\n";
 } elsif ($action eq 'origin') {
-    if ($build_flags->has($param)) {
-	print $build_flags->get_origin($param) . "\n";
-	exit(0);
-    }
+    exit 1 unless $build_flags->has($param);
+
+    print $build_flags->get_origin($param) . "\n";
 } elsif ($action eq 'query-features') {
-    if ($build_flags->has_features($param)) {
-	my %features = $build_flags->get_features($param);
-	my $para_shown = 0;
-	foreach my $feature (sort keys %features) {
-	    print $para_shown++ ? "\n" : '';
-	    printf "Feature: %s\n", $feature;
-	    printf "Enabled: %s\n", $features{$feature} ? 'yes' : 'no';
-	}
-	exit(0);
+    exit 1 unless $build_flags->has_features($param);
+
+    my %features = $build_flags->get_features($param);
+    my $para_shown = 0;
+    foreach my $feature (sort keys %features) {
+        print $para_shown++ ? "\n" : '';
+        printf "Feature: %s\n", $feature;
+        printf "Enabled: %s\n", $features{$feature} ? 'yes' : 'no';
     }
 } elsif ($action =~ m/^export-(.*)$/) {
     my $export_type = $1;
@@ -142,13 +138,11 @@ if ($action eq 'get') {
 	    print "$flag=\"$value\" ";
 	}
     }
-    exit(0);
 } elsif ($action eq 'dump') {
     foreach my $flag ($build_flags->list()) {
 	my $value = $build_flags->get($flag);
 	print "$flag=$value\n";
     }
-    exit(0);
 } elsif ($action eq 'status') {
     # Prefix everything with "dpkg-buildflags: status: " to allow easy
     # extraction from a build log. Thus we use report with a non-translated
@@ -182,7 +176,4 @@ if ($action eq 'get') {
 	my $maintainer = $build_flags->is_maintainer_modified($flag) ? '+maintainer' : '';
 	print report('status', "$flag [$origin$maintainer]: $value");
     }
-    exit(0);
 }
-
-exit(1);

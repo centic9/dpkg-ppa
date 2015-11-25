@@ -22,8 +22,8 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH deb\-src\-control 5 2013\-09\-17 Debian\-Projekt Debian
-.SH NAME
+.TH deb\-src\-control 5 2013\-12\-20 Debian\-Projekt Debian
+.SH BEZEICHNUNG
 deb\-src\-control \- Dateiformat der Hauptsteuerdatei von Debian\-Quellpaketen
 .
 .SH ÜBERSICHT
@@ -83,7 +83,21 @@ Format ist \fIBTS\-Art\fP\fB://\fP\fIBTS\-Adresse\fP wie in
 \fBdebbugs://bugs.debian.org\fP. Dieses Feld wird normalerweise nicht benötigt.
 
 .TP 
-\fBVcs\-*:\fP \fI URL\fP
+\fBVcs\-Arch*:\fP\fI URL\fP
+.TQ
+\fBVcs\-Bzr:\fP\fI URL\fP
+.TQ
+\fBVcs\-Cvs:\fP\fI URL\fP
+.TQ
+\fBVcs\-Darcs:\fP\fI URL\fP
+.TQ
+\fBVcs\-Git:\fP\fI URL\fP
+.TQ
+\fBVcs\-Hg:\fP\fI URL\fP
+.TQ
+\fBVcs\-Mtn:\fP\fI URL\fP
+.TQ
+\fBVcs\-Svn:\fP\fI URL\fP
 Die \fIURL\fP des Versionskontrollsystem\-Depots, das für die Betreuung des
 Pakets verwandt wird. Derzeit werden \fBArch\fP, \fBBzr\fP (Bazaar), \fBCvs\fP,
 \fBDarcs\fP, \fBGit\fP, \fBHg\fP (Mercurial), \fBMtn\fP (Monotone) und \fBSvn\fP
@@ -91,7 +105,7 @@ Pakets verwandt wird. Derzeit werden \fBArch\fP, \fBBzr\fP (Bazaar), \fBCvs\fP,
 Version des Pakets, wie den Hauptzweig oder den Trunk.
 
 .TP 
-\fBVcs\-Browser:\fP \fI URL\fP
+\fBVcs\-Browser:\fP\fI URL\fP
 Die \fIURL\fP der Webschnittstelle, um das Versionskontrollsystem\-Depot
 anzuschauen.
 
@@ -167,16 +181,17 @@ Paketen. Jede Gruppe ist eine Liste von durch vertikale Striche (oder
 getrennt. Kommata müssen als »UND«, vertikale Striche als »ODER« gelesen
 werden, wobei die vertikalen Striche stärker binden. Jeder Paketname wird
 optional gefolgt von einer Versionsnummer\-Spezifikation in Klammern, einer
-Architekturspezifikation in eckigen Klammern und einer Profilspezifikation
-in spitzen Klammern.
+Architekturspezifikation in eckigen Klammern und einer Einschränkungsformel,
+die aus einer oder mehr Listen von Profilnamen in spitzen Klammern besteht.
 
 Syntaxtisch werden die Felder \fBBuild\-Conflicts\fP, \fBBuild\-Conflicts\-Arch\fP
 und \fBBuild\-Conflicts\-Indep\fP durch eine Komma\-separierte Liste von
 Paketnamen dargestellt, wobei das Komma als »UND« verstanden wird. Die
 Angabe alternativer Pakete mit dem »Pipe«\-Symbol wird nicht
 unterstützt. Jedem Paketnamen folgt optional eine Versionnummerangabe in
-Klammern, eine Architekturspezifikation in eckigen Klammern und ein
-Profilspezifikation in spitzen Klammern.
+Klammern, eine Architekturspezifikation in eckigen Klammern und einer
+Einschränkungsformel, die aus einer oder mehr Listen von Profilnamen in
+spitzen Klammern besteht.
 
 Eine Versionsnummer kann mit »>>« beginnen, in diesem Falle passen
 alle neueren Versionen, und kann die Debian\-Paketrevision (getrennt durch
@@ -189,10 +204,13 @@ Eine Architekturspezifikation besteht aus einer oder mehreren durch
 Leerzeichen getrennten Architekturnamen. Jedem Namen darf ein Ausrufezeichen
 vorangestellt werden, das »NICHT« bedeutet.
 
-Eine Profilspezifikation besteht aus einer oder mehreren durch Leerzeichen
-getrennten Profilnamen, denen der Namensraum »\fBprofile.\fP« vorangestellt
-wird. Jedem Namen darf ein Ausrufezeichen vorangestellt werden, das »NICHT«
-bedeutet.
+Eine Einschränkungsformel besteht aus einer oder mehrerer durch Leeraum
+getrennten Einschränkungslisten. Jede Einschränkungsliste wird in spitze
+Klammern eingeschlossen. Einträge in den Einschränkungslisten sind
+Bauprofilnamen, getrennt durch Leerraum. Diesen Listen kann ein
+Ausrufezeichen vorangestellt werden, das »NICHT« bedeutet. Eine
+Einschränkungsformel stellt einen Ausdruck in einer disjunkte Normalform
+dar.
 
 Beachten Sie, dass die Abhängigkeiten von Paketen aus der Menge der
 \fBbuild\-essential\fP entfallen kann und die Angabe von Baukonflikten gegen sie
@@ -243,7 +261,7 @@ aus dem Paket \fBdebian\-installer\fP für weitere Informationen über sie.
 .TP 
 \fBEssential:\fP \fByes\fP|\fBno\fP
 .TQ
-\fBMulti\-Arch:\fP \fBsame\fP|\fBforeign\fP|\fBallowed\fP
+\fBMulti\-Arch:\fP \fBsame\fP|\fBforeign\fP|\fBallowed\fP|\fBno\fP
 .TQ
 \fBTag:\fP \fI Liste\-von\-Markierungen\fP
 .TQ
@@ -292,9 +310,7 @@ nicht in den Steuerdateien des Quell\- und Binärpakets auftauchen.
 Beachten Sie, dass diese Benutzer\-definierten Felder den globalen Namensraum
 nutzen werden und somit in der Zukunft mit offiziell erkannten Feldern
 kollidieren könnten. Um solche möglichen Situationen zu vermeiden, können
-Sie den Feldern \fBPrivate\-\fP, wie in \fBXB\-Private\-Neues\-Feld\fP,
-voranstellen. Als Seiteneffekt wird in diesem Fall \fBdpkg\-deb\fP sie nicht mit
-der Warnung eines unbekannten Feldes ausgeben.
+Sie den Feldern \fBPrivate\-\fP, wie in \fBXB\-Private\-Neues\-Feld\fP, voranstellen.
 
 .SH BEISPIEL
 .\" .RS
@@ -307,8 +323,8 @@ Maintainer: Dpkg Developers <debian\-dpkg@lists.debian.org>
 # dieses Feld wird in das Binär\- und Quellpaket kopiert
 XBS\-Upstream\-Release\-Status: stable
 Homepage: https://wiki.debian.org/Teams/Dpkg
-Vcs\-Browser: http://git.debian.org/?p=dpkg/dpkg.git
-Vcs\-Git: git://git.debian.org/git/dpkg/dpkg.git
+Vcs\-Browser: https://anonscm.debian.org/cgit/dpkg/dpkg.git
+Vcs\-Git: git://anonscm.debian.org/dpkg/dpkg.git
 Standards\-Version: 3.7.3
 Build\-Depends: pkg\-config, debhelper (>= 4.1.81),
  libselinux1\-dev (>= 1.28\-4) [!linux\-any]
@@ -336,7 +352,7 @@ Description: Debian package development tools
 
 .\" .RE
 .SH ÜBERSETZUNG
-Die deutsche Übersetzung wurde 2004, 2006-2013 von Helge Kreutzmann
+Die deutsche Übersetzung wurde 2004, 2006-2015 von Helge Kreutzmann
 <debian@helgefjell.de>, 2007 von Florian Rehnisch <eixman@gmx.de> und
 2008 von Sven Joachim <svenjoac@gmx.de>
 angefertigt. Diese Übersetzung ist Freie Dokumentation; lesen Sie die

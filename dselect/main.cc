@@ -230,9 +230,8 @@ extern "C" {
     fp = fopen(v, "a");
     if (!fp)
       ohshite(_("couldn't open debug file `%.255s'\n"), v);
-    dpkg_set_report_buffer(fp);
 
-    debug_set_output(fp);
+    debug_set_output(fp, v);
     debug_set_mask(dbg_general | dbg_depcon);
   }
 
@@ -304,6 +303,8 @@ extern "C" {
                        color[screenpart].attr= color[screenpart].attr | aval;
       }
     }
+
+    free(s);
   }
 
 } /* End of extern "C" */
@@ -351,14 +352,18 @@ void cursesoff() {
   cursesareon = false;
 }
 
-extern void *operator new(size_t size) {
+extern void *
+operator new(size_t size) DPKG_ATTR_THROW(std::bad_alloc)
+{
   void *p;
   p= m_malloc(size);
   assert(p);
   return p;
 }
 
-extern void operator delete(void *p) {
+extern void
+operator delete(void *p) DPKG_ATTR_NOEXCEPT
+{
   free(p);
 }
 

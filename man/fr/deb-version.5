@@ -22,7 +22,7 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH deb\-version 5 2013\-04\-02 "Projet Debian" Debian
+.TH deb\-version 5 02\-04\-2013 "Projet Debian" Debian
 .SH NOM
 deb\-version \- Format du numéro de version des paquets Debian
 .
@@ -68,9 +68,9 @@ est analysée de la même façon que la \fIversion_amont\fP.
 .IP
 Cette partie est facultative\ ; si elle n'est pas présente, la
 \fIversion_amont\fP ne doit pas contenir de tiret. Ce format est prévu pour le
-cas où un logiciel a été directement conçu comme paquet Debian, il y a donc
-qu'une seule «\ debianisation\ » et donc par la suite pas besoin d'indication
-de révision.
+cas où un logiciel a été directement conçu comme paquet Debian, il n'y a
+donc qu'une seule «\ debianisation\ » et donc par la suite pas besoin
+d'indication de révision.
 .IP
 Il est convenu de repartir à 1 pour la \fIrévision_debian\fP à chaque fois que
 la \fIversion_amont\fP est incrémentée.
@@ -80,7 +80,7 @@ déterminer la partie \fIversion_amont\fP et la \fIrévision_Debian\fP. L'absence 
 \fIrévision_Debian\fP est comparée avant sa présence, mais il faut noter que la
 \fIrévision_Debian\fP est la partie la moins significative du numéro de
 version.
-.SS "Sorting algorithm"
+.SS "Algorithme de tri"
 Les parties \fIversion_amont\fP et \fIrévision_Debian\fP sont comparées par le
 système de gestion de paquet en utilisant le même algorithme\ :
 .PP
@@ -97,7 +97,7 @@ ainsi\ : «\ ~~\ », «\ ~~a\ », «\ ~\ », partie vide, «\ a\ ».
 .PP
 Puis, le début de ce qui reste des chaînes de caractères qui ne doivent plus
 contenir que des chiffres est déterminé. Ces valeurs numériques sont
-comparées, et les différences sont remontées. Dans le cas d'une chaîne vide
+comparées et les différences sont remontées. Dans le cas d'une chaîne vide
 (ce qui peut arriver si une chaîne est plus longue que l'autre lors de la
 comparaison) elle compte pour un zéro.
 .PP
@@ -106,16 +106,17 @@ puis de suppression des caractères numériques dans le début de la chaîne)
 sont répétées jusqu'à ce qu'une différence soit trouvée ou la fin des
 chaînes atteinte.
 .PP
-Notez que le rôle de epoch est de permettre de se sortir de problèmes de
+Notez que le rôle de epoch est de permettre de se sortir des problèmes de
 numérotation de version, et de faire face à des situations de changement de
 logique de numérotation. Cela n'est \fBpas\fP destiné à faire face à des
 numéros de version qui contiennent des chaînes de lettres que le système de
-gestion de paquet ne sait pas interpréter (comme «\ ALPHA\ », «\ pre\-\ »)ou
+gestion de paquet ne sait pas interpréter (comme «\ ALPHA\ », «\ pre\-\ ») ou
 d'autres choses stupides.
 .SH NOTES
-The tilde character and its special sorting properties were introduced in
-dpkg 1.10 and some parts of the dpkg build scripts only gained support for
-it later in the 1.10.x series.
+Le caractère tilde («\ ~\ ») et sa propriété spéciale pour les comparaisons
+ont été introduites dans la version 1.10 de dpkg. Ce n'est qu'à partir des
+versions supérieures (1.10.x) que certaines parties des scripts de
+construction de dpkg ont commencé à gérer ce système.
 .SH "VOIR AUSSI"
 \fBdeb\-control\fP(5), \fBdeb\fP(5), \fBdpkg\fP(1).
 .SH TRADUCTION

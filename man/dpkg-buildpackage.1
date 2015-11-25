@@ -33,43 +33,61 @@ is a program that automates the process of building a Debian package. It
 consists of the following steps:
 .IP \fB1.\fP 3
 It prepares the build environment by setting various environment
-variables (see \fBENVIRONMENT\fP) and calls \fBdpkg\-source
-\-\-before\-build\fP (unless \fB\-T\fP or \fB\-\-target\fP has been used).
+variables (see \fBENVIRONMENT\fP), runs the \fBinit\fP hook, and calls
+\fBdpkg\-source \-\-before\-build\fP (unless \fB\-T\fP or \fB\-\-target\fP
+has been used).
 .IP \fB2.\fP 3
 It checks that the build-dependencies and build-conflicts
 are satisfied (unless \fB\-d\fP is specified).
 .IP \fB3.\fP 3
 If a specific target has been selected with the \fB\-T\fP or \fB\-\-target\fP
-option, it calls that target and stops here. Otherwise it calls
-\fBfakeroot debian/rules clean\fP to clean the build-tree (unless
-\fB\-nc\fP is specified).
+option, it calls that target and stops here. Otherwise it runs the
+\fBpreclean\fP hook and calls \fBfakeroot debian/rules clean\fP to
+clean the build-tree (unless \fB\-nc\fP is specified).
 .IP \fB4.\fP 3
-It calls \fBdpkg\-source \-b\fP to generate the source package (unless
-a binary\-only build has been requested with \fB\-b\fP, \fB\-B\fP or
-\fB\-A\fP).
+It runs the \fBsource\fP hook and calls \fBdpkg\-source \-b\fP to generate
+the source package (unless a binary\-only build has been requested with
+\fB\-b\fP, \fB\-B\fP or \fB\-A\fP).
 .IP \fB5.\fP 3
-It calls \fBdebian/rules\fP \fIbuild-target\fP followed by
-\fBfakeroot debian/rules\fP \fIbinary-target\fP (unless a source-only
-build has been requested with \fB\-S\fP). Note that \fIbuild-target\fR
-and \fIbinary-target\fP are either \fBbuild\fP and \fBbinary\fP (default
-case, or if \fB\-b\fP is specified), or \fBbuild\-arch\fP and
-\fBbinary\-arch\fP (if \fB\-B\fP is specified), or \fBbuild\-indep\fP and
-\fBbinary\-indep\fP (if \fB\-A\fP is specified).
+It runs the \fBbuild\fP hook and calls \fBdebian/rules\fP \fIbuild-target\fP,
+then runs the \fBbinary\fP hook followed by \fBfakeroot debian/rules\fP
+\fIbinary-target\fP (unless a source-only build has been requested with
+\fB\-S\fP). Note that \fIbuild-target\fR and \fIbinary-target\fP are either
+\fBbuild\fP and \fBbinary\fP (default case, or if \fB\-b\fP is specified),
+or \fBbuild\-arch\fP and \fBbinary\-arch\fP (if \fB\-B\fP or \fB\-G\fP are
+specified), or \fBbuild\-indep\fP and \fBbinary\-indep\fP (if \fB\-A\fP
+or \fB\-g\fP are specified).
 .IP \fB6.\fP 3
-It calls \fBgpg2\fP or \fBgpg\fP to sign the \fB.dsc\fP file (if any, unless
-\fB\-us\fP is specified or on UNRELEASED builds).
-.IP \fB7.\fP 3
-It calls \fBdpkg\-genchanges\fP to generate a \fB.changes\fP file.
+It runs the \fBchanges\fP hook and calls \fBdpkg\-genchanges\fP to
+generate a \fB.changes\fP file.
 Many \fBdpkg\-buildpackage\fP options are forwarded to
 \fBdpkg\-genchanges\fP.
+.IP \fB7.\fP 3
+It runs the \fBpostclean\fP hook and if \fB\-tc\fP is specified, it will
+call \fBfakeroot debian/rules clean\fP again.
 .IP \fB8.\fP 3
-It calls \fBgpg2\fP or \fBgpg\fP to sign the \fB.changes\fP file (unless
-\fB\-uc\fP is specified or on UNRELEASED builds).
+It calls \fBdpkg\-source \-\-after\-build\fP.
 .IP \fB9.\fP 3
-If \fB\-tc\fP is specified, it will call \fBfakeroot debian/rules clean\fP
-again. Finally it calls \fBdpkg\-source \-\-after\-build\fP.
+It runs the \fBcheck\fP hook and calls a package checker for the
+\fB.changes\fP file (if a command is specified in \fBDEB_CHECK_COMMAND\fP or
+with \fB\-\-check\-command\fP).
+.IP \fB10.\fP 3
+It runs the \fBsign\fP hook and calls \fBgpg2\fP or \fBgpg\fP to sign
+the \fB.dsc\fP file (if any, unless \fB\-us\fP is specified or on UNRELEASED
+builds), and the \fB.changes\fP file (unless \fB\-uc\fP is specified or on
+UNRELEASED builds).
+.IP \fB11.\fP 3
+It runs the \fBdone\fP hook.
 .
 .SH OPTIONS
+.TP
+.B \-g
+Specifies a build limited to source and architecture independent packages.
+Passed to \fBdpkg\-genchanges\fP.
+.TP
+.B \-G
+Specifies a build limited to source and architecture specific packages.
+Passed to \fBdpkg\-genchanges\fP.
 .TP
 .B \-b
 Specifies a binary-only build, no source files are to be built and/or
@@ -121,33 +139,49 @@ run with root rights.
 .BI \-e maintainer-address
 Passed unchanged to \fBdpkg\-genchanges\fP. See its manual page.
 .TP
-.BI \-a architecture
+.BR \-a ", " \-\-host\-arch " \fIarchitecture\fP"
 Specify the Debian architecture we build for. The architecture of the
 machine we build on is determined automatically, and is also the default
 for the host machine.
 .TP
-.BI \-t gnu-system-type
+.BR \-t ", " \-\-host\-type " \fIgnu-system-type\fP"
 Specify the GNU system type we build for. It can be used in place
-of \-a or as a complement to override the default GNU system type
-of the target Debian architecture.
+of \-\-host\-arch or as a complement to override the default GNU system type
+of the host Debian architecture.
+.TP
+.BR \-\-target\-arch " \fIarchitecture\fP"
+Specify the Debian architecture the binaries built will build for.
+The default value is the host machine.
+.TP
+.BR \-\-target\-type " \fIgnu-system-type\fP"
+Specify the GNU system type the binaries built will build for. It can be
+used in place of \-\-target\-arch or as a complement to override the
+default GNU system type of the target Debian architecture.
 .TP
 .BR \-P \fIprofile\fP[ , ...]
-Specify the profile(s) we build, as a comma-separated list, without the
-"\fBprofile.\fP" namespace prefix. The default behavior is to build for
-no specific profile. Also adds them (as a space separated list) to the
-\fBDEB_BUILD_PROFILES\fP environment variable which allows, for example,
-\fBdebian/rules\fP files to use this information for conditional builds.
+Specify the profile(s) we build, as a comma-separated list. The default
+behavior is to build for no specific profile. Also sets them (as a space
+separated list) as the \fBDEB_BUILD_PROFILES\fP environment variable which
+allows, for example, \fBdebian/rules\fP files to use this information for
+conditional builds.
 .TP
-.BI \-j jobs
-Number of jobs allowed to be run simultaneously, equivalent to the
+.BR \-j [\fIjobs\fP|\fBauto\fP]
+Number of jobs allowed to be run simultaneously, number of jobs matching
+the number of online processors if \fBauto\fP is specified, or unlimited
+number if \fIjobs\fP is not specified, equivalent to the
 .BR make (1)
 option of the same name. Will add itself to the \fBMAKEFLAGS\fP
 environment variable, which should cause all subsequent make
-invocations to inherit the option. Also adds \fBparallel=\fP\fIjobs\fP
-to the \fBDEB_BUILD_OPTIONS\fP environment variable which allows
-debian/rules files to use this information for their own purposes.
-The \fBparallel=\fP\fIjobs\fP in \fBDEB_BUILD_OPTIONS\fP environment variable
-will override the \fB\-j\fP value if this option is given.
+invocations to inherit the option. Also adds \fBparallel=\fP\fIjobs\fP or
+\fBparallel=\fP to the \fBDEB_BUILD_OPTIONS\fP environment variable which
+allows debian/rules files to use this information for their own purposes.
+The \fBparallel=\fP\fIjobs\fP or \fBparallel=\fP option in
+\fBDEB_BUILD_OPTIONS\fP environment variable will override the \fB\-j\fP
+value if this option is given.
+Note that the \fBauto\fP value will get replaced by the actual number of
+currently active processors, and as such will not get propagated to any
+child process. If the number of online processors cannot be inferred then
+the code will fallback to using an unlimited number.
 .TP
 .B \-D
 Check build dependencies and conflicts; abort if unsatisfied. This is the
@@ -158,7 +192,8 @@ Do not check build dependencies and conflicts.
 .TP
 .B \-nc
 Do not clean the source tree (implies \fB\-b\fP if nothing else has been
-selected among \fB\-B\fP, \fB\-A\fP or \fB\-S\fP).
+selected among \fB\-F\fP, \fB\-g\fP, \fB\-G\fP, \fB\-B\fP, \fB\-A\fP
+or \fB\-S\fP).
 .TP
 .B \-tc
 Clean the source tree (using
@@ -201,6 +236,54 @@ another make program (for example by using
 .B /usr/local/bin/make \-f debian/rules
 as \fIrules-file\fR).
 .TP
+.BI \-\-check\-command= check-command
+Command used to check the \fB.changes\fP file itself and any artifact built
+referenced in the file. The command should take the \fB.changes\fP pathname
+as an argument. This command will usually be \fBlintian\fP.
+.TP
+.BI \-\-check\-option= opt
+Pass option \fIopt\fP to the \fIcheck-command\fP specified with
+\fBDEB_CHECK_COMMAND\fP or \fB\-\-check\-command\fP.
+Can be used multiple times.
+.TP
+.BI \-\-hook\- hook-name = hook-command
+Set the specified shell code \fIhook-command\fP as the hook \fIhook-name\fP,
+which will run at the times specified in the run steps. The hooks will
+always be executed even if the following action is not performed (except
+for the \fBbinary\fP hook).
+
+Note: Hooks can affect the build process, and cause build failures if
+their commands fail, so watch out for unintended consequences.
+
+The current \fIhook-name\fP supported are:
+
+.B init preclean source build binary changes postclean check sign done
+
+The \fIhook-command\fP supports the following substitution format string,
+which will get applied to it before execution:
+
+.RS
+.TP
+.B %%
+A single % character.
+.TP
+.B %a
+A boolean value (0 or 1), representing whether the following action is
+being performed.
+.TP
+.B %p
+The source package name.
+.TP
+.B %v
+The source package version.
+.TP
+.B %s
+The source package version (without the epoch).
+.TP
+.B %u
+The upstream version.
+.RE
+.TP
 .BI \-p sign-command
 When \fBdpkg\-buildpackage\fP needs to execute GPG to sign a source
 control (\fB.dsc\fP) file or a \fB.changes\fP file it will run
@@ -233,9 +316,11 @@ Passed unchanged to \fBdpkg\-source\fP. See its manual page.
 .TP
 .BI \-\-source\-option= opt
 Pass option \fIopt\fP to \fBdpkg\-source\fP.
+Can be used multiple times.
 .TP
 .BI \-\-changes\-option= opt
 Pass option \fIopt\fP to \fBdpkg\-genchanges\fP.
+Can be used multiple times.
 .TP
 .BI \-\-admindir= dir
 .TQ
@@ -251,14 +336,22 @@ Show the version and exit.
 .
 .SH ENVIRONMENT
 .TP
+.B DEB_CHECK_COMMAND
+If set, it will be used as the command to check the \fB.changes\fP file.
+Overridden by the \fB\-\-check\-command\fP option.
+.TP
 .B DEB_SIGN_KEYID
 If set, it will be used to sign the \fB.changes\fP and \fB.dsc\fP files.
 Overridden by the \fB\-k\fP option.
 .TP
+.B DEB_BUILD_OPTIONS
+If set, and containing \fBnocheck\fP the \fBDEB_CHECK_COMMAND\fP variable
+will be ignored.
+.TP
 .B DEB_BUILD_PROFILES
 If set, it will be used as the active build profile(s) for the package
-being built. It is a space separated list of profile names, without the
-"\fBprofile.\fP" namespace prefix. Overridden by the \fB\-P\fP option.
+being built. It is a space separated list of profile names. Overridden
+by the \fB\-P\fP option.
 
 .SS Reliance on exported environment flags
 Even if \fBdpkg\-buildpackage\fP exports some variables, \fBdebian/rules\fP
@@ -283,7 +376,7 @@ the transition, it will fallback to using the \fBbuild\fP target
 if \fBmake \-f debian/rules \-qn\fP \fIbuild-target\fP returns 2 as
 exit code.
 .SH BUGS
-It should be possible to specify spaces and shell metacharacters in
+It should be possible to specify spaces and shell metacharacters
 and initial arguments for
 .IR gain-root-command " and " sign-command .
 .
@@ -295,5 +388,6 @@ and initial arguments for
 .BR dpkg\-buildflags (1),
 .BR dpkg\-genchanges (1),
 .BR fakeroot (1),
+.BR lintian (1),
 .BR gpg2 (1),
 .BR gpg (1).

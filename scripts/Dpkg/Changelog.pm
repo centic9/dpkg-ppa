@@ -116,9 +116,8 @@ specified with $error and a copy of the line can be recorded in $line.
 
 sub parse_error {
     my ($self, $file, $line_nr, $error, $line) = @_;
-    shift;
 
-    push @{$self->{parse_errors}}, [ @_ ];
+    push @{$self->{parse_errors}}, [ $file, $line_nr, $error, $line ];
 
     if ($self->{verbose}) {
 	if ($line) {
@@ -168,7 +167,7 @@ sub get_parse_errors {
 	my $res = '';
 	foreach my $e (@{$self->{parse_errors}}) {
 	    if ($e->[3]) {
-		$res .= report(_g('warning'),_g("%s(l%s): %s\nLINE: %s"), @$e );
+		$res .= report(_g('warning'), _g("%s(l%s): %s\nLINE: %s"), @$e);
 	    } else {
 		$res .= report(_g('warning'), _g('%s(l%s): %s'), @$e);
 	    }
@@ -344,8 +343,8 @@ sub _is_full_range {
     return 1 if $range->{all};
 
     # If no range delimiter is specified, we want everything.
-    foreach (qw(since until from to count offset)) {
-        return 0 if exists $range->{$_};
+    foreach my $delim (qw(since until from to count offset)) {
+        return 0 if exists $range->{$delim};
     }
 
     return 1;
@@ -362,7 +361,7 @@ sub _data_range {
 
     my ($start, $end);
     if (defined($range->{count})) {
-	my $offset = $range->{offset} || 0;
+	my $offset = $range->{offset} // 0;
 	my $count = $range->{count};
 	# Convert count/offset in start/end
 	if ($offset > 0) {
@@ -388,12 +387,12 @@ sub _data_range {
     my @result;
     my $include = 1;
     $include = 0 if defined($range->{to}) or defined($range->{until});
-    foreach (@$data) {
-	my $v = $_->get_version();
+    foreach my $entry (@{$data}) {
+	my $v = $entry->get_version();
 	$include = 1 if defined($range->{to}) and $v eq $range->{to};
 	last if defined($range->{since}) and $v eq $range->{since};
 
-	push @result, $_ if $include;
+	push @result, $entry if $include;
 
 	$include = 1 if defined($range->{until}) and $v eq $range->{until};
 	last if defined($range->{from}) and $v eq $range->{from};
@@ -416,8 +415,8 @@ sub abort_early {
 
     my $data = $self->{data} or return;
     my $r = $self->{range} or return;
-    my $count = $r->{count} || 0;
-    my $offset = $r->{offset} || 0;
+    my $count = $r->{count} // 0;
+    my $offset = $r->{offset} // 0;
 
     return if $self->_is_full_range($r);
     return if $offset < 0 or $count < 0;
@@ -431,8 +430,8 @@ sub abort_early {
     }
 
     return unless defined($r->{since}) or defined($r->{from});
-    foreach (@$data) {
-	my $v = $_->get_version();
+    foreach my $entry (@{$data}) {
+	my $v = $entry->get_version();
 	return 1 if defined($r->{since}) and $v eq $r->{since};
 	return 1 if defined($r->{from}) and $v eq $r->{from};
     }
@@ -537,8 +536,8 @@ sub dpkg {
     $f->{Source} = $src->get_source() || 'unknown';
     $f->{Version} = $src->get_version() // 'unknown';
     $f->{Distribution} = join(' ', $src->get_distributions());
-    $f->{Maintainer} = $src->get_maintainer() || '';
-    $f->{Date} = $src->get_timestamp() || '';
+    $f->{Maintainer} = $src->get_maintainer() // '';
+    $f->{Date} = $src->get_timestamp() // '';
     $f->{Changes} = $src->get_dpkg_changes();
 
     # handle optional fields
@@ -554,10 +553,10 @@ sub dpkg {
     }
 
     foreach my $bin (@data) {
-	my $oldurg = $f->{Urgency} || '';
-	my $oldurgn = $URGENCIES{$f->{Urgency}} || -1;
-	my $newurg = $bin->get_urgency() || '';
-	my $newurgn = $URGENCIES{$newurg} || -1;
+	my $oldurg = $f->{Urgency} // '';
+	my $oldurgn = $URGENCIES{$f->{Urgency}} // -1;
+	my $newurg = $bin->get_urgency() // '';
+	my $newurgn = $URGENCIES{$newurg} // -1;
 	$f->{Urgency} = ($newurgn > $oldurgn) ? $newurg : $oldurg;
 	$f->{Changes} .= "\n" . $bin->get_dpkg_changes();
 
@@ -602,8 +601,8 @@ sub rfc822 {
 	$f->{Source} = $entry->get_source() || 'unknown';
 	$f->{Version} = $entry->get_version() // 'unknown';
 	$f->{Distribution} = join(' ', $entry->get_distributions());
-	$f->{Maintainer} = $entry->get_maintainer() || '';
-	$f->{Date} = $entry->get_timestamp() || '';
+	$f->{Maintainer} = $entry->get_maintainer() // '';
+	$f->{Date} = $entry->get_timestamp() // '';
 	$f->{Changes} = $entry->get_dpkg_changes();
 
 	# handle optional fields
@@ -694,6 +693,12 @@ entries for the versions 1.2, 1.3, 2.0, 2.1, 2.2, 3.0 and 3.1.
 Any combination of one option of C<since> and C<from> and one of
 C<until> and C<to> returns the intersection of the two results
 with only one of the options specified.
+
+=head1 CHANGES
+
+=head2 Version 1.00
+
+Mark the module as public.
 
 =head1 AUTHOR
 

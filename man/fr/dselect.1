@@ -4,7 +4,7 @@
 .\" Copyright Â© 2000 Josip Rodin
 .\" Copyright Â© 2001 Joost Kooij
 .\" Copyright Â© 2001 Wichert Akkerman <wakkerma@debian.org>
-.\" Copyright Â© 2010-2011 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2010-2014 Guillem Jover <guillem@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH dselect 1 07\-04\-2012 "Projet Debian" Debian
+.TH dselect 1 11\-08\-2014 "Projet Debian" Debian
 .SH NOM
 dselect \- Interface de gestion de paquets Debian.
 .
@@ -58,11 +58,11 @@ pour modifier le comportement de \fBdselect\fP ou pour montrer des informations
 supplémentaires sur le programme.
 .
 .SH OPTIONS
-All options can be specified both on the command line and in the \fBdselect\fP
-configuration file \fI/etc/dpkg/dselect.cfg\fP or the files on the
-configuration directory \fI/etc/dpkg/dselect.cfg.d/\fP. Each line in the
-configuration file is either an option (exactly the same as the command line
-option but without leading hyphens) or a comment (if it starts with a \fB#\fP).
+On peut spécifier une option à la fois sur la ligne de commande et dans le
+fichier de configuration de \fBdselect\fP, \fI/etc/dpkg/dselect.cfg\fP ou dans les
+fichiers du répertoire de configuration \fI/etc/dpkg/dselect.cfg.d/\fP. Chaque
+ligne de ce fichier est soit une option (identique à une option en ligne de
+commande mais sans tiret), soit un commentaire (si il commence par \fB#\fP).
 .br
 .TP 
 \fB\-\-admindir\fP\fI répertoire\fP
@@ -79,7 +79,7 @@ Activer le mode expert, c'est\-à\-dire ne pas afficher les messages d'aide
 ennuyeux.
 .TP 
 \fB\-\-colour\fP|\fB\-\-color\fP \fIpartie_écran:\fP[\fIpremier_plan\fP],[\fIarrière_plan\fP][\fI:attr\fP[\fI+attr+...\fP]]
-Configure les couleurs des écrans. Ceci ne fonctionne que si votre terminal
+Configure les couleurs des écrans. Cela ne fonctionne que si votre terminal
 gère les couleurs. Cette option peut\-être utilisée plusieurs fois (et il est
 préférable de l'utiliser dans \fIdselect.cfg\fP). Chaque utilisation change la
 couleur (et, en option, d'autres attributs) d'une partie de l'écran. Les
@@ -125,12 +125,12 @@ Utilisé pour les lignes des recherches.
 \fBhelpscreen\fP
 La couleur des écrans d'aide.
 .RE
-.P
+.IP
 Après la partie de l'écran concernée, vient un signe deux\-points et la
 spécification des couleurs. Pour surcharger les valeurs des couleurs
 compilées, vous pouvez indiquer la couleur du premier plan, de
 l'arrière\-plan, ou les deux. Utilisez les noms standard de couleurs curses.
-.P
+.IP
 En option, les spécifications des couleurs peuvent être suivies d'un signe
 deux\-points et de la spécification d'un attribut. Il s'agit d'une liste
 d'attributs, séparés par des caractères plus («\ +\ »). Parmi les attributs
@@ -208,12 +208,12 @@ disparaissent ou sont résolus. Si les problèmes persistent ou si
 l'installation n'est pas correcte, veuillez examiner les causes et
 circonstances puis soumettez un rapport de bogue au système de suivi des
 bogues Debian. Les instructions pour soumettre ces rapports de bogues se
-trouvent sur http://bugs.debian.org/ ou dans la page de manuel de
+trouvent sur https://bugs.debian.org/ ou dans la page de manuel de
 \fBreportbug\fP(1), si ce paquet est installé.
 .sp
 Les détails de l'action d'installation dépendent de l'implémentation de la
 méthode d'accès. L'attention et la contribution de l'utilisateur peuvent
-être nécessaires lors de l'installation ou du retrait des paquets. Ceci
+être nécessaires lors de l'installation ou du retrait des paquets. Cela
 dépend des scripts des responsables des paquets. Certains paquets utilisent
 la bibliothèque \fBdebconf\fP(1), ce qui permet la mise en place
 d'installations plus flexibles ou même automatisées.
@@ -232,7 +232,7 @@ Quitter \fBdselect\fP
 Quitte le programme avec un code d'erreur de 0 (succès).
 .sp
 .
-.SH "PACKAGE SELECTIONS MANAGEMENT"
+.SH "GESTION DE LA SÉLECTION DES PAQUETS"
 .sp
 .SS Introduction
 .sp
@@ -244,10 +244,10 @@ conçu pour aider la gestion et l'administration des paquets. Ce n'est qu'un
 outil, et ne doit pas remplacer la compréhension et les aptitudes d'un
 administrateur. L'utilisateur doit être familier des concepts sous\-jacents
 au système de gestion des paquets Debian. En cas de doute, consultez la page
-de manuel \fBdpkg\fP(1) et la charte Debian présente dans le paquet
+de manuel \fBdpkg\fP(1) et la Charte Debian présente dans le paquet
 \fBdebian\-policy\fP.
 .sp
-À moins que \fBdselect\fP soit lancé en mode expert ou intermédiaire, un
+À moins que \fBdselect\fP ne soit lancé en mode expert ou intermédiaire, un
 message d'aide est d'abord affiché lorsque cette action est choisie dans le
 menu. Il est \fBfortement\fP conseillé à l'utilisateur d'étudier toutes les
 informations dans ces écrans d'aide lorsqu'ils apparaissent. Les écrans
@@ -268,14 +268,14 @@ paquets ou à un mode partagé équitablement.
 .sp
 .SS "Vue des détails d'un paquet"
 .sp
-La vue des détails d'un paquet affiche par défaut la description longue du paquet sélectionné dans la liste des paquets. Le type de détail peut être modifié en pressant la touche «\ \fBi\fP\ ». Ceci permet de passer de\ :
+La vue des détails d'un paquet affiche par défaut la description longue du paquet sélectionné dans la liste des paquets. Le type de détail peut être modifié en pressant la touche «\ \fBi\fP\ ». Cela permet de passer de\ :
  \- la description longue
  \- les informations de contrôle de la version installée
  \- les informations de contrôle de la version disponible
 .sp
 Dans un écran de résolution des dépendances, on peut également voir les
-dépendances et conflits spécifiques au paquet et qui expliquent la présence
-du paquet dans la liste.
+dépendances et conflits spécifiques au paquet qui expliquent la présence du
+paquet dans la liste.
 .sp
 .SS "Liste des états des paquets"
 .sp
@@ -285,15 +285,18 @@ installés sur le système et les paquets connus par la base de données des
 paquets disponibles.
 .sp
 Pour tous les paquets, la liste affiche sur une ligne l'état du paquet, sa
-priorité, sa section, les versions installées et disponibles, le nom du
-paquet et sa description courte. En appuyant sur la touche «\ \fBV\fP\ », on peut
-activer ou désactiver l'affichage des versions installées et disponibles. En
-appuyant sur la touche «\ \fBv\fP\ », l'affichage de l'état passe d'un mode
-verbeux à un mode raccourci. Par défaut, l'état raccourci est utilisé.
+priorité, sa section, les architectures installée et disponible, les
+versions installée et disponible, le nom du paquet et sa description
+courte. En appuyant sur la touche «\ \fBA\fP\ », on peut activer ou désactiver
+l'affichage des architectures installée et disponible.En appuyant sur la
+touche «\ \fBV\fP\ », on peut activer ou désactiver l'affichage des versions
+installée et disponible. En appuyant sur la touche «\ \fBv\fP\ », l'affichage de
+l'état passe d'un mode bavard à un mode raccourci. Par défaut, l'état
+raccourci est utilisé.
 .sp
 L'état raccourci consiste en 4 parties\ : un drapeau d'erreur, qui est
-d'habitude vide, l'état courant, l'état de sélection précédent et l'état de
-sélection actuel. Les deux premiers donnent des indications sur l'état
+habituellement vide, l'état courant, l'état de sélection précédent et l'état
+de sélection actuel. Les deux premiers donnent des indications sur l'état
 courant du paquet, les deux suivants concernent les sélections définies par
 l'utilisateur.
 .sp
@@ -312,7 +315,7 @@ Voici la signification des codes d'indication des états\ :
   \fB*\fP       marqué comme étant à installer ou à mettre à jour\ ;
   \fB\-\fP       marqué comme étant à retirer, en conservant la configuration\ ;
   \fB=\fP       marqué comme étant à conserver\ : le paquet ne sera pas traité\ ;
-  \fB_\fP       marqué comme étant à nettoyé, la configuration sera retirée également\ ;
+  \fB_\fP       marqué comme étant à nettoyer, la configuration sera retirée également\ ;
   \fBn\fP       nouveau paquet, n'a toujours pas été marqué.
 .sp
 .SS "Déplacement du curseur et de l'écran"
@@ -399,15 +402,15 @@ paquet sélectionné se trouve présent dans la liste.
 .sp
 Quand la sous\-liste de paquets est affichée pour la première fois,
 \fBdselect\fP peut avoir déjà fixé les états demandés pour certains des paquets
-listés, ceci afin de résoudre les dépendances ou les conflits qui ont causé
-l'apparition de l'écran de résolution des dépendances. Il est d'habitude
+listés, cela afin de résoudre les dépendances ou les conflits qui ont causé
+l'apparition de l'écran de résolution des dépendances. Il est habituellement
 recommandé de suivre les suggestions de \fBdselect\fP.
 .sp
 Le type de sélection des paquets listés peut être remis dans leurs états
-précédents, avant que le problème de dépendance ou le conflit soit créé, en
-appuyant sur la touche «\ \fBR\fP\ ». La touche «\ \fBD\fP\ » permet de remettre à
+précédents, avant que le problème de dépendance ou le conflit ne soit créé,
+en appuyant sur la touche «\ \fBR\fP\ ». La touche «\ \fBD\fP\ » permet de remettre à
 zéro les suggestions automatiques, tout en conservant les modifications qui
-ont causées l'apparition de l'écran de résolution des dépendances. Enfin, la
+ont causé l'apparition de l'écran de résolution des dépendances. Enfin, la
 touche «\ \fBU\fP\ » permet de rétablir les suggestions automatiques.
 .sp
 .SS "Établir les sélections demandées"
@@ -431,9 +434,9 @@ on peut complètement revenir à la dernière configuration établie.
 .sp
 Si par erreur vous avez fixé certains paramètres et que vous souhaitez
 revenir en arrière sur ce qui est actuellement installé sur le système,
-appuyez sur la touche \fB'C'\fP. C'est un peu comme utiliser la commande de
+appuyez sur la touche «\ \fBC\fP\ ». C'est un peu comme utiliser la commande de
 déblocage sur tous les paquets, mais cela offre un bouton panique plus
-évident pour les cas où l'utilisateur a appuyé sur \fBentrer\fP
+évident pour les cas où l'utilisateur a appuyé sur \fBentrée\fP
 accidentellement.
 .sp
 .

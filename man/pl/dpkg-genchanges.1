@@ -2,7 +2,7 @@
 .\"
 .\" Copyright Â© 1995-1996 Ian Jackson <ian@chiark.chu.cam.ac.uk>
 .\" Copyright Â© 2000 Wichert Akkerman <wakkerma@debian.org>
-.\" Copyright Â© 2006-2012 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2006-2014 Guillem Jover <guillem@debian.org>
 .\" Copyright Â© 2008-2010 RaphaÃ«l Hertzog <hertzog@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
@@ -23,7 +23,7 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH dpkg\-genchanges 1 2012\-05\-04 "Projekt Debian" "programy pomocnicze dpkg"
+.TH dpkg\-genchanges 1 2014\-09\-24 "Projekt Debian" "programy pomocnicze dpkg"
 .SH NAZWA
 dpkg\-genchanges \- tworzy pliki .changes
 .
@@ -37,6 +37,14 @@ pakietu ¼ród³owego Debiana oraz z plików, które wygenerowa³, i na ich
 podstawie tworzy plik kontrolny wydania (plik \fB.changes\fP).
 .
 .SH OPCJE
+.TP 
+\fB\-g\fP
+Specifies that only source and architecture independent packages should be
+uploaded (no architecture specific packages will be included).
+.TP 
+\fB\-G\fP
+Specifies that only source and architecture specific packages should be
+uploaded (no architecture independent packages will be included).
 .TP 
 \fB\-b\fP, \fB\-B\fP, \fB\-A\fP
 Okre¶la, ¿e wykonywane jest budowanie tylko pakietów binarnych (bez

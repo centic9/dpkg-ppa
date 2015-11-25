@@ -4,7 +4,7 @@
 #
 # Copyright © 1996 Ian Jackson
 # Copyright © 2000,2002 Wichert Akkerman
-# Copyright © 2006-2013 Guillem Jover <guillem@debian.org>
+# Copyright © 2006-2014 Guillem Jover <guillem@debian.org>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -38,6 +38,7 @@ use Dpkg::Control::Fields;
 use Dpkg::Substvars;
 use Dpkg::Vars;
 use Dpkg::Changelog::Parse;
+use Dpkg::Dist::Files;
 
 textdomain('dpkg-dev');
 
@@ -96,40 +97,40 @@ sub usage {
 
 while (@ARGV) {
     $_=shift(@ARGV);
-    if (m/^-p/) {
-        $oppackage = $';
+    if (m/^-p/p) {
+        $oppackage = ${^POSTMATCH};
         my $err = pkg_name_is_illegal($oppackage);
         error(_g("illegal package name '%s': %s"), $oppackage, $err) if $err;
-    } elsif (m/^-c/) {
-        $controlfile= $';
-    } elsif (m/^-l/) {
-        $changelogfile= $';
-    } elsif (m/^-P/) {
-        $packagebuilddir= $';
-    } elsif (m/^-f/) {
-        $fileslistfile= $';
+    } elsif (m/^-c/p) {
+        $controlfile = ${^POSTMATCH};
+    } elsif (m/^-l/p) {
+        $changelogfile = ${^POSTMATCH};
+    } elsif (m/^-P/p) {
+        $packagebuilddir = ${^POSTMATCH};
+    } elsif (m/^-f/p) {
+        $fileslistfile = ${^POSTMATCH};
     } elsif (m/^-v(.+)$/) {
         $forceversion= $1;
     } elsif (m/^-O$/) {
         $stdout= 1;
     } elsif (m/^-O(.+)$/) {
         $outputfile = $1;
-    } elsif (m/^-i[sp][sp]?$/) {
-	# ignored for backwards compatibility
+    } elsif (m/^-i([sp][sp]?)$/) {
+        warning(_g('-i%s is deprecated; it is without effect'), $1);
     } elsif (m/^-F([0-9a-z]+)$/) {
         $changelogformat=$1;
-    } elsif (m/^-D([^\=:]+)[=:]/) {
-        $override{$1}= $';
+    } elsif (m/^-D([^\=:]+)[=:]/p) {
+        $override{$1} = ${^POSTMATCH};
     } elsif (m/^-U([^\=:]+)$/) {
         $remove{$1}= 1;
-    } elsif (m/^-V(\w[-:0-9A-Za-z]*)[=:]/) {
-        $substvars->set_as_used($1, $');
+    } elsif (m/^-V(\w[-:0-9A-Za-z]*)[=:]/p) {
+        $substvars->set_as_used($1, ${^POSTMATCH});
     } elsif (m/^-T(.*)$/) {
 	$substvars->load($1) if -e $1;
 	$substvars_loaded = 1;
-    } elsif (m/^-n/) {
-        $forcefilename= $';
-    } elsif (m/^-(\?|-help)$/) {
+    } elsif (m/^-n/p) {
+        $forcefilename = ${^POSTMATCH};
+    } elsif (m/^-(?:\?|-help)$/) {
         usage();
         exit(0);
     } elsif (m/^--version$/) {
@@ -211,9 +212,9 @@ foreach (keys %{$pkg}) {
 	} else {
 	    my @archlist = split(/\s+/, $v);
 	    my @invalid_archs = grep { m/[^\w-]/ } @archlist;
-	    warning(ngettext("`%s' is not a legal architecture string.",
-			     "`%s' are not legal architecture strings.",
-			     scalar(@invalid_archs)),
+	    warning(P_("`%s' is not a legal architecture string.",
+	               "`%s' are not legal architecture strings.",
+	               scalar(@invalid_archs)),
 		    join("' `", @invalid_archs))
 		if @invalid_archs >= 1;
 	    if (none { debarch_is($host_arch, $_) } @archlist) {
@@ -352,11 +353,11 @@ if (!defined($substvars->get('Installed-Size'))) {
     if ($duo !~ m/^(\d+)\s+\.$/) {
         error(_g("du gave unexpected output \`%s'"), $duo);
     }
-    $substvars->set_as_used('Installed-Size', $1);
+    $substvars->set_as_auto('Installed-Size', $1);
 }
 if (defined($substvars->get('Extra-Size'))) {
     my $size = $substvars->get('Extra-Size') + $substvars->get('Installed-Size');
-    $substvars->set_as_used('Installed-Size', $size);
+    $substvars->set_as_auto('Installed-Size', $size);
 }
 if (defined($substvars->get('Installed-Size'))) {
     $fields->{'Installed-Size'} = $substvars->get('Installed-Size');
@@ -369,6 +370,14 @@ for my $f (keys %remove) {
     delete $fields->{$f};
 }
 
+my $sversion = $fields->{'Version'};
+$sversion =~ s/^\d+://;
+$forcefilename //= sprintf('%s_%s_%s.%s', $oppackage, $sversion,
+                           $fields->{'Architecture'} || '', $pkg_type);
+$forcefilename = $substvars->substvars($forcefilename);
+my $section = $substvars->substvars($fields->{'Section'} || '-');
+my $priority = $substvars->substvars($fields->{'Priority'} || '-');
+
 # Obtain a lock on debian/control to avoid simultaneous updates
 # of debian/files when parallel building is in use
 my $lockfh;
@@ -379,37 +388,22 @@ sysopen($lockfh, $lockfile, O_WRONLY)
     or syserr(_g('cannot write %s'), $lockfile);
 file_lock($lockfh, $lockfile);
 
-open(my $fileslistnew_fh, '>', "$fileslistfile.new")
-    or syserr(_g('open new files list file'));
-binmode($fileslistnew_fh);
-if (open(my $fileslist_fh, '<', $fileslistfile)) {
-    binmode($fileslist_fh);
-    while (<$fileslist_fh>) {
-        chomp;
-        next if m/^([-+0-9a-z.]+)_[^_]+_([\w-]+)\.(a-z+) /
-                && ($1 eq $oppackage)
-	        && ($3 eq $pkg_type)
-	        && (debarch_eq($2, $fields->{'Architecture'} || '')
-		    || debarch_eq($2, 'all'));
-        print { $fileslistnew_fh } "$_\n"
-            or syserr(_g('copy old entry to new files list file'));
-    }
-    close($fileslist_fh) or syserr(_g('close old files list file'));
-} elsif ($! != ENOENT) {
-    syserr(_g('read old files list file'));
-}
-my $sversion = $fields->{'Version'};
-$sversion =~ s/^\d+://;
-$forcefilename //= sprintf('%s_%s_%s.%s', $oppackage, $sversion,
-                           $fields->{'Architecture'} || '', $pkg_type);
+my $dist = Dpkg::Dist::Files->new();
+$dist->load($fileslistfile) if -e $fileslistfile;
 
-print { $fileslistnew_fh }
-      $substvars->substvars(sprintf("%s %s %s\n",
-                                    $forcefilename,
-                                    $fields->{'Section'} || '-',
-                                    $fields->{'Priority'} || '-'))
-    or syserr(_g('write new entry to new files list file'));
-close($fileslistnew_fh) or syserr(_g('close new files list file'));
+foreach my $file ($dist->get_files()) {
+    if (defined $file->{package} &&
+        ($file->{package} eq $oppackage) &&
+        ($file->{package_type} eq $pkg_type) &&
+        (debarch_eq($file->{arch}, $fields->{'Architecture'} || '') ||
+         debarch_eq($file->{arch}, 'all'))) {
+        $dist->del_file($file->{filename});
+    }
+}
+
+$dist->add_file($forcefilename, $section, $priority);
+$dist->save("$fileslistfile.new");
+
 rename("$fileslistfile.new", $fileslistfile)
     or syserr(_g('install new files list file'));
 

@@ -1,5 +1,5 @@
 #line 2 "trigdeferred.c"
-#line 37 "trigdeferred.l"
+#line 38 "trigdeferred.l"
 #include <config.h>
 #include <compat.h>
 
@@ -33,7 +33,7 @@
 #define FLEX_SCANNER
 #define YY_FLEX_MAJOR_VERSION 2
 #define YY_FLEX_MINOR_VERSION 5
-#define YY_FLEX_SUBMINOR_VERSION 35
+#define YY_FLEX_SUBMINOR_VERSION 39
 #if YY_FLEX_SUBMINOR_VERSION > 0
 #define FLEX_BETA
 #endif
@@ -186,7 +186,12 @@ typedef unsigned int flex_uint32_t;
 typedef struct yy_buffer_state *YY_BUFFER_STATE;
 #endif
 
-extern int trigdef_yyleng;
+#ifndef YY_TYPEDEF_YY_SIZE_T
+#define YY_TYPEDEF_YY_SIZE_T
+typedef size_t yy_size_t;
+#endif
+
+extern yy_size_t trigdef_yyleng;
 
 extern FILE *trigdef_yyin, *trigdef_yyout;
 
@@ -195,6 +200,7 @@ extern FILE *trigdef_yyin, *trigdef_yyout;
 #define EOB_ACT_LAST_MATCH 2
 
     #define YY_LESS_LINENO(n)
+    #define YY_LINENO_REWIND_TO(ptr)
     
 /* Return all but the first "n" matched characters back to the input stream. */
 #define yyless(n) \
@@ -211,11 +217,6 @@ extern FILE *trigdef_yyin, *trigdef_yyout;
 	while ( 0 )
 
 #define unput(c) yyunput( c, (yytext_ptr)  )
-
-#ifndef YY_TYPEDEF_YY_SIZE_T
-#define YY_TYPEDEF_YY_SIZE_T
-typedef size_t yy_size_t;
-#endif
 
 #ifndef YY_STRUCT_YY_BUFFER_STATE
 #define YY_STRUCT_YY_BUFFER_STATE
@@ -234,7 +235,7 @@ struct yy_buffer_state
 	/* Number of characters read into yy_ch_buf, not including EOB
 	 * characters.
 	 */
-	int yy_n_chars;
+	yy_size_t yy_n_chars;
 
 	/* Whether we "own" the buffer - i.e., we know we created it,
 	 * and can realloc() it to grow it, and should free() it to
@@ -304,8 +305,8 @@ static YY_BUFFER_STATE * yy_buffer_stack = 0; /**< Stack as an array. */
 
 /* yy_hold_char holds the character lost when trigdef_yytext is formed. */
 static char yy_hold_char;
-static int yy_n_chars;		/* number of characters read into yy_ch_buf */
-int trigdef_yyleng;
+static yy_size_t yy_n_chars;		/* number of characters read into yy_ch_buf */
+yy_size_t trigdef_yyleng;
 
 /* Points to current character in buffer. */
 static char *yy_c_buf_p = (char *) 0;
@@ -333,7 +334,7 @@ static void trigdef_yy_init_buffer (YY_BUFFER_STATE b,FILE *file  );
 
 YY_BUFFER_STATE trigdef_yy_scan_buffer (char *base,yy_size_t size  );
 YY_BUFFER_STATE trigdef_yy_scan_string (yyconst char *yy_str  );
-YY_BUFFER_STATE trigdef_yy_scan_bytes (yyconst char *bytes,int len  );
+YY_BUFFER_STATE trigdef_yy_scan_bytes (yyconst char *bytes,yy_size_t len  );
 
 void *trigdef_yyalloc (yy_size_t  );
 void *trigdef_yyrealloc (void *,yy_size_t  );
@@ -365,7 +366,7 @@ void trigdef_yyfree (void *  );
 
 /* Begin user sect3 */
 
-#define trigdef_yywrap(n) 1
+#define trigdef_yywrap() 1
 #define YY_SKIP_YYWRAP
 
 typedef unsigned char YY_CHAR;
@@ -502,6 +503,7 @@ char *trigdef_yytext;
  *
  * Copyright © 2007 Canonical Ltd
  * written by Ian Jackson <ian@chiark.greenend.org.uk>
+ * Copyright © 2008-2014 Guillem Jover <guillem@debian.org>
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -521,9 +523,10 @@ char *trigdef_yytext;
 #define YY_NO_INPUT 1
 
 
-#line 42 "trigdeferred.l"
+#line 43 "trigdeferred.l"
 #include <sys/stat.h>
-#include <sys/fcntl.h>
+
+#include <fcntl.h>
 
 #include <dpkg/i18n.h>
 #include <dpkg/dpkg.h>
@@ -539,7 +542,7 @@ static struct varbuf fn, newfn;
 
 static const struct trigdefmeths *trigdef;
 
-#line 543 "trigdeferred.c"
+#line 546 "trigdeferred.c"
 
 #define INITIAL 0
 #define midline 1
@@ -579,7 +582,7 @@ FILE *trigdef_yyget_out (void );
 
 void trigdef_yyset_out  (FILE * out_str  );
 
-int trigdef_yyget_leng (void );
+yy_size_t trigdef_yyget_leng (void );
 
 char *trigdef_yyget_text (void );
 
@@ -725,11 +728,6 @@ YY_DECL
 	register char *yy_cp, *yy_bp;
 	register int yy_act;
     
-#line 61 "trigdeferred.l"
-
-
-#line 732 "trigdeferred.c"
-
 	if ( !(yy_init) )
 		{
 		(yy_init) = 1;
@@ -756,6 +754,12 @@ YY_DECL
 		trigdef_yy_load_buffer_state( );
 		}
 
+	{
+#line 63 "trigdeferred.l"
+
+
+#line 762 "trigdeferred.c"
+
 	while ( 1 )		/* loops until end-of-file is reached */
 		{
 		yy_cp = (yy_c_buf_p);
@@ -772,7 +776,7 @@ YY_DECL
 yy_match:
 		do
 			{
-			register YY_CHAR yy_c = yy_ec[YY_SC_TO_UI(*yy_cp)];
+			register YY_CHAR yy_c = yy_ec[YY_SC_TO_UI(*yy_cp)] ;
 			if ( yy_accept[yy_current_state] )
 				{
 				(yy_last_accepting_state) = yy_current_state;
@@ -810,18 +814,18 @@ do_action:	/* This label is used only to access EOF actions. */
 case 1:
 /* rule 1 can match eol */
 YY_RULE_SETUP
-#line 63 "trigdeferred.l"
+#line 65 "trigdeferred.l"
 /* whitespace */
 	YY_BREAK
 case 2:
 /* rule 2 can match eol */
 YY_RULE_SETUP
-#line 64 "trigdeferred.l"
+#line 66 "trigdeferred.l"
 /* comments */
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 65 "trigdeferred.l"
+#line 67 "trigdeferred.l"
 {
 	trigdef->trig_begin(trigdef_yytext);
 	BEGIN(midline);
@@ -829,12 +833,12 @@ YY_RULE_SETUP
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 70 "trigdeferred.l"
+#line 72 "trigdeferred.l"
 /* whitespace */
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 71 "trigdeferred.l"
+#line 73 "trigdeferred.l"
 {
 	if (trigdef_yytext[0] == '-' && trigdef_yytext[1])
 		ohshit(_("invalid package name `%.250s' in triggers deferred "
@@ -845,21 +849,21 @@ YY_RULE_SETUP
 case 6:
 /* rule 6 can match eol */
 YY_RULE_SETUP
-#line 77 "trigdeferred.l"
+#line 79 "trigdeferred.l"
 {
 	trigdef->trig_end();
 	BEGIN(0);
 	}
 	YY_BREAK
 case YY_STATE_EOF(midline):
-#line 81 "trigdeferred.l"
+#line 83 "trigdeferred.l"
 {
 	ohshit(_("truncated triggers deferred file `%.250s'"), fn.buf);
 	}
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 85 "trigdeferred.l"
+#line 87 "trigdeferred.l"
 {
 	ohshit(_("syntax error in triggers deferred file `%.250s' at "
 	         "character `%s'%s"),
@@ -868,10 +872,10 @@ YY_RULE_SETUP
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 91 "trigdeferred.l"
+#line 93 "trigdeferred.l"
 YY_FATAL_ERROR( "flex scanner jammed" );
 	YY_BREAK
-#line 875 "trigdeferred.c"
+#line 879 "trigdeferred.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -1003,6 +1007,7 @@ case YY_STATE_EOF(INITIAL):
 			"fatal flex scanner internal error--no action found" );
 	} /* end of action switch */
 		} /* end of scanning one token */
+	} /* end of user's declarations */
 } /* end of trigdef_yylex */
 
 /* yy_get_next_buffer - try to read in a new buffer
@@ -1058,21 +1063,21 @@ static int yy_get_next_buffer (void)
 
 	else
 		{
-			int num_to_read =
+			yy_size_t num_to_read =
 			YY_CURRENT_BUFFER_LVALUE->yy_buf_size - number_to_move - 1;
 
 		while ( num_to_read <= 0 )
 			{ /* Not enough room in the buffer - grow it. */
 
 			/* just a shorter name for the current buffer */
-			YY_BUFFER_STATE b = YY_CURRENT_BUFFER;
+			YY_BUFFER_STATE b = YY_CURRENT_BUFFER_LVALUE;
 
 			int yy_c_buf_p_offset =
 				(int) ((yy_c_buf_p) - b->yy_ch_buf);
 
 			if ( b->yy_is_our_buffer )
 				{
-				int new_size = b->yy_buf_size * 2;
+				yy_size_t new_size = b->yy_buf_size * 2;
 
 				if ( new_size <= 0 )
 					b->yy_buf_size += b->yy_buf_size / 8;
@@ -1103,7 +1108,7 @@ static int yy_get_next_buffer (void)
 
 		/* Read in more data. */
 		YY_INPUT( (&YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[number_to_move]),
-			(yy_n_chars), (size_t) num_to_read );
+			(yy_n_chars), num_to_read );
 
 		YY_CURRENT_BUFFER_LVALUE->yy_n_chars = (yy_n_chars);
 		}
@@ -1198,7 +1203,7 @@ static int yy_get_next_buffer (void)
 	yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
 	yy_is_jam = (yy_current_state == 22);
 
-	return yy_is_jam ? 0 : yy_current_state;
+		return yy_is_jam ? 0 : yy_current_state;
 }
 
 #ifndef YY_NO_INPUT
@@ -1225,7 +1230,7 @@ static int yy_get_next_buffer (void)
 
 		else
 			{ /* need more input */
-			int offset = (yy_c_buf_p) - (yytext_ptr);
+			yy_size_t offset = (yy_c_buf_p) - (yytext_ptr);
 			++(yy_c_buf_p);
 
 			switch ( yy_get_next_buffer(  ) )
@@ -1385,10 +1390,6 @@ static void trigdef_yy_load_buffer_state  (void)
 	trigdef_yyfree((void *) b  );
 }
 
-#ifndef __cplusplus
-extern int isatty (int );
-#endif /* __cplusplus */
-    
 /* Initializes or reinitializes a buffer.
  * This function is sometimes called more than once on the same buffer,
  * such as during a trigdef_yyrestart() or at EOF.
@@ -1501,7 +1502,7 @@ void trigdef_yypop_buffer_state (void)
  */
 static void trigdef_yyensure_buffer_stack (void)
 {
-	int num_to_alloc;
+	yy_size_t num_to_alloc;
     
 	if (!(yy_buffer_stack)) {
 
@@ -1598,12 +1599,12 @@ YY_BUFFER_STATE trigdef_yy_scan_string (yyconst char * yystr )
  * 
  * @return the newly allocated buffer state object.
  */
-YY_BUFFER_STATE trigdef_yy_scan_bytes  (yyconst char * yybytes, int  _yybytes_len )
+YY_BUFFER_STATE trigdef_yy_scan_bytes  (yyconst char * yybytes, yy_size_t  _yybytes_len )
 {
 	YY_BUFFER_STATE b;
 	char *buf;
 	yy_size_t n;
-	int i;
+	yy_size_t i;
     
 	/* Get memory for full buffer, including space for trailing EOB's. */
 	n = _yybytes_len + 2;
@@ -1685,7 +1686,7 @@ FILE *trigdef_yyget_out  (void)
 /** Get the length of the current token.
  * 
  */
-int trigdef_yyget_leng  (void)
+yy_size_t trigdef_yyget_leng  (void)
 {
         return trigdef_yyleng;
 }
@@ -1833,7 +1834,7 @@ void trigdef_yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 91 "trigdeferred.l"
+#line 92 "trigdeferred.l"
 
 
 
@@ -1858,31 +1859,28 @@ constructfn(struct varbuf *vb, const char *dir, const char *tail)
  * Start processing of the triggers deferred file.
  *
  * @retval -1 Lock ENOENT with O_CREAT (directory does not exist).
- * @retval -2 Unincorp empty, tduf_writeifempty unset.
- * @retval -3 Unincorp ENOENT, tduf_writeifenoent unset.
- * @retval  1 Unincorp ENOENT, tduf_writeifenoent set.
+ * @retval -2 Unincorp empty, TDUF_WRITE_IF_EMPTY unset.
+ * @retval -3 Unincorp ENOENT, TDUF_WRITE_IF_ENOENT unset.
+ * @retval  1 Unincorp ENOENT, TDUF_WRITE_IF_ENOENT set.
  * @retval  2 Ok.
  *
  * For positive return values the caller must call trigdef_update_done!
  */
 enum trigdef_update_status
-trigdef_update_start(enum trigdef_updateflags uf)
+trigdef_update_start(enum trigdef_update_flags uf)
 {
-	struct stat stab;
-	int r;
-
 	triggersdir = dpkg_db_get_path(TRIGGERSDIR);
 
-	if (uf & tduf_write) {
+	if (uf & TDUF_WRITE) {
 		constructfn(&fn, triggersdir, TRIGGERSLOCKFILE);
 		if (lock_fd == -1) {
 			lock_fd = open(fn.buf, O_RDWR | O_CREAT | O_TRUNC, 0600);
 			if (lock_fd == -1) {
-				if (!(errno == ENOENT && (uf & tduf_nolockok)))
+				if (!(errno == ENOENT && (uf & TDUF_NO_LOCK_OK)))
 					ohshite(_("unable to open/create "
 					          "triggers lockfile `%.250s'"),
 					        fn.buf);
-				return tdus_error_no_dir;
+				return TDUS_ERROR_NO_DIR;
 			}
 		}
 
@@ -1893,17 +1891,6 @@ trigdef_update_start(enum trigdef_updateflags uf)
 	}
 
 	constructfn(&fn, triggersdir, TRIGGERSDEFERREDFILE);
-	r = stat(fn.buf, &stab);
-	if (r) {
-		if (errno != ENOENT)
-			ohshite(_("unable to stat triggers deferred file `%.250s'"),
-			        fn.buf);
-	} else if (!stab.st_size) {
-		if (!(uf & tduf_writeifempty)) {
-			pop_cleanup(ehflag_normaltidy);
-			return tdus_error_empty_deferred;
-		}
-	}
 
 	if (old_deferred)
 		fclose(old_deferred);
@@ -1912,13 +1899,28 @@ trigdef_update_start(enum trigdef_updateflags uf)
 		if (errno != ENOENT)
 			ohshite(_("unable to open triggers deferred file `%.250s'"),
 			        fn.buf);
-		if (!(uf & tduf_writeifenoent)) {
+		if (!(uf & TDUF_WRITE_IF_ENOENT)) {
 			pop_cleanup(ehflag_normaltidy);
-			return tdus_error_no_deferred;
+			return TDUS_ERROR_NO_DEFERRED;
+		}
+	} else {
+		struct stat stab;
+		int rc;
+
+		setcloexec(fileno(old_deferred), fn.buf);
+
+		rc = fstat(fileno(old_deferred), &stab);
+		if (rc < 0)
+			ohshite(_("unable to stat triggers deferred file `%.250s'"),
+			        fn.buf);
+
+		if (stab.st_size == 0 && !(uf & TDUF_WRITE_IF_EMPTY)) {
+			pop_cleanup(ehflag_normaltidy);
+			return TDUS_ERROR_EMPTY_DEFERRED;
 		}
 	}
 
-	if (uf & tduf_write) {
+	if (uf & TDUF_WRITE) {
 		constructfn(&newfn, triggersdir, TRIGGERSDEFERREDFILE ".new");
 		if (trig_new_deferred)
 			fclose(trig_new_deferred);
@@ -1926,15 +1928,17 @@ trigdef_update_start(enum trigdef_updateflags uf)
 		if (!trig_new_deferred)
 			ohshite(_("unable to open/create new triggers deferred file `%.250s'"),
 			        newfn.buf);
+
+		setcloexec(fileno(trig_new_deferred), newfn.buf);
 	}
 
 	if (!old_deferred)
-		return tdus_no_deferred;
+		return TDUS_NO_DEFERRED;
 
 	trigdef_yyrestart(old_deferred);
 	BEGIN(0);
 
-	return tdus_ok;
+	return TDUS_OK;
 }
 
 void

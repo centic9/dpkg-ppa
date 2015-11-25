@@ -35,15 +35,16 @@ dpkg\-scanpackages \- crea file Sources con indici
 vengono usati per creare un indice dei sorgenti Debian che viene restituito
 sullo stdout.
 .PP
-The \fIoverride\-file\fP, if given, is used to set priorities in the resulting
-index records and to override the maintainer field given in the \fI.dsc\fP
-files. The file can be compressed. See \fBdeb\-override\fP(5)  for the format of
-this file. Note: Since the override file is indexed by binary, not source
-packages, there's a bit of a problem here. The current implementation uses
-the highest priority of all the binary packages produced by a \fI.dsc\fP file
-for the priority of the source package, and the override entry for the first
-binary package listed in the \fI.dsc\fP file to modify maintainer
-information. This might change.
+Il \fIfile\-override\fP, se specificato, viene usato per impostare le priorità
+nelle voci dell'indice risultante e per sovrascrivere il campo manutentore
+specificato nei file \fI.dsc\fP. Il file può essere compresso. Vedere
+\fBdeb\-override\fP(5) per il formato di questo file. Nota: dato che il file
+override è indicizzato a partire da file binari, non sorgenti, sorge un
+piccolo problema. L'implementazione attuale usa, come priorità del pacchetto
+sorgente, la priorità più alta tra tutti i pacchetti binari prodotti da un
+file \fI.dsc\fP e la voce override per il primo pacchetto binario elencato nel
+file \fI.dsc\fP per modificare l'informazione sul manutentore. Ciò potrebbe
+cambiare.
 .PP
 \fIprefisso\-percorso\fP, se specificato, viene posto prima del campo directory
 nell'indice dei sorgenti generato. Viene generalmente usato per far sì che i
@@ -79,9 +80,9 @@ per ciò che riguarda l'impostazione della sezione.
 .IP \fB\-\-debug\fP 4
 Attiva il debug.
 .IP \fB\-\-help\fP 4
-Show the usage message and exit.
+Mostra il messaggio sull'uso ed esce.
 .IP \fB\-\-version\fP 4
-Show the version and exit.
+Mostra la versione ed esce.
 .
 .SH "VEDERE ANCHE"
 \fBdeb\-override\fP(5), \fBdeb\-extra\-override\fP(5), \fBdpkg\-scanpackages\fP(1).

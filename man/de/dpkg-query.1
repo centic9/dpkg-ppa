@@ -24,7 +24,7 @@
 .\"
 .\"*******************************************************************
 .TH dpkg\-query 1 2012\-04\-03 Debian\-Projekt dpkg\-Programmsammlung
-.SH NAME
+.SH BEZEICHNUNG
 dpkg\-query \- ein Werkzeug, um die dpkg\-Datenbank abzufragen
 .
 .SH ÜBERSICHT
@@ -40,8 +40,9 @@ in der \fBdpkg\fP\-Datenbank aufgeführt sind.
 Liste Pakete auf, deren Namen auf ein bestimmtes Muster passt. Falls kein
 \fIPaketname\-Muster\fP angegeben ist, liste alle Pakete in
 \fI/var/lib/dpkg/status\fP auf. Dabei werden alle Pakete ausgeschlossen, die
-als »nicht\-installiert markiert sind (d.h. früher endgültig entfernt
-wurden). Beachten Sie, dass Sie wahrscheinlich \fIPaketname\-Muster\fP durch
+als »nicht\-installiert« markiert sind (d.h. früher endgültig entfernt
+wurden). Normale Shell\-Jokerzeichen sind im \fIPaketname\-Muster\fP
+erlaubt. Beachten Sie, dass Sie wahrscheinlich \fIPaketname\-Muster\fP durch
 Anführungszeichen schützen müssen, um die Shell an der Dateinamen\-Expansion
 zu hindern. Folgender Befehl listet beispielsweise alle Paketnamen, die mit
 »libc6« beginnen, auf:
@@ -125,9 +126,15 @@ auf der Standardausgabe ausgeben.
 \fB\-c\fP, \fB\-\-control\-path\fP \fIPaketname\fP [\fISteuerdatei\fP]
 Listet die Pfade für Steuerdateien auf, die von \fIPaketname\fP auf Ihrem
 System installiert wurden. Falls \fISteuerdatei\fP angegeben wurde, liste nur
-den Pfad für diese Steuerdatei auf, falls sie existiert. \fBWarnung:\fP: Dieser
-Befehl ist veraltet, bitte verwenden Sie stattdessen \fB\-\-control\-list\fP und
-\fB\-\-control\-show\fP.
+den Pfad für diese Steuerdatei auf, falls sie existiert.
+
+\fBWarnung\fP: Dieser Befehl ist veraltet, da er direkten Zugriff auf die
+interne Dpkg\-Datenbank gibt. Bitte wechseln Sie stattdessen zu
+\fB\-\-control\-list\fP und \fB\-\-control\-show\fP für alle Fälle, in denen diese
+Befehle die gleichen Ergebnisse geben. Solange es noch mindestens einen Fall
+gibt, in dem dieser Befehl benötigt wird (d.h. wenn ein beschädigendes
+Postrm\-Betreuerskript entfernt werden muss), und solange es keine gute
+Lösung dafür gibt wird dieser Befehl nicht entfernt.
 .TP 
 \fB\-S\fP, \fB\-\-search\fP \fIDateiname\-Suchmuster\fP ?
 Suche nach Paketen, denen Paketen, die auf ein bestimmtes Muster passen,
@@ -227,25 +234,45 @@ Felder, die im Binärpaket abgespeichert sind, landen dort):
 Die folgenden Felder sind virtuell, sie werden von \fBdpkg\-query\fP aus Werten
 aus anderen Feldern erstellt (beachten Sie, dass diese keine gültigen Namen
 für Felder in Steuerdateien benutzen):
-
-.nf
-    \fBbinary:Package\fP
-    \fBbinary:Summary\fP
-    \fBdb:Status\-Abbrev\fP
-    \fBsource:Package\fP
-    \fBsource:Version\fP
-.fi
-
+.RS
+.TP 
+\fBbinary:Package\fP
+Es enthält den Binärpaketnamen mit einem möglichen Architektur\-Kennzeichner
+wie »libc6:amd64« (seit Dpkg 1.16.2). Der Architektur\-Kennzeichner wird nur
+vorhanden sein, falls das Paket ein Feld \fBMulti\-Arch\fP mit dem Wert \fBsame\fP
+trägt. Damit wird der Name eindeutig.
+.TP 
+\fBbinary:Summary\fP
+Es enthält die Kurzbeschreibung des Pakets (seit Dpkg 1.16.2).
+.TP 
+\fBdb:Status\-Abbrev\fP
+Es enthält den abgekürzten Paketstatus, wie \(lqii\(rq (seit Dpkg 1.16.2).
+.TP 
+\fBdb:Status\-Want\fP
+Es enthält den gewünschten Status des Pakets, Teil des Statusfeldes (seit
+Dpkg 1.17.11).
+.TP 
+\fBdb:Status\-Status\fP
+Es enthält das Paketstatuswort, Teil des Statusfeldes (seit Dpkg 1.17.11).
+.TP 
+\fBdb:Status\-Eflag\fP
+Es enthält den Paketstatusfehlerschalter, Teil des Statusfeldes (seit Dpkg
+1.17.11).
+.TP 
+\fBsource:Package\fP
+Es enthält den Quellpaketnamen für dieses Binärpaket (seit Dpkg 1.16.2).
+.TP 
+\fBsource:Version\fP
+Es enthält die Quellpaketversion für dieses Binärpaket (seit Dpkg 1.16.2).
+.RE
+.IP
 Die Standard\-Formatzeichenkette ist
 \(lq\fB${binary:Package}\et${Version}\en\fP\(rq. Tatsächlich können auch alle
 anderen Felder, die in der Statusdatei gefunden werden können
 (d.h. benutzerdefinierte Felder), abgefragt werden. Sie werden so
 dargestellt, wie sie gefunden werden, es erfolgt keine Umwandlung oder
-Fehlerüberprüfung. \fBbinary:Package\fP ist ein besonderes Feld, das den
-Paketnamen mit einem Architektur\-Kennzeichner (wie »libc6:amd64«) ausgibt,
-falls das Paket ein Feld \fBMulti\-Arch\fP mit dem Wert \fBsame\fP trägt und daher
-der Name mehrdeutig sein könnte. Um den Namen des \fBdpkg\fP\-Betreuers und die
-installierte Version zu erhalten, könnten Sie folgendes ausführen:
+Fehlerüberprüfung. Um den Namen des \fBdpkg\fP\-Betreuers und die installierte
+Version zu erhalten, könnten Sie folgendes ausführen:
 
 .nf
   \fBdpkg\-query \-W \-f=\(aq${binary:Package} ${Version}\et${Maintainer}\en\(aq dpkg\fP
@@ -257,7 +284,7 @@ installierte Version zu erhalten, könnten Sie folgendes ausführen:
 Die angeforderte Abfrage wurde erfolgreich ausgeführt.
 .TP 
 \fB1\fP
-Beim Lesen der Kommandozeile oder beim Ausführen der Abfrage traten Probleme
+Beim Lesen der Befehlszeile oder beim Ausführen der Abfrage traten Probleme
 auf. Dazu gehören auch keine Datei oder Paket gefunden (außer für
 \fB\-\-control\-path\fP).
 .
@@ -272,7 +299,7 @@ Diese Einstellung beeinflusst die Ausgabe der \fB\-\-list\fP\-Option durch
 Verändern der Breite ihrer Ausgabe.
 .
 .SH ÜBERSETZUNG
-Die deutsche Übersetzung wurde 2004, 2006-2013 von Helge Kreutzmann
+Die deutsche Übersetzung wurde 2004, 2006-2015 von Helge Kreutzmann
 <debian@helgefjell.de>, 2007 von Florian Rehnisch <eixman@gmx.de> und
 2008 von Sven Joachim <svenjoac@gmx.de>
 angefertigt. Diese Übersetzung ist Freie Dokumentation; lesen Sie die

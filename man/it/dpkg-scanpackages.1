@@ -2,7 +2,7 @@
 .\"
 .\" Copyright © 1996 Michael Shields <shields@crosslink.net>
 .\" Copyright © 2006 Frank Lichtenheld <djpig@debian.org>
-.\" Copyright © 2007 Guillem Jover <guillem@debian.org>
+.\" Copyright © 2007, 2009, 2011-2014 Guillem Jover <guillem@debian.org>
 .\" Copyright © 2009 Raphaël Hertzog <hertzog@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
@@ -75,6 +75,11 @@ suo formato.
 Usa un modello che corrisponde a \fI*_all.deb\fP e \fI*_arch.deb\fP invece di
 cercare tutti i file deb.
 .TP 
+\fB\-h\fP, \fB\-\-hash\fP \fIhash\-list\fP
+Genera solamente gli hash dei file per l'elenco separato da virgole
+specificato. Il valore predefinito � di generare tutti gli hash attualmente
+supportati. Valori supportati: \fBmd5\fP, \fBsha1\fP, \fBsha256\fP.
+.TP 
 \fB\-m\fP, \fB\-\-multiversion\fP
 Include nell'output tutti i pacchetti trovati.
 .TP 
@@ -84,10 +89,10 @@ Aggiunge un campo X\-Medium contenente il valore \fIstringa\-ID\fP. Questo campo
 metodo di accesso multicd di dselect.
 .TP 
 \fB\-?\fP, \fB\-\-help\fP
-Show the usage message and exit.
+Mostra il messaggio sull'uso ed esce.
 .TP 
 \fB\-\-version\fP
-Show the version and exit.
+Mostra la versione ed esce.
 .
 .SH DIAGNOSTICA
 \fBdpkg\-scanpackages\fP produce in output i consueti errori

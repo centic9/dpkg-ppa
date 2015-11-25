@@ -43,7 +43,7 @@ sub create {
     $self->ensure_open('w'); # Creates the file
     *$self->{errors} = 0;
     *$self->{empty} = 1;
-    if ($opts{old} and $opts{new}) {
+    if ($opts{old} and $opts{new} and $opts{filename}) {
         $opts{old} = '/dev/null' unless -e $opts{old};
         $opts{new} = '/dev/null' unless -e $opts{new};
         if (-d $opts{old} and -d $opts{new}) {
@@ -51,7 +51,7 @@ sub create {
         } elsif (-f $opts{old} and -f $opts{new}) {
             $self->add_diff_file($opts{old}, $opts{new}, %opts);
         } else {
-            $self->_fail_not_same_type($opts{old}, $opts{new});
+            $self->_fail_not_same_type($opts{old}, $opts{new}, $opts{filename});
         }
         $self->finish() unless $opts{nofinish};
     }
@@ -64,10 +64,11 @@ sub set_header {
 
 sub add_diff_file {
     my ($self, $old, $new, %opts) = @_;
-    $opts{include_timestamp} = 0 unless exists $opts{include_timestamp};
-    my $handle_binary = $opts{handle_binary_func} || sub {
-        my ($self, $old, $new) = @_;
-        $self->_fail_with_msg($new, _g('binary file contents changed'));
+    $opts{include_timestamp} //= 0;
+    my $handle_binary = $opts{handle_binary_func} // sub {
+        my ($self, $old, $new, %opts) = @_;
+        my $file = $opts{filename};
+        $self->_fail_with_msg($file, _g('binary file contents changed'));
     };
     # Optimization to avoid forking diff if unnecessary
     return 1 if compare($old, $new, 4096) == 0;
@@ -107,10 +108,12 @@ sub add_diff_file {
     # Check diff and write it in patch file
     my $difflinefound = 0;
     my $binary = 0;
+    local $_;
+
     while (<$diffgen>) {
         if (m/^(?:binary|[^-+\@ ].*\bdiffer\b)/i) {
             $binary = 1;
-            &$handle_binary($self, $old, $new);
+            &$handle_binary($self, $old, $new, %opts);
             last;
         } elsif (m/^[-+\@ ]/) {
             $difflinefound++;
@@ -145,7 +148,7 @@ sub add_diff_directory {
     # TODO: make this function more configurable
     # - offer to disable some checks
     my $basedir = $opts{basedirname} || basename($new);
-    my $inc_removal = $opts{include_removal} || 0;
+    my $inc_removal = $opts{include_removal} // 0;
     my $diff_ignore;
     if ($opts{diff_ignore_func}) {
         $diff_ignore = $opts{diff_ignore_func};
@@ -166,7 +169,7 @@ sub add_diff_directory {
         my $size = (lstat(_))[7];
         if (-l _) {
             unless (-l "$old/$fn") {
-                $self->_fail_not_same_type("$old/$fn", "$new/$fn");
+                $self->_fail_not_same_type("$old/$fn", "$new/$fn", $fn);
                 return;
             }
             my $n = readlink("$new/$fn");
@@ -178,7 +181,7 @@ sub add_diff_directory {
                 syserr(_g('cannot read link %s'), "$old/$fn");
             }
             unless ($n eq $n2) {
-                $self->_fail_not_same_type("$old/$fn", "$new/$fn");
+                $self->_fail_not_same_type("$old/$fn", "$new/$fn", $fn);
             }
         } elsif (-f _) {
             my $old_file = "$old/$fn";
@@ -188,7 +191,7 @@ sub add_diff_directory {
                 }
                 $old_file = '/dev/null';
             } elsif (not -f _) {
-                $self->_fail_not_same_type("$old/$fn", "$new/$fn");
+                $self->_fail_not_same_type("$old/$fn", "$new/$fn", $fn);
                 return;
             }
 
@@ -200,7 +203,7 @@ sub add_diff_directory {
                                $label_old, "$basedir/$fn"];
         } elsif (-p _) {
             unless (-p "$old/$fn") {
-                $self->_fail_not_same_type("$old/$fn", "$new/$fn");
+                $self->_fail_not_same_type("$old/$fn", "$new/$fn", $fn);
             }
         } elsif (-b _ || -c _ || -S _) {
             $self->_fail_with_msg("$new/$fn",
@@ -211,7 +214,7 @@ sub add_diff_directory {
                     syserr(_g('cannot stat file %s'), "$old/$fn");
                 }
             } elsif (not -d _) {
-                $self->_fail_not_same_type("$old/$fn", "$new/$fn");
+                $self->_fail_not_same_type("$old/$fn", "$new/$fn", $fn);
             }
         } else {
             $self->_fail_with_msg("$new/$fn", _g('unknown file type'));
@@ -227,14 +230,14 @@ sub add_diff_directory {
                 push @diff_files, [$fn, 0, 0, "$old/$fn", '/dev/null',
                                    "$basedir.orig/$fn", '/dev/null'];
             } else {
-                warning(_g('ignoring deletion of file %s'), $fn);
+                warning(_g('ignoring deletion of file %s, use --include-removal to override'), $fn);
             }
         } elsif (-d _) {
             warning(_g('ignoring deletion of directory %s'), $fn);
         } elsif (-l _) {
             warning(_g('ignoring deletion of symlink %s'), $fn);
         } else {
-            $self->_fail_not_same_type("$old/$fn", "$new/$fn");
+            $self->_fail_not_same_type("$old/$fn", "$new/$fn", $fn);
         }
     };
 
@@ -259,7 +262,7 @@ sub add_diff_directory {
         # being shuffled when they are regenerated.
         foreach my $diff_file (sort { $a->[0] cmp $b->[0] } @diff_files) {
             my $fn = $diff_file->[0];
-            $patchorder{$fn} = $i++ unless exists $patchorder{$fn};
+            $patchorder{$fn} //= $i++;
         }
         @diff_files = sort { $patchorder{$a->[0]} <=> $patchorder{$b->[0]} }
                       @diff_files;
@@ -271,6 +274,7 @@ sub add_diff_directory {
         my ($fn, $mode, $size,
             $old_file, $new_file, $label_old, $label_new) = @$diff_file;
         my $success = $self->add_diff_file($old_file, $new_file,
+                                           filename => $fn,
                                            label_old => $label_old,
                                            label_new => $label_new, %opts);
         if ($success and
@@ -309,10 +313,10 @@ sub _fail_with_msg {
     $self->register_error();
 }
 sub _fail_not_same_type {
-    my ($self, $old, $new) = @_;
+    my ($self, $old, $new, $file) = @_;
     my $old_type = get_type($old);
     my $new_type = get_type($new);
-    errormsg(_g('cannot represent change to %s:'), $new);
+    errormsg(_g('cannot represent change to %s:'), $file);
     errormsg(_g('  new version is %s'), $new_type);
     errormsg(_g('  old version is %s'), $old_type);
     $self->register_error();
@@ -328,6 +332,26 @@ sub _getline {
         $line =~ s/\r$//;
     }
     return $line;
+}
+
+# Fetch the header filename ignoring the optional timestamp
+sub _fetch_filename {
+    my ($diff, $header) = @_;
+
+    # Strip any leading spaces.
+    $header =~ s/^\s+//;
+
+    # Is it a C-style string?
+    if ($header =~ m/^"/) {
+        error(_g('diff %s patches file with C-style encoded filename'), $diff);
+    } else {
+        # Tab is the official separator, it's always used when
+        # filename contain spaces. Try it first, otherwise strip on space
+        # if there's no tab
+        $header =~ s/\s.*// unless $header =~ s/\t.*//;
+    }
+
+    return $header;
 }
 
 sub _intuit_file_patched {
@@ -364,26 +388,6 @@ sub _intuit_file_patched {
     return $old;
 }
 
-# Fetch the header filename ignoring the optional timestamp
-sub _fetch_filename {
-    my ($diff, $header) = @_;
-
-    # Strip any leading spaces.
-    $header =~ s/^\s+//;
-
-    # Is it a C-style string?
-    if ($header =~ m/^"/) {
-        error(_g('diff %s patches file with C-style encoded filename'), $diff);
-    } else {
-        # Tab is the official separator, it's always used when
-        # filename contain spaces. Try it first, otherwise strip on space
-        # if there's no tab
-        $header =~ s/\s.*// unless $header =~ s/\t.*//;
-    }
-
-    return $header;
-}
-
 # check diff for sanity, find directories to create as a side effect
 sub analyze {
     my ($self, $destdir, %opts) = @_;
@@ -396,39 +400,48 @@ sub analyze {
     my $patch_header = '';
     my $diff_count = 0;
 
-    $_ = _getline($self);
+    my $line = _getline($self);
 
   HUNK:
-    while (defined($_) or not eof($self)) {
+    while (defined $line or not eof $self) {
 	my (%path, %fn);
-	# skip comments leading up to patch (if any)
+
+	# Skip comments leading up to the patch (if any). Although we do not
+	# look for an Index: pseudo-header in the comments, because we would
+	# not use it anyway, as we require both ---/+++ filename headers.
 	while (1) {
-	    if (/^(?:--- |\+\+\+ |@@ -)/) {
+	    if ($line =~ /^(?:--- |\+\+\+ |@@ -)/) {
 		last;
 	    } else {
-		$patch_header .= "$_\n";
+		$patch_header .= "$line\n";
 	    }
-	    last HUNK if not defined($_ = _getline($self));
+	    $line = _getline($self);
+	    last HUNK if not defined $line;
 	}
 	$diff_count++;
 	# read file header (---/+++ pair)
-	unless(s/^--- //) {
+	unless ($line =~ s/^--- //) {
 	    error(_g("expected ^--- in line %d of diff `%s'"), $., $diff);
 	}
-        $path{old} = $_ = _fetch_filename($diff, $_);
-	$fn{old} = $_ if $_ ne '/dev/null' and s{^[^/]*/+}{$destdir/};
-	if (/\.dpkg-orig$/) {
+	$path{old} = $line = _fetch_filename($diff, $line);
+	if ($line ne '/dev/null' and $line =~ s{^[^/]*/+}{$destdir/}) {
+	    $fn{old} = $line;
+	}
+	if ($line =~ /\.dpkg-orig$/) {
 	    error(_g("diff `%s' patches file with name ending .dpkg-orig"), $diff);
 	}
 
-	unless (defined($_ = _getline($self))) {
+	$line = _getline($self);
+	unless (defined $line) {
 	    error(_g("diff `%s' finishes in middle of ---/+++ (line %d)"), $diff, $.);
 	}
-	unless (s/^\+\+\+ //) {
+	unless ($line =~ s/^\+\+\+ //) {
 	    error(_g("line after --- isn't as expected in diff `%s' (line %d)"), $diff, $.);
 	}
-        $path{new} = $_ = _fetch_filename($diff, $_);
-	$fn{new} = $_ if $_ ne '/dev/null' and s{^[^/]*/+}{$destdir/};
+	$path{new} = $line = _fetch_filename($diff, $line);
+	if ($line ne '/dev/null' and $line =~ s{^[^/]*/+}{$destdir/}) {
+	    $fn{new} = $line;
+	}
 
 	unless (defined $fn{old} or defined $fn{new}) {
 	    error(_g("none of the filenames in ---/+++ are valid in diff '%s' (line %d)"),
@@ -484,14 +497,14 @@ sub analyze {
 
 	# read hunks
 	my $hunk = 0;
-	while (defined($_ = _getline($self))) {
+	while (defined($line = _getline($self))) {
 	    # read hunk header (@@)
-	    next if /^\\ /;
-	    last unless (/^@@ -\d+(,(\d+))? \+\d+(,(\d+))? @\@( .*)?$/);
+	    next if $line =~ /^\\ /;
+	    last unless $line =~ /^@@ -\d+(,(\d+))? \+\d+(,(\d+))? @\@(?: .*)?$/;
 	    my ($olines, $nlines) = ($1 ? $2 : 1, $3 ? $4 : 1);
 	    # read hunk
 	    while ($olines || $nlines) {
-		unless (defined($_ = _getline($self))) {
+		unless (defined($line = _getline($self))) {
                     if (($olines == $nlines) and ($olines < 3)) {
                         warning(_g("unexpected end of diff `%s'"), $diff)
                             if $opts{verbose};
@@ -500,19 +513,23 @@ sub analyze {
                         error(_g("unexpected end of diff `%s'"), $diff);
                     }
 		}
-		next if /^\\ /;
+		next if $line =~ /^\\ /;
 		# Check stats
-		if    (/^ / || /^$/)  { --$olines; --$nlines; }
-		elsif (/^-/)  { --$olines; }
-		elsif (/^\+/) { --$nlines; }
-		else {
+		if ($line =~ /^ / or length $line == 0) {
+		    --$olines;
+		    --$nlines;
+		} elsif ($line =~ /^-/) {
+		    --$olines;
+		} elsif ($line =~ /^\+/) {
+		    --$nlines;
+		} else {
 		    error(_g("expected [ +-] at start of line %d of diff `%s'"),
 		          $., $diff);
 		}
 	    }
 	    $hunk++;
 	}
-	unless($hunk) {
+	unless ($hunk) {
 	    error(_g("expected ^\@\@ at line %d of diff `%s'"), $., $diff);
 	}
     }
@@ -541,12 +558,12 @@ sub prepare_apply {
 sub apply {
     my ($self, $destdir, %opts) = @_;
     # Set default values to options
-    $opts{force_timestamp} = 1 unless exists $opts{force_timestamp};
-    $opts{remove_backup} = 1 unless exists $opts{remove_backup};
-    $opts{create_dirs} = 1 unless exists $opts{create_dirs};
+    $opts{force_timestamp} //= 1;
+    $opts{remove_backup} //= 1;
+    $opts{create_dirs} //= 1;
     $opts{options} ||= [ '-t', '-F', '0', '-N', '-p1', '-u',
             '-V', 'never', '-g0', '-b', '-z', '.dpkg-orig'];
-    $opts{add_options} ||= [];
+    $opts{add_options} //= [];
     push @{$opts{options}}, @{$opts{add_options}};
     # Check the diff and create missing directories
     my $analysis = $self->analyze($destdir, %opts);
@@ -576,7 +593,7 @@ sub apply {
     # and remove .dpkg-orig files
     my @files = keys %{$analysis->{filepatched}};
     my $now = $opts{timestamp};
-    $now ||= fs_time($files[0]) if $opts{force_timestamp} && scalar @files;
+    $now //= fs_time($files[0]) if $opts{force_timestamp} && scalar @files;
     foreach my $fn (@files) {
 	if ($opts{force_timestamp}) {
 	    utime($now, $now, $fn) or $! == ENOENT
@@ -590,14 +607,14 @@ sub apply {
     return $analysis;
 }
 
-# Verify if check will work...
+# Verify if check will work...
 sub check_apply {
     my ($self, $destdir, %opts) = @_;
     # Set default values to options
-    $opts{create_dirs} = 1 unless exists $opts{create_dirs};
+    $opts{create_dirs} //= 1;
     $opts{options} ||= [ '--dry-run', '-s', '-t', '-F', '0', '-N', '-p1', '-u',
             '-V', 'never', '-g0', '-b', '-z', '.dpkg-orig'];
-    $opts{add_options} ||= [];
+    $opts{add_options} //= [];
     push @{$opts{options}}, @{$opts{add_options}};
     # Check the diff and create missing directories
     my $analysis = $self->analyze($destdir, %opts);

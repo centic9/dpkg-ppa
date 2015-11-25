@@ -25,6 +25,8 @@
 #include <stdarg.h>
 #include <stdio.h>
 
+#include <dpkg/dpkg.h>
+#include <dpkg/report.h>
 #include <dpkg/debug.h>
 
 static int debug_mask = 0;
@@ -32,10 +34,14 @@ static FILE *debug_output = NULL;
 
 /**
  * Set the debugging output file.
+ *
+ * Marks the file descriptor as close-on-exec.
  */
 void
-debug_set_output(FILE *output)
+debug_set_output(FILE *output, const char *filename)
 {
+	setcloexec(fileno(output), filename);
+	dpkg_set_report_buffer(output);
 	debug_output = output;
 }
 

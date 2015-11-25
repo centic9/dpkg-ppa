@@ -65,12 +65,11 @@ enlace simbólico al fichero al que se hace referencia en realidad. El
 objetivo es que los cambios del administrador se mantengan dentro del
 directorio \fI/etc\fP: el FHS (q.v.) da razones de por qué esto es bueno.
 .PP
-Cuando se instala o desinstala un paquete que provee un fichero con una
-funcionalidad en particular se ejecuta \fBupdate\-alternatives\fP para
-actualizar la información del sistema de alternativas acerca de ese
-fichero. Habitualmente, \fBupdate\-alternatives\fP se ejecuta desde los scripts
-\fBpostinst\fP (post\-instalación o configuración) o \fBprerm\fP (pre\-eliminación)
-de los paquetes de Debian.
+When each package providing a file with a particular functionality is
+installed, changed or removed, \fBupdate\-alternatives\fP is called to update
+information about that file in the alternatives system.
+\fBupdate\-alternatives\fP is usually called from the \fBpostinst\fP (configure) or
+\fBprerm\fP (remove and deconfigure) scripts in Debian packages.
 .PP
 Habitualmente, es útil que un número de alternativas se sincronicen de tal
 modo que se puedan cambiar como un grupo. Por ejemplo, cuando varias

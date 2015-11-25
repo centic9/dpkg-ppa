@@ -35,7 +35,7 @@ use parent qw(Dpkg::Compression::FileHandle);
 
 sub create {
     my ($self, %opts) = @_;
-    $opts{options} ||= [];
+    $opts{options} //= [];
     my %spawn_opts;
     # Possibly run tar from another directory
     if ($opts{chdir}) {
@@ -49,7 +49,7 @@ sub create {
     # Call tar creation process
     $spawn_opts{delete_env} = [ 'TAR_OPTIONS' ];
     $spawn_opts{exec} = [ 'tar', '--null', '-T', '-', '--numeric-owner',
-                            '--owner', '0', '--group', '0',
+                            '--owner', '0', '--group', '0', '--format=gnu',
                             @{$opts{options}}, '-cf', '-' ];
     *$self->{pid} = spawn(%spawn_opts);
     *$self->{cwd} = getcwd();
@@ -99,9 +99,9 @@ sub finish {
 
 sub extract {
     my ($self, $dest, %opts) = @_;
-    $opts{options} ||= [];
-    $opts{in_place} ||= 0;
-    $opts{no_fixperms} ||= 0;
+    $opts{options} //= [];
+    $opts{in_place} //= 0;
+    $opts{no_fixperms} //= 0;
     my %spawn_opts = (wait_child => 1);
 
     # Prepare destination
@@ -120,7 +120,7 @@ sub extract {
     }
 
     # Prepare stuff that handles the input of tar
-    $self->ensure_open('r');
+    $self->ensure_open('r', delete_sig => [ 'PIPE' ]);
     $spawn_opts{from_handle} = $self->get_filehandle();
 
     # Call tar extraction process

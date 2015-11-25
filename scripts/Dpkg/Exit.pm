@@ -91,7 +91,12 @@ $SIG{QUIT} = \&exit_handler;
 =head2 Version 1.01
 
 New functions: push_exit_handler(), pop_exit_handler(), run_exit_handlers()
+
 Deprecated variable: @handlers
+
+=head2 Version 1.00
+
+Mark the module as public.
 
 =cut
 

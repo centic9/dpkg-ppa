@@ -50,9 +50,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dselect 1.17.0\n"
 "Report-Msgid-Bugs-To: debian-dpkg@lists.debian.org\n"
-"POT-Creation-Date: 2013-12-12 08:35+0100\n"
-"PO-Revision-Date: 2012-07-01 08:30+0200\n"
-"Last-Translator: Christian Perrier <bubulle@debian.org>\n"
+"POT-Creation-Date: 2015-11-26 03:30+0000\n"
+"PO-Revision-Date: 2014-10-31 18:10-0400\n"
+"Last-Translator: Sébastien Poher <sbphr@volted.net>\n"
 "Language-Team: French <debian-l10n-french@lists.debian.org>\n"
 "Language: fr\n"
 "MIME-Version: 1.0\n"
@@ -76,8 +76,8 @@ msgstr "Aide : "
 #: dselect/basecmds.cc:186
 msgid "Press ? for help menu, . for next topic, <space> to exit help."
 msgstr ""
-"Appuyez sur ? pour un menu d'aide, . pour le sujet suivant, <espace>\n"
-"pour quitter l'aide."
+"Appuyez sur ? pour un menu d'aide, . pour le sujet suivant, <espace> pour "
+"quitter l'aide."
 
 #: dselect/basecmds.cc:193
 msgid "Help information is available under the following topics:"
@@ -88,9 +88,9 @@ msgid ""
 "Press a key from the list above, <space> or `q' to exit help,\n"
 "  or `.' (full stop) to read each help page in turn. "
 msgstr ""
-"Appuyez sur une des touches listées ci-dessus,\n"
-"  <espace> ou « q » pour sortir de l'aide,\n"
-"  ou . pour lire chaque page tour à tour. "
+"Appuyez sur une des touches listées ci-dessus, <espace> ou « q » pour sortir "
+"de l'aide,\n"
+" ou . pour lire chaque page tour à tour. "
 
 #: dselect/basecmds.cc:207
 msgid "error reading keyboard in help"
@@ -128,53 +128,53 @@ msgstr "impossible de bloquer SIGWINCH"
 msgid "failed to set new SIGWINCH sigact"
 msgstr "impossible de positionner le nouveau sigact de SIGWINCH"
 
-#: dselect/baselist.cc:136
+#: dselect/baselist.cc:174
 msgid "failed to allocate colour pair"
 msgstr "impossible d'allouer une paire de couleurs"
 
-#: dselect/baselist.cc:165
+#: dselect/baselist.cc:203
 msgid "failed to create title window"
 msgstr "impossible de créer la fenêtre de titre"
 
-#: dselect/baselist.cc:169
+#: dselect/baselist.cc:207
 msgid "failed to create whatinfo window"
 msgstr "impossible de créer la fenêtre d'à propos"
 
-#: dselect/baselist.cc:173
+#: dselect/baselist.cc:211
 msgid "failed to create baselist pad"
 msgstr "impossible de créer la zone de liste de base"
 
-#: dselect/baselist.cc:176
+#: dselect/baselist.cc:214
 msgid "failed to create heading pad"
 msgstr "impossible de créer la zone d'en-tête"
 
-#: dselect/baselist.cc:180
+#: dselect/baselist.cc:218
 msgid "failed to create thisstate pad"
 msgstr "impossible de créer la zone d'état"
 
-#: dselect/baselist.cc:184
+#: dselect/baselist.cc:222
 msgid "failed to create info pad"
 msgstr "impossible de créer la zone d'info"
 
-#: dselect/baselist.cc:189
+#: dselect/baselist.cc:227
 msgid "failed to create query window"
 msgstr "impossible de créer la fenêtre de requête"
 
-#: dselect/baselist.cc:258
+#: dselect/baselist.cc:298
 msgid "Keybindings"
 msgstr "Affectations de touches"
 
-#: dselect/baselist.cc:306
+#: dselect/baselist.cc:347
 #, c-format
 msgid "  -- %d%%, press "
 msgstr "  -- %d%%, appuyez sur "
 
-#: dselect/baselist.cc:309
+#: dselect/baselist.cc:350
 #, c-format
 msgid "%s for more"
 msgstr "%s pour plus d'informations"
 
-#: dselect/baselist.cc:313
+#: dselect/baselist.cc:354
 #, c-format
 msgid "%s to go back"
 msgstr "%s pour revenir en arrière"
@@ -348,7 +348,7 @@ msgid ""
 "displays\n"
 "   Q     Confirm, quit (override dep.s)       o, O  cycle through sort "
 "options\n"
-" X, Esc  eXit, abandoning any changes made    v, V  change status display "
+" X, Esc  eXit, abandoning any changes made   v, A, V  change status display "
 "opts\n"
 "   R     Revert to state before this list      ^l   redraw display\n"
 "   U     set all to sUggested state             /   search (Return to "
@@ -357,9 +357,11 @@ msgid ""
 msgstr ""
 "Touches de déplacement : Suivant/Précédent, Début/Fin, Haut/Bas, Arrière/"
 "Avant :\n"
-" Flèche bas, j         Flèche haut, k       déplacement du surlignage\n"
-" N, Page haut, Espace  P, Page bas, Efface  défilement liste d'une page\n"
-" ^n                    ^p                   défilement liste d'une ligne\n"
+" j, Flèche bas         k, Flèche haut       déplacer le surlignage\n"
+" N, Page haut, Espace  P, Page bas, Efface  faire défiler la liste d'une "
+"page\n"
+" ^n                    ^p                   faire défiler la liste d'une "
+"ligne\n"
 " t, Début              e, Fin               aller au début/fin de la liste\n"
 " u                     d                    faire défiler info d'une page\n"
 " ^u                    ^d                   faire défiler info d'une ligne\n"
@@ -369,24 +371,24 @@ msgstr ""
 "caractère\n"
 "\n"
 "Marquer les paquets à traiter ultérieurement :\n"
-" +, Inser  installer ou mettre à niveau  =, H  marquer « à garder » (on "
-"hold)\n"
+" +, Inser  installer ou mettre à niveau  =, H  marquer à garder en l'état "
+"(on hold)\n"
 " -, Suppr  supprimer                     :, G  mettre à niveau ou laisser "
 "non installé\n"
-" _         supprimer et purger config\n"
+" _         supprimer le paquet et sa configuration\n"
 "                                             Divers :\n"
-"Quitter, sortir, surcharger (! majuscules):   ?, F1 demander de l'aide (Aide "
-"de même)\n"
-" Return  Confirm. et quitte. (vérif depend.)    i, I  faire défiler écrans "
+"Quitter, sortir, écraser (en majuscules!):      ?, F1 demander de l'aide "
+"(voir aussi « Help »)\n"
+" Entrée  confirm. et quitte. (vérif depend.)    i, I  faire défiler écrans "
 "d'info\n"
-"   Q     Confirm. et quitte. (outrepass. dep.s) o, O  faire défiler les "
+"   Q     confirm. et quitte. (outrepass. dep.s) o, O  faire défiler les "
 "options de tri\n"
-" X, Esc  sortie, abandon des changements      v, V  change les options "
+" X, Esc  sortir, abandon des changements        v, A, V  changer les options "
 "d'affichage\n"
-"   R     Retour. à l'état précèd cette liste  ^l   redessiner l'affichage\n"
-"   U     tout positionner aux états suggérés    /   rechercher (Entrée pour "
+"   R     retour. à l'état précèd cette liste    ^l   redessiner l'affichage\n"
+"   U     tout positionner aux états suggérés    /    rechercher (Entrée pour "
 "annuler)\n"
-"   D     tout posit. à l'état directem. requis  \\  répéter la dernière "
+"   D     tout posit. à l'état directem. requis  n, \\  répéter la dernière "
 "recherche\n"
 
 #: dselect/helpmsgs.cc:55
@@ -787,9 +789,9 @@ msgstr ""
 "des paquets.)\n"
 "\n"
 "Quitter :\n"
-" Entrée, Entr  sélectionner cette méthode et configurer celle-ci de manière "
+" Entrée, Enter  sélectionner cette méthode et configurer celle-ci de manière "
 "interactive\n"
-" x, X          sortir sans changer ou configurer la méthode d'installation\n"
+" x, X           sortir sans changer ou configurer la méthode d'installation\n"
 "\n"
 "Divers :\n"
 "  ?, Help, F1     demander de l'aide\n"
@@ -974,36 +976,36 @@ msgstr "Attributs :\n"
 msgid "couldn't open debug file `%.255s'\n"
 msgstr "impossible d'ouvrir le fichier de débogage « %.255s »\n"
 
-#: dselect/main.cc:254
+#: dselect/main.cc:253
 #, c-format
 msgid "invalid %s '%s'"
 msgstr "Non valable %s « %s »"
 
-#: dselect/main.cc:273
+#: dselect/main.cc:272
 msgid "screen part"
 msgstr "Partie de l'écran"
 
-#: dselect/main.cc:279
+#: dselect/main.cc:278
 msgid "null colour specification"
 msgstr "Spécification de couleur nulle"
 
-#: dselect/main.cc:287 dselect/main.cc:292
+#: dselect/main.cc:286 dselect/main.cc:291
 msgid "colour"
 msgstr "couleur"
 
-#: dselect/main.cc:300
+#: dselect/main.cc:299
 msgid "colour attribute"
 msgstr "attribut de couleur"
 
-#: dselect/main.cc:332
+#: dselect/main.cc:333
 msgid "Terminal does not appear to support cursor addressing.\n"
 msgstr "Il semble que votre terminal ne supporte pas la gestion du curseur\n"
 
-#: dselect/main.cc:334
+#: dselect/main.cc:335
 msgid "Terminal does not appear to support highlighting.\n"
 msgstr "Il semble que votre terminal ne supporte pas le surlignage\n"
 
-#: dselect/main.cc:336
+#: dselect/main.cc:337
 #, c-format
 msgid ""
 "Set your TERM variable correctly, use a better terminal,\n"
@@ -1013,11 +1015,11 @@ msgstr ""
 "un meilleur terminal ou contentez-vous d'une installation\n"
 "paquet par paquet avec l'outil de gestion de paquets %s.\n"
 
-#: dselect/main.cc:339
+#: dselect/main.cc:340
 msgid "terminal lacks necessary features, giving up"
 msgstr "Il manque d'importantes fonctionnalités au terminal, abandon"
 
-#: dselect/main.cc:420
+#: dselect/main.cc:425
 msgid ""
 "\n"
 "\n"
@@ -1032,7 +1034,7 @@ msgstr ""
 "Appuyez sur <Entrée> pour confirmer la sélection. ^L pour redessiner "
 "l'écran.\n"
 
-#: dselect/main.cc:425
+#: dselect/main.cc:430
 msgid ""
 "Copyright (C) 1994-1996 Ian Jackson.\n"
 "Copyright (C) 2000,2001 Wichert Akkerman.\n"
@@ -1040,7 +1042,7 @@ msgstr ""
 "Copyright (C) 1994-1996 Ian Jackson.\n"
 "Copyright (C) 2000,2001 Wichert Akkerman.\n"
 
-#: dselect/main.cc:431
+#: dselect/main.cc:436
 msgid ""
 "\n"
 "\n"
@@ -1050,14 +1052,22 @@ msgstr ""
 "\n"
 "Accès en lecture seule : seul un aperçu des sélections est disponible !"
 
-#: dselect/main.cc:450
+#: dselect/main.cc:455
 msgid "failed to getch in main menu"
 msgstr "échec de « getch » dans le menu principal"
 
-#: dselect/main.cc:533
+#: dselect/main.cc:538
 #, c-format
 msgid "unknown action string `%.50s'"
 msgstr "chaîne d'action inconnue « %.50s »"
+
+#: dselect/methlist.cc:66
+msgid "Abbrev."
+msgstr "Abrév."
+
+#: dselect/methlist.cc:67 dselect/pkgdisplay.cc:188 dselect/pkginfo.cc:110
+msgid "Description"
+msgstr "Description"
 
 #: dselect/methlist.cc:73
 msgid "dselect - list of access methods"
@@ -1068,35 +1078,27 @@ msgstr "dselect - liste des méthodes d'accès"
 msgid "Access method `%s'."
 msgstr "Méthode d'accès « %s »."
 
-#: dselect/methlist.cc:116
-msgid "Abbrev."
-msgstr "Abrév."
-
-#: dselect/methlist.cc:117 dselect/pkginfo.cc:110 dselect/pkgtop.cc:292
-msgid "Description"
-msgstr "Description"
-
-#: dselect/methlist.cc:160 dselect/pkglist.cc:583
+#: dselect/methlist.cc:161 dselect/pkglist.cc:587
 msgid "doupdate failed"
 msgstr "échec de doupdate"
 
-#: dselect/methlist.cc:163 dselect/pkglist.cc:586
+#: dselect/methlist.cc:164 dselect/pkglist.cc:590
 msgid "failed to unblock SIGWINCH"
 msgstr "échec du déblocage de SIGWINCH"
 
-#: dselect/methlist.cc:168 dselect/pkglist.cc:591
+#: dselect/methlist.cc:169 dselect/pkglist.cc:595
 msgid "failed to re-block SIGWINCH"
 msgstr "échec du reblocage de SIGWINCH"
 
-#: dselect/methlist.cc:169 dselect/pkglist.cc:593
+#: dselect/methlist.cc:170 dselect/pkglist.cc:597
 msgid "getch failed"
 msgstr "échec de « getch »"
 
-#: dselect/methlist.cc:186
+#: dselect/methlist.cc:187
 msgid "Explanation"
 msgstr "Explication"
 
-#: dselect/methlist.cc:196
+#: dselect/methlist.cc:197
 msgid "No explanation available."
 msgstr "Aucune explication n'est disponible."
 
@@ -1119,6 +1121,32 @@ msgstr ""
 "\n"
 "Appuyez sur <Entrée> pour continuer."
 
+#: dselect/method.cc:82
+msgid "cannot unlock access method area"
+msgstr "impossible de déverrouiller la zone de méthodes d'accès"
+
+#: dselect/method.cc:96
+msgid "no access methods are available"
+msgstr "aucune méthode d'accès n'est disponible"
+
+#: dselect/method.cc:115
+msgid "requested operation requires superuser privilege"
+msgstr "l'opération demandée requiert les privilèges de super-utilisateur"
+
+#: dselect/method.cc:118
+msgid "cannot open or create access method lockfile"
+msgstr ""
+"impossible d'ouvrir ou de créer le fichier de verrouillage de la méthode "
+"d'accès"
+
+#: dselect/method.cc:125
+msgid "the access method area is already locked"
+msgstr "La zone de méthodes d'accès est déjà verrouillée"
+
+#: dselect/method.cc:128
+msgid "cannot lock access method area"
+msgstr "impossible de verrouiller la zone de méthodes d'accès"
+
 #: dselect/method.cc:161
 #, c-format
 msgid "Press <enter> to continue.\n"
@@ -1133,6 +1161,10 @@ msgid "error reading acknowledgement of program failure message"
 msgstr ""
 "erreur rencontrée lors de la lecture du message d'acquittement produit par "
 "l'échec du programme"
+
+#: dselect/method.cc:187
+msgid "no access method is selected or configured"
+msgstr "aucune méthode d'accès n'est sélectionnée ni configurée"
 
 #: dselect/method.cc:196
 msgid "update available list script"
@@ -1497,67 +1529,115 @@ msgstr "Installé"
 msgid "Purged"
 msgstr "Purgé"
 
-#: dselect/pkgdisplay.cc:193
+#: dselect/pkgdisplay.cc:138
+msgid "Error"
+msgstr "Erreur"
+
+#: dselect/pkgdisplay.cc:139
+msgid "Installed?"
+msgstr "Installé ?"
+
+#: dselect/pkgdisplay.cc:140
+msgid "Old mark"
+msgstr "Ancienne marque"
+
+#: dselect/pkgdisplay.cc:141
+msgid "Marked for"
+msgstr "Marqué pour"
+
+#: dselect/pkgdisplay.cc:143
+msgid "EIOM"
+msgstr "EIAM"
+
+#: dselect/pkgdisplay.cc:147 dselect/pkgdisplay.cc:150
+msgid "Section"
+msgstr "Section"
+
+#: dselect/pkgdisplay.cc:148
+msgid "Priority"
+msgstr "Priorité"
+
+#: dselect/pkgdisplay.cc:152
+msgid "Package"
+msgstr "Paquet"
+
+#: dselect/pkgdisplay.cc:161 dselect/pkgdisplay.cc:165
+msgid "Avail.arch"
+msgstr "Arch. dispo."
+
+#: dselect/pkgdisplay.cc:164
+msgid "Inst.arch"
+msgstr "Arch. inst"
+
+#: dselect/pkgdisplay.cc:178 dselect/pkgdisplay.cc:182
+msgid "Avail.ver"
+msgstr "Vers. dispo."
+
+#: dselect/pkgdisplay.cc:181
+msgid "Inst.ver"
+msgstr "Vers. inst"
+
+#: dselect/pkgdisplay.cc:197
 msgid "dselect - recursive package listing"
 msgstr "dselect - liste des paquets récursive"
 
-#: dselect/pkgdisplay.cc:195
+#: dselect/pkgdisplay.cc:199
 msgid "dselect - inspection of package states"
 msgstr "dselect - inspection de l'état des paquets"
 
-#: dselect/pkgdisplay.cc:196
+#: dselect/pkgdisplay.cc:200
 msgid "dselect - main package listing"
 msgstr "dselect - liste principale des paquets"
 
-#: dselect/pkgdisplay.cc:204
+#: dselect/pkgdisplay.cc:208
 msgid " (by section)"
 msgstr " (par section)"
 
-#: dselect/pkgdisplay.cc:207
+#: dselect/pkgdisplay.cc:211
 msgid " (avail., section)"
 msgstr " (dispo., section)"
 
-#: dselect/pkgdisplay.cc:210
+#: dselect/pkgdisplay.cc:214
 msgid " (status, section)"
 msgstr " (état, section)"
 
-#: dselect/pkgdisplay.cc:219
+#: dselect/pkgdisplay.cc:223
 msgid " (by priority)"
 msgstr " (par priorité)"
 
-#: dselect/pkgdisplay.cc:222
+#: dselect/pkgdisplay.cc:226
 msgid " (avail., priority)"
 msgstr " (dispo., priorité)"
 
-#: dselect/pkgdisplay.cc:225
+#: dselect/pkgdisplay.cc:229
 msgid " (status, priority)"
 msgstr " (état, priorité)"
 
-#: dselect/pkgdisplay.cc:234
+#: dselect/pkgdisplay.cc:238
 msgid " (alphabetically)"
 msgstr " (alphabétiquement)"
 
-#: dselect/pkgdisplay.cc:237
+#: dselect/pkgdisplay.cc:241
 msgid " (by availability)"
 msgstr " (par disponibilité)"
 
-#: dselect/pkgdisplay.cc:240
+#: dselect/pkgdisplay.cc:244
 msgid " (by status)"
 msgstr " (par état)"
 
-#: dselect/pkgdisplay.cc:255
+#: dselect/pkgdisplay.cc:259
 msgid " mark:+/=/- terse:v help:?"
 msgstr " marq:+/=/- concis:v aide:?"
 
-#: dselect/pkgdisplay.cc:256
+#: dselect/pkgdisplay.cc:260
 msgid " mark:+/=/- verbose:v help:?"
 msgstr " marq:+/=/- verbeux:v aide:?"
 
-#: dselect/pkgdisplay.cc:258
+#: dselect/pkgdisplay.cc:262
 msgid " terse:v help:?"
 msgstr " concis:v aide:?"
 
-#: dselect/pkgdisplay.cc:259
+#: dselect/pkgdisplay.cc:263
 msgid " verbose:v help:?"
 msgstr " verbeux:v aide:?"
 
@@ -1598,103 +1678,63 @@ msgstr "information de contrôle installée"
 msgid "Available control file information"
 msgstr "Informations disponibles du fichier de contrôle"
 
-#: dselect/pkglist.cc:424
+#: dselect/pkglist.cc:425
 msgid "there are no packages"
 msgstr "Il n'existe pas de paquets"
 
-#: dselect/pkglist.cc:517
+#: dselect/pkglist.cc:521
 msgid "invalid search option given"
 msgstr "Option de recherche donnée invalide"
 
-#: dselect/pkglist.cc:532
+#: dselect/pkglist.cc:536
 msgid "error in regular expression"
 msgstr "Erreur dans l'expression rationnelle"
 
-#: dselect/pkgsublist.cc:108
+#: dselect/pkgsublist.cc:111
 msgid " does not appear to be available\n"
 msgstr " semble ne pas être disponible\n"
 
-#: dselect/pkgsublist.cc:128
+#: dselect/pkgsublist.cc:131
 msgid " or "
 msgstr " ou "
 
-#: dselect/pkgtop.cc:57
+#: dselect/pkgtop.cc:58
 msgid "All"
 msgstr "Tous"
 
-#: dselect/pkgtop.cc:79
+#: dselect/pkgtop.cc:80
 msgid "All packages"
 msgstr "Tous les paquets"
 
-#: dselect/pkgtop.cc:83
+#: dselect/pkgtop.cc:84
 #, c-format
 msgid "%s packages without a section"
 msgstr "Paquets %s sans section"
 
-#: dselect/pkgtop.cc:85
+#: dselect/pkgtop.cc:86
 #, c-format
 msgid "%s packages in section %s"
 msgstr "Paquets %s dans la section %s"
 
-#: dselect/pkgtop.cc:91
+#: dselect/pkgtop.cc:92
 #, c-format
 msgid "%s %s packages"
 msgstr "Paquets %s %s"
 
-#: dselect/pkgtop.cc:95
+#: dselect/pkgtop.cc:96
 #, c-format
 msgid "%s %s packages without a section"
 msgstr "Paquets %s %s sans section"
 
-#: dselect/pkgtop.cc:97
+#: dselect/pkgtop.cc:98
 #, c-format
 msgid "%s %s packages in section %s"
 msgstr "Paquets %s %s dans la section %s"
 
-#: dselect/pkgtop.cc:118
+#: dselect/pkgtop.cc:119
 #, c-format
 msgid "%-*s %s%s%s;  %s (was: %s).  %s"
 msgstr "%-*s %s%s%s ;  %s (précédemment : %s).  %s"
-
-#: dselect/pkgtop.cc:264
-msgid "Error"
-msgstr "Erreur"
-
-#: dselect/pkgtop.cc:268
-msgid "Installed?"
-msgstr "Installé ?"
-
-#: dselect/pkgtop.cc:272
-msgid "Old mark"
-msgstr "Ancienne marque"
-
-#: dselect/pkgtop.cc:276
-msgid "Marked for"
-msgstr "Marqué pour"
-
-#: dselect/pkgtop.cc:279
-msgid "EIOM"
-msgstr "EIAM"
-
-#: dselect/pkgtop.cc:281
-msgid "Section"
-msgstr "Section"
-
-#: dselect/pkgtop.cc:282
-msgid "Priority"
-msgstr "Priorité"
-
-#: dselect/pkgtop.cc:283
-msgid "Package"
-msgstr "Paquet"
-
-#: dselect/pkgtop.cc:287
-msgid "Inst.ver"
-msgstr "Vers. inst"
-
-#: dselect/pkgtop.cc:290
-msgid "Avail.ver"
-msgstr "Vers. dispo."
 
 #~ msgid "foreign architectures enabled but multi-arch is not supported"
 #~ msgstr ""

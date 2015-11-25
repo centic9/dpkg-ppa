@@ -180,7 +180,7 @@ sub load_src_override {
 	next if /^\s*$/;
 	s/\s+$//;
 
-	my @data = split ' ', $_;
+	my @data = split ' ';
 	unless (@data == 2) {
 	    warning(_g('invalid source override entry at line %d (%d fields)'),
 	            $., 0 + @data);
@@ -281,7 +281,7 @@ sub process_dsc {
     # Process extra override
     if (exists $extra_override{$source}) {
         my ($field, $value);
-        while(($field, $value) = each %{$extra_override{$source}}) {
+        while (($field, $value) = each %{$extra_override{$source}}) {
             $fields->{$field} = $value;
         }
     }

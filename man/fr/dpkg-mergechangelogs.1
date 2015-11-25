@@ -39,26 +39,25 @@ Chaque entrée est identifiée par son numéro de version. Les entrées ne sont
 pas censées entrer en conflit, mais sont simplement fusionnées dans le bon
 ordre (par numéro de version décroissant). Si l'option
 \fB\-\-merge\-prereleases\fP est utilisée, la partie de numéro de version qui suit
-le dernier caractère tilde est omise\ ;\ les versions 1.0\-1~exp1 et 1.0\-1exp5
+le dernier caractère tilde est omise\ ;\ les versions 1.0\-1~exp1 et 1.0\-1~exp5
 sont ainsi considérées comme la même entrée. Quand la même version est
-mentionnée dans \fInouveau\-a\fP et \fInouveau\-b\fP, une fusion triple ligne à
-ligne standard est tentée (sous réserve que le module Algorithm::Merge soit
-disponible \[em] il est fourni par le paquet libalgorithm\-merge\-perl
-\[em]. Dans le cas contraire, un conflit global est créé dans le contexte de
-cette entrée.
+mentionnée dans \fInouveau\-a\fP et \fInouveau\-b\fP, une fusion «\ 3\-way\ » standard
+est tentée (sous réserve que le module Algorithm::Merge soit disponible
+\[em] il est fourni par le paquet libalgorithm\-merge\-perl \[em]. Dans le cas
+contraire, un conflit global est créé dans le contexte de cette entrée.
 .
 .SH OPTIONS
 .TP 
 \fB\-\-merge\-prereleases\fP, \fB\-m\fP
 Omet la version qui suit le dernier caractère tilde dans les numéros de
-versions, lors de la comparaison qui permet d'identifier si ceux entrées
+versions, lors de la comparaison qui permet d'identifier si deux entrées
 sont les mêmes ou pas.
 .sp
-Cette option utile lorsqu'on conserve la même entrée de journal mais que la
-version est incrémentée régulièrement. Par exemple, cela permet d'utiliser
-les numéros 2.3\-1~exp1, 2.3\-1~exp2, etc. jusqu'à une publication officielle
-numérotée 2.3\-1, toutes ces versions étant considérées comme l'évolution
-dans le temps de la même version.
+Cette option est utile lorsqu'on conserve la même entrée de journal mais que
+la version est incrémentée régulièrement. Par exemple, cela permet
+d'utiliser les numéros 2.3\-1~exp1, 2.3\-1~exp2, etc. jusqu'à une publication
+officielle numérotée 2.3\-1, toutes ces versions étant considérées comme
+l'évolution dans le temps de la même version.
 .TP 
 \fB\-\-help\fP
 Affiche un message d'aide puis quitte.
@@ -70,7 +69,7 @@ Affiche le numéro de version puis quitte.
 .P
 Tout ce qui ne peut pas être analysé par Dpkg::Changelog est perdu lors de
 la fusion. Cela peut comprendre des lignes de mode vim, des commentaires qui
-ne sont pas censés se trouver là, etc.
+ne sont pas censés se trouver là,\ etc.
 .
 .SH "INTÉGRATION AVEC GIT"
 .P

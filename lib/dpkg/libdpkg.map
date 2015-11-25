@@ -3,9 +3,16 @@ global:
 	# Error reporting
 	dpkg_error_destroy;
 
+	# Charset and string functions
+	dpkg_locales_init;
+
 	# Program name
 	dpkg_set_progname;
 	dpkg_get_progname;
+
+	# Program setup/teardown
+	dpkg_program_init;
+	dpkg_program_done;
 
 	# Ar support
 	dpkg_ar_normalize_name;
@@ -63,10 +70,10 @@ LIBDPKG_PRIVATE {
 	fgets_checked;
 
 	# Charset and string functions
-	dpkg_locales_init;
-
 	cisdigit;
 
+	str_match_end;
+	str_fnv_hash;
 	str_escape_fmt;
 	str_strip_quotes;
 	str_quote_meta;
@@ -119,17 +126,17 @@ LIBDPKG_PRIVATE {
 	# Buffer I/O functions
 	fd_read;
 	fd_write;
+	fd_allocate_size;
 	buffer_filter;
 	buffer_skip_*;
 	buffer_copy_*;
 
 	# Subprocess and command handling
-	subproc_signals_setup;
+	subproc_signals_ignore;
 	subproc_signals_cleanup;
+	subproc_signals_restore;
 	subproc_fork;
-	subproc_wait;
-	subproc_check;
-	subproc_wait_check;
+	subproc_reap;
 
 	command_init;
 	command_add_arg;
@@ -146,6 +153,7 @@ LIBDPKG_PRIVATE {
 	# Compression support
 	compressor_find_by_name;
 	compressor_find_by_extension;
+	compressor_get_name;
 	compressor_get_extension;
 	compressor_get_strategy;
 	compressor_check_params;
@@ -166,6 +174,7 @@ LIBDPKG_PRIVATE {
 	dpkg_options_load;
 	dpkg_options_parse;
 	dpkg_options_parse_arg_int;
+	dpkg_options_parse_pkgname;
 	badusage;
 	cipaction;		# XXX variable, do not export
 	setaction;
@@ -237,6 +246,10 @@ LIBDPKG_PRIVATE {
 	pkg_abbrev_want;
 	pkg_abbrev_status;
 	pkg_abbrev_eflag;
+	pkg_want_name;
+	pkg_eflag_name;
+	pkg_status_name;
+	pkg_priority_name;
 
 	# Package list handling
 	pkg_list_new;
@@ -245,6 +258,7 @@ LIBDPKG_PRIVATE {
 
 	# Package array handling
 	pkg_array_init_from_db;
+	pkg_array_init_from_names;
 	pkg_array_sort;
 	pkg_array_destroy;
 
@@ -291,8 +305,7 @@ LIBDPKG_PRIVATE {
 	versionsatisfied;
 
 	# Package on-disk database functions
-	statusinfos;		# XXX variable, do not export
-	wantinfos;		# XXX variable, do not export
+	varbuf_add_arbfield;
 	varbufdependency;
 	varbufrecord;
 	writerecord;

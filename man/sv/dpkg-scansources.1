@@ -35,15 +35,16 @@ dpkg\-scansources \- skapar indexfilerna Sources
 \&\fI.dsc\fP\-filer. De används för att skapa ett Debiankällkodsindex, vilket
 skrivs på standard ut.
 .PP
-The \fIoverride\-file\fP, if given, is used to set priorities in the resulting
-index records and to override the maintainer field given in the \fI.dsc\fP
-files. The file can be compressed. See \fBdeb\-override\fP(5)  for the format of
-this file. Note: Since the override file is indexed by binary, not source
-packages, there's a bit of a problem here. The current implementation uses
-the highest priority of all the binary packages produced by a \fI.dsc\fP file
-for the priority of the source package, and the override entry for the first
-binary package listed in the \fI.dsc\fP file to modify maintainer
-information. This might change.
+\fIÖverstyrningsfil\fPen, om den anges, används för att ställa in prioriteter i
+de skapade indexposterna, samt för att ersätta fält de paketansvariga ger i
+\&\fI.dsc\fP\-filerna. Filen kan vara komprimerad. Se \fBdeb\-override\fP(5) för en
+beskrivning av formatet för denna fil. Observera: Eftersom
+överstyrningsfilen indexerar per binärpaket, inte källkodspaket, uppstår det
+ett problem här. Nuvarande implementation använder den högsta prioriteten av
+samtliga binärpaket som skapas av en \fI.dsc\fP\-fil som prioritet för
+källkodspaketet, och överstyrningsposten för det första binärpaket som
+listas i \fI.dsc\fP\-filen för att ersätta information från
+paketansvariga. Detta kan komma att ändras.
 .PP
 \fIsökvägsprefix\fP läggs, om den anges, till i början av katalogfältet i det
 skapade källkodsindexet. Du använder det normalt till att göra så att

@@ -4,7 +4,7 @@
  *
  * Copyright © 1995 Ian Jackson <ian@chiark.greenend.org.uk>
  * Copyright © 2001 Wichert Akkerman
- * Copyright © 2006-2013 Guillem Jover <guillem@debian.org>
+ * Copyright © 2006-2014 Guillem Jover <guillem@debian.org>
  * Copyright © 2009 Canonical Ltd.
  * Copyright © 2011 Linaro Limited
  * Copyright © 2011 Raphaël Hertzog <hertzog@debian.org>
@@ -185,7 +185,7 @@ f_architecture(struct pkginfo *pkg, struct pkgbin *pkgbin,
                const char *value, const struct fieldinfo *fip)
 {
   pkgbin->arch = dpkg_arch_find(value);
-  if (pkgbin->arch->type == arch_illegal)
+  if (pkgbin->arch->type == DPKG_ARCH_ILLEGAL)
     parse_warn(ps, _("'%s' is not a valid architecture name: %s"),
                value, dpkg_arch_name_is_illegal(value));
 }
@@ -207,7 +207,7 @@ f_priority(struct pkginfo *pkg, struct pkgbin *pkgbin,
   if (!*value) return;
   pkg->priority = parse_nv_last(ps, _("word in 'Priority' field"),
                                 priorityinfos, value);
-  if (pkg->priority == pri_other)
+  if (pkg->priority == PKG_PRIO_OTHER)
     pkg->otherpriority = nfstrsave(value);
 }
 
@@ -451,7 +451,7 @@ f_dependency(struct pkginfo *pkg, struct pkgbin *pkgbin,
         dop->arch_is_implicit = false;
         dop->arch = dpkg_arch_find(arch.buf);
 
-        if (dop->arch->type == arch_illegal)
+        if (dop->arch->type == DPKG_ARCH_ILLEGAL)
           emsg = dpkg_arch_name_is_illegal(arch.buf);
         if (emsg)
           parse_error(ps, _("'%s' field, reference to '%.255s': "
@@ -461,7 +461,7 @@ f_dependency(struct pkginfo *pkg, struct pkgbin *pkgbin,
                  fip->integer == dep_replaces) {
         /* Conflics/Breaks/Replaces get an implicit "any" arch qualifier. */
         dop->arch_is_implicit = true;
-        dop->arch = dpkg_arch_get(arch_wildcard);
+        dop->arch = dpkg_arch_get(DPKG_ARCH_WILDCARD);
       } else {
         /* Otherwise use the pkgbin architecture, which will be assigned to
          * later on by parse.c, once we can guarantee we have parsed it from
@@ -479,9 +479,9 @@ f_dependency(struct pkginfo *pkg, struct pkgbin *pkgbin,
         c1= *p;
         if (c1 == '<' || c1 == '>') {
           c2= *++p;
-          dop->verrel = (c1 == '<') ? dpkg_relation_lt : dpkg_relation_gt;
+          dop->verrel = (c1 == '<') ? DPKG_RELATION_LT : DPKG_RELATION_GT;
           if (c2 == '=') {
-            dop->verrel |= dpkg_relation_eq;
+            dop->verrel |= DPKG_RELATION_EQ;
             p++;
           } else if (c2 == c1) {
             /* Either ‘<<’ or ‘>>’. */
@@ -491,16 +491,16 @@ f_dependency(struct pkginfo *pkg, struct pkgbin *pkgbin,
                         _("`%s' field, reference to `%.255s':\n"
                           " bad version relationship %c%c"),
                         fip->name, depname.buf, c1, c2);
-            dop->verrel = dpkg_relation_none;
+            dop->verrel = DPKG_RELATION_NONE;
           } else {
             parse_warn(ps,
                        _("`%s' field, reference to `%.255s':\n"
                          " `%c' is obsolete, use `%c=' or `%c%c' instead"),
                        fip->name, depname.buf, c1, c1, c1, c1);
-            dop->verrel |= dpkg_relation_eq;
+            dop->verrel |= DPKG_RELATION_EQ;
           }
         } else if (c1 == '=') {
-          dop->verrel = dpkg_relation_eq;
+          dop->verrel = DPKG_RELATION_EQ;
           p++;
         } else {
           parse_warn(ps,
@@ -508,9 +508,9 @@ f_dependency(struct pkginfo *pkg, struct pkgbin *pkgbin,
                        " implicit exact match on version number, "
                        "suggest using `=' instead"),
                      fip->name, depname.buf);
-          dop->verrel = dpkg_relation_eq;
+          dop->verrel = DPKG_RELATION_EQ;
         }
-        if ((dop->verrel != dpkg_relation_eq) && (fip->integer == dep_provides))
+        if ((dop->verrel != DPKG_RELATION_EQ) && (fip->integer == dep_provides))
           parse_warn(ps,
                      _("only exact versions may be used for '%s' field"),
                      "Provides");
@@ -552,7 +552,7 @@ f_dependency(struct pkginfo *pkg, struct pkgbin *pkgbin,
                            "error in version"), fip->name, depname.buf);
         p++; while (isspace(*p)) p++;
       } else {
-        dop->verrel = dpkg_relation_none;
+        dop->verrel = DPKG_RELATION_NONE;
         dpkg_version_blank(&dop->version);
       }
       if (!*p || *p == ',') break;

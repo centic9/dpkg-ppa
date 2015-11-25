@@ -41,6 +41,7 @@
 #include <dpkg/dpkg.h>
 #include <dpkg/dpkg-db.h>
 #include <dpkg/path.h>
+#include <dpkg/string.h>
 #include <dpkg/subproc.h>
 #include <dpkg/buffer.h>
 #include <dpkg/ar.h>
@@ -81,7 +82,7 @@ deb_field(const char *filename, const char *field)
 
 	close(p[0]);
 
-	subproc_wait_check(pid, _("package field value extraction"), PROCPIPE);
+	subproc_reap(pid, _("package field value extraction"), SUBPROC_NOPIPE);
 
 	/* Trim down trailing junk. */
 	for (end = buf.buf + strlen(buf.buf) - 1; end - buf.buf >= 1; end--)
@@ -233,6 +234,10 @@ mksplit(const char *file_src, const char *prefix, off_t maxpartsize,
 	varbuf_destroy(&partname);
 	varbuf_destroy(&partmagic);
 
+	free(package);
+	free(version);
+	free(arch);
+
 	free(prefixdir);
 	free(msdos_prefix);
 
@@ -255,17 +260,12 @@ do_split(const char *const *argv)
 	if (prefix && *argv)
 		badusage(_("--split takes at most a source filename and destination prefix"));
 	if (!prefix) {
-		char *palloc;
-		int l;
+		size_t sourcefile_len = strlen(sourcefile);
 
-		l = strlen(sourcefile);
-		palloc = nfmalloc(l + 1);
-		strcpy(palloc, sourcefile);
-		if (strcmp(palloc + l - (sizeof(DEBEXT) - 1), DEBEXT) == 0) {
-			l -= (sizeof(DEBEXT) - 1);
-			palloc[l] = '\0';
-		}
-		prefix = palloc;
+		if (str_match_end(sourcefile, DEBEXT))
+			sourcefile_len -= strlen(DEBEXT);
+
+		prefix = nfstrnsave(sourcefile, sourcefile_len);
 	}
 
 	mksplit(sourcefile, prefix, opt_maxpartsize, opt_msdos);

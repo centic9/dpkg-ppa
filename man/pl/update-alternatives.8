@@ -65,11 +65,11 @@ dlatego, ¿eby zmiany wprowadzane przez administratora systemu by³y
 ograniczone do katalogu \fI/etc\fP: standard FHS wymienia powody, aby tak
 zrobiæ.
 .PP
-Kiedy pakiet dostarczaj±cy pliku o okre¶lonej funkcjonalno¶ci jest
-instalowany, zmieniany lub usuwany, wywo³ywany jest program
-\fBupdate\-alternatives\fP, aby zaktualizowaæ informacje o tym pliku w systemie
-alternatyw. \fBupdate\-alternatives\fP jest zazwyczaj wywo³ywany ze skryptów
-\fBpostinst\fP (configure) lub \fBprerm\fP (install) w pakietach Debiana.
+When each package providing a file with a particular functionality is
+installed, changed or removed, \fBupdate\-alternatives\fP is called to update
+information about that file in the alternatives system.
+\fBupdate\-alternatives\fP is usually called from the \fBpostinst\fP (configure) or
+\fBprerm\fP (remove and deconfigure) scripts in Debian packages.
 .PP
 Czêsto u¿yteczne jest, aby pewna liczba alternatyw by³a zsynchronizowana,
 tak ¿eby by³a zmieniana jako grupa. Na przyk³ad je¿eli jest zainstalowane

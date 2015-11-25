@@ -5,7 +5,7 @@
 .\" Copyright 息 2000-2001 Wichert Akkerman <wakkerma@debian.org>
 .\" Copyright 息 2002-2003 Adam Heath <doogie@debian.org>
 .\" Copyright 息 2004 Scott James Remnant <keybuk@debian.org>
-.\" Copyright 息 2008-2012 Guillem Jover <guillem@debian.org>
+.\" Copyright 息 2008-2014 Guillem Jover <guillem@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH start\-stop\-daemon 8 2012\-06\-17 "Debian Project" "dpkg ユーティリティ"
+.TH start\-stop\-daemon 8 2014\-03\-26 "Debian Project" "dpkg ユーティリティ"
 .SH 名前
 start\-stop\-daemon \- システムデーモンプログラムの起動、停止
 .
@@ -36,12 +36,14 @@ start\-stop\-daemon \- システムデーモンプログラムの起動、停止
 \fBstart\-stop\-daemon\fP はシステムレベルのプロセスの生成や停止を制御するために使用される。また、
 適切なオプションを指定することで、実行中のプロセスを確認することができる。
 .PP
-注記: \fB\-\-pidfile\fP を指定しない場合、\fBstart\-stop\-daemon\fP は \fBkillall\fP(1)
-と類似の動作を行う。\fBstart\-stop\-daemon\fP は、(指定されていれば) プロセス名、uid、および gid
-にマッチするプロセスをプロセステーブルから検索する。\fB\-\-start\fP
-が指定されている場合にマッチするプロセスがあれば、デーモンは起動されない。\fB\-\-stop\fP が指定されていれば、マッチするプロセスすべてに TERM
-シグナル (もしくは \fB\-\-signal\fP や \fB\-\-retry\fP により指定されたシグナル) が送られる。そのため、\fB\-\-stop\fP
-を指定されても動作しつづける必要があるような、長寿命の子プロセスを持つデーモンには、 pidfile を指定しなければならない。
+Note: unless \fB\-\-pid\fP or \fB\-\-pidfile\fP are specified, \fBstart\-stop\-daemon\fP
+behaves similar to \fBkillall\fP(1).  \fBstart\-stop\-daemon\fP will scan the
+process table looking for any processes which match the process name, parent
+pid, uid, and/or gid (if specified). Any matching process will prevent
+\fB\-\-start\fP from starting the daemon. All matching processes will be sent the
+TERM signal (or the one specified via \fB\-\-signal\fP or \fB\-\-retry\fP) if
+\fB\-\-stop\fP is specified. For daemons which have long\-lived children which
+need to live through a \fB\-\-stop\fP, you must specify a pidfile.
 .
 .SH コマンド
 .TP 
@@ -68,6 +70,14 @@ start\-stop\-daemon \- システムデーモンプログラムの起動、停止
 .
 .SH オプション
 .SS "Matching options"
+.TP 
+\fB\-\-pid\fP \fIpid\fP
+Check for a process with the specified \fIpid\fP. The \fIpid\fP must be a number
+greater than 0.
+.TP 
+\fB\-\-ppid\fP \fIppid\fP
+Check for a process with the specified \fIppid\fP (parent pid).  The \fIppid\fP
+must be a number greater than 0.
 .TP 
 \fB\-p\fP, \fB\-\-pidfile\fP \fIpid\-file\fP
 プロセスが \fIpid\-file\fP を作成したかどうかをチェックする。このオプションを単体で使用した場合、以前のプロセスが \fIpid\-file\fP
@@ -172,11 +182,19 @@ fork に意味のないプログラムや、fork を自身で行うためのコード追加が現実的でないプ
 プロセスを起動する前にプロセスの umask を設定する。
 .TP 
 \fB\-m\fP, \fB\-\-make\-pidfile\fP
-自分自身で PID ファイルを作成しないプログラムを起動する際に使用する。このオプションにより、プロセスの起動直前に
-\fBstart\-stop\-daemon\fP は \fB\-\-pidfile\fP で参照されるファイルを作成し、pid
-の値を格納する。このファイルはプログラムの停止時に削除されないことに注意。\fB注記:\fP
-このオプションは動作しない場合がある。特に、プログラムの実行時にそのメインのプロセスから fork
-するようなプログラムでは正しく動作しない。このため、通常は \fB\-\-background\fP オプションと併用する場合にのみ有用である。
+Used when starting a program that does not create its own pid file. This
+option will make \fBstart\-stop\-daemon\fP create the file referenced with
+\fB\-\-pidfile\fP and place the pid into it just before executing the
+process. Note, the file will only be removed when stopping the program if
+\fB\-\-remove\-pidfile\fP is used.  \fBNOTE:\fP This feature may not work in all
+cases. Most notably when the program being executed forks from its main
+process. Because of this, it is usually only useful when combined with the
+\fB\-\-background\fP option.
+.TP 
+\fB\-\-remove\-pidfile\fP
+Used when stopping a program that does not remove its own pid file. This
+option will make \fBstart\-stop\-daemon\fP remove the file referenced with
+\fB\-\-pidfile\fP after terminating the process.
 .TP 
 \fB\-v\fP, \fB\-\-verbose\fP
 詳細な情報を出力する。

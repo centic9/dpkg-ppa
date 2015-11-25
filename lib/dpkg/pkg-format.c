@@ -236,6 +236,39 @@ virt_status_abbrev(struct varbuf *vb,
 }
 
 static void
+virt_status_want(struct varbuf *vb,
+                 const struct pkginfo *pkg, const struct pkgbin *pkgbin,
+                 enum fwriteflags flags, const struct fieldinfo *fip)
+{
+	if (pkgbin != &pkg->installed)
+		return;
+
+	varbuf_add_str(vb, pkg_want_name(pkg));
+}
+
+static void
+virt_status_status(struct varbuf *vb,
+                   const struct pkginfo *pkg, const struct pkgbin *pkgbin,
+                   enum fwriteflags flags, const struct fieldinfo *fip)
+{
+	if (pkgbin != &pkg->installed)
+		return;
+
+	varbuf_add_str(vb, pkg_status_name(pkg));
+}
+
+static void
+virt_status_eflag(struct varbuf *vb,
+                  const struct pkginfo *pkg, const struct pkgbin *pkgbin,
+                  enum fwriteflags flags, const struct fieldinfo *fip)
+{
+	if (pkgbin != &pkg->installed)
+		return;
+
+	varbuf_add_str(vb, pkg_eflag_name(pkg));
+}
+
+static void
 virt_summary(struct varbuf *vb,
              const struct pkginfo *pkg, const struct pkgbin *pkgbin,
              enum fwriteflags flags, const struct fieldinfo *fip)
@@ -294,26 +327,16 @@ virt_source_version(struct varbuf *vb,
 }
 
 const struct fieldinfo virtinfos[] = {
-	{ "binary:Package", NULL, virt_package },
-	{ "binary:Summary", NULL, virt_summary },
-	{ "db:Status-Abbrev", NULL, virt_status_abbrev },
-	{ "source:Package", NULL, virt_source_package },
-	{ "source:Version", NULL, virt_source_version },
+	{ FIELD("binary:Package"), NULL, virt_package },
+	{ FIELD("binary:Summary"), NULL, virt_summary },
+	{ FIELD("db:Status-Abbrev"), NULL, virt_status_abbrev },
+	{ FIELD("db:Status-Want"), NULL, virt_status_want },
+	{ FIELD("db:Status-Status"), NULL, virt_status_status },
+	{ FIELD("db:Status-Eflag"), NULL, virt_status_eflag },
+	{ FIELD("source:Package"), NULL, virt_source_package },
+	{ FIELD("source:Version"), NULL, virt_source_version },
 	{ NULL },
 };
-
-static const struct fieldinfo *
-find_field_info(const struct fieldinfo *fields_head,
-                const struct pkg_format_node *fmt_node)
-{
-	const struct fieldinfo *fip;
-
-	for (fip = fields_head; fip->name; fip++)
-		if (strcasecmp(fmt_node->data, fip->name) == 0)
-			return fip;
-
-	return NULL;
-}
 
 void
 pkg_format_show(const struct pkg_format_node *head,
@@ -340,9 +363,9 @@ pkg_format_show(const struct pkg_format_node *head,
 		} else if (node->type == PKG_FORMAT_FIELD) {
 			const struct fieldinfo *fip;
 
-			fip = find_field_info(fieldinfos, node);
+			fip = find_field_info(fieldinfos, node->data);
 			if (fip == NULL)
-				fip = find_field_info(virtinfos, node);
+				fip = find_field_info(virtinfos, node->data);
 
 			if (fip) {
 				fip->wcall(&wb, pkg, pkgbin, 0, fip);
@@ -354,17 +377,16 @@ pkg_format_show(const struct pkg_format_node *head,
 			} else {
 				const struct arbitraryfield *afp;
 
-				for (afp = pkgbin->arbs; afp; afp = afp->next)
-					if (strcasecmp(node->data, afp->name) == 0) {
-						varbuf_printf(&fb, fmt, afp->value);
-						ok = true;
-						break;
-					}
+				afp = find_arbfield_info(pkgbin->arbs, node->data);
+				if (afp) {
+					varbuf_printf(&fb, fmt, afp->value);
+					ok = true;
+				}
 			}
 		}
 
 		if (ok) {
-			size_t len = strlen(fb.buf);
+			size_t len = fb.used;
 			if ((node->width > 0) && (len > node->width))
 				len = node->width;
 			varbuf_add_buf(&vb, fb.buf, len);

@@ -22,7 +22,7 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH deb\-src\-control 5 2013\-09\-17 "Progetto Debian" Debian
+.TH deb\-src\-control 5 "20 dicembre 2013" "Progetto Debian" Debian
 .SH NOME
 deb\-src\-control \- formato del file principale di controllo dei pacchetti
 sorgente Debian
@@ -85,7 +85,21 @@ formato attualmente utilizzato è \fItipo\-bts\fP\fB://\fP\fIindirizzo\-bts\fP, c
 \fBdebbugs://bugs.debian.org\fP. Questo campo solitamente non è necessario.
 
 .TP 
-\fBVcs\-*:\fP\fI url\fP
+\fBVcs\-Arch:\fP\fI url\fP
+.TQ
+\fBVcs\-Bzr:\fP\fI url\fP
+.TQ
+\fBVcs\-Cvs:\fP\fI url\fP
+.TQ
+\fBVcs\-Darcs:\fP\fI url\fP
+.TQ
+\fBVcs\-Git:\fP\fI url\fP
+.TQ
+\fBVcs\-Hg:\fP\fI url\fP
+.TQ
+\fBVcs\-Mtn:\fP\fI url\fP
+.TQ
+\fBVcs\-Svn:\fP\fI url\fP
 L'\fIurl\fP del repository del sistema di controllo di versione usato per
 manutenere questo pacchetto. Attualmente sono supportati \fBArch\fP, \fBBzr\fP
 (Bazaar), \fBCvs\fP, \fBDarcs\fP, \fBGit\fP, \fBHg\fP (Mercurial), \fBMtn\fP (Monotone) e
@@ -122,17 +136,18 @@ elenco di tali valori dalla versione più recente del pacchetto
 .TP 
 \fBBuild\-Depends:\fP\fI elenco\-pacchetti\fP
 Un elenco di pacchetti che devono essere installati e configurati per poter
-compilare il pacchetto sorgente. Includere una dipendenza in questo elenco
-ha lo stesso effetto di includerla in entrambi \fBBuild\-Depends\-Arch\fP e
+creare il pacchetto sorgente. Includere una dipendenza in questo elenco ha
+lo stesso effetto di includerla in entrambi \fBBuild\-Depends\-Arch\fP e
 \fBBuild\-Depends\-Indep\fP, con l'effetto aggiuntivo di essere usata per la
 creazione di archivi solo\-sorgenti.
 
 .TP 
 \fBBuild\-Depends\-Arch:\fP\fI elenco\-pacchetti\fP
-Same as \fBBuild\-Depends\fP, but they are only needed when building the
-architecture dependent packages. The \fBBuild\-Depends\fP are also installed in
-this case. This field is supported since dpkg 1.16.4; in order to build with
-older dpkg versions, \fBBuild\-Depends\fP should be used instead.
+Come \fBBuild\-Depends\fP, ma sono necessari solamente quando si compilano i
+pacchetti dipendenti dall'architettura. In questo caso vengono installati
+anche i \fBBuild\-Depends\fP. Questo campo è supportato a partire dalla versione
+1.16.4 di dpkg; per poter compilare con versioni più vecchie di dpkg, deve
+essere invece usato \fBBuild\-Depends\fP.
 
 .TP 
 \fBBuild\-Depends\-Indep:\fP\fI elenco\-pacchetti\fP
@@ -150,9 +165,10 @@ con l'effetto aggiuntivo di essere usata per le compilazioni solo\-sorgente.
 
 .TP 
 \fBBuild\-Conflicts\-Arch:\fP\fI elenco\-pacchetti\fP
-Same as \fBBuild\-Conflicts\fP, but only when building the architecture
-dependent packages. This field is supported since dpkg 1.16.4; in order to
-build with older dpkg versions, \fBBuild\-Conflicts\fP should be used instead.
+Come \fBBuild\-Conflicts\fP, ma solo quando si compilano i pacchetti dipendenti
+dall'architettura. Questo campo è supportato dalla versione 1.16.4 di dpkg;
+per poter compilare con versioni più vecchie di dpkg, deve essere invece
+usato \fBBuild\-Conflicts\fP.
 
 .TP 
 \fBBuild\-Conflicts\-Indep:\fP\fI elenco\-pacchetti\fP
@@ -160,21 +176,24 @@ Come \fBBuild\-Conflicts\fP, ma solo quando si compilano i pacchetti
 indipendenti dall'architettura.
 
 .PP
-The syntax of the \fBBuild\-Depends\fP, \fBBuild\-Depends\-Arch\fP and
-\fBBuild\-Depends\-Indep\fP fields is a list of groups of alternative
-packages. Each group is a list of packages separated by vertical bar (or
-"pipe") symbols, "|". The groups are separated by commas. Commas are to be
-read as "AND", and pipes as "OR", with pipes binding more tightly. Each
-package name is optionally followed by a version number specification in
-parentheses, an architecture specification in square brackets, and a profile
-specification in angle brackets.
+La sintassi dei campi \fBBuild\-Depends\fP, \fBBuild\-Depends\-Arch\fP e
+\fBBuild\-Depends\-Indep\fP è un elenco di gruppi di pacchetti alternativi. Ogni
+gruppo è un elenco di pacchetti separati da una barra verticale (o «pipe»):
+«|». I gruppi sono separati da virgole. Le virgole devono essere lette come
+«AND» e le pipe come «OR», con le pipe che hanno la precedenza. Ogni nome di
+pacchetto è seguito opzionalmente da un numero di versione specificato tra
+parentesi, un'architettura specificata tra parentesi quadre e una formula di
+restrizione che consiste di uno o più elenchi di nomi di profilo specificati
+tra parentesi angolari.
 
-The syntax of the \fBBuild\-Conflicts\fP, \fBBuild\-Conflicts\-Arch\fP and
-\fBBuild\-Conflicts\-Indep\fP fields is a list of comma\-separated package names,
-where the comma is read as an "AND". Specifying alternative packages using a
-"pipe" is not supported.  Each package name is optionally followed by a
-version number specification in parentheses, an architecture specification
-in square brackets, and a profile specification in angle brackets.
+La sintassi dei campi \fBBuild\-Conflicts\fP, \fBBuild\-Conflicts\-Arch\fP e
+\fBBuild\-Conflicts\-Indep\fP è un elenco di gruppi di pacchetti separati da
+virgole, dove la virgola viene letta come un «AND». Non è supportato
+specificare pacchetti alternativi usando una «pipe». Ogni nome di pacchetto
+è seguito opzionalmente da un numero di versione specificato tra parentesi,
+da un'architettura specificata tra parentesi quadre e da una formula di
+restrizione che consiste di uno o più elenchi di nomi di profilo specificati
+tra parentesi angolari.
 
 Un numero di versione può iniziare con «>>», nel qual caso
 corrisponde ad ogni versione successiva e può specificare o meno la
@@ -183,13 +202,16 @@ accettate per le versioni sono «>>» per maggiore di, «<<»
 per minore di, «>=» per maggiore o uguale a, «<=» per minore o
 uguale a e «=» per uguale a.
 
-An architecture specification consists of one or more architecture names,
-separated by whitespace. Exclamation marks may be prepended to each of the
-names, meaning "NOT".
+L'indicazione di un'architettura è formata da uno o più nomi di
+architettura, separati da spazi bianchi. Ciascun nome può essere fatto
+precedere da un punto esclamativo col significato di «NON».
 
-A profile specification consists of one or more profile names, prefixed with
-the "\fBprofile.\fP" namespace, separated by whitespace. Exclamation marks may
-be prepended to each of the names, meaning "NOT".
+Una formula di restrizione è costituita da uno o più elenchi di restrizione,
+separati da uno spazio bianco. Ogni elenco di restrizione e racchiuso tra
+parentesi angolari. Gli elementi nell'elenco di restrizione sono nomi di
+profilo, separati da spazi bianchi e possono essere preceduti da un punto
+esclamativo col significato di «NON». Una formula di restrizione rappresenta
+una espressione in forma normale disgiuntiva.
 
 Notare che le dipendenze dai pacchetti nell'insieme \fBbuild\-essential\fP
 possono essere omesse e che dichiarare conflitti di compilazione con essi è
@@ -216,7 +238,7 @@ valore \fBany\fP. Per i pacchetti che sono indipendenti dall'architettura, come
 gli script Perl e di shell o la documentazione, usare il valore \fBall\fP. Per
 limitare i pacchetti ad un determinato insieme di architetture, specificare
 i nomi delle architetture, separate da uno spazio. In tale elenco è anche
-possibile usare caratteri jolly per le architetture (per maggiori
+possibile usare espressioni jolly per le architetture (per maggiori
 informazioni vedere \fBdpkg\-architecture\fP(1)).
 
 .TP 
@@ -240,7 +262,7 @@ necessari. Per maggiori dettagli su di essi, guardare il file
 .TP 
 \fBEssential:\fP \fByes\fP|\fBno\fP
 .TQ
-\fBMulti\-Arch:\fP \fBsame\fP|\fBforeign\fP|\fBallowed\fP
+\fBMulti\-Arch:\fP \fBsame\fP|\fBforeign\fP|\fBallowed\fP|\fBno\fP
 .TQ
 \fBTag:\fP\fI elenco\-etichette\fP
 .TQ
@@ -291,8 +313,7 @@ Tenere a mente che questi campi definiti dall'utente useranno lo spazio dei
 nomi globale, che potrebbe in futuro andare in conflitto con i campi
 ufficialmente riconosciuti. Per evitare una potenziale situazione di questo
 tipo, si possono far iniziare questi campi con \fBPrivate\-\fP, come in
-\fBXB\-Private\-Nuovo\-Campo\fP; l'effetto collaterale è che \fBdpkg\-deb\fP non
-avvertirà della loro presenza come campi sconosciuti.
+\fBXB\-Private\-Nuovo\-Campo\fP.
 
 .SH ESEMPIO
 .\" .RS
@@ -305,8 +326,8 @@ Maintainer: Dpkg Developers <debian\-dpkg@lists.debian.org>
 # questo campo viene copiato nei pacchetti binario e sorgente
 XBS\-Upstream\-Release\-Status: stable
 Homepage: https://wiki.debian.org/Teams/Dpkg
-Vcs\-Browser: http://git.debian.org/?p=dpkg/dpkg.git
-Vcs\-Git: git://git.debian.org/git/dpkg/dpkg.git
+Vcs\-Browser: https://anonscm.debian.org/cgit/dpkg/dpkg.git
+Vcs\-Git: git://anonscm.debian.org/dpkg/dpkg.git
 Standards\-Version: 3.7.3
 Build\-Depends: pkg\-config, debhelper (>= 4.1.81),
  libselinux1\-dev (>= 1.28\-4) [!linux\-any]

@@ -297,7 +297,7 @@ sub gnutriplet_to_multiarch($)
     my ($gnu) = @_;
     my ($cpu, $cdr) = split(/-/, $gnu, 2);
 
-    if ($cpu =~ /^i[456]86$/) {
+    if ($cpu =~ /^i[4567]86$/) {
 	return "i386-$cdr";
     } else {
 	return $gnu;
@@ -328,16 +328,13 @@ sub debtriplet_to_debarch(@)
 
 sub debarch_to_debtriplet($)
 {
-    local ($_) = @_;
-    my $arch;
+    my $arch = shift;
 
     read_triplettable();
 
-    if (/^linux-([^-]*)/) {
+    if ($arch =~ /^linux-([^-]*)/) {
 	# XXX: Might disappear in the future, not sure yet.
 	$arch = $1;
-    } else {
-	$arch = $_;
     }
 
     my $triplet = $debarch_to_debtriplet{$arch};
@@ -389,7 +386,7 @@ sub debarch_to_cpuattrs($)
     if (defined($cpu)) {
         abitable_load();
 
-        return ($abibits{$abi} || $cpubits{$cpu}, $cpuendian{$cpu});
+        return ($abibits{$abi} // $cpubits{$cpu}, $cpuendian{$cpu});
     } else {
         return;
     }

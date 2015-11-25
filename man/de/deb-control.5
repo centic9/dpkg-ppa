@@ -3,7 +3,7 @@
 .\" Copyright Â© 1995 Raul Miller, Ian Jackson, Ian Murdock
 .\" Copyright Â© 1999 Ben Collins <bcollins@debian.org>
 .\" Copyright Â© 2000 Wichert Akkerman <wakkerma@debian.org>
-.\" Copyright Â© 2007-2011 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2007-2011, 2013 Guillem Jover <guillem@debian.org>
 .\" Copyright Â© 2008-2012 RaphaÃ«l Hertzog <hertzog@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
@@ -24,8 +24,8 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH deb\-control 5 2011\-08\-14 Debian\-Projekt Debian
-.SH NAME
+.TH deb\-control 5 2013\-12\-20 Debian\-Projekt Debian
+.SH BEZEICHNUNG
 deb\-control \- Dateiformat der Hauptsteuerdatei von Debian\-Paketen
 .
 .SH ÜBERSICHT
@@ -115,7 +115,7 @@ Liste der unterstützten Markierungen (»Tags«), die die Eigenschaften des
 Pakets beschreiben. Die Beschreibung und die Liste der unterstützten
 Markierungen kann in dem Paket \fBdebtags\fP gefunden werden.
 .TP 
-\fBMulti\-Arch:\fP \fBsame\fP|\fBforeign\fP|\fBallowed\fP
+\fBMulti\-Arch:\fP \fBsame\fP|\fBforeign\fP|\fBallowed\fP|\fBno\fP
 Das Feld wird dazu verwandt, anzugeben, wie sich dieses Paket in einer
 Multi\-Arch\-Installation verhalten soll. Der Wert \fBsame\fP bedeutet, dass das
 Paket mit sich selbst koinstallierbar ist, aber nicht dazu verwandt werden
@@ -123,9 +123,11 @@ darf, die Abhängigkeit eines Pakets von einer anderen Architektur mit ihm
 selbst zu erfüllen. Der Wert \fBforeign\fP bedeutet, dass das Paket nicht mit
 sich selbst koinstallierbar ist, aber es erlaubt sein soll, die Abhängigkeit
 eines Pakets von einer anderen Architektur mit ihm selbst zu erfüllen. Der
-Wert \fBallowed\fP erlaubt es invers Abhängigen in ihrem Feld »Depends«
+Wert \fBallowed\fP erlaubt es invers Abhängigen, in ihrem Feld »Depends«
 anzuzeigen, dass sie ein Paket von einer fremden Architektur akzeptieren,
-hat aber ansonsten keinen Effekt.
+hat aber ansonsten keinen Effekt. Der Wert \fBno\fP ist der Standardwert, wenn
+das Feld nicht verwandt wurde. In diesem Fall wird das Feld mit einem
+expliziten Wert \fBno\fP im Allgemeinen nicht benötigt.
 .TP 
 \fBSource:\fP \fI Quell\-Name\fP
 Der Name des Quellpakets, aus dem dieses Binärpaket abstammt, falls es sich
@@ -266,7 +268,7 @@ Description: GNU grep, egrep und fgrep.
 .\" .RE
 .
 .SH ÜBERSETZUNG
-Die deutsche Übersetzung wurde 2004, 2006-2013 von Helge Kreutzmann
+Die deutsche Übersetzung wurde 2004, 2006-2015 von Helge Kreutzmann
 <debian@helgefjell.de>, 2007 von Florian Rehnisch <eixman@gmx.de> und
 2008 von Sven Joachim <svenjoac@gmx.de>
 angefertigt. Diese Übersetzung ist Freie Dokumentation; lesen Sie die

@@ -1,4 +1,4 @@
-# Copyright © 2006-2009,2012 Guillem Jover <guillem@debian.org>
+# Copyright © 2006-2009,2012-2014 Guillem Jover <guillem@debian.org>
 # Copyright © 2007-2010 Raphaël Hertzog <hertzog@debian.org>
 #
 # This program is free software; you can redistribute it and/or modify
@@ -19,7 +19,7 @@ package Dpkg::Substvars;
 use strict;
 use warnings;
 
-our $VERSION = '1.02';
+our $VERSION = '1.03';
 
 use Dpkg ();
 use Dpkg::Arch qw(get_host_arch);
@@ -43,6 +43,14 @@ Dpkg::Substvars - handle variable substitution in strings
 
 It provides some an object which is able to substitute variables in
 strings.
+
+=cut
+
+use constant {
+    SUBSTVAR_ATTR_USED => 1,
+    SUBSTVAR_ATTR_AUTO => 2,
+    SUBSTVAR_ATTR_OLD => 4,
+};
 
 =head1 METHODS
 
@@ -73,12 +81,14 @@ sub new {
             'dpkg:Version' => $Dpkg::PROGVERSION,
             'dpkg:Upstream-Version' => $Dpkg::PROGVERSION,
             },
-        used => {},
+        attr => {},
 	msg_prefix => '',
     };
     $self->{vars}{'dpkg:Upstream-Version'} =~ s/-[^-]+$//;
     bless $self, $class;
-    $self->mark_as_used($_) foreach keys %{$self->{vars}};
+
+    my $attr = SUBSTVAR_ATTR_USED | SUBSTVAR_ATTR_AUTO;
+    $self->{attr}{$_} = $attr foreach keys %{$self->{vars}};
     if ($arg) {
         $self->load($arg) if -e $arg;
     }
@@ -92,8 +102,12 @@ Add/replace a substitution.
 =cut
 
 sub set {
-    my ($self, $key, $value) = @_;
+    my ($self, $key, $value, $attr) = @_;
+
+    $attr //= 0;
+
     $self->{vars}{$key} = $value;
+    $self->{attr}{$key} = $attr;
 }
 
 =item $s->set_as_used($key, $value)
@@ -105,8 +119,21 @@ even if unused).
 
 sub set_as_used {
     my ($self, $key, $value) = @_;
-    $self->set($key, $value);
-    $self->mark_as_used($key);
+
+    $self->set($key, $value, SUBSTVAR_ATTR_USED);
+}
+
+=item $s->set_as_auto($key, $value)
+
+Add/replace a substitution and mark it as used and automatic (no warnings
+will be produced even if unused).
+
+=cut
+
+sub set_as_auto {
+    my ($self, $key, $value) = @_;
+
+    $self->set($key, $value, SUBSTVAR_ATTR_USED | SUBSTVAR_ATTR_AUTO);
 }
 
 =item $s->get($key)
@@ -128,7 +155,7 @@ Remove a given substitution.
 
 sub delete {
     my ($self, $key) = @_;
-    delete $self->{used}{$key};
+    delete $self->{attr}{$key};
     return delete $self->{vars}{$key};
 }
 
@@ -141,7 +168,7 @@ default.
 
 sub mark_as_used {
     my ($self, $key) = @_;
-    $self->{used}{$key}++;
+    $self->{attr}{$key} |= SUBSTVAR_ATTR_USED;
 }
 
 =item $s->no_warn($key)
@@ -169,6 +196,8 @@ the filehandle in error messages.
 
 sub parse {
     my ($self, $fh, $varlistfile) = @_;
+    local $_;
+
     binmode($fh);
     while (<$fh>) {
 	next if m/^\s*\#/ || !m/\S/;
@@ -177,7 +206,7 @@ sub parse {
 	    error(_g('bad line in substvars file %s at line %d'),
 		  $varlistfile, $.);
 	}
-	$self->{vars}{$1} = $2;
+	$self->set($1, $2);
     }
 }
 
@@ -194,21 +223,23 @@ sub set_version_substvars {
     my ($self, $sourceversion, $binaryversion) = @_;
 
     # Handle old function signature taking only one argument.
-    $binaryversion ||= $sourceversion;
+    $binaryversion //= $sourceversion;
 
     # For backwards compatibility on binNMUs that do not use the Binary-Only
     # field on the changelog, always fix up the source version.
     $sourceversion =~ s/\+b[0-9]+$//;
 
-    $self->{vars}{'binary:Version'} = $binaryversion;
-    $self->{vars}{'source:Version'} = $sourceversion;
-    $self->{vars}{'source:Upstream-Version'} = $sourceversion;
-    $self->{vars}{'source:Upstream-Version'} =~ s/-[^-]*$//;
+    my $upstreamversion = $sourceversion;
+    $upstreamversion =~ s/-[^-]*$//;
+
+    my $attr = SUBSTVAR_ATTR_USED | SUBSTVAR_ATTR_AUTO;
+
+    $self->set('binary:Version', $binaryversion, $attr);
+    $self->set('source:Version', $sourceversion, $attr);
+    $self->set('source:Upstream-Version', $upstreamversion, $attr);
 
     # XXX: Source-Version is now deprecated, remove in the future.
-    $self->{vars}{'Source-Version'} = $binaryversion;
-
-    $self->mark_as_used($_) foreach qw/binary:Version source:Version source:Upstream-Version Source-Version/;
+    $self->set('Source-Version', $binaryversion, $attr | SUBSTVAR_ATTR_OLD);
 }
 
 =item $s->set_arch_substvars()
@@ -222,7 +253,9 @@ This will never be warned about when unused.
 sub set_arch_substvars {
     my ($self) = @_;
 
-    $self->set_as_used('Arch', get_host_arch());
+    my $attr = SUBSTVAR_ATTR_USED | SUBSTVAR_ATTR_AUTO;
+
+    $self->set('Arch', get_host_arch(), $attr);
 }
 
 =item $newstring = $s->substvars($string)
@@ -237,8 +270,8 @@ sub substvars {
     my $vn;
     my $rhs = '';
     my $count = 0;
-    $opts{msg_prefix} = $self->{msg_prefix} unless exists $opts{msg_prefix};
-    $opts{no_warn} = 0 unless exists $opts{no_warn};
+    $opts{msg_prefix} //= $self->{msg_prefix};
+    $opts{no_warn} //= 0;
 
     while ($v =~ m/^(.*?)\$\{([-:0-9a-z]+)\}(.*)$/si) {
         # If we have consumed more from the leftover data, then
@@ -254,6 +287,11 @@ sub substvars {
             $v = $lhs . $self->{vars}{$vn} . $rhs;
             $self->mark_as_used($vn);
             $count++;
+
+            if (not $opts{no_warn} and $self->{attr}{$vn} & SUBSTVAR_ATTR_OLD) {
+                warning($opts{msg_prefix} .
+                        _g('deprecated substitution variable ${%s}'), $vn);
+            }
         } else {
             warning($opts{msg_prefix} . _g('unknown substitution variable ${%s}'),
 	            $vn) unless $opts{no_warn};
@@ -265,16 +303,16 @@ sub substvars {
 
 =item $s->warn_about_unused()
 
-Issues warning about any variables that were set, but not used
+Issues warning about any variables that were set, but not used.
 
 =cut
 
 sub warn_about_unused {
     my ($self, %opts) = @_;
-    $opts{msg_prefix} = $self->{msg_prefix} unless exists $opts{msg_prefix};
+    $opts{msg_prefix} //= $self->{msg_prefix};
 
     foreach my $vn (keys %{$self->{vars}}) {
-        next if $self->{used}{$vn};
+        next if $self->{attr}{$vn} & SUBSTVAR_ATTR_USED;
         # Empty substitutions variables are ignored on the basis
         # that they are not required in the current situation
         # (example: debhelper's misc:Depends in many cases)
@@ -318,7 +356,7 @@ sub output {
     my $str = '';
     # Store all non-automatic substitutions only
     foreach my $vn (sort keys %{$self->{vars}}) {
-	next if /^(?:(?:dpkg|source|binary):(?:Source-)?Version|Space|Tab|Newline|Arch|Source-Version|F:.+)$/;
+	next if $self->{attr}{$vn} & SUBSTVAR_ATTR_AUTO;
 	my $line = "$vn=" . $self->{vars}{$vn} . "\n";
 	print { $fh } $line if defined $fh;
 	$str .= $line;
@@ -327,6 +365,29 @@ sub output {
 }
 
 =back
+
+=head1 CHANGES
+
+=head2 Version 1.03
+
+New method: $s->set_as_auto().
+
+=head2 Version 1.02
+
+New argument: Accept a $binaryversion in $s->set_version_substvars(),
+passing a single argument is still supported.
+
+New method: $s->mark_as_used().
+
+Deprecated method: $s->no_warn(), use $s->mark_as_used() instead.
+
+=head2 Version 1.01
+
+New method: $s->set_as_used().
+
+=head2 Version 1.00
+
+Mark the module as public.
 
 =head1 AUTHOR
 

@@ -47,7 +47,7 @@ Quand toutes les substitutions ont été faites, chaque occurrence de la
 chaîne \fB${}\fP (laquelle n'est pas une substitution autorisée) est remplacée
 par un signe \fB$\fP.
 
-Lorsque le remplacement de variables est effectué sur tous les champs de
+Alors que le remplacement de variables est effectué sur tous les champs de
 contrôle, certains de ces champs sont utilisés et nécessaires pendant la
 construction alors même que la substitution n'a pas encore pu être
 effectuée. Cela explique pourquoi il n'est pas possible d'utiliser de
@@ -55,7 +55,7 @@ variables dans les champs \fBPackage\fP, \fBSource\fP et \fBArchitecture\fP.
 
 La substitution de variables se fait dans le contexte des champs après leur
 analyse. En conséquence, si vous souhaitez qu'une variable soit remplacée
-sur plusieurs lignes, il n'est pas nécessaire de placer un espace après le
+sur plusieurs lignes, il n'est pas nécessaire de placer une espace après le
 retour à la ligne. Cela se fait implicitement quand le champ est
 affiché. Par exemple, si la variable \fB${Description}\fP est positionnée sur
 «\ foo est bar.${Newline}foo est super.\ » et si vous avez le champ suivant\ :
@@ -76,8 +76,8 @@ Le résultat final sera\ :
 On peut définir les variables en utilisant l'option commune \fB\-V\fP. On peut
 aussi se servir du fichier \fBdebian/substvars\fP (ou tout autre fichier avec
 l'option \fB\-T\fP). Ce fichier est composé de lignes de la forme suivante\ :
-\fInom\fP\fB=\fP\fIvaleur\fP. Les espaces résiduels sur chaque ligne, les lignes
-vides et les lignes qui commencent par un symbole \fB#\fP sont ignorés.
+\fInom\fP\fB=\fP\fIvaleur\fP. Les espaces résiduelles sur chaque ligne, les lignes
+vides et les lignes qui commencent par un symbole \fB#\fP sont ignorées.
 
 En outre, les variables standard suivantes sont disponibles\ :
 .TP 
@@ -103,9 +103,9 @@ fonction. Utilisez plutôt \fBsource:Version\fP ou \fBbinary:Version\fP.
 .TP 
 \fBInstalled\-Size\fP
 La taille de tous les fichiers installés du paquet. Cette valeur est copiée
-dans le champ adéquat du fichier «\ control\ »\ ; Quand on fixe cette variable,
+dans le champ adéquat du fichier «\ control\ »\ ; quand on fixe cette variable,
 cela modifie la valeur de ce champ. Quand elle est indéterminée,
-\fBdpkg\-gencontrol\fP use de la commande \fBdu \-k debian/tmp\fP pour trouver une
+\fBdpkg\-gencontrol\fP utilise la commande \fBdu \-k debian/tmp\fP pour trouver une
 valeur par défaut.
 .TP 
 \fBExtra\-Size\fP

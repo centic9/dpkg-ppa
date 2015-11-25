@@ -2,7 +2,7 @@
 .\"
 .\" Copyright © 2005 Marcus Brinkmann <brinkmd@debian.org>
 .\" Copyright © 2005 Scott James Remnant <scott@netsplit.com>
-.\" Copyright © 2006-2013 Guillem Jover <guillem@debian.org>
+.\" Copyright © 2006-2014 Guillem Jover <guillem@debian.org>
 .\" Copyright © 2009-2012 Raphaël Hertzog <hertzog@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
@@ -36,49 +36,56 @@ The build architecture is always determined by an external call to
 \fBdpkg\fP(1), and can not be set at the command line.
 .PP
 You can specify the host architecture by providing one or both of the options
-\fB\-a\fR and \fB\-t\fR. The default is determined by an external call to
+\fB\-\-host\-arch\fR and \fB\-\-host\-type\fR. The default is determined by
+an external call to
 .BR gcc (1),
 or the same as the build architecture if \fBCC\fP or gcc are both not
-available. One out of \fB\-a\fR and \fB\-t\fR is sufficient, the value of the
+available. One out of \fB\-\-host\-arch\fR and \fB\-\-host\-type\fR is
+sufficient, the value of the
 other will be set to a usable default. Indeed, it is often better to only
 specify one, because \fBdpkg\-architecture\fP will warn you if your choice
 does not match the default.
 .
 .SH COMMANDS
 .TP
-.B \-l
+.BR \-l ", " \-\-list
 Print the environment variables, one each line, in the format
 \fIVARIABLE=value\fP. This is the default action.
 .TP
-.BI \-e debian-architecture
-Check for equality of architecture (since dpkg 1.13.13). By default
-\fIdebian-architecture\fP is compared against the current Debian architecture,
-being the host. This action will not expand the architecture wildcards.
+.BR \-e ", " \-\-equal " \fIarchitecture\fP"
+Check for equality of architecture (since dpkg 1.13.13).
+It compares the current or specified Debian host architecture against
+\fIarchitecture\fP, to check if they are equal.
+This action will not expand the architecture wildcards.
 Command finishes with an exit status of 0 if matched, 1 if not matched.
 
 .TP
-.BI \-i architecture-wildcard
-Check for identity of architecture by expanding \fIarchitecture-wildcard\fP
-as an architecture wildcard and comparing against the current Debian
-architecture (since dpkg 1.13.13).
+.BR \-i ", " \-\-is " \fIarchitecture-wildcard\fP"
+Check for identity of architecture (since dpkg 1.13.13).
+It compares the current or specified Debian host architecture against
+\fIarchitecture-wildcard\fP after having expanded it as an architecture
+wildcard, to check if they match.
 Command finishes with an exit status of 0 if matched, 1 if not matched.
 .TP
-.BI \-q variable-name
+.BR \-q ", " \-\-query " \fIvariable-name\fP"
 Print the value of a single variable.
 .TP
-.B \-s
+.BR \-s ", " \-\-print\-set
 Print an export command. This can be used to set the environment variables
 using eval.
 .TP
-.B \-u
-Print a similar command to \fB\-s\fP but to unset all variables.
+.BR \-u ", " \-\-print\-unset
+Print a similar command to \fB\-\-print\-unset\fP but to unset all variables.
 .TP
-.BI \-c " command"
+.BR \-c ", " \-\-command " \fIcommand\fP"
 Execute a \fIcommand\fP in an environment which has all variables set to
 the determined value.
 .TP
-.B \-L
+.BR \-L ", " \-\-list\-known
 Print a list of valid architecture names.
+Possibly restricted by one or more of the matching options
+\fB\-\-match\-wildcard\fP, \fB\-\-match\-bits\fP or \fB\-\-match\-endian\fP
+(since dpkg 1.17.14).
 .TP
 .BR \-? ", " \-\-help
 Show the usage message and exit.
@@ -88,13 +95,33 @@ Show the version and exit.
 .
 .SH OPTIONS
 .TP
-.BI \-a debian-architecture
-Set the Debian architecture.
+.BR \-a ", " \-\-host\-arch " \fIarchitecture\fP"
+Set the host Debian architecture.
 .TP
-.BI \-t gnu-system-type
-Set the GNU system type.
+.BR \-t ", " \-\-host\-type " \fIgnu-system-type\fP"
+Set the host GNU system type.
 .TP
-.B \-f
+.BR \-A ", " \-\-target\-arch " \fIarchitecture\fP"
+Set the target Debian architecture. This is only needed when building a
+cross-toolchain, one that will be built on the build architecture, to be
+run on the host architecture, and to build code for the target architecture.
+.TP
+.BR \-T ", " \-\-target\-type " \fIgnu-system-type\fP"
+Set the target GNU system type.
+.TP
+.BR \-W ", " \-\-match\-wildcard " \fIarchitecture-wildcard\fP"
+Restrict the architectures listed by \fB\-\-list\-known\fP to ones matching
+the specified architecture wildcard (since dpkg 1.17.14).
+.TP
+.BR \-B ", " \-\-match\-bits " \fIarchitecture-bits\fP"
+Restrict the architectures listed by \fB\-\-list\-known\fP to ones with the
+specified CPU bits (since dpkg 1.17.14). Either \fB32\fP or \fB64\fP.
+.TP
+.BR \-E ", " \-\-match\-endian " \fIarchitecture-endianness\fP"
+Restrict the architectures listed by \fB\-\-list\-known\fP to ones with the
+specified endianness (since dpkg 1.17.14). Either \fBlittle\fP or \fBbig\fP.
+.TP
+.BR \-f ", " \-\-force
 Values set by existing environment variables with the same name as used by
 the scripts are honored (i.e. used by \fBdpkg\-architecture\fP), except if
 this force flag is present. This allows the user
@@ -106,6 +133,8 @@ in some other script (for example \fBdpkg\-buildpackage\fP(1)).
 The machine the package is built on.
 .IP "host machine" 4
 The machine the package is built for.
+.IP "target machine" 4
+The machine the compiler is building for.
 .IP "Debian architecture" 4
 The Debian architecture string, which specifies the binary tree in the
 FTP archive. Examples: i386, sparc, hurd\-i386.
@@ -158,6 +187,25 @@ The GNU system type of the host machine.
 .IP "\fBDEB_HOST_MULTIARCH\fP" 4
 The clarified GNU system type of the host machine, used for filesystem
 paths (since dpkg 1.16.0).
+.IP "\fBDEB_TARGET_ARCH\fP" 4
+The Debian architecture of the target machine (since dpkg 1.17.14).
+.IP "\fBDEB_TARGET_ARCH_OS\fP" 4
+The Debian system name of the target machine (since dpkg 1.17.14).
+.IP "\fBDEB_TARGET_ARCH_CPU\fP" 4
+The Debian cpu name of the target machine (since dpkg 1.17.14).
+.IP "\fBDEB_TARGET_ARCH_BITS\fP" 4
+The pointer size of the target machine (in bits; since dpkg 1.17.14).
+.IP "\fBDEB_TARGET_ARCH_ENDIAN\fP" 4
+The endianness of the target machine (little / big; since dpkg 1.17.14).
+.IP "\fBDEB_TARGET_GNU_CPU\fP" 4
+The CPU part of \fBDEB_TARGET_GNU_TYPE\fP (since dpkg 1.17.14).
+.IP "\fBDEB_TARGET_GNU_SYSTEM\fP" 4
+The System part of \fBDEB_TARGET_GNU_TYPE\fP (since dpkg 1.17.14).
+.IP "\fBDEB_TARGET_GNU_TYPE\fP" 4
+The GNU system type of the target machine (since dpkg 1.17.14).
+.IP "\fBDEB_TARGET_MULTIARCH\fP" 4
+The clarified GNU system type of the target machine, used for filesystem
+paths (since dpkg 1.17.14).
 .
 .SH FILES
 .SS Architecture tables
@@ -188,15 +236,14 @@ CC=i386\-gnu\-gcc dpkg\-architecture \-c debian/rules build
 .IP
 eval \`dpkg\-architecture \-u\`
 .PP
-Check if an architecture is equal to the current architecture or a given
-one:
+Check if the current or specified host architecture is equal to an
+architecture:
 .IP
 dpkg\-architecture \-elinux\-alpha
 .IP
 dpkg\-architecture \-amips \-elinux\-mips
 .PP
-Check if the current architecture or an architecture provided with \fB\-a\fP
-are Linux systems:
+Check if the current or specified host architecture is a Linux system:
 .IP
 dpkg\-architecture \-ilinux\-any
 .IP
@@ -259,6 +306,9 @@ endif
 .PP
 In any case, you should never use \fBdpkg \-\-print\-architecture\fP to get
 architecture information during a package build.
+.
+.SH NOTES
+All long command and option names available only since dpkg 1.17.17.
 .
 .SH SEE ALSO
 .BR dpkg\-buildpackage (1),

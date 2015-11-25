@@ -2,7 +2,7 @@
 .\"
 .\" Copyright 息 1995-1996 Ian Jackson <ian@chiark.chu.cam.ac.uk>
 .\" Copyright 息 2000 Wichert Akkerman <wakkerma@debian.org>
-.\" Copyright 息 2006-2012 Guillem Jover <guillem@debian.org>
+.\" Copyright 息 2006-2014 Guillem Jover <guillem@debian.org>
 .\" Copyright 息 2008-2010 Rapha谷l Hertzog <hertzog@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
@@ -23,7 +23,7 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH dpkg\-genchanges 1 2012\-05\-04 "Debian Project" "dpkg ユーティリティ"
+.TH dpkg\-genchanges 1 2014\-09\-24 "Debian Project" "dpkg ユーティリティ"
 .SH 名前
 dpkg\-genchanges \- Debian .changes ファイルの生成
 .
@@ -36,6 +36,14 @@ dpkg\-genchanges \- Debian .changes ファイルの生成
 アップロード制御ファイル (\fB.changes\fP ファイル) を生成する。
 .
 .SH オプション
+.TP 
+\fB\-g\fP
+Specifies that only source and architecture independent packages should be
+uploaded (no architecture specific packages will be included).
+.TP 
+\fB\-G\fP
+Specifies that only source and architecture specific packages should be
+uploaded (no architecture independent packages will be included).
 .TP 
 \fB\-b\fP, \fB\-B\fP, \fB\-A\fP
 バイナリのみのビルドが実行された (ソースファイルが含まれていない) ことを指定する。\fB\-b\fP, \fB\-B\fP, \fB\-A\fP に差異はなく、生成された

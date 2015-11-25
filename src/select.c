@@ -3,7 +3,7 @@
  * select.c - by-hand (rather than dselect-based) package selection
  *
  * Copyright © 1995,1996 Ian Jackson <ian@chiark.greenend.org.uk>
- * Copyright © 2006,2008-2012 Guillem Jover <guillem@debian.org>
+ * Copyright © 2006,2008-2014 Guillem Jover <guillem@debian.org>
  * Copyright © 2011 Linaro Limited
  * Copyright © 2011 Raphaël Hertzog <hertzog@debian.org>
  *
@@ -46,14 +46,15 @@ static void getsel1package(struct pkginfo *pkg) {
   const char *pkgname;
   int l;
 
-  if (pkg->want == want_unknown) return;
+  if (pkg->want == PKG_WANT_UNKNOWN)
+    return;
   pkgname = pkg_name(pkg, pnaw_nonambig);
   l = strlen(pkgname);
   l >>= 3;
   l = 6 - l;
   if (l < 1)
     l = 1;
-  printf("%s%.*s%s\n", pkgname, l, "\t\t\t\t\t\t", wantinfos[pkg->want].name);
+  printf("%s%.*s%s\n", pkgname, l, "\t\t\t\t\t\t", pkg_want_name(pkg));
 }
 
 int
@@ -72,7 +73,8 @@ getselections(const char *const *argv)
   if (!*argv) {
     for (i = 0; i < array.n_pkgs; i++) {
       pkg = array.pkgs[i];
-      if (pkg->status == stat_notinstalled) continue;
+      if (pkg->status == PKG_STAT_NOTINSTALLED)
+        continue;
       getsel1package(pkg);
     }
   } else {
@@ -80,7 +82,7 @@ getselections(const char *const *argv)
       struct pkg_spec pkgspec;
 
       found= 0;
-      pkg_spec_init(&pkgspec, psf_patterns | psf_arch_def_wildcard);
+      pkg_spec_init(&pkgspec, PKG_SPEC_PATTERNS | PKG_SPEC_ARCH_WILDCARD);
       pkg_spec_parse(&pkgspec, thisarg);
 
       for (i = 0; i < array.n_pkgs; i++) {
@@ -107,6 +109,7 @@ getselections(const char *const *argv)
 int
 setselections(const char *const *argv)
 {
+  enum modstatdb_rw msdbflags;
   const struct namevalue *nv;
   struct pkginfo *pkg;
   int c, lno;
@@ -117,7 +120,13 @@ setselections(const char *const *argv)
   if (*argv)
     badusage(_("--%s takes no arguments"), cipaction->olong);
 
-  modstatdb_open(msdbrw_write | msdbrw_available_readonly);
+  msdbflags = msdbrw_available_readonly;
+  if (f_noact)
+    msdbflags |= msdbrw_readonly;
+  else
+    msdbflags |= msdbrw_write;
+
+  modstatdb_open(msdbflags);
   pkg_infodb_upgrade();
 
   lno= 1;
@@ -192,19 +201,25 @@ setselections(const char *const *argv)
 int
 clearselections(const char *const *argv)
 {
+  enum modstatdb_rw msdbflags;
   struct pkgiterator *it;
   struct pkginfo *pkg;
 
   if (*argv)
     badusage(_("--%s takes no arguments"), cipaction->olong);
 
-  modstatdb_open(msdbrw_write);
+  if (f_noact)
+    msdbflags = msdbrw_readonly;
+  else
+    msdbflags = msdbrw_write;
+
+  modstatdb_open(msdbflags);
   pkg_infodb_upgrade();
 
   it = pkg_db_iter_new();
   while ((pkg = pkg_db_iter_next_pkg(it))) {
     if (!pkg->installed.essential)
-      pkg_set_want(pkg, want_deinstall);
+      pkg_set_want(pkg, PKG_WANT_DEINSTALL);
   }
   pkg_db_iter_free(it);
 

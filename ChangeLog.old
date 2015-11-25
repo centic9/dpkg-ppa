@@ -4605,7 +4605,7 @@
 	tree even if that package doesn't contain an shlibs file. Then
 	don't complain about missing dependency information if the lib is in
 	the same package than the binary. Also ignore it if the library is
-	not versionned and can't have an shlibs file.
+	not versioned and can't have an shlibs file.
 	* scripts/Dpkg/Path.pm (guess_pkg_root_dir)
 	(check_files_are_the_same): New helper functions.
 
@@ -9743,7 +9743,7 @@ Fri May 7 00:39:01 BST 2004 Christian Perrier <bubulle@debian.org>
 
 Fri May 7 00:04:28 BST 2004 Scott James Remnant <scott@netsplit.com>
 
-  * lib/parsehelp.c, scripts/dpkg-source.pl, scripts/cl-debian.pl: Remove
+  * lib/parsehelp.c, scripts/dpkg-source.pl, scripts/cl-debian.pl: Remove
   restriction that package names be at least two characters long.
 
 Thu May 6 23:57:52 BST 2004 Andrew Shugg <andrew@neep.com.au>

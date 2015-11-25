@@ -224,7 +224,14 @@ sub init_options {
          'debian/source/local-patch-header';
     # Skip debianization while specific to some formats has an impact
     # on code common to all formats
-    $self->{options}{skip_debianization} ||= 0;
+    $self->{options}{skip_debianization} //= 0;
+
+    # Set default compressor for new formats.
+    $self->{options}{compression} //= 'xz';
+    $self->{options}{comp_level} //= compression_get_property($self->{options}{compression},
+                                                              'default_level');
+    $self->{options}{comp_ext} //= compression_get_property($self->{options}{compression},
+                                                            'file_ext');
 }
 
 sub initialize {
@@ -254,8 +261,7 @@ sub initialize {
 sub upgrade_object_type {
     my ($self, $update_format) = @_;
     $update_format //= 1;
-    $self->{fields}{'Format'} = '1.0'
-        unless exists $self->{fields}{'Format'};
+    $self->{fields}{'Format'} //= '1.0';
     my $format = $self->{fields}{'Format'};
 
     if ($format =~ /^([\d\.]+)(?:\s+\((.*)\))?$/) {
@@ -338,10 +344,9 @@ sub get_basename {
 
 sub find_original_tarballs {
     my ($self, %opts) = @_;
-    $opts{extension} = compression_get_file_extension_regex()
-        unless exists $opts{extension};
-    $opts{include_main} = 1 unless exists $opts{include_main};
-    $opts{include_supplementary} = 1 unless exists $opts{include_supplementary};
+    $opts{extension} //= compression_get_file_extension_regex();
+    $opts{include_main} //= 1;
+    $opts{include_supplementary} //= 1;
     my $basename = $self->get_basename();
     my @tar;
     foreach my $dir ('.', $self->{basedir}, $self->{options}{origtardir}) {
@@ -395,7 +400,7 @@ sub check_signature {
         push @exec, 'gpg', '--no-default-keyring', '-q', '--verify';
     }
     if (scalar(@exec)) {
-        if (defined $ENV{HOME} and -r "$ENV{HOME}/.gnupg/trustedkeys.gpg") {
+        if (length $ENV{HOME} and -r "$ENV{HOME}/.gnupg/trustedkeys.gpg") {
             push @exec, '--keyring', "$ENV{HOME}/.gnupg/trustedkeys.gpg";
         }
         foreach my $vendor_keyring (run_vendor_hook('keyrings')) {
@@ -433,9 +438,9 @@ sub check_signature {
 
 sub parse_cmdline_options {
     my ($self, @opts) = @_;
-    foreach (@opts) {
-        if (not $self->parse_cmdline_option($_)) {
-            warning(_g('%s is not a valid option for %s'), $_, ref($self));
+    foreach my $option (@opts) {
+        if (not $self->parse_cmdline_option($option)) {
+            warning(_g('%s is not a valid option for %s'), $option, ref $self);
         }
     }
 }
@@ -452,11 +457,16 @@ that if $targetdir already exists, it will be erased.
 =cut
 
 sub extract {
-    my $self = shift;
-    my $newdirectory = $_[0];
+    my ($self, $newdirectory) = @_;
 
     my ($ok, $error) = version_check($self->{fields}{'Version'});
-    error($error) unless $ok;
+    if (not $ok) {
+        if ($self->{options}{ignore_bad_version}) {
+            warning($error);
+        } else {
+            error($error);
+        }
+    }
 
     # Copy orig tarballs
     if ($self->{options}{copy_orig_tarballs}) {
@@ -477,7 +487,7 @@ sub extract {
     }
 
     # Try extract
-    eval { $self->do_extract(@_) };
+    eval { $self->do_extract($newdirectory) };
     if ($@) {
         run_exit_handlers();
         die $@;
@@ -583,7 +593,7 @@ sub write_dsc {
 	$fields->{$f} = $opts{override}{$f};
     }
 
-    unless($opts{nocheck}) {
+    unless ($opts{nocheck}) {
         foreach my $f (qw(Source Version)) {
             unless (defined($fields->{$f})) {
                 error(_g('missing information for critical output field %s'), $f);
@@ -601,9 +611,7 @@ sub write_dsc {
     }
 
     my $filename = $opts{filename};
-    unless (defined $filename) {
-        $filename = $self->get_basename(1) . '.dsc';
-    }
+    $filename //= $self->get_basename(1) . '.dsc';
     open(my $dsc_fh, '>', $filename)
         or syserr(_g('cannot write %s'), $filename);
     $fields->apply_substvars($opts{substvars});
@@ -621,6 +629,10 @@ New functions: get_default_diff_ignore_regex(), set_default_diff_ignore_regex(),
 get_default_tar_ignore_pattern()
 
 Deprecated variables: $diff_ignore_default_regexp, @tar_ignore_default_pattern
+
+=head2 Version 1.00
+
+Mark the module as public.
 
 =head1 AUTHOR
 

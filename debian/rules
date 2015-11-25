@@ -66,7 +66,7 @@ check: build
 	dh_testdir
 
 ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
-	cd build-tree && $(MAKE) check
+	cd build-tree && $(MAKE) VERBOSE=1 check
 endif
 
 # Install the package underneath debian/tmp
@@ -80,7 +80,7 @@ install: check
 
 ifeq (yes,$(shell dpkg-vendor --derives-from Ubuntu && echo yes))
 	# Ubuntu's «i386» architecture is built for i686 (the Debian default
-	# is i486).
+	# is i586).
 	sed -ri 's/^(i386[[:space:]]+)[^[:space:]]+/\1i686/' \
 	        $(CURDIR)/debian/tmp/usr/share/dpkg/cputable
 endif

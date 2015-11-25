@@ -4,7 +4,7 @@
  *
  * Copyright © 1994,1995 Ian Jackson <ian@chiark.greenend.org.uk>
  * Copyright © 2000,2001 Wichert Akkerman
- * Copyright © 2006-2012 Guillem Jover <guillem@debian.org>
+ * Copyright © 2006-2014 Guillem Jover <guillem@debian.org>
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -92,6 +92,13 @@ struct filedetails {
   const char *md5sum;
 };
 
+enum pkgmultiarch {
+	PKG_MULTIARCH_NO,
+	PKG_MULTIARCH_SAME,
+	PKG_MULTIARCH_ALLOWED,
+	PKG_MULTIARCH_FOREIGN,
+};
+
 /**
  * Node describing a binary package file.
  *
@@ -101,12 +108,7 @@ struct pkgbin {
   struct dependency *depends;
   /** The ‘essential’ flag, true = yes, false = no (absent). */
   bool essential;
-  enum pkgmultiarch {
-    multiarch_no,
-    multiarch_same,
-    multiarch_allowed,
-    multiarch_foreign,
-  } multiarch;
+  enum pkgmultiarch multiarch;
   const struct dpkg_arch *arch;
   /** The following is the "pkgname:archqual" cached string, if this was a
    * C++ class this member would be mutable. */
@@ -148,6 +150,43 @@ struct trigaw {
 /* Note: dselect and dpkg have different versions of this. */
 struct perpackagestate;
 
+enum pkgwant {
+	PKG_WANT_UNKNOWN,
+	PKG_WANT_INSTALL,
+	PKG_WANT_HOLD,
+	PKG_WANT_DEINSTALL,
+	PKG_WANT_PURGE,
+	/** Not allowed except as special sentinel value in some places. */
+	PKG_WANT_SENTINEL,
+};
+
+enum pkgeflag {
+	PKG_EFLAG_OK		= 0,
+	PKG_EFLAG_REINSTREQ	= 1,
+};
+
+enum pkgstatus {
+	PKG_STAT_NOTINSTALLED,
+	PKG_STAT_CONFIGFILES,
+	PKG_STAT_HALFINSTALLED,
+	PKG_STAT_UNPACKED,
+	PKG_STAT_HALFCONFIGURED,
+	PKG_STAT_TRIGGERSAWAITED,
+	PKG_STAT_TRIGGERSPENDING,
+	PKG_STAT_INSTALLED,
+};
+
+enum pkgpriority {
+	PKG_PRIO_REQUIRED,
+	PKG_PRIO_IMPORTANT,
+	PKG_PRIO_STANDARD,
+	PKG_PRIO_OPTIONAL,
+	PKG_PRIO_EXTRA,
+	PKG_PRIO_OTHER,
+	PKG_PRIO_UNKNOWN,
+	PKG_PRIO_UNSET = -1,
+};
+
 /**
  * Node describing an architecture package instance.
  *
@@ -157,34 +196,11 @@ struct pkginfo {
   struct pkgset *set;
   struct pkginfo *arch_next;
 
-  enum pkgwant {
-    want_unknown, want_install, want_hold, want_deinstall, want_purge,
-    /** Not allowed except as special sentinel value in some places. */
-    want_sentinel,
-  } want;
+  enum pkgwant want;
   /** The error flag bitmask. */
-  enum pkgeflag {
-    eflag_ok		= 0,
-    eflag_reinstreq	= 1,
-  } eflag;
-  enum pkgstatus {
-    stat_notinstalled,
-    stat_configfiles,
-    stat_halfinstalled,
-    stat_unpacked,
-    stat_halfconfigured,
-    stat_triggersawaited,
-    stat_triggerspending,
-    stat_installed
-  } status;
-  enum pkgpriority {
-    pri_required,
-    pri_important,
-    pri_standard,
-    pri_optional,
-    pri_extra,
-    pri_other, pri_unknown, pri_unset=-1
-  } priority;
+  enum pkgeflag eflag;
+  enum pkgstatus status;
+  enum pkgpriority priority;
   const char *otherpriority;
   const char *section;
   struct dpkg_version configversion;
@@ -296,6 +312,10 @@ enum parsedbflags {
   pdb_lax_version_parser	= DPKG_BIT(6),
   /** Perform laxer parsing, used to transition to stricter parsing. */
   pdb_lax_parser		= pdb_lax_version_parser,
+  /** Close file descriptor on context destruction. */
+  pdb_close_fd			= DPKG_BIT(7),
+  /** Interpret filename ‘-’ as stdin. */
+  pdb_dash_is_stdin		= DPKG_BIT(8),
 
   /* Standard operations. */
 
@@ -308,6 +328,12 @@ enum parsedbflags {
 };
 
 const char *pkg_name_is_illegal(const char *p);
+
+const struct fieldinfo *
+find_field_info(const struct fieldinfo *fields, const char *fieldname);
+const struct arbitraryfield *
+find_arbfield_info(const struct arbitraryfield *arbs, const char *fieldname);
+
 int parsedb(const char *filename, enum parsedbflags, struct pkginfo **donep);
 void copy_dependency_links(struct pkginfo *pkg,
                            struct dependency **updateme,
@@ -353,6 +379,12 @@ const char *pkgbin_name(struct pkginfo *pkg, struct pkgbin *pkgbin,
                         enum pkg_name_arch_when pnaw);
 const char *pkg_name(struct pkginfo *pkg, enum pkg_name_arch_when pnaw);
 
+const char *pkg_want_name(const struct pkginfo *pkg);
+const char *pkg_status_name(const struct pkginfo *pkg);
+const char *pkg_eflag_name(const struct pkginfo *pkg);
+
+const char *pkg_priority_name(const struct pkginfo *pkg);
+
 /*** from dump.c ***/
 
 void writerecord(FILE*, const char*,
@@ -379,6 +411,10 @@ bool versionsatisfied(struct pkgbin *it, struct deppossi *against);
 bool deparchsatisfied(struct pkgbin *it, const struct dpkg_arch *arch,
                       struct deppossi *against);
 bool archsatisfied(struct pkgbin *it, struct deppossi *against);
+
+bool
+pkg_virtual_deppossi_satisfied(struct deppossi *dependee,
+                               struct deppossi *provider);
 
 /*** from nfmalloc.c ***/
 void *nfmalloc(size_t);

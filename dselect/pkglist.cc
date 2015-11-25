@@ -4,6 +4,7 @@
  *
  * Copyright © 1995 Ian Jackson <ian@chiark.greenend.org.uk>
  * Copyright © 2001 Wichert Akkerman <wakkerma@debian.org>
+ * Copyright © 2008-2014 Guillem Jover <guillem@debian.org>
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -65,7 +66,7 @@ int packagelist::compareentries(const struct perpackagestate *a,
     strcasecmp(asection,bsection);
   int c_priority=
     a->pkg->priority - b->pkg->priority;
-  if (!c_priority && a->pkg->priority == pkginfo::pri_other)
+  if (!c_priority && a->pkg->priority == PKG_PRIO_OTHER)
     c_priority= strcasecmp(a->pkg->otherpriority, b->pkg->otherpriority);
   int c_name=
     a->pkg->set->name && b->pkg->set->name ?
@@ -109,7 +110,7 @@ void packagelist::discardheadings() {
 
 void packagelist::addheading(enum ssavailval ssavail,
                              enum ssstateval ssstate,
-                             pkginfo::pkgpriority priority,
+                             pkgpriority priority,
                              const char *otherpriority,
                              const char *section) {
   assert(nitems <= nallocated);
@@ -182,28 +183,28 @@ void packagelist::ensurestatsortinfo() {
             this, index, pkg_name(table[index]->pkg, pnaw_always));
       pkg= table[index]->pkg;
       switch (pkg->status) {
-      case pkginfo::stat_unpacked:
-      case pkginfo::stat_halfconfigured:
-      case pkginfo::stat_halfinstalled:
-      case pkginfo::stat_triggersawaited:
-      case pkginfo::stat_triggerspending:
+      case PKG_STAT_UNPACKED:
+      case PKG_STAT_HALFCONFIGURED:
+      case PKG_STAT_HALFINSTALLED:
+      case PKG_STAT_TRIGGERSAWAITED:
+      case PKG_STAT_TRIGGERSPENDING:
         table[index]->ssavail= ssa_broken;
         break;
-      case pkginfo::stat_notinstalled:
-      case pkginfo::stat_configfiles:
+      case PKG_STAT_NOTINSTALLED:
+      case PKG_STAT_CONFIGFILES:
         if (!dpkg_version_is_informative(&pkg->available.version)) {
           table[index]->ssavail= ssa_notinst_gone;
 // FIXME: Disable for now as a workaround, until dselect knows how to properly
 //        store seen packages.
 #if 0
-        } else if (table[index]->original == pkginfo::want_unknown) {
+        } else if (table[index]->original == PKG_WANT_UNKNOWN) {
           table[index]->ssavail= ssa_notinst_unseen;
 #endif
         } else {
           table[index]->ssavail= ssa_notinst_seen;
         }
         break;
-      case pkginfo::stat_installed:
+      case PKG_STAT_INSTALLED:
         veri= &table[index]->pkg->installed.version;
         vera= &table[index]->pkg->available.version;
         if (!dpkg_version_is_informative(vera)) {
@@ -231,20 +232,20 @@ void packagelist::ensurestatsortinfo() {
       debug(dbg_general, "packagelist[%p]::ensurestatsortinfos() i=%d pkg=%s",
             this, index, pkg_name(table[index]->pkg, pnaw_always));
       switch (table[index]->pkg->status) {
-      case pkginfo::stat_unpacked:
-      case pkginfo::stat_halfconfigured:
-      case pkginfo::stat_halfinstalled:
-      case pkginfo::stat_triggersawaited:
-      case pkginfo::stat_triggerspending:
+      case PKG_STAT_UNPACKED:
+      case PKG_STAT_HALFCONFIGURED:
+      case PKG_STAT_HALFINSTALLED:
+      case PKG_STAT_TRIGGERSAWAITED:
+      case PKG_STAT_TRIGGERSPENDING:
         table[index]->ssstate= sss_broken;
         break;
-      case pkginfo::stat_notinstalled:
+      case PKG_STAT_NOTINSTALLED:
         table[index]->ssstate= sss_notinstalled;
         break;
-      case pkginfo::stat_configfiles:
+      case PKG_STAT_CONFIGFILES:
         table[index]->ssstate= sss_configfiles;
         break;
-      case pkginfo::stat_installed:
+      case PKG_STAT_INSTALLED:
         table[index]->ssstate= sss_installed;
         break;
       default:
@@ -272,7 +273,7 @@ void packagelist::sortmakeheads() {
         this, sortorder, statsortorder);
 
   int nrealitems= nitems;
-  addheading(ssa_none, sss_none, pkginfo::pri_unset, nullptr, nullptr);
+  addheading(ssa_none, sss_none, PKG_PRIO_UNSET, nullptr, nullptr);
 
   assert(sortorder != so_unsorted);
   if (sortorder == so_alpha && statsortorder == sso_unsorted) { sortinplace(); return; }
@@ -307,7 +308,7 @@ void packagelist::sortmakeheads() {
 
     int prioritydiff= (!lastpkg ||
                        thispkg->priority != lastpkg->priority ||
-                       (thispkg->priority == pkginfo::pri_other &&
+                       (thispkg->priority == PKG_PRIO_OTHER &&
                         strcasecmp(thispkg->otherpriority,lastpkg->otherpriority)));
     int sectiondiff= (!lastpkg ||
                       strcasecmp(thispkg->section ? thispkg->section : "",
@@ -320,7 +321,7 @@ void packagelist::sortmakeheads() {
           thispkg->clientdata->ssavail, thispkg->clientdata->ssstate,
           ssdiff ? "*diff" : "same",
           thispkg->priority,
-          thispkg->priority != pkginfo::pri_other ? "<none>" :
+          thispkg->priority != PKG_PRIO_OTHER ? "<none>" :
           thispkg->otherpriority ? thispkg->otherpriority : "<null>",
           prioritydiff ? "*diff*" : "same",
           thispkg->section ? thispkg->section : "<null>",
@@ -328,11 +329,11 @@ void packagelist::sortmakeheads() {
 
     if (ssdiff)
       addheading(ssavail,ssstate,
-                 pkginfo::pri_unset, nullptr, nullptr);
+                 PKG_PRIO_UNSET, nullptr, nullptr);
 
     if (sortorder == so_section && sectiondiff)
       addheading(ssavail,ssstate,
-                 pkginfo::pri_unset, nullptr,
+                 PKG_PRIO_UNSET, nullptr,
                  thispkg->section ? thispkg->section : "");
 
     if (sortorder == so_priority && prioritydiff)
@@ -391,20 +392,20 @@ packagelist::packagelist(keybindings *kb) : baselist(kb) {
   while ((pkg = pkg_db_iter_next_pkg(iter))) {
     struct perpackagestate *state= &datatable[nitems];
     state->pkg= pkg;
-    if (pkg->status == pkginfo::stat_notinstalled &&
+    if (pkg->status == PKG_STAT_NOTINSTALLED &&
         !pkg->files &&
-        pkg->want != pkginfo::want_install) {
+        pkg->want != PKG_WANT_INSTALL) {
       pkg->clientdata = nullptr;
       continue;
     }
     // treat all unknown packages as already seen
-    state->direct= state->original= (pkg->want == pkginfo::want_unknown ? pkginfo::want_purge : pkg->want);
+    state->direct = state->original = (pkg->want == PKG_WANT_UNKNOWN ? PKG_WANT_PURGE : pkg->want);
     if (modstatdb_get_status() == msdbrw_write &&
-        state->original == pkginfo::want_unknown) {
+        state->original == PKG_WANT_UNKNOWN) {
       state->suggested=
-        pkg->status == pkginfo::stat_installed ||
-          pkg->priority <= pkginfo::pri_standard /* FIXME: configurable */
-            ? pkginfo::want_install : pkginfo::want_purge;
+        pkg->status == PKG_STAT_INSTALLED ||
+          pkg->priority <= PKG_PRIO_STANDARD /* FIXME: configurable */
+            ? PKG_WANT_INSTALL : PKG_WANT_PURGE;
       state->spriority= sp_inherit;
     } else {
       state->suggested= state->original;
@@ -425,6 +426,7 @@ packagelist::packagelist(keybindings *kb) : baselist(kb) {
   recursive = false;
   sortorder= so_priority;
   statsortorder= sso_avail;
+  archdisplayopt = ado_both;
   versiondisplayopt= vdo_both;
   sortmakeheads();
   finalsetup();
@@ -443,6 +445,7 @@ packagelist::packagelist(keybindings *kb, pkginfo **pkgltab) : baselist(kb) {
 
   sortorder= so_unsorted;
   statsortorder= sso_unsorted;
+  archdisplayopt = ado_none;
   versiondisplayopt= vdo_none;
   finalsetup();
 }
@@ -459,7 +462,7 @@ perpackagestate::free(bool recursive)
       } else {
         assert(!recursive);
         if (pkg->want != selected &&
-            !(pkg->want == pkginfo::want_unknown && selected == pkginfo::want_purge)) {
+            !(pkg->want == PKG_WANT_UNKNOWN && selected == PKG_WANT_PURGE)) {
           pkg->want= selected;
         }
         pkg->clientdata = nullptr;
@@ -495,7 +498,8 @@ packagelist::~packagelist() {
 bool
 packagelist::checksearch(char *rx)
 {
-  int r,opt = REG_NOSUB;
+  int rc, opt = REG_NOSUB;
+  int pos;
 
   if (str_is_unset(rx))
     return false;
@@ -507,28 +511,28 @@ packagelist::checksearch(char *rx)
   }
 
   /* look for search options */
-  for (r=strlen(rx)-1; r>=0; r--)
-    if ((rx[r]=='/') && ((r==0) || (rx[r-1]!='\\')))
+  for (pos = strlen(rx) - 1; pos >= 0; pos--)
+    if ((rx[pos] == '/') && ((pos == 0) || (rx[pos - 1] != '\\')))
       break;
 
-  if (r>=0) {
-    rx[r++]='\0';
-    if (strcspn(rx+r, "di")!=0) {
+  if (pos >= 0) {
+    rx[pos++] = '\0';
+    if (strcspn(rx + pos, "di") != 0) {
       displayerror(_("invalid search option given"));
       return false;
     }
 
-   while (rx[r]) {
-     if (rx[r]=='i')
+   while (rx[pos]) {
+     if (rx[pos] == 'i')
        opt|=REG_ICASE;
-     else if (rx[r]=='d')
+     else if (rx[pos] == 'd')
        searchdescr = true;
-     r++;
+     pos++;
    }
   }
 
-  r = regcomp(&searchfsm, rx, opt);
-  if (r != 0) {
+  rc = regcomp(&searchfsm, rx, opt);
+  if (rc != 0) {
     displayerror(_("error in regular expression"));
     return false;
   }

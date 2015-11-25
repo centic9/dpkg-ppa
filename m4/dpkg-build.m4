@@ -1,4 +1,13 @@
-# Copyright © 2010-2012 Guillem Jover <guillem@debian.org>
+# Copyright © 2010-2014 Guillem Jover <guillem@debian.org>
+
+# DPKG_BUILD_SHARED_LIBS()
+# ----------------------
+AC_DEFUN([DPKG_BUILD_SHARED_LIBS], [
+  m4_pattern_allow([DPKG_DEVEL_MODE])
+  AS_IF([test "$enable_shared" = "yes" && test -z "$DPKG_DEVEL_MODE"],
+        [AC_MSG_ERROR([building libdpkg as a shared library is not supported])])
+  AM_CONDITIONAL([BUILD_SHARED], [test "$enable_shared" = "yes"])
+])# DPKG_BUILD_SHARED_LIBS
 
 # DPKG_BUILD_PROG(PROG)
 # ---------------
@@ -47,7 +56,7 @@ AC_DEFUN([DPKG_DEB_COMPRESSOR], [
     [gzip|xz|bzip2], [:],
     [AC_MSG_ERROR([unsupported default compressor $with_dpkg_deb_compressor])])
   AC_DEFINE_UNQUOTED([DPKG_DEB_DEFAULT_COMPRESSOR],
-                     [compressor_type_${with_dpkg_deb_compressor}],
+                     [COMPRESSOR_TYPE_]AS_TR_CPP(${with_dpkg_deb_compressor}),
                      [default dpkg-deb build compressor])
   AC_MSG_NOTICE([using default dpkg-deb compressor = $with_dpkg_deb_compressor])
 ]) # DPKG_DEB_COMPRESSOR

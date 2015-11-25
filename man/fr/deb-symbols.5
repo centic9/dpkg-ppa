@@ -33,7 +33,7 @@ bibliothèques partagées dans ces fichiers est le suivant\ :
 .PP
 \fImodèle principal de dépendance de bibliothèque soname\fP
 .br
-[| \fImodèle\-alternatif\-de\-dépendance\fP]
+[| \fImodèle alternatif de dépendance\fP]
 .br
 [...]
 .br
@@ -51,17 +51,27 @@ quelle que soit sa version est reconnue suffisante).
 Chaque \fIsymbole\fP exporté (noté \fInom\fP@\fIversion\fP, avec \fIversion\fP qui
 commence par "Base" si la bibliothèque n'a pas de version) est associé à une
 \fIversion minimale\fP dans son modèle de dépendance (le modèle principal de
-dépendance est utilisé si l'\fIid du modèle de dépendance\fP n'est pas
-présent). La première alternative au modèle de dépendance est numérotée 1,
-la seconde 2, etc.
+dépendance est toujours utilisé et se termine combiné avec le modèle de
+dépendance référencé par l'\fIid du modèle de dépendance\fP est présent). La
+première alternative au modèle de dépendance est numérotée 1, la seconde 2,
+etc.
 .P
 Chaque entrée pour une bibliothèque peut aussi avoir des champs de
-méta\-information. Ces champs sont enregistrés via des lignes qui débutent
-par une astérisque («\ *\ »). Actuellement, le seul champ valable est
-\fIBuild\-Depends\-Package\fP ; il indique le nom du paquet «\ \-dev\ » associé à la
-bibliothèque et est utilisé par \fBdpkg\-shlibdeps\fP pour s'assurer que la
-dépendance produite est au moins aussi stricte que la dépendance de
-construction correspondante.
+méta\-information. Ces champs sont enregistrés dans des lignes qui débutent
+par un astérisque («\ *\ »). Actuellement, le seul champ valable est\ :
+.TP 
+\fBBuild\-Depends\-Package\fP
+Il indique le nom du paquet «\ \-dev\ » associé à la bibliothèque et est
+utilisé par \fBdpkg\-shlibdeps\fP pour s'assurer que la dépendance produite est
+au moins aussi stricte que la dépendance de construction correspondante.
+.TP 
+\fBIgnore\-Blacklist\-Groups\fP
+Il indique que les groupes blacklistés seront ignorés, sous forme de liste
+séparée par des espaces, afin que les symboles contenus dans ces groupes
+soient inclus dans le fichier de sortie. Cela sera seulement nécessaire pour
+les paquets de chaîne d'outils qui fournissent ces symboles blacklistés. Les
+groupes disponibles dépendent des systèmes et, pour les systèmes basés sur
+ELF et GNU, ce sont \fBaeabi\fP et \fBgomp\fP.
 .SH EXEMPLES
 .SS "Simple fichier de symboles"
 .PP

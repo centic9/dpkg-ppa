@@ -3,7 +3,7 @@
 .\" Copyright Â© 1995 Raul Miller, Ian Jackson, Ian Murdock
 .\" Copyright Â© 1999 Ben Collins <bcollins@debian.org>
 .\" Copyright Â© 2000 Wichert Akkerman <wakkerma@debian.org>
-.\" Copyright Â© 2007-2011 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2007-2011, 2013 Guillem Jover <guillem@debian.org>
 .\" Copyright Â© 2008-2012 RaphaÃ«l Hertzog <hertzog@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
@@ -24,7 +24,7 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH deb\-control 5 2011\-08\-14 "Debian Project" Debian
+.TH deb\-control 5 2013\-12\-20 "Debian Project" Debian
 .SH Ì¾Á°
 deb\-control \- Debian ¥Ñ¥Ã¥±¡¼¥¸¤Î¥Þ¥¹¥¿À©¸æ¥Õ¥¡¥¤¥ë¤Î·Á¼°
 .
@@ -94,12 +94,18 @@ Debian ¤Ç¤Ï¡¢\fBSection\fP ¤È \fBPriority\fP ¥Õ¥£¡¼¥ë¥É¤Ç»È¤¨¤ëÃÍ¤¬¥Ý¥ê¥·¡¼¥Þ¥Ë¥
 \fBTag:\fP\fI ¥¿¥°¤Î¥ê¥¹¥È\fP
 ¥Ñ¥Ã¥±¡¼¥¸¤ÎÉÊ¼Á¤ò¼¨¤¹¥¿¥°¤Î¥ê¥¹¥È¡£¥µ¥Ý¡¼¥È¤µ¤ì¤Æ¤¤¤ë¥¿¥°¤Î°ìÍ÷¤ÈÀâÌÀ¤Ï¡¢\fBdebtags\fP ¥Ñ¥Ã¥±¡¼¥¸¤ò»²¾È¤Î¤³¤È¡£
 .TP 
-\fBMulti\-Arch:\fP \fBsame\fP|\fBforeign\fP|\fBallowed\fP
-¤³¤Î¥Õ¥£¡¼¥ë¥É¤Ï¡¢multiarch ¥¤¥ó¥¹¥È¡¼¥ë¤ÎºÝ¤Î¥Ñ¥Ã¥±¡¼¥¸¤ÎÆ°ºî¤òÄêµÁ¤¹¤ë¤¿¤á¤Ë»ÈÍÑ¤µ¤ì¤ë¡£\fBsame\fP ¤Ï¡¢¥Ñ¥Ã¥±¡¼¥¸¤¬Â¿½Å¥¤¥ó¥¹¥È¡¼¥ë
-(co\-install) ²ÄÇ½¤Ç¤¢¤ë (ÌõÃí: ¤¢¤ë¥Ñ¥Ã¥±¡¼¥¸¤ËÂÐ¤·¤Æ¡¢ÊÌ¥¢¡¼¥­¥Æ¥¯¥Á¥ã¤ÎÆ±°ì¥Ñ¥Ã¥±¡¼¥¸¤ò¥¤¥ó¥¹¥È¡¼¥ë¤Ç¤­¤ë)
-°ìÊý¡¢ÊÌ¥¢¡¼¥­¥Æ¥¯¥Á¥ã¤Î¤¤¤«¤Ê¤ë¥Ñ¥Ã¥±¡¼¥¸¤È¤Î°ÍÂ¸´Ø·¸¤òËþ¤¿¤¹¤¿¤á¤Ë¤â»ÈÍÑ¤·¤Æ¤Ï¤¤¤±¤Ê¤¤¤³¤È¤ò°ÕÌ£¤¹¤ë¡£\fBforeign\fP
-¤Ï¡¢¥Ñ¥Ã¥±¡¼¥¸¤òÂ¿½Å¥¤¥ó¥¹¥È¡¼¥ë¤Ç¤­¤Ê¤¤¤¬¡¢ÊÌ¥¢¡¼¥­¥Æ¥¯¥Á¥ã¤Î¥Ñ¥Ã¥±¡¼¥¸¤Î°ÍÂ¸´Ø·¸¤òËþ¤¿¤¹¤³¤È¤¬²ÄÇ½¤Ç¤¢¤ë¤³¤È¤ò°ÕÌ£¤¹¤ë¡£ \fBallowed\fP
-¤Ï¡¢ÊÌ¥¢¡¼¥­¥Æ¥¯¥Á¥ã¤Î¥Ñ¥Ã¥±¡¼¥¸¤òµöÍÆ¤¹¤ë¤è¤¦¤ÊµÕ¤Î°ÍÂ¸´Ø·¸¤ò Depends ¥Õ¥£¡¼¥ë¥É¤Ë»ØÄê²ÄÇ½¤Ç¤¢¤ë¤³¤È¤ò¼¨¤¹¤À¤±¤Ç¡¢¤½¤ì°Ê¾å¤Î°ÕÌ£¤Ï¤Ê¤¤¡£
+\fBMulti\-Arch:\fP \fBsame\fP|\fBforeign\fP|\fBallowed\fP|\fBno\fP
+This field is used to indicate how this package should behave on a
+multi\-arch installations. The value \fBsame\fP means that the package is
+co\-installable with itself, but it must not be used to satisfy the
+dependency of any package of a different architecture from itself. The value
+\fBforeign\fP means that the package is not co\-installable with itself, but
+should be allowed to satisfy the dependency of a package of a different arch
+from itself. The value \fBallowed\fP allows reverse\-dependencies to indicate in
+their Depends field that they accept a package from a foreign architecture,
+but has no effect otherwise.  The value \fBno\fP is the default when the field
+is omitted, in which case adding the field with an explicit \fBno\fP value is
+generally not needed.
 .TP 
 \fBSource:\fP\fI ¥½¡¼¥¹¥Ñ¥Ã¥±¡¼¥¸Ì¾\fP
 ¤³¤Î¥Ð¥¤¥Ê¥ê¥Ñ¥Ã¥±¡¼¥¸¤òºî¤ë¤¿¤á¤Ë»È¤ï¤ì¤¿¥½¡¼¥¹¥Ñ¥Ã¥±¡¼¥¸Ì¾¤Ç¤¢¤ë¡£¥Ð¥¤¥Ê¥ê¥Ñ¥Ã¥±¡¼¥¸¤ÎÌ¾Á°¤È¥½¡¼¥¹¥Ñ¥Ã¥±¡¼¥¸¤ÎÌ¾Á°¤¬°ã¤¦»þ¤Ë»È¤ï¤ì¤ë¡£

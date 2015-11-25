@@ -2,7 +2,7 @@
 .\"
 .\" Copyright Â© 1996 Michael Shields <shields@crosslink.net>
 .\" Copyright Â© 2006 Frank Lichtenheld <djpig@debian.org>
-.\" Copyright Â© 2007 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2007, 2009, 2011-2014 Guillem Jover <guillem@debian.org>
 .\" Copyright Â© 2009 RaphaÃ«l Hertzog <hertzog@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
@@ -75,6 +75,11 @@ opis wymaganego formatu.
 \fB\-a\fP, \fB\-\-arch\fP \fIarchitektura\fP
 U¿ywa wzorca zawieraj±cego \fI*_all.deb\fP i \fI*_arch.deb\fP zamiast poszukiwaæ
 wszystkich plików deb.
+.TP 
+\fB\-h\fP, \fB\-\-hash\fP \fIhash\-list\fP
+Only generate file hashes for the comma\-specified list specified.  The
+default is to generate all currently supported hashes.  Supported values:
+\fBmd5\fP, \fBsha1\fP, \fBsha256\fP.
 .TP 
 \fB\-m\fP, \fB\-\-multiversion\fP
 Wypisuje wszystkie znalezione pakiety.

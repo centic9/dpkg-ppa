@@ -27,6 +27,40 @@ use strict;
 use warnings;
 
 our $VERSION = '1.00';
+our @EXPORT = qw(_g P_ textdomain ngettext);
+
+use Exporter qw(import);
+
+=encoding utf8
+
+=head1 NAME
+
+Dpkg::Gettext - convenience wrapper around Locale::gettext
+
+=head1 DESCRIPTION
+
+The Dpkg::Gettext module is a convenience wrapper over the Locale::gettext
+module, to guarantee we always have working gettext functions, and to add
+some commonly used aliases.
+
+=head1 FUNCTIONS
+
+=over 4
+
+=item my $trans = _g($msgid)
+
+Calls gettext() on the $msgid and returns its translation for the current
+locale. If gettext() is not available, simply returns $msgid.
+
+=item my $trans = P_($msgid, $msgid_plural, $n)
+
+Calls ngettext(), returning the correct translation for the plural form
+dependent on $n. If gettext() is not available, returns $msgid if $n is 1
+or $msgid_plural otherwise.
+
+=back
+
+=cut
 
 BEGIN {
     eval 'use Locale::gettext';
@@ -38,10 +72,11 @@ BEGIN {
             sub textdomain {
             }
             sub ngettext {
-                if ($_[2] == 1) {
-                    return $_[0];
+                my ($msgid, $msgid_plural, $n) = @_;
+                if ($n == 1) {
+                    return $msgid;
                 } else {
-                    return $_[1];
+                    return $msgid_plural;
                 }
             }
             sub P_ {
@@ -60,7 +95,12 @@ BEGIN {
     }
 }
 
-use Exporter qw(import);
-our @EXPORT=qw(_g P_ textdomain ngettext);
+=head1 CHANGES
+
+=head2 Version 1.00
+
+Mark the module as public.
+
+=cut
 
 1;

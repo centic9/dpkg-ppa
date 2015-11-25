@@ -13,6 +13,8 @@ AM_CPPFLAGS = \
 	-iquote $(builddir) \
 	-I$(top_builddir) \
 	-I$(top_srcdir)/lib
+AM_CXXFLAGS = \
+	-fno-rtti
 
 
 bin_PROGRAMS = dselect
@@ -42,8 +44,7 @@ dselect_SOURCES = \
 
 dselect_LDADD = \
 	$(CURSES_LIBS) \
-	../lib/dpkg/libdpkg.a \
-	../lib/compat/libcompat.a \
+	../lib/dpkg/libdpkg.la \
 	$(LIBINTL)
 
 
@@ -54,7 +55,7 @@ curkeys.$(OBJEXT): curkeys.h
 curkeys.h: $(srcdir)/keyoverride $(srcdir)/mkcurkeys.pl
 	$(AM_V_GEN) cursesfile=`echo '#include "dselect-curses.h"' | \
 		$(CPP) $(CPPFLAGS) -I$(top_builddir) -I $(srcdir) - | \
-		grep 'curses.h' | head -n 1 | \
+		grep '[^-]curses\.h' | head -n 1 | \
 		sed -e 's/^[^"]*"//; s/".*$$//'`; \
 	if [ "$$cursesfile" = "" ]; then \
 		echo "can't find curses file"; exit 1; \

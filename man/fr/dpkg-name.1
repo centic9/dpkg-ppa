@@ -66,8 +66,9 @@ aussi beaucoup de paquets sont dans la zone «\ no\-section\ ». Utilisez cette
 option avec soin\ : elle est compliquée.
 .TP 
 \fB\-c\fP, \fB\-\-create\-dir\fP
-This option can used together with the \fB\-s\fP option. If a target directory
-isn't found it will be created automatically.  \fBUse this option with care.\fP
+On peut utiliser cette option avec l'option \fB\-s\fP. Quand un répertoire cible
+n'est pas trouvé, il est créé automatiquement. \fBUtilisez cette option avec
+soin.\fP
 .TP 
 \fB\-?\fP, \fB\-\-help\fP
 Affiche un message d'aide puis quitte.
@@ -76,11 +77,11 @@ Affiche un message d'aide puis quitte.
 Affiche le numéro de version puis quitte.
 .
 .SH BOGUES
-Some packages don't follow the name structure
-\fIpackage\fP\fB_\fP\fIversion\fP\fB_\fP\fIarchitecture\fP\fB.deb\fP.  Packages renamed by
-\fBdpkg\-name\fP will follow this structure. Generally this will have no impact
-on how packages are installed by \fBdselect\fP(1)/\fBdpkg\fP(1), but other
-installation tools might depend on this naming structure.
+Certains paquets ne respectent pas l'organisation
+\fIpaquet\fP\fB_\fP\fIversion\fP\fB_\fP\fIarchitecture\fP\fB.deb\fP. Les paquets traités par
+\fBdpkg\-name\fP la respectent. Cela n'a pas de conséquence sur la façon dont
+\fBdselect\fP(1) ou \fBdpkg\fP(1) installent les paquets, mais il se peut que
+d'autres systèmes d'installation aient besoin de cette organisation.
 .
 .SH EXEMPLES
 .TP 
@@ -90,9 +91,10 @@ quelque chose de similaire suivant les renseignements que contient la partie
 de contrôle de «\ bar\-foo.deb\ ».
 .TP 
 \fBfind /root/debian/ \-name \(aq*.deb\(aq | xargs \-n 1 dpkg\-name \-a\fP
-All files with the extension `deb' in the directory /root/debian and its
-subdirectory's will be renamed by \fBdpkg\-name\fP if required into names with
-no architecture information.
+Cette commande \fBdpkg\-name\fP redonne leur nom complet à tous les fichiers qui
+se trouvent dans le répertoire /root/debian et ses sous\-répertoires et qui
+possèdent une extension «\ deb\ », mais supprime l'information sur
+l'architecture.
 .TP 
 \fBfind \-name \(aq*.deb\(aq | xargs \-n 1 dpkg\-name \-a \-o \-s \-c\fP
 \fBNe faites pas ça\ !\fP L'archive sera complètement gâchée par des paquets qui

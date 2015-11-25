@@ -1,7 +1,7 @@
 .\" dpkg manual page - deb-triggers(5)
 .\"
-.\" Copyright Â© 2008, 2013 Guillem Jover <guillem@debian.org>
-.\" Copyright Â© 2011 RaphaÃ«l Hertzog <hertzog@debian.org>
+.\" Copyright Â© 2008, 2013, 2014 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2011, 2014 RaphaÃ«l Hertzog <hertzog@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -21,8 +21,8 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH deb\-triggers 5 2013\-04\-02 Debian\-Projekt dpkg\-Hilfsprogramme
-.SH NAME
+.TH deb\-triggers 5 2014\-10\-15 Debian\-Projekt dpkg\-Hilfsprogramme
+.SH BEZEICHNUNG
 deb\-triggers \- Paket\-Trigger
 .
 .SH ÜBERSICHT
@@ -43,6 +43,9 @@ Die derzeit unterstützten Steuerdirektiven für Trigger sind:
 \fBinterest\fP \fITrigger\-Name\fP
 .PP
 .in +5
+\fBinterest\-await\fP \fITrigger\-Name\fP
+.PP
+.in +5
 \fBinterest\-noawait\fP \fITrigger\-Name\fP
 .PP
 .in +5
@@ -55,6 +58,9 @@ nicht äußerst wichtig ist.
 .PP
 .in +5
 \fBactivate\fP \fITrigger\-Name\fP
+.PP
+.in +5
+\fBactivate\-await\fP \fITrigger\-Name\fP
 .PP
 .in +5
 \fBactivate\-noawait\fP \fITrigger\-Name\fP
@@ -79,13 +85,27 @@ des Pakets angegebenen Trigger aktiviert.
 Unbekannte Direktiven sind ein Fehler, der die Installation eines Pakets
 verhindert.
 .PP
+Die Variante »\-noawait« sollte stets wenn möglich bevorzugt werden, da die
+Trigger\-auslösenden Pakete nicht in den Zustand »triggers\-awaited« überführt
+werden und daher sofort konfiguriert werden können, ohne die Verarbeitung
+des Triggers zu verlangen. Falls die Trigger\-auslösenden Pakete
+Abhängigkeiten von anderen, im Upgrade befindlichen Paketen sind, wird dies
+einen frühzeitigen Lauf der Trigger\-Verarbeitung vermeiden und es
+ermöglichen, den Trigger nur einmal als einen der letzten Schrittes des
+Upgrades auszuführen.
+.PP
 Die Varianten »\-noawait« werden nur seit Dpkg 1.16.1 unterstützt und werden
 bei älteren Dpkg zu Fehlern führen. Es wird daher empfohlen, ein
 »Pre\-Depends: dpkg (>= 1.16.1)« zu jedem Paket hinzuzufügen, dass diese
 Direktiven nutzen möchte.
+.PP
+Die Alias\-Varianten »\-await« werden nur seit Dpkg 1.17.21 unterstützt und
+werden bei älteren Dpkg zu Fehlern führen. Es wird daher empfohlen, ein
+»Pre\-Depends: dpkg (>= 1.17.21)« zu jedem Paket hinzuzufügen, dass diese
+Direktiven nutzen möchte.
 .
 .SH ÜBERSETZUNG
-Die deutsche Übersetzung wurde 2004, 2006-2013 von Helge Kreutzmann
+Die deutsche Übersetzung wurde 2004, 2006-2015 von Helge Kreutzmann
 <debian@helgefjell.de>, 2007 von Florian Rehnisch <eixman@gmx.de> und
 2008 von Sven Joachim <svenjoac@gmx.de>
 angefertigt. Diese Übersetzung ist Freie Dokumentation; lesen Sie die

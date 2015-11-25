@@ -3,7 +3,7 @@
  * infodb.c - package control information database
  *
  * Copyright © 1995 Ian Jackson <ian@chiark.greenend.org.uk>
- * Copyright © 2011 Guillem Jover <guillem@debian.org>
+ * Copyright © 2011-2014 Guillem Jover <guillem@debian.org>
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -67,16 +67,16 @@ pkg_infodb_foreach(struct pkginfo *pkg, struct pkgbin *pkgbin,
 	/* Make sure to always read and verify the format version. */
 	db_format = pkg_infodb_get_format();
 
-	if (pkgbin->multiarch == multiarch_same &&
-	    db_format == pkg_infodb_format_multiarch)
+	if (pkgbin->multiarch == PKG_MULTIARCH_SAME &&
+	    db_format == PKG_INFODB_FORMAT_MULTIARCH)
 		pkgname = pkgbin_name(pkg, pkgbin, pnaw_always);
 	else
 		pkgname = pkgbin_name(pkg, pkgbin, pnaw_never);
 
 	varbuf_add_str(&db_path, pkg_infodb_get_dir());
 	varbuf_add_char(&db_path, '/');
+	varbuf_end_str(&db_path);
 	db_path_len = db_path.used;
-	varbuf_add_char(&db_path, '\0');
 
 	db_dir = opendir(db_path.buf);
 	if (!db_dir)

@@ -17,7 +17,7 @@
 .\" You should have received a copy of the GNU General Public License
 .\" along with this program.  If not, see <https://www.gnu.org/licenses/>.
 .
-.TH deb\-src\-control 5 "2013-09-17" "Debian Project" "Debian"
+.TH deb\-src\-control 5 "2013-12-20" "Debian Project" "Debian"
 .SH NAME
 deb\-src\-control \- Debian source packages' master control file format
 .
@@ -82,7 +82,21 @@ used format is \fIbts-type\fP\fB://\fP\fIbts-address\fP, like
 \fBdebbugs://bugs.debian.org\fP. This field is usually not needed.
 
 .TP
-.BI Vcs\-*: " url"
+.BI Vcs\-Arch: " url"
+.TQ
+.BI Vcs\-Bzr: " url"
+.TQ
+.BI Vcs\-Cvs: " url"
+.TQ
+.BI Vcs\-Darcs: " url"
+.TQ
+.BI Vcs\-Git: " url"
+.TQ
+.BI Vcs\-Hg: " url"
+.TQ
+.BI Vcs\-Mtn: " url"
+.TQ
+.BI Vcs\-Svn: " url"
 The \fIurl\fP of the Version Control System repository used to maintain this
 package. Currently supported are \fBArch\fP, \fBBzr\fP (Bazaar), \fBCvs\fP,
 \fBDarcs\fP, \fBGit\fP, \fBHg\fP (Mercurial), \fBMtn\fP (Monotone) and
@@ -173,8 +187,8 @@ of packages separated by vertical bar (or "pipe") symbols, "|". The
 groups are separated by commas. Commas are to be read as "AND", and pipes
 as "OR", with pipes binding more tightly. Each package name is
 optionally followed by a version number specification in parentheses, an
-architecture specification in square brackets, and a profile specification
-in angle brackets.
+architecture specification in square brackets, and a restriction formula
+consisting of one or more lists of profile names in angle brackets.
 
 The syntax of the
 .BR Build\-Conflicts ,
@@ -184,8 +198,9 @@ and
 fields is a list of comma-separated package names, where the comma is read
 as an "AND". Specifying alternative packages using a "pipe" is not supported.
 Each package name is optionally followed by a version number specification in
-parentheses, an architecture specification in square brackets, and a profile
-specification in angle brackets.
+parentheses, an architecture specification in square brackets, and a
+restriction formula consisting of one or more lists of profile names in
+angle brackets.
 
 A version number may start with a ">>", in which case any later version
 will match, and may specify or omit the Debian packaging revision (separated
@@ -197,9 +212,11 @@ An architecture specification consists of one or more architecture names,
 separated by whitespace. Exclamation marks may be prepended to each of the
 names, meaning "NOT".
 
-A profile specification consists of one or more profile names, prefixed
-with the "\fBprofile.\fP" namespace, separated by whitespace. Exclamation
-marks may be prepended to each of the names, meaning "NOT".
+A restriction formula consists of one or more restriction lists, separated
+by whitespace. Each restriction list is enclosed in angle brackets. Items
+in the restriction list are build profile names, separated by whitespace
+and can be prefixed with an exclamation mark, meaning "NOT". A restriction
+formula represents a disjunctive normal form expression.
 
 Note that dependencies on packages in the
 .B build\-essential
@@ -256,7 +273,7 @@ package for more details about them.
 .TP
 .BR Essential: " \fByes\fP|\fBno\fP"
 .TQ
-.BR Multi\-Arch: " \fBsame\fP|\fBforeign\fP|\fBallowed\fP"
+.BR Multi\-Arch: " \fBsame\fP|\fBforeign\fP|\fBallowed\fP|\fBno\fP"
 .TQ
 .BI Tag: " tag-list"
 .TQ
@@ -312,8 +329,7 @@ source package control files.
 Take into account that these user-defined fields will be using the global
 namespace, which might at some point in the future collide with officially
 recognized fields. To avoid such potential situation you can prefix those
-fields with \fBPrivate\-\fP, such as \fBXB\-Private\-New\-Field\fP, which as
-a side effect will make \fBdpkg\-deb\fP not warn on them as unknown fields.
+fields with \fBPrivate\-\fP, such as \fBXB\-Private\-New\-Field\fP.
 
 .SH EXAMPLE
 .\" .RS
@@ -326,8 +342,8 @@ Maintainer: Dpkg Developers <debian\-dpkg@lists.debian.org>
 # this field is copied to the binary and source packages
 XBS\-Upstream\-Release\-Status: stable
 Homepage: https://wiki.debian.org/Teams/Dpkg
-Vcs\-Browser: http://git.debian.org/?p=dpkg/dpkg.git
-Vcs\-Git: git://git.debian.org/git/dpkg/dpkg.git
+Vcs\-Browser: https://anonscm.debian.org/cgit/dpkg/dpkg.git
+Vcs\-Git: git://anonscm.debian.org/dpkg/dpkg.git
 Standards\-Version: 3.7.3
 Build\-Depends: pkg\-config, debhelper (>= 4.1.81),
  libselinux1\-dev (>= 1.28\-4) [!linux\-any]

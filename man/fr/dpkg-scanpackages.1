@@ -2,7 +2,7 @@
 .\"
 .\" Copyright Â© 1996 Michael Shields <shields@crosslink.net>
 .\" Copyright Â© 2006 Frank Lichtenheld <djpig@debian.org>
-.\" Copyright Â© 2007 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2007, 2009, 2011-2014 Guillem Jover <guillem@debian.org>
 .\" Copyright Â© 2009 RaphaÃ«l Hertzog <hertzog@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
@@ -28,8 +28,8 @@
 dpkg\-scanpackages \- créer des fichiers d'index de paquets.
 .
 .SH SYNOPSIS
-\fBdpkg\-scanpackages\fP [\fIoption\fP...] \fIrep\-de\-binaires\fP [\fIfichier\-override\fP
-[\fIchemin\-à\-préfixer\fP]] \fB>\fP \fIPackages\fP
+\fBdpkg\-scanpackages\fP [\fIoption\fP...] \fIrep\-de\-binaires\fP
+[\fIfichier\-d'override\fP [\fIchemin\-à\-préfixer\fP]] \fB>\fP \fIPackages\fP
 .
 .SH DESCRIPTION
 \fBdpkg\-scanpackages\fP trie une arborescence contenant des paquets binaires
@@ -40,11 +40,11 @@ trouver sur les sites d'archives Debian ou sur des CD. Quand on crée un
 répertoire contenant des paquets qu'on veut installer sur un ensemble de
 machines, on peut se servir soi\-même de \fBdpkg\-scanpackages\fP.
 .PP
-\fBNote\ :\fP Pour pouvoir accéder avec \fBapt\fP au fichier Packages créé, il
+\fBNote\ :\fP Pour pouvoir accéder avec \fBapt\fP au fichier «\ Packages\ » créé, il
 faudra sans doute le compresser avec \fBbzip2\fP(1) (qui crée un fichier
 Packages.bz2) ou \fBgzip\fP(1) (qui crée un fichier Packages.gz). apt ignore
-les fichiers Packages non compressés, sauf pour des sources locales
-(c.\-à\-d. \fBfile://\fP).
+les fichiers «\ Packages\ » non compressés, sauf pour des sources locales
+(c'est\-à\-dire \fBfile://\fP).
 .PP
 \fIrep\-de\-binaires\fP est le nom de l'arborescence des paquets binaires (par
 exemple \fBcontrib/binary\-i386)\fP que l'on veut traiter. Il vaut mieux qu'elle
@@ -52,7 +52,7 @@ soit relative à la racine de l'archive Debian\ ; ainsi chaque champ
 «\ Filename\ » dans le nouveau fichier «\ Packages\ » commencera par cette
 chaîne.
 .PP
-\fIfichier\-d'\-override\fP est le nom du fichier qui contient les renseignements
+\fIfichier\-d'override\fP est le nom du fichier qui contient les renseignements
 sur la manière dont le paquet s'insère dans la distribution (ce fichier peut
 être compressé)\ ; voir \fBdeb\-override\fP(5).
 .PP
@@ -74,8 +74,13 @@ fichier peut être compressé). Voir \fBdeb\-extra\-override\fP(5) pour plus
 d'information sur le format utilisé.
 .TP 
 \fB\-a\fP, \fB\-\-arch\fP \fIarch\fP
-Utiliser un motif équivalent à \fI*_all.deb\fP et à \fI*_arch.deb\fP, plutôt que
-de rechercher tous les fichiers debs.
+Utilise un motif équivalent à \fI*_all.deb\fP et à \fI*_arch.deb\fP, plutôt que de
+rechercher tous les fichiers debs.
+.TP 
+\fB\-h\fP, \fB\-\-hash\fP \fIliste\-de\-hachage\fP
+Générer uniquement le hachage de fichiers spécifiés (liste séparée par des
+virgules). Par défaut cela génére tous les hachages actuellement pris en
+charge. Valeurs supportées: \fBmd5\fP, \fBsha1\fP, \fBsha256\fP.
 .TP 
 \fB\-m\fP, \fB\-\-multiversion\fP
 Affiche tous les paquets trouvés en sortie.

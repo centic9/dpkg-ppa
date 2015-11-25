@@ -51,9 +51,15 @@ sub init_options {
     }
     push @{$self->{options}{tar_ignore}}, 'debian/source/local-options',
          'debian/source/local-patch-header';
-    $self->{options}{sourcestyle} ||= 'X';
-    $self->{options}{skip_debianization} ||= 0;
-    $self->{options}{abort_on_upstream_changes} ||= 0;
+    $self->{options}{sourcestyle} //= 'X';
+    $self->{options}{skip_debianization} //= 0;
+    $self->{options}{ignore_bad_version} //= 0;
+    $self->{options}{abort_on_upstream_changes} //= 0;
+
+    # V1.0 only supports gzip compression.
+    $self->{options}{compression} //= 'gzip';
+    $self->{options}{comp_level} //= compression_get_property('gzip', 'default_level');
+    $self->{options}{comp_ext} //= compression_get_property('gzip', 'file_ext');
 }
 
 sub parse_cmdline_option {
@@ -65,10 +71,13 @@ sub parse_cmdline_option {
         $o->{sourcestyle} = $1;
         $o->{copy_orig_tarballs} = 0 if $1 eq 'n'; # Extract option -sn
         return 1;
-    } elsif ($opt =~ m/^--skip-debianization$/) {
+    } elsif ($opt eq '--skip-debianization') {
         $o->{skip_debianization} = 1;
         return 1;
-    } elsif ($opt =~ m/^--abort-on-upstream-changes$/) {
+    } elsif ($opt eq '--ignore-bad-version') {
+        $o->{ignore_bad_version} = 1;
+        return 1;
+    } elsif ($opt eq '--abort-on-upstream-changes') {
         $o->{abort_on_upstream_changes} = 1;
         return 1;
     }
@@ -354,7 +363,8 @@ sub do_build {
 					DIR => getcwd(), UNLINK => 0);
         push_exit_handler(sub { unlink($newdiffgz) });
         my $diff = Dpkg::Source::Patch->new(filename => $newdiffgz,
-                                            compression => 'gzip');
+                                            compression => 'gzip',
+                                            compression_level => $self->{options}{comp_level});
         $diff->create();
         $diff->add_diff_directory($origdir, $dir,
                 basedirname => $basedirname,
@@ -365,7 +375,8 @@ sub do_build {
         pop_exit_handler();
 
 	my $analysis = $diff->analyze($origdir);
-	my @files = grep { ! m{^debian/} } map { s{^[^/]+/+}{}; $_ }
+	my @files = grep { ! m{^debian/} }
+		    map { my $file = $_; $file =~ s{^[^/]+/+}{}; $file }
 		    sort keys %{$analysis->{filepatched}};
 	if (scalar @files) {
 	    warning(_g('the diff modifies the following upstream files: %s'),

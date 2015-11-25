@@ -1,5 +1,6 @@
 # Copyright © 2008-2009 Raphaël Hertzog <hertzog@debian.org>
 # Copyright © 2008 Frank Lichtenheld <djpig@debian.org>
+# Copyright © 2008-2010,2012-2014 Guillem Jover <guillem@debian.org>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,7 +20,7 @@ package Dpkg::IPC;
 use strict;
 use warnings;
 
-our $VERSION = '1.00';
+our $VERSION = '1.01';
 
 use Dpkg::ErrorHandling;
 use Dpkg::Gettext;
@@ -127,6 +128,16 @@ hash before calling exec. This allows exporting environment variables.
 Array reference. The child process will remove all environment variables
 listed in the array before calling exec.
 
+=item sig
+
+Hash reference. The child process will populate %SIG with the items of the
+hash before calling exec. This allows setting signal dispositions.
+
+=item delete_sig
+
+Array reference. The child process will reset all signals listed in the
+array to their default dispositions before calling exec.
+
 =back
 
 =cut
@@ -138,10 +149,10 @@ sub _sanity_check_opts {
 	unless $opts{exec};
 
     my $to = my $error_to = my $from = 0;
-    foreach (qw(file handle string pipe)) {
-	$to++ if $opts{"to_$_"};
-	$error_to++ if $opts{"error_to_$_"};
-	$from++ if $opts{"from_$_"};
+    foreach my $thing (qw(file handle string pipe)) {
+	$to++ if $opts{"to_$thing"};
+	$error_to++ if $opts{"error_to_$thing"};
+	$from++ if $opts{"from_$thing"};
     }
     croak 'not more than one of to_* parameters is allowed'
 	if $to > 1;
@@ -150,18 +161,18 @@ sub _sanity_check_opts {
     croak 'not more than one of from_* parameters is allowed'
 	if $from > 1;
 
-    foreach (qw(to_string error_to_string from_string)) {
-	if (exists $opts{$_} and
-	    (not ref($opts{$_}) or ref($opts{$_}) ne 'SCALAR')) {
-	    croak "parameter $_ must be a scalar reference";
+    foreach my $param (qw(to_string error_to_string from_string)) {
+	if (exists $opts{$param} and
+	    (not ref $opts{$param} or ref $opts{$param} ne 'SCALAR')) {
+	    croak "parameter $param must be a scalar reference";
 	}
     }
 
-    foreach (qw(to_pipe error_to_pipe from_pipe)) {
-	if (exists $opts{$_} and
-	    (not ref($opts{$_}) or (ref($opts{$_}) ne 'SCALAR' and
-				 not $opts{$_}->isa('IO::Handle')))) {
-	    croak "parameter $_ must be a scalar reference or " .
+    foreach my $param (qw(to_pipe error_to_pipe from_pipe)) {
+	if (exists $opts{$param} and
+	    (not ref $opts{$param} or (ref $opts{$param} ne 'SCALAR' and
+	     not $opts{$param}->isa('IO::Handle')))) {
+	    croak "parameter $param must be a scalar reference or " .
 	          'an IO::Handle object';
 	}
     }
@@ -179,13 +190,23 @@ sub _sanity_check_opts {
 	croak 'parameter delete_env must be an array reference';
     }
 
+    if (exists $opts{sig} and ref($opts{sig}) ne 'HASH') {
+	croak 'parameter sig must be a hash reference';
+    }
+
+    if (exists $opts{delete_sig} and ref($opts{delete_sig}) ne 'ARRAY') {
+	croak 'parameter delete_sig must be an array reference';
+    }
+
     return %opts;
 }
 
 sub spawn {
-    my (%opts) = _sanity_check_opts(@_);
-    $opts{close_in_child} ||= [];
+    my (%opts) = @_;
     my @prog;
+
+    _sanity_check_opts(%opts);
+    $opts{close_in_child} //= [];
     if (ref($opts{exec}) =~ /ARRAY/) {
 	push @prog, @{$opts{exec}};
     } elsif (not ref($opts{exec})) {
@@ -237,6 +258,15 @@ sub spawn {
 	}
 	if ($opts{delete_env}) {
 	    delete $ENV{$_} foreach (@{$opts{delete_env}});
+	}
+	# Define signal dispositions.
+	if ($opts{sig}) {
+	    foreach (keys %{$opts{sig}}) {
+		$SIG{$_} = $opts{sig}{$_};
+	    }
+	}
+	if ($opts{delete_sig}) {
+	    delete $SIG{$_} foreach (@{$opts{delete_sig}});
 	}
 	# Change the current directory
 	if ($opts{chdir}) {
@@ -340,7 +370,7 @@ with an error message.
 
 sub wait_child {
     my ($pid, %opts) = @_;
-    $opts{cmdline} ||= _g('child process');
+    $opts{cmdline} //= _g('child process');
     croak 'no PID set, cannot wait end of process' unless $pid;
     eval {
         local $SIG{ALRM} = sub { die "alarm\n" };
@@ -350,9 +380,9 @@ sub wait_child {
     };
     if ($@) {
         die $@ unless $@ eq "alarm\n";
-        error(ngettext("%s didn't complete in %d second",
-                       "%s didn't complete in %d seconds",
-                       $opts{timeout}),
+        error(P_("%s didn't complete in %d second",
+                 "%s didn't complete in %d seconds",
+                 $opts{timeout}),
               $opts{cmdline}, $opts{timeout});
     }
     unless ($opts{nocheck}) {
@@ -364,6 +394,16 @@ sub wait_child {
 __END__
 
 =back
+
+=head1 CHANGES
+
+=head2 Version 1.01
+
+New options: spawn() now accepts 'sig' and 'delete_sig'.
+
+=head2 Version 1.00
+
+Mark the module as public.
 
 =head1 AUTHORS
 

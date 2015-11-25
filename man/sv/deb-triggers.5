@@ -1,7 +1,7 @@
 .\" dpkg manual page - deb-triggers(5)
 .\"
-.\" Copyright Â© 2008, 2013 Guillem Jover <guillem@debian.org>
-.\" Copyright Â© 2011 RaphaÃ«l Hertzog <hertzog@debian.org>
+.\" Copyright Â© 2008, 2013, 2014 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2011, 2014 RaphaÃ«l Hertzog <hertzog@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH deb\-triggers 5 2013\-04\-02 Debianprojektet dpkg\-verktygen
+.TH deb\-triggers 5 2014\-10\-15 Debianprojektet dpkg\-verktygen
 .SH NAMN
 deb\-triggers \- utlösare för paket
 .
@@ -43,6 +43,9 @@ De styrdirektiv som för närvarande stöds för utlösare är:
 \fBinterest\fP \fIutlösarnamn\fP
 .PP
 .in +5
+\fBinterest\-await\fP \fIutlösarnamn\fP
+.PP
+.in +5
 \fBinterest\-noawait\fP \fIutlösarnamn\fP
 .PP
 .in +5
@@ -54,6 +57,9 @@ tillhandahålls av utlösaren inte är avgörande.
 .PP
 .in +5
 \fBactivate\fP \fIutlösarnamn\fP
+.PP
+.in +5
+\fBactivate\-await\fP \fIutlösarnamn\fP
 .PP
 .in +5
 \fBactivate\-noawait\fP \fIutlösarnamn\fP
@@ -76,10 +82,22 @@ som omnämns i gamla och nya versioner av paketet att aktiveras.
 .PP
 Okända direktiv är ett fel som förhindrar paketet från att installeras.
 .PP
-The "\-noawait" variants are only supported since dpkg 1.16.1, and will lead
-to errors if used with an older dpkg. It is thus recommended to add a
-"Pre\-Depends: dpkg (>= 1.16.1)" to any package that wish to use those
-directives.
+Varianterna med "\-noawait" kommer alltid att föredras när så är möjligt
+eftersom de utlösande paketen inte försätts i avvaktande tillstånd och kan
+därför konfigureras omedelbart utan att utlösaren behöver hanteras. Om de
+utlösande paketen beror på andra uppgraderade paket kan det undvika att
+utlösare hanteras tidigt och göra det möjligt att köra utlösaren endast en
+gång som ett av de sista stegen i uppgraderingen.
+.PP
+Varianterna med "\-noawait" stöds endast sedan dpkg 1.16.1, och kommer leda
+till fel om de används med äldre versioner av dpkg. Det rekommenderas därför
+att du lägger till ett "Pre\-Depends: dpkg (>= 1.16.1)" till eventuella
+paket som vill använda dessa direktiv.
+.PP
+Aliasvarianterna med "\-await" stöds endast sedan dpkg 1.17.21, och kommer
+leda till fel om de används med äldre versioner av dpkg. Det rekommenderas
+därför att du lägger till ett "Pre\-Depends: dpkg (>= 1.17.21)" till
+eventuella paket som vill använda dessa direktiv.
 .
 .SH "SE ÄVEN"
 \fBdpkg\-trigger\fP(1), \fBdpkg\fP(1), \fB/usr/share/doc/dpkg\-dev/triggers.txt.gz\fP.

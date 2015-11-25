@@ -3,7 +3,7 @@
  * script.c - maintainer script routines
  *
  * Copyright © 1995 Ian Jackson <ian@chiark.greenend.org.uk>
- * Copyright © 2007-2013 Guillem Jover <guillem@debian.org>
+ * Copyright © 2007-2014 Guillem Jover <guillem@debian.org>
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,8 +33,6 @@
 
 #ifdef WITH_SELINUX
 #include <selinux/selinux.h>
-#include <selinux/flask.h>
-#include <selinux/context.h>
 #endif
 
 #include <dpkg/i18n.h>
@@ -52,14 +50,14 @@
 void
 post_postinst_tasks(struct pkginfo *pkg, enum pkgstatus new_status)
 {
-	if (new_status < stat_triggersawaited)
+	if (new_status < PKG_STAT_TRIGGERSAWAITED)
 		pkg_set_status(pkg, new_status);
 	else if (pkg->trigaw.head)
-		pkg_set_status(pkg, stat_triggersawaited);
+		pkg_set_status(pkg, PKG_STAT_TRIGGERSAWAITED);
 	else if (pkg->trigpend_head)
-		pkg_set_status(pkg, stat_triggerspending);
+		pkg_set_status(pkg, PKG_STAT_TRIGGERSPENDING);
 	else
-		pkg_set_status(pkg, stat_installed);
+		pkg_set_status(pkg, PKG_STAT_INSTALLED);
 	modstatdb_note(pkg);
 
 	debug(dbg_triggersdetail, "post_postinst_tasks - trig_incorporate");
@@ -145,49 +143,9 @@ static int
 maintscript_set_exec_context(struct command *cmd, const char *fallback)
 {
 	int rc = 0;
+
 #ifdef WITH_SELINUX
-	security_context_t curcon = NULL, newcon = NULL, filecon = NULL;
-	context_t tmpcon = NULL;
-
-	if (is_selinux_enabled() < 1)
-		return 0;
-
-	rc = getcon(&curcon);
-	if (rc < 0)
-		goto out;
-
-	rc = getfilecon(cmd->filename, &filecon);
-	if (rc < 0)
-		goto out;
-
-	rc = security_compute_create(curcon, filecon, SECCLASS_PROCESS, &newcon);
-	if (rc < 0)
-		goto out;
-
-	if (strcmp(curcon, newcon) == 0) {
-		/* No default transition, use fallback for now. */
-		rc = -1;
-		tmpcon = context_new(curcon);
-		if (tmpcon == NULL)
-			goto out;
-		if (context_type_set(tmpcon, fallback))
-			goto out;
-		freecon(newcon);
-		newcon = strdup(context_str(tmpcon));
-		if (newcon == NULL)
-			goto out;
-	}
-
-	rc = setexeccon(newcon);
-
-out:
-	if (rc < 0 && security_getenforce() == 0)
-		rc = 0;
-
-	context_free(tmpcon);
-	freecon(newcon);
-	freecon(curcon);
-	freecon(filecon);
+	rc = setexecfilecon(cmd->filename, fallback);
 #endif
 
 	return rc < 0 ? rc : 0;
@@ -198,7 +156,7 @@ maintscript_exec(struct pkginfo *pkg, struct pkgbin *pkgbin,
                  struct command *cmd, struct stat *stab, int warn)
 {
 	pid_t pid;
-	int r;
+	int rc;
 
 	setexecute(cmd->filename, stab);
 
@@ -225,13 +183,13 @@ maintscript_exec(struct pkginfo *pkg, struct pkgbin *pkgbin,
 
 		command_exec(cmd);
 	}
-	subproc_signals_setup(cmd->name); /* This does a push_cleanup(). */
-	r = subproc_wait_check(pid, cmd->name, warn);
-	pop_cleanup(ehflag_normaltidy);
+	subproc_signals_ignore(cmd->name);
+	rc = subproc_reap(pid, cmd->name, warn);
+	subproc_signals_restore();
 
 	pop_cleanup(ehflag_normaltidy);
 
-	return r;
+	return rc;
 }
 
 static int
@@ -276,32 +234,32 @@ maintscript_installed(struct pkginfo *pkg, const char *scriptname,
                       const char *desc, ...)
 {
 	va_list args;
-	int r;
+	int rc;
 
 	va_start(args, desc);
-	r = vmaintscript_installed(pkg, scriptname, desc, args);
+	rc = vmaintscript_installed(pkg, scriptname, desc, args);
 	va_end(args);
 
-	if (r)
+	if (rc)
 		post_script_tasks();
 
-	return r;
+	return rc;
 }
 
 int
 maintscript_postinst(struct pkginfo *pkg, ...)
 {
 	va_list args;
-	int r;
+	int rc;
 
 	va_start(args, pkg);
-	r = vmaintscript_installed(pkg, POSTINSTFILE, "post-installation", args);
+	rc = vmaintscript_installed(pkg, POSTINSTFILE, "post-installation", args);
 	va_end(args);
 
-	if (r)
+	if (rc)
 		ensure_diversions();
 
-	return r;
+	return rc;
 }
 
 int
@@ -370,7 +328,7 @@ maintscript_fallback(struct pkginfo *pkg,
 		warning(_("unable to stat %s '%.250s': %s"),
 		        cmd.name, oldscriptpath, strerror(errno));
 	} else {
-		if (!maintscript_exec(pkg, &pkg->installed, &cmd, &stab, PROCWARN)) {
+		if (!maintscript_exec(pkg, &pkg->installed, &cmd, &stab, SUBPROC_WARN)) {
 			command_destroy(&cmd);
 			post_script_tasks();
 			return 1;

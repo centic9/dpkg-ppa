@@ -3,7 +3,7 @@
 .\" Copyright Â© 1995-1996 Ian Jackson <ian@chiark.chu.cam.ac.uk>
 .\" Copyright Â© 1999 Wichert Akkerman <wakkerma@debian.org>
 .\" Copyright Â© 2006 Frank Lichtenheld <djpig@debian.org>
-.\" Copyright Â© 2007-2012 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2007-2014 Guillem Jover <guillem@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH dpkg\-deb 1 2013\-03\-27 "Progetto Debian" "suite dpkg"
+.TH dpkg\-deb 1 "20 agosto 2014" "Progetto Debian" "suite dpkg"
 .SH NOME
 dpkg\-deb \- strumento per la manipolazione di archivi di pacchetto Debian
 (.deb)
@@ -108,7 +108,7 @@ Elenca il contenuto della porzione dell'archivio di pacchetto con l'albero
 del file system. Attualmente viene prodotto nel formato generato dall'elenco
 prolisso di \fBtar\fP.
 .TP 
-\fB\-x\fP, \fB\-\-extract\fP \fIdirectory archivio\fP
+\fB\-x\fP, \fB\-\-extract\fP \fIarchivio directory\fP
 Estrae l'albero del file system da un archivio di pacchetto nella directory
 specificata.
 
@@ -119,17 +119,24 @@ Se necessario verrà creata \fIdirectory\fP (ma non le directory sovrastanti) e
 i suoi permessi saranno modificati per corrispondere al contenuto del
 pacchetto.
 .TP 
-\fB\-X\fP, \fB\-\-vextract\fP \fIdirectory archivio\fP
+\fB\-X\fP, \fB\-\-vextract\fP \fIarchivio directory\fP
 Come \fB\-\-extract\fP (\fB\-x\fP) con \fB\-\-verbose\fP (\fB\-v\fP), che visualizza un elenco
 dei file processati mentre vengono estratti.
 .TP 
-\fB\-R\fP, \fB\-\-raw\-extract\fP \fIdirectory archivio\fP
+\fB\-R\fP, \fB\-\-raw\-extract\fP \fIarchivio directory\fP
 Estrae l'albero del file system da un archivio di pacchetto in una directory
 specificata, e i file con le informazioni di controllo in una sottodirectory
 DEBIAN della directory specificata.
 
 Se necessario verrà creata la directory di destinazione (ma non le directory
 sovrastanti).
+.TP 
+\fB\-\-ctrl\-tarfile\fP \fIarchivio\fP
+Estrae i dati di controllo da un pacchetto binario e lo invia allo standard
+output in formato \fBtar\fP (a partire da dpkg 1.17.14). Insieme a \fBtar\fP(1)
+può essere usata per estrarre un file di controllo specifico da un archivio
+di pacchetto. L'archivio in input verrà sempre elaborato in modo
+sequenziale.
 .TP 
 \fB\-\-fsys\-tarfile\fP \fIarchivio\fP
 Estrae l'albero del file system da un pacchetto binario e lo invia allo
@@ -148,10 +155,10 @@ Se necessario verrà creata la directory di destinazione (ma non le directory
 sovrastanti).
 .TP 
 \fB\-?\fP, \fB\-\-help\fP
-Show the usage message and exit.
+Mostra il messaggio sull'uso ed esce.
 .TP 
 \fB\-\-version\fP
-Show the version and exit.
+Mostra la versione ed esce.
 .
 .SH OPZIONI
 .TP 
@@ -178,31 +185,39 @@ di dpkg, il livello 0 corrispondeva a nessuna compressione per tutti i
 compressori.
 .TP 
 \fB\-S\fP\fIstrategia\-di\-compressione\fP
-Specify which compression strategy to use on the compressor backend, when
-building a package (since dpkg 1.16.2). Allowed values are \fInone\fP (since
-dpkg 1.16.4), \fIfiltered\fP, \fIhuffman\fP, \fIrle\fP and \fIfixed\fP for gzip (since
-dpkg 1.17.0) and \fIextreme\fP for xz.
+Specifica quale strategia di compressione usare nel backend di compressione
+quando si crea un pacchetto (a partire da dpkg 1.16.2). I valori permessi
+sono \fInone\fP (a partire da dpkg 1.16.4), \fIfiltered\fP, \fIhuffman\fP, \fIrle\fP e
+\fIfixed\fP per gzip (a partire da dpkg 1.17.0) e \fIextreme\fP per xz.
 .TP 
 \fB\-Z\fP\fItipo\-di\-compressione\fP
-Specify which compression type to use when building a package. Allowed
-values are \fIgzip\fP, \fIxz\fP, \fIbzip2\fP, \fIlzma\fP, and \fInone\fP (default is
-\fIxz\fP).
+Specifica quale tipo di compressione usare quando si crea un pacchetto. I
+valori permessi sono \fIgzip\fP, \fIxz\fP, \fIbzip2\fP (deprecato), \fIlzma\fP
+(deprecato) e \fInone\fP (il valore predefinito è \fIxz\fP).
+.TP 
+\fB\-\-uniform\-compression\fP
+Specifica che devono essere usati gli stessi parametri di compressione per
+tutti i membri di un archivio (cioè \fBcontrol.tar\fP e
+\fBdata.tar\fP). Altrimenti solo l'elemento \fBdata.tar\fP userà tali
+parametri. Gli unici tipi di compressione supportati che è permesso di usare
+in modo uniforme sono \fInone\fP, \fIgzip\fP e \fIxz\fP.
 .TP 
 \fB\-\-deb\-format=\fP\fIformat\fP
-Set the archive format version used when building (since dpkg 1.17.0).
-Allowed values are \fI2.0\fP for the new format, and \fI0.939000\fP for the old
-one (default is \fI2.0\fP).
+Imposta la versione del formato dell'archivio usata nella creazione (a
+partire da dpkg 1.17.0). I valori permessi sono \fI2.0\fP per il formato nuovo
+e \fI0.939000\fP per quello vecchio (il predefinito è \fI2.0\fP).
 
-The old archive format is less easily parsed by non\-Debian tools and is now
-obsolete; its only use is when building packages to be parsed by versions of
-dpkg older than 0.93.76 (September 1995), which was released as i386 a.out
-only.
+Il vecchio formato degli archivi viene analizzato con più difficoltà dagli
+strumenti non Debian e ora è obsoleto; il suo unico utilizzo è quello di
+creare pacchetti che devono essere manipolati da versioni di dpkg precedenti
+alla 0.93.76 (settembre 1995) che è stata rilasciata solo come a.out per
+i386.
 .TP 
 \fB\-\-new\fP
-This is a legacy alias for \fB\-\-deb\-format=2.0\fP.
+Questo è un alias obsoleto per \fB\-\-deb\-format=2.0\fP.
 .TP 
 \fB\-\-old\fP
-This is a legacy alias for \fB\-\-deb\-format=0.939000\fP.
+Questo è un alias obsoleto per \fB\-\-deb\-format=0.939000\fP.
 .TP 
 \fB\-\-nocheck\fP
 Impedisce i consueti controlli di \fBdpkg\-deb \-\-build\fP sui contenuti proposti

@@ -297,8 +297,8 @@ sub find_closes {
     my %closes;
 
     while ($changes &&
-           ($changes =~ /closes:\s*(?:bug)?\#?\s?\d+(?:,\s*(?:bug)?\#?\s?\d+)*/ig)) {
-        $closes{$_} = 1 foreach($& =~ /\#?\s?(\d+)/g);
+           ($changes =~ /closes:\s*(?:bug)?\#?\s?\d+(?:,\s*(?:bug)?\#?\s?\d+)*/pig)) {
+        $closes{$_} = 1 foreach (${^MATCH} =~ /\#?\s?(\d+)/g);
     }
 
     my @closes = sort { $a <=> $b } keys %closes;
@@ -312,7 +312,12 @@ sub find_closes {
 =head2 Version 1.01
 
 New functions: match_header(), match_trailer()
+
 Deprecated variables: $regex_header, $regex_trailer
+
+=head2 Version 1.00
+
+Mark the module as public.
 
 =head1 AUTHOR
 

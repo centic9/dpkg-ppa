@@ -88,12 +88,19 @@ if test "x$with_selinux" != "xno"; then
 		[if test -n "$with_selinux"; then
 			AC_MSG_FAILURE([selinux library not found])
 		 fi])
+	AC_CHECK_LIB([selinux], [setexecfilecon],
+		[AC_DEFINE([HAVE_SETEXECFILECON], [1],
+		           [Define to 1 if SELinux setexecfilecon is present])
+	])
 
 	AC_CHECK_HEADER([selinux/selinux.h],,
 		[if test -n "$with_selinux"; then
 			AC_MSG_FAILURE([selinux header not found])
 		 fi])
 fi
+AM_CONDITIONAL(WITH_SELINUX, [test "x$with_selinux" = "xyes"])
+AM_CONDITIONAL(HAVE_SETEXECFILECON,
+               [test "x$ac_cv_lib_selinux_setexecfilecon" = "xyes"])
 ])# DPKG_LIB_SELINUX
 
 # _DPKG_CHECK_LIB_CURSES_NARROW
@@ -134,8 +141,6 @@ fi
 # Check for start-stop-daemon libraries.
 AC_DEFUN([DPKG_LIB_SSD],
 [AC_ARG_VAR([SSD_LIBS], [linker flags for start-stop-daemon])dnl
-AC_CHECK_LIB([ihash], [ihash_create], [SSD_LIBS="${SSD_LIBS:+$SSD_LIBS }-lihash"])
 AC_CHECK_LIB([ps], [proc_stat_list_create], [SSD_LIBS="${SSD_LIBS:+$SSD_LIBS }-lps"])
-AC_CHECK_LIB([shouldbeinlibc], [fmt_past_time], [SSD_LIBS="${SSD_LIBS:+$SSD_LIBS }-lshouldbeinlibc"])
 AC_CHECK_LIB([kvm], [kvm_openfiles], [SSD_LIBS="${SSD_LIBS:+$SSD_LIBS }-lkvm"])
 ])# DPKG_LIB_SSD

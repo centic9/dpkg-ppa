@@ -3,6 +3,7 @@
  * pkgsublist.cc - status modification and recursive package list handling
  *
  * Copyright © 1995 Ian Jackson <ian@chiark.greenend.org.uk>
+ * Copyright © 2007-2014 Guillem Jover <guillem@debian.org>
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -53,7 +54,9 @@ void packagelist::add(pkginfo *pkg) {
   nitems++;
 }
 
-void packagelist::add(pkginfo *pkg, pkginfo::pkgwant nw) {
+void
+packagelist::add(pkginfo *pkg, pkgwant nw)
+{
   debug(dbg_general, "packagelist[%p]::add(pkginfo %s, %s)",
         this, pkg_name(pkg, pnaw_always), wantstrings[nw]);
   add(pkg);  if (!pkg->clientdata) return;
@@ -128,21 +131,21 @@ packagelist::add(dependency *depends, showpriority displayimportance)
        possi=possi->next, comma=(possi && possi->next ? ", " : _(" or "))) {
     info(comma);
     info(possi->ed->name);
-    if (possi->verrel != dpkg_relation_none) {
+    if (possi->verrel != DPKG_RELATION_NONE) {
       switch (possi->verrel) {
-      case dpkg_relation_le:
+      case DPKG_RELATION_LE:
         info(" (<= ");
         break;
-      case dpkg_relation_ge:
+      case DPKG_RELATION_GE:
         info(" (>= ");
         break;
-      case dpkg_relation_lt:
+      case DPKG_RELATION_LT:
         info(" (<< ");
         break;
-      case dpkg_relation_gt:
+      case DPKG_RELATION_GT:
         info(" (>> ");
         break;
-      case dpkg_relation_eq:
+      case DPKG_RELATION_EQ:
         info(" (= ");
         break;
       default:
@@ -156,9 +159,9 @@ packagelist::add(dependency *depends, showpriority displayimportance)
   add(depends->up,info.string(),displayimportance);
   for (possi=depends->list; possi; possi=possi->next) {
     add(&possi->ed->pkg, info.string(), displayimportance);
-    if (possi->verrel == dpkg_relation_none && depends->type != dep_provides) {
-      // providers aren't relevant if a version was specified, or
-      // if we're looking at a provider relationship already
+    if (depends->type != dep_provides) {
+      /* Providers are not relevant if we are looking at a provider
+       * relationship already. */
       deppossi *provider;
       for (provider = possi->ed->depended.available;
            provider;

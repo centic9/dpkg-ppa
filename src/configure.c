@@ -4,7 +4,7 @@
  *
  * Copyright © 1995 Ian Jackson <ian@chiark.greenend.org.uk>
  * Copyright © 1999, 2002 Wichert Akkerman <wichert@deephackmode.org>
- * Copyright © 2007-2012 Guillem Jover <guillem@debian.org>
+ * Copyright © 2007-2014 Guillem Jover <guillem@debian.org>
  * Copyright © 2011 Linaro Limited
  * Copyright © 2011 Raphaël Hertzog <hertzog@debian.org>
  *
@@ -58,28 +58,28 @@
 #include "main.h"
 
 enum conffopt {
-	cfof_prompt		= DPKG_BIT(0),
-	cfof_keep		= DPKG_BIT(1),
-	cfof_install		= DPKG_BIT(2),
-	cfof_backup		= DPKG_BIT(3),
-	cfof_newconff		= DPKG_BIT(4),
-	cfof_isnew		= DPKG_BIT(5),
-	cfof_isold		= DPKG_BIT(6),
-	cfof_userrmd		= DPKG_BIT(7),
+	CFOF_PROMPT		= DPKG_BIT(0),
+	CFOF_KEEP		= DPKG_BIT(1),
+	CFOF_INSTALL		= DPKG_BIT(2),
+	CFOF_BACKUP		= DPKG_BIT(3),
+	CFOF_NEW_CONFF		= DPKG_BIT(4),
+	CFOF_IS_NEW		= DPKG_BIT(5),
+	CFOF_IS_OLD		= DPKG_BIT(6),
+	CFOF_USER_DEL		= DPKG_BIT(7),
 
-	cfo_keep		= cfof_keep,
-	cfo_identical		= cfof_keep,
-	cfo_install		= cfof_install,
-	cfo_newconff		= cfof_newconff | cfof_install,
-	cfo_prompt		= cfof_prompt,
-	cfo_prompt_keep		= cfof_prompt | cfof_keep,
-	cfo_prompt_install	= cfof_prompt | cfof_install,
+	CFO_KEEP		= CFOF_KEEP,
+	CFO_IDENTICAL		= CFOF_KEEP,
+	CFO_INSTALL		= CFOF_INSTALL,
+	CFO_NEW_CONFF		= CFOF_NEW_CONFF | CFOF_INSTALL,
+	CFO_PROMPT		= CFOF_PROMPT,
+	CFO_PROMPT_KEEP		= CFOF_PROMPT | CFOF_KEEP,
+	CFO_PROMPT_INSTALL	= CFOF_PROMPT | CFOF_INSTALL,
 };
 
 static int conffoptcells[2][2] = {
 	/* Distro !edited. */	/* Distro edited. */
-	{ cfo_keep,		cfo_install },		/* User !edited. */
-	{ cfo_keep,		cfo_prompt_keep },	/* User edited. */
+	{ CFO_KEEP,		CFO_INSTALL },		/* User !edited. */
+	{ CFO_KEEP,		CFO_PROMPT_KEEP },	/* User edited. */
 };
 
 static int
@@ -100,14 +100,14 @@ show_prompt(const char *cfgfile, const char *realold, const char *realnew,
 		fprintf(stderr, _("Configuration file '%s' (actually '%s')\n"),
 		        cfgfile, realold);
 
-	if (what & cfof_isnew) {
+	if (what & CFOF_IS_NEW) {
 		fprintf(stderr,
 		        _(" ==> File on system created by you or by a script.\n"
 		          " ==> File also in package provided by package maintainer.\n"));
 	} else {
 		fprintf(stderr, !useredited ?
 		        _("     Not modified since installation.\n") :
-		        !(what & cfof_userrmd) ?
+		        !(what & CFOF_USER_DEL) ?
 		        _(" ==> Modified (by you or by a script) since installation.\n") :
 		        _(" ==> Deleted (by you or by a script) since installation.\n"));
 
@@ -119,7 +119,7 @@ show_prompt(const char *cfgfile, const char *realold, const char *realnew,
 	/* No --force-confdef but a forcible situtation. */
 	/* TODO: check if this condition can not be simplified to
 	 *       just !fc_conff_def */
-	if (!(fc_conff_def && (what & (cfof_install | cfof_keep)))) {
+	if (!(fc_conff_def && (what & (CFOF_INSTALL | CFOF_KEEP)))) {
 		if (fc_conff_new) {
 			fprintf(stderr,
 			        _(" ==> Using new file as you requested.\n"));
@@ -133,11 +133,11 @@ show_prompt(const char *cfgfile, const char *realold, const char *realnew,
 
 	/* Force the default action (if there is one. */
 	if (fc_conff_def) {
-		if (what & cfof_keep) {
+		if (what & CFOF_KEEP) {
 			fprintf(stderr,
 			        _(" ==> Keeping old config file as default.\n"));
 			return 'n';
-		} else if (what & cfof_install) {
+		} else if (what & CFOF_INSTALL) {
 			fprintf(stderr,
 			        _(" ==> Using new config file as default.\n"));
 			return 'y';
@@ -151,17 +151,17 @@ show_prompt(const char *cfgfile, const char *realold, const char *realnew,
 	          "      D     : show the differences between the versions\n"
 	          "      Z     : start a shell to examine the situation\n"));
 
-	if (what & cfof_keep)
+	if (what & CFOF_KEEP)
 		fprintf(stderr,
 		        _(" The default action is to keep your current version.\n"));
-	else if (what & cfof_install)
+	else if (what & CFOF_INSTALL)
 		fprintf(stderr,
 		        _(" The default action is to install the new version.\n"));
 
 	s = path_basename(cfgfile);
 	fprintf(stderr, "*** %s (Y/I/N/O/D/Z) %s ? ", s,
-	        (what & cfof_keep) ? _("[default=N]") :
-	        (what & cfof_install) ? _("[default=Y]") :
+	        (what & CFOF_KEEP) ? _("[default=N]") :
+	        (what & CFOF_INSTALL) ? _("[default=Y]") :
 	        _("[no default]"));
 
 	if (ferror(stderr))
@@ -179,9 +179,9 @@ show_prompt(const char *cfgfile, const char *realold, const char *realnew,
 	}
 
 	if (!cc) {
-		if (what & cfof_keep)
+		if (what & CFOF_KEEP)
 			return 'n';
-		else if (what & cfof_install)
+		else if (what & CFOF_INSTALL)
 			return 'y';
 	}
 
@@ -212,7 +212,7 @@ show_diff(const char *old, const char *new)
 	}
 
 	/* Parent process. */
-	subproc_wait(pid, _("conffile difference visualizer"));
+	subproc_reap(pid, _("conffile difference visualizer"), SUBPROC_NOCHECK);
 }
 
 /**
@@ -242,7 +242,7 @@ spawn_shell(const char *confold, const char *confnew)
 	}
 
 	/* Parent process. */
-	subproc_wait(pid, _("conffile shell"));
+	subproc_reap(pid, _("conffile shell"), SUBPROC_NOCHECK);
 }
 
 /**
@@ -276,7 +276,7 @@ promptconfaction(struct pkginfo *pkg, const char *cfgfile,
 {
 	int cc;
 
-	if (!(what & cfof_prompt))
+	if (!(what & CFOF_PROMPT))
 		return what;
 
 	statusfd_send("status: %s : %s : '%s' '%s' %i %i ",
@@ -298,17 +298,17 @@ promptconfaction(struct pkginfo *pkg, const char *cfgfile,
 	log_message("conffile %s %s", cfgfile,
 	            (cc == 'i' || cc == 'y') ? "install" : "keep");
 
-	what &= cfof_userrmd;
+	what &= CFOF_USER_DEL;
 
 	switch (cc) {
 	case 'i':
 	case 'y':
-		what |= cfof_install | cfof_backup;
+		what |= CFOF_INSTALL | CFOF_BACKUP;
 		break;
 
 	case 'n':
 	case 'o':
-		what |= cfof_keep | cfof_backup;
+		what |= CFOF_KEEP | CFOF_BACKUP;
 		break;
 
 	default:
@@ -341,7 +341,7 @@ deferred_configure_ghost_conffile(struct pkginfo *pkg, struct conffile *conff)
 	for (otherpkg = &pkg->set->pkg; otherpkg; otherpkg = otherpkg->arch_next) {
 		if (otherpkg == pkg)
 			continue;
-		if (otherpkg->status <= stat_halfconfigured)
+		if (otherpkg->status <= PKG_STAT_HALFCONFIGURED)
 			continue;
 
 		for (otherconff = otherpkg->installed.conffiles; otherconff;
@@ -371,13 +371,13 @@ deferred_configure_conffile(struct pkginfo *pkg, struct conffile *conff)
 	struct stat stab;
 	struct varbuf cdr = VARBUF_INIT, cdr2 = VARBUF_INIT;
 	char *cdr2rest;
-	int r;
+	int rc;
 
 	usenode = namenodetouse(findnamenode(conff->name, fnn_nocopy),
                                 pkg, &pkg->installed);
 
-	r = conffderef(pkg, &cdr, usenode->name);
-	if (r == -1) {
+	rc = conffderef(pkg, &cdr, usenode->name);
+	if (rc == -1) {
 		conff->hash = EMPTYHASHFLAG;
 		return;
 	}
@@ -419,38 +419,38 @@ deferred_configure_conffile(struct pkginfo *pkg, struct conffile *conff)
 		 * questions. */
 		useredited = -1;
 		distedited = -1;
-		what = cfo_identical;
+		what = CFO_IDENTICAL;
 	} else if (strcmp(currenthash, NONEXISTENTFLAG) == 0 && fc_conff_miss) {
 		fprintf(stderr,
 		        _("\n"
 		          "Configuration file `%s', does not exist on system.\n"
 		          "Installing new config file as you requested.\n"),
 		        usenode->name);
-		what = cfo_newconff;
+		what = CFO_NEW_CONFF;
 		useredited = -1;
 		distedited = -1;
 	} else if (strcmp(conff->hash, NEWCONFFILEFLAG) == 0) {
 		if (strcmp(currenthash, NONEXISTENTFLAG) == 0) {
-			what = cfo_newconff;
+			what = CFO_NEW_CONFF;
 			useredited = -1;
 			distedited = -1;
 		} else {
 			useredited = 1;
 			distedited = 1;
 			what = conffoptcells[useredited][distedited] |
-			       cfof_isnew;
+			       CFOF_IS_NEW;
 		}
 	} else {
 		useredited = strcmp(conff->hash, currenthash) != 0;
 		distedited = strcmp(conff->hash, newdisthash) != 0;
 
 		if (fc_conff_ask && useredited)
-			what = cfo_prompt_keep;
+			what = CFO_PROMPT_KEEP;
 		else
 			what = conffoptcells[useredited][distedited];
 
 		if (strcmp(currenthash, NONEXISTENTFLAG) == 0)
-			what |= cfof_userrmd;
+			what |= CFOF_USER_DEL;
 	}
 
 	debug(dbg_conff,
@@ -460,8 +460,8 @@ deferred_configure_conffile(struct pkginfo *pkg, struct conffile *conff)
 	what = promptconfaction(pkg, usenode->name, cdr.buf, cdr2.buf,
 	                        useredited, distedited, what);
 
-	switch (what & ~(cfof_isnew | cfof_userrmd)) {
-	case cfo_keep | cfof_backup:
+	switch (what & ~(CFOF_IS_NEW | CFOF_USER_DEL)) {
+	case CFO_KEEP | CFOF_BACKUP:
 		strcpy(cdr2rest, DPKGOLDEXT);
 		if (unlink(cdr2.buf) && errno != ENOENT)
 			warning(_("%s: failed to remove old backup '%.250s': %s"),
@@ -477,14 +477,14 @@ deferred_configure_conffile(struct pkginfo *pkg, struct conffile *conff)
 			        pkg_name(pkg, pnaw_nonambig), cdr2.buf, cdr.buf,
 			        strerror(errno));
 		break;
-	case cfo_keep:
+	case CFO_KEEP:
 		strcpy(cdr2rest, DPKGNEWEXT);
 		if (unlink(cdr2.buf))
 			warning(_("%s: failed to remove '%.250s': %s"),
 			        pkg_name(pkg, pnaw_nonambig), cdr2.buf,
 			        strerror(errno));
 		break;
-	case cfo_install | cfof_backup:
+	case CFO_INSTALL | CFOF_BACKUP:
 		strcpy(cdr2rest, DPKGDISTEXT);
 		if (unlink(cdr2.buf) && errno != ENOENT)
 			warning(_("%s: failed to remove old distributed version '%.250s': %s"),
@@ -495,16 +495,17 @@ deferred_configure_conffile(struct pkginfo *pkg, struct conffile *conff)
 			warning(_("%s: failed to remove '%.250s' (before overwrite): %s"),
 			        pkg_name(pkg, pnaw_nonambig), cdr2.buf,
 			        strerror(errno));
-		if (!(what & cfof_userrmd))
+		if (!(what & CFOF_USER_DEL))
 			if (link(cdr.buf, cdr2.buf))
 				warning(_("%s: failed to link '%.250s' to '%.250s': %s"),
 				        pkg_name(pkg, pnaw_nonambig), cdr.buf,
 				        cdr2.buf, strerror(errno));
 		/* Fall through. */
-	case cfo_install:
+	case CFO_INSTALL:
 		printf(_("Installing new version of config file %s ...\n"),
 		       usenode->name);
-	case cfo_newconff:
+		/* Fall through. */
+	case CFO_NEW_CONFF:
 		strcpy(cdr2rest, DPKGNEWEXT);
 		trig_path_activate(usenode, pkg);
 		if (rename(cdr2.buf, cdr.buf))
@@ -559,30 +560,31 @@ deferred_configure(struct pkginfo *pkg)
 	struct pkginfo *otherpkg;
 	enum dep_check ok;
 
-	if (pkg->status == stat_notinstalled)
+	if (pkg->status == PKG_STAT_NOTINSTALLED)
 		ohshit(_("no package named `%s' is installed, cannot configure"),
 		       pkg_name(pkg, pnaw_nonambig));
-	if (pkg->status == stat_installed)
+	if (pkg->status == PKG_STAT_INSTALLED)
 		ohshit(_("package %.250s is already installed and configured"),
 		       pkg_name(pkg, pnaw_nonambig));
-	if (pkg->status != stat_unpacked && pkg->status != stat_halfconfigured)
+	if (pkg->status != PKG_STAT_UNPACKED &&
+	    pkg->status != PKG_STAT_HALFCONFIGURED)
 		ohshit(_("package %.250s is not ready for configuration\n"
 		         " cannot configure (current status `%.250s')"),
 		       pkg_name(pkg, pnaw_nonambig),
-		       statusinfos[pkg->status].name);
+		       pkg_status_name(pkg));
 
 	for (otherpkg = &pkg->set->pkg; otherpkg; otherpkg = otherpkg->arch_next) {
 		if (otherpkg == pkg)
 			continue;
-		if (otherpkg->status <= stat_configfiles)
+		if (otherpkg->status <= PKG_STAT_CONFIGFILES)
 			continue;
 
-		if (otherpkg->status < stat_unpacked)
+		if (otherpkg->status < PKG_STAT_UNPACKED)
 			ohshit(_("package %s cannot be configured because "
 			         "%s is not ready (current status '%s')"),
 			       pkg_name(pkg, pnaw_always),
 			       pkg_name(otherpkg, pnaw_always),
-			       statusinfos[otherpkg->status].name);
+			       pkg_status_name(otherpkg));
 
 		if (dpkg_version_compare(&pkg->installed.version,
 		                         &otherpkg->installed.version))
@@ -601,9 +603,9 @@ deferred_configure(struct pkginfo *pkg)
 			sincenothing = 0;
 
 	ok = dependencies_ok(pkg, NULL, &aemsgs);
-	if (ok == dep_check_defer) {
+	if (ok == DEP_CHECK_DEFER) {
 		varbuf_destroy(&aemsgs);
-		pkg->clientdata->istobe = itb_installnew;
+		pkg->clientdata->istobe = PKG_ISTOBE_INSTALLNEW;
 		enqueue_package(pkg);
 		return;
 	}
@@ -613,13 +615,13 @@ deferred_configure(struct pkginfo *pkg)
 	/*
 	 * At this point removal from the queue is confirmed. This
 	 * represents irreversible progress wrt trigger cycles. Only
-	 * packages in stat_unpacked are automatically added to the
+	 * packages in PKG_STAT_UNPACKED are automatically added to the
 	 * configuration queue, and during configuration and trigger
 	 * processing new packages can't enter into unpacked.
 	 */
 
-	ok = breakses_ok(pkg, &aemsgs) ? ok : dep_check_halt;
-	if (ok == dep_check_halt) {
+	ok = breakses_ok(pkg, &aemsgs) ? ok : DEP_CHECK_HALT;
+	if (ok == DEP_CHECK_HALT) {
 		sincenothing = 0;
 		varbuf_end_str(&aemsgs);
 		notice(_("dependency problems prevent configuration of %s:\n%s"),
@@ -634,7 +636,7 @@ deferred_configure(struct pkginfo *pkg)
 	varbuf_destroy(&aemsgs);
 	sincenothing = 0;
 
-	if (pkg->eflag & eflag_reinstreq)
+	if (pkg->eflag & PKG_EFLAG_REINSTREQ)
 		forcibleerr(fc_removereinstreq,
 		            _("package is in a very bad inconsistent state; you should\n"
 		              " reinstall it before attempting configuration"));
@@ -646,12 +648,12 @@ deferred_configure(struct pkginfo *pkg)
 	trig_activate_packageprocessing(pkg);
 
 	if (f_noact) {
-		pkg_set_status(pkg, stat_installed);
-		pkg->clientdata->istobe = itb_normal;
+		pkg_set_status(pkg, PKG_STAT_INSTALLED);
+		pkg->clientdata->istobe = PKG_ISTOBE_NORMAL;
 		return;
 	}
 
-	if (pkg->status == stat_unpacked) {
+	if (pkg->status == PKG_STAT_UNPACKED) {
 		debug(dbg_general, "deferred_configure updating conffiles");
 		/* This will not do at all the right thing with overridden
 		 * conffiles or conffiles that are the ‘target’ of an override;
@@ -675,10 +677,10 @@ deferred_configure(struct pkginfo *pkg)
 			deferred_configure_conffile(pkg, conff);
 		}
 
-		pkg_set_status(pkg, stat_halfconfigured);
+		pkg_set_status(pkg, PKG_STAT_HALFCONFIGURED);
 	}
 
-	assert(pkg->status == stat_halfconfigured);
+	assert(pkg->status == PKG_STAT_HALFCONFIGURED);
 
 	modstatdb_note(pkg);
 
@@ -690,7 +692,7 @@ deferred_configure(struct pkginfo *pkg)
 
 	pkg_reset_eflags(pkg);
 	pkg->trigpend_head = NULL;
-	post_postinst_tasks(pkg, stat_installed);
+	post_postinst_tasks(pkg, PKG_STAT_INSTALLED);
 }
 
 /**
@@ -714,8 +716,6 @@ conffderef(struct pkginfo *pkg, struct varbuf *result, const char *in)
 
 	varbuf_reset(result);
 	varbuf_add_str(result, instdir);
-	if (*in != '/')
-		varbuf_add_char(result, '/');
 	varbuf_add_str(result, in);
 	varbuf_end_str(result);
 

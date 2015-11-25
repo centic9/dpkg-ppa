@@ -3,7 +3,7 @@
  * main.c - main program
  *
  * Copyright © 1994,1995 Ian Jackson <ian@chiark.greenend.org.uk>
- * Copyright © 2006-2012 Guillem Jover <guillem@debian.org>
+ * Copyright © 2006-2014 Guillem Jover <guillem@debian.org>
  * Copyright © 2010 Canonical Ltd.
  *   written by Martin Pitt <martin.pitt@canonical.com>
  *
@@ -46,9 +46,9 @@
 #include <dpkg/dpkg.h>
 #include <dpkg/dpkg-db.h>
 #include <dpkg/arch.h>
+#include <dpkg/path.h>
 #include <dpkg/subproc.h>
 #include <dpkg/command.h>
-#include <dpkg/pkg-spec.h>
 #include <dpkg/options.h>
 
 #include "main.h"
@@ -67,18 +67,6 @@ printversion(const struct cmdinfo *ci, const char *value)
   m_output(stdout, _("<standard output>"));
 
   exit(0);
-}
-
-/* This function, and the config hook for it, can be removed in 14.10 */
-static void
-printfawarn()
-{
-  fprintf(stderr, _(
-"Unknown configuration key `foreign-architecture' found in your `%s'\n"
-"configuration files.  This warning will become a hard error at a later\n"
-"date, so please remove the offending configuration options and replace\n"
-"them with `%s --add-architecture' invocations at the command line.\n\n"),
-  DPKG, DPKG);
 }
 
 /*
@@ -107,8 +95,8 @@ usage(const struct cmdinfo *ci, const char *value)
 "  --get-selections [<pattern> ...] Get list of selections to stdout.\n"
 "  --set-selections                 Set package selections from stdin.\n"
 "  --clear-selections               Deselect every non-essential package.\n"
-"  --update-avail <Packages-file>   Replace available packages info.\n"
-"  --merge-avail <Packages-file>    Merge with info from file.\n"
+"  --update-avail [<Packages-file>] Replace available packages info.\n"
+"  --merge-avail [<Packages-file>]  Merge with info from file.\n"
 "  --clear-avail                    Erase existing available info.\n"
 "  --forget-old-unavail             Forget uninstalled unavailable pkgs.\n"
 "  -s|--status <package> ...        Display package status details.\n"
@@ -116,7 +104,7 @@ usage(const struct cmdinfo *ci, const char *value)
 "  -L|--listfiles <package> ...     List files `owned' by package(s).\n"
 "  -l|--list [<pattern> ...]        List packages concisely.\n"
 "  -S|--search <pattern> ...        Find package(s) owning file(s).\n"
-"  -C|--audit                       Check for broken package(s).\n"
+"  -C|--audit [<package> ...]       Check for broken package(s).\n"
 "  --add-architecture <arch>        Add <arch> to the list of architectures.\n"
 "  --remove-architecture <arch>     Remove <arch> from the list of architectures.\n"
 "  --print-architecture             Print dpkg architecture.\n"
@@ -139,7 +127,7 @@ usage(const struct cmdinfo *ci, const char *value)
   printf(_(
 "For internal use: dpkg --assert-support-predepends | --predep-package |\n"
 "  --assert-working-epoch | --assert-long-filenames | --assert-multi-conrep |\n"
-"  --assert-multi-arch.\n"
+"  --assert-multi-arch | --assert-versioned-provides.\n"
 "\n"));
 
   printf(_(
@@ -357,11 +345,23 @@ set_verify_format(const struct cmdinfo *cip, const char *value)
 }
 
 static void
+set_instdir(const struct cmdinfo *cip, const char *value)
+{
+  char *new_instdir;
+
+  new_instdir = m_strdup(value);
+  path_trim_slash_slashdot(new_instdir);
+
+  instdir = new_instdir;
+}
+
+static void
 set_root(const struct cmdinfo *cip, const char *value)
 {
   char *p;
-  instdir= value;
-  m_asprintf(&p, "%s%s", value, ADMINDIR);
+
+  set_instdir(cip, value);
+  m_asprintf(&p, "%s%s", instdir, ADMINDIR);
   admindir= p;
 }
 
@@ -382,14 +382,9 @@ set_ignore_depends(const struct cmdinfo *cip, const char *value)
   }
   p= copy;
   while (*p) {
-    struct dpkg_error err;
     struct pkginfo *pkg;
 
-    pkg = pkg_spec_parse_pkg(p, &err);
-    if (pkg == NULL)
-      ohshit(_("--%s needs a valid package name but '%.250s' is not: %s"),
-              cip->olong, p, err.str);
-
+    pkg = dpkg_options_parse_pkgname(cip, p);
     pkg_list_prepend(&ignoredependss, pkg);
 
     p+= strlen(p)+1;
@@ -424,6 +419,8 @@ is_invoke_action(enum action action)
   case act_triggers:
   case act_remove:
   case act_purge:
+  case act_arch_add:
+  case act_arch_remove:
     return true;
   default:
     return false;
@@ -516,17 +513,17 @@ arch_add(const char *const *argv)
   struct dpkg_arch *arch;
   const char *archname = *argv++;
 
-  if (archname == NULL)
-    badusage(_("--%s takes one argument"), cipaction->olong);
+  if (archname == NULL || *argv)
+    badusage(_("--%s takes exactly one argument"), cipaction->olong);
 
   dpkg_arch_load_list();
 
   arch = dpkg_arch_add(archname);
   switch (arch->type) {
-  case arch_native:
-  case arch_foreign:
+  case DPKG_ARCH_NATIVE:
+  case DPKG_ARCH_FOREIGN:
     break;
-  case arch_illegal:
+  case DPKG_ARCH_ILLEGAL:
     ohshit(_("architecture '%s' is illegal: %s"), archname,
            dpkg_arch_name_is_illegal(archname));
   default:
@@ -546,13 +543,13 @@ arch_remove(const char *const *argv)
   struct pkgiterator *iter;
   struct pkginfo *pkg;
 
-  if (archname == NULL)
-    badusage(_("--%s takes one argument"), cipaction->olong);
+  if (archname == NULL || *argv)
+    badusage(_("--%s takes exactly one argument"), cipaction->olong);
 
   modstatdb_open(msdbrw_readonly);
 
   arch = dpkg_arch_find(archname);
-  if (arch->type != arch_foreign) {
+  if (arch->type != DPKG_ARCH_FOREIGN) {
     warning(_("cannot remove non-foreign architecture '%s'"), arch->name);
     return 0;
   }
@@ -560,7 +557,7 @@ arch_remove(const char *const *argv)
   /* Check if it's safe to remove the architecture from the db. */
   iter = pkg_db_iter_new();
   while ((pkg = pkg_db_iter_next_pkg(iter))) {
-    if (pkg->status < stat_halfinstalled)
+    if (pkg->status < PKG_STAT_HALFINSTALLED)
       continue;
     if (pkg->installed.arch == arch) {
       if (fc_architecture)
@@ -690,6 +687,7 @@ static const struct cmdinfo cmdinfos[]= {
   ACTION( "assert-long-filenames",           0,  act_assertlongfilenames,  assertlongfilenames ),
   ACTION( "assert-multi-conrep",             0,  act_assertmulticonrep,    assertmulticonrep ),
   ACTION( "assert-multi-arch",               0,  act_assertmultiarch,      assertmultiarch ),
+  ACTION( "assert-versioned-provides",       0,  act_assertverprovides,    assertverprovides ),
   ACTION( "add-architecture",                0,  act_arch_add,             arch_add        ),
   ACTION( "remove-architecture",             0,  act_arch_remove,          arch_remove     ),
   ACTION( "print-architecture",              0,  act_printarch,            printarch   ),
@@ -727,7 +725,7 @@ static const struct cmdinfo cmdinfos[]= {
   { "root",              0,   1, NULL,          NULL,      set_root,      0 },
   { "abort-after",       0,   1, &errabort,     NULL,      set_integer,   0 },
   { "admindir",          0,   1, NULL,          &admindir, NULL,          0 },
-  { "instdir",           0,   1, NULL,          &instdir,  NULL,          0 },
+  { "instdir",           0,   1, NULL,          NULL,      set_instdir,   0 },
   { "ignore-depends",    0,   1, NULL,          NULL,      set_ignore_depends, 0 },
   { "force",             0,   2, NULL,          NULL,      set_force,     1 },
   { "refuse",            0,   2, NULL,          NULL,      set_force,     0 },
@@ -735,8 +733,6 @@ static const struct cmdinfo cmdinfos[]= {
   { "debug",             'D', 1, NULL,          NULL,      set_debug,     0 },
   { "help",              '?', 0, NULL,          NULL,      usage,         0 },
   { "version",           0,   0, NULL,          NULL,      printversion,  0 },
-  /* This config hook, and the function it calls, can be removed in 14.10 */
-  { "foreign-architecture", 0, 1, NULL,         NULL,      printfawarn,   0 },
   ACTIONBACKEND( "build",		'b', BACKEND),
   ACTIONBACKEND( "contents",		'c', BACKEND),
   ACTIONBACKEND( "control",		'e', BACKEND),

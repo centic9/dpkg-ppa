@@ -21,7 +21,7 @@
 .\"
 .\"*******************************************************************
 .TH deb\-symbols 5 2011\-08\-14 Debian\-Projekt dpkg\-Hilfsprogramme
-.SH NAME
+.SH BEZEICHNUNG
 deb\-symbols \- Debians erweiterte Informationsdatei von Laufzeitbibliotheken
 .
 .SH ÜBERSICHT
@@ -52,18 +52,28 @@ erachtet wird.
 Jedem exportierten \fISymbol\fP (aufgeführt als \fIName\fP@\fIVersion\fP, mit
 \fIVersion\fP als »Base«, falls die Bibliothek nicht versioniert ist) wird eine
 \fIMinimalversion\fP seiner Abhängigkeitsvorlage zugeordnet (die
-Hauptabhängigkeitsvorlage wird verwandt, falls die
-\fIKennung\-der\-Abhängigkeitsvorlage\fP nicht vorhanden ist). Die erste
-alternative Abhängigkeitsvorlage wird mit 1 nummeriert, die zweite mit 2
-usw.
+Hauptabhängigkeitsvorlage wird immer verwandt und wird am Ende mit der
+abhängigen, in \fIid\-of\-dependency\-template\fP referenzierten Vorlage (falls
+vorhanden) kombiniert) Die erste alternative Abhängigkeitsvorlage wird mit 1
+nummeriert, die zweite mit 2 usw.
 .P
 Jeder Eintrag für eine Bibliothek kann auch einige Felder mit
 Metainformationen enthalten. Diese Felder werden in Zeilen gespeichert, die
-mit einem Stern beginnen. Derzeit ist \fIBuild\-Depends\-Package\fP das einzige
-gültige Feld, es gibt den Namen des »\-dev«\-Pakets an, das der Bibliothek
-zugeordnet ist, und wird von \fBdpkg\-shlibdeps\fP verwandt, um sicherzustellen,
-dass die erstellte Abhängigkeit mindestens genauso strikt ist wie die
-zugehörige Bau\-Abhängigkeit.
+mit einem Stern beginnen. Derzeit sind die einzig gültigen Felder:
+.TP 
+\fBBuild\-Depends\-Package\fP
+Es gibt den Namen des »\-dev«\-Pakets an, das der Bibliothek zugeordnet ist,
+und wird von \fBdpkg\-shlibdeps\fP verwandt, um sicherzustellen, dass die
+erstellte Abhängigkeit mindestens genauso strikt ist wie die zugehörige
+Bau\-Abhängigkeit.
+.TP 
+\fBIgnore\-Blacklist\-Groups\fP
+Es gibt in einer durch Leerzeichen getrennten Liste an, welche
+Blacklist\-Gruppen ignoriert werden sollten, so dass Symbole, die in diesen
+Gruppen enthalten sind, in die Ausgabedatei aufgenommen werden. Dies sollte
+nur für Toolchain\-Pakete notwendig sein, die solche Symbole in Blacklists
+bereitstellen. Die verfügbaren Gruppen sind systemabhängig, für ELF\- und
+GNU\-basierte Systeme sind dies \fBaeabi\fP und \fBgomp\fP.
 .SH BEISPIELE
 .SS "Einfache Symboldatei"
 .PP
@@ -83,7 +93,7 @@ libGL.so.1 libgl1
  implementationSpecificSymbol@Base 6.5.2\-7 1
  [?]
 .SH ÜBERSETZUNG
-Die deutsche Übersetzung wurde 2004, 2006-2013 von Helge Kreutzmann
+Die deutsche Übersetzung wurde 2004, 2006-2015 von Helge Kreutzmann
 <debian@helgefjell.de>, 2007 von Florian Rehnisch <eixman@gmx.de> und
 2008 von Sven Joachim <svenjoac@gmx.de>
 angefertigt. Diese Übersetzung ist Freie Dokumentation; lesen Sie die

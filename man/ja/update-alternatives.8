@@ -52,9 +52,11 @@ name)」を共有する。その一般名が実際にどのファイルを参照するかは、 alternatives
 にある名前へのシンボリックリンクになっており、その名前が実際に参照されるファイルへのシンボリックリンクになっている。こうなっている理由は、システム管理者による変更を
 \fI/etc\fP ディレクトリ以下で完結させるためである。なぜこうするのが良いかについては FHS に説明がある。
 .PP
-ある機能を持ったファイルを提供するパッケージがインストール・変更・削除されると、 \fBupdate\-alternatives\fP
-が呼ばれ、そのファイルに対する alternatives システムの情報を更新する。 \fBupdate\-alternatives\fP は、通常
-Debian パッケージの \fBpostinst\fP (configure) または \fBprerm\fP (install) スクリプトから呼び出される。
+When each package providing a file with a particular functionality is
+installed, changed or removed, \fBupdate\-alternatives\fP is called to update
+information about that file in the alternatives system.
+\fBupdate\-alternatives\fP is usually called from the \fBpostinst\fP (configure) or
+\fBprerm\fP (remove and deconfigure) scripts in Debian packages.
 .PP
 複数の選択肢を同期させ、グループとして変更すると便利なことが多い。例えば \fBvi\fP(1)
 エディタのいろいろな派生システムが同時にインストールされていたとすると、 \fI/usr/share/man/man1/vi.1\fP が参照する man
