@@ -23,7 +23,6 @@
 
 #include <sys/types.h>
 
-#include <assert.h>
 #include <errno.h>
 #include <limits.h>
 #include <inttypes.h>
@@ -45,8 +44,8 @@
 static void DPKG_ATTR_NORET
 printversion(const struct cmdinfo *cip, const char *value)
 {
-  printf(_("Debian `%s' package split/join tool; version %s.\n"),
-         SPLITTER, DPKG_VERSION_ARCH);
+  printf(_("Debian '%s' package split/join tool; version %s.\n"),
+         SPLITTER, PACKAGE_RELEASE);
 
   printf(_(
 "This is free software; see the GNU General Public License version 2 or\n"
@@ -124,7 +123,7 @@ set_part_size(const struct cmdinfo *cip, const char *value)
   errno = 0;
   newpartsize = strtoimax(value, &endp, 10);
   if (value == endp || *endp)
-    badusage(_("invalid integer for --%s: `%.250s'"), cip->olong, value);
+    badusage(_("invalid integer for --%s: '%.250s'"), cip->olong, value);
   if (newpartsize <= 0 || newpartsize > (INT_MAX >> 10) || errno == ERANGE)
     badusage(_("part size is far too large or is not positive"));
 

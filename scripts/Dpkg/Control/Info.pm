@@ -1,4 +1,5 @@
 # Copyright © 2007-2010 Raphaël Hertzog <hertzog@debian.org>
+# Copyright © 2009, 2012-2015 Guillem Jover <guillem@debian.org>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,7 +19,7 @@ package Dpkg::Control::Info;
 use strict;
 use warnings;
 
-our $VERSION = '1.00';
+our $VERSION = '1.01';
 
 use Dpkg::Control;
 use Dpkg::ErrorHandling;
@@ -40,30 +41,40 @@ Dpkg::Control::Info - parse files like debian/control
 It provides an object to access data of files that follow the same
 syntax as F<debian/control>.
 
-=head1 FUNCTIONS
+=head1 METHODS
 
 =over 4
 
-=item $c = Dpkg::Control::Info->new($file)
+=item $c = Dpkg::Control::Info->new(%opts)
 
-Create a new Dpkg::Control::Info object for $file. If $file is omitted, it
-loads F<debian/control>. If file is "-", it parses the standard input.
+Create a new Dpkg::Control::Info object. Loads the file from the filename
+option, if no option is specified filename defaults to F<debian/control>.
+If a scalar is passed instead, it will be used as the filename. If filename
+is "-", it parses the standard input. If filename is undef no loading will
+be performed.
 
 =cut
 
 sub new {
-    my ($this, $arg) = @_;
+    my ($this, @args) = @_;
     my $class = ref($this) || $this;
     my $self = {
 	source => undef,
 	packages => [],
     };
     bless $self, $class;
-    if ($arg) {
-	$self->load($arg);
+
+    my %opts;
+    if (scalar @args == 0) {
+        $opts{filename} = 'debian/control';
+    } elsif (scalar @args == 1) {
+        $opts{filename} = $args[0];
     } else {
-	$self->load('debian/control');
+        %opts = @args;
     }
+
+    $self->load($opts{filename}) if $opts{filename};
+
     return $self;
 }
 
@@ -100,18 +111,18 @@ sub parse {
     return if not $cdata->parse($fh, $desc);
     $self->{source} = $cdata;
     unless (exists $cdata->{Source}) {
-	$cdata->parse_error($desc, _g('first block lacks a source field'));
+	$cdata->parse_error($desc, g_('first block lacks a Source field'));
     }
     while (1) {
 	$cdata = Dpkg::Control->new(type => CTRL_INFO_PKG);
         last if not $cdata->parse($fh, $desc);
 	push @{$self->{packages}}, $cdata;
 	unless (exists $cdata->{Package}) {
-	    $cdata->parse_error($desc, _g("block lacks the '%s' field"),
+	    $cdata->parse_error($desc, g_("block lacks the '%s' field"),
 	                        'Package');
 	}
 	unless (exists $cdata->{Architecture}) {
-	    $cdata->parse_error($desc, _g("block lacks the '%s' field"),
+	    $cdata->parse_error($desc, g_("block lacks the '%s' field"),
 	                        'Architecture');
 	}
 
@@ -182,7 +193,7 @@ sub output {
     my $str;
     $str .= $self->{source}->output($fh);
     foreach my $pkg (@{$self->{packages}}) {
-	print { $fh } "\n";
+	print { $fh } "\n" if defined $fh;
 	$str .= "\n" . $pkg->output($fh);
     }
     return $str;
@@ -202,7 +213,11 @@ information.
 
 =head1 CHANGES
 
-=head2 Version 1.00
+=head2 Version 1.01 (dpkg 1.18.0)
+
+New argument: The $c->new() constructor accepts an %opts argument.
+
+=head2 Version 1.00 (dpkg 1.15.6)
 
 Mark the module as public.
 

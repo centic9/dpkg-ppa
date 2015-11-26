@@ -2,7 +2,7 @@
 .\"
 .\" Copyright 息 2007-2011 Rapha谷l Hertzog <hertzog@debian.org>
 .\" Copyright 息 2009-2010 Modestas Vainius <modestas@vainius.eu>
-.\" Copyright 息 2012-2013 Guillem Jover <guillem@debian.org>
+.\" Copyright 息 2012-2015 Guillem Jover <guillem@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH dpkg\-gensymbols 1 2013\-09\-06 "Debian Project" "dpkg ユーティリティ"
+.TH dpkg\-gensymbols 1 2014\-12\-29 "Debian Project" "dpkg ユーティリティ"
 .SH 名前
 dpkg\-gensymbols \- シンボルファイル (共有ライブラリの依存情報) の生成
 .
@@ -70,12 +70,14 @@ needed: it's recommended for example to drop the Debian revision from the
 minimal version so that backports with a lower version number but the same
 upstream version still satisfy the generated dependencies.  If the Debian
 revision can't be dropped because the symbol really got added by the Debian
-specific change, then one should suffix the version with "~".
+specific change, then one should suffix the version with \(oq\fB~\fP\(cq.
 .P
 シンボルファイルに何らかのパッチを適用する前に、メンテナは本当にそれが必要かどうかを再度確認すること。公開シンボルが削除されることは想定されていないため、パッチは新しい行を追加するだけに留めるのが理想である。
 .P
-シンボルファイルにコメントを記載することもできる。'#' から始まる行は'#include' (\fBUsing includes\fP セクションを参照)
-から始まる場合をのぞき、コメントと見なされる。'#MISSING:' から始まる行は、なくなったシンボルについて記載された特別なコメントを意味する。
+Note that you can put comments in symbols files: any line with \(oq#\(cq as
+the first character is a comment except if it starts with \(oq#include\(cq
+(see section \fBUsing includes\fP).  Lines starting with \(oq#MISSING:\(cq are
+special comments documenting symbols that have disappeared.
 .P
 Do not forget to check if old symbol versions need to be increased.  There
 is no way \fBdpkg\-gensymbols\fP can warn about this. Blindly applying the diff
@@ -124,26 +126,42 @@ original form as they were loaded.
 .SS 標準シンボルタグ
 .TP 
 \fBoptional\fP
-optional とマークされたシンボルはいつでもライブラリから削除することができる。削除によって \fBdpkg\-gensymbols\fP
-に失敗することは決してない。ただし、削除された optional のシンボルは、新しいパッケージのリビジョン各々において、差分情報内に MISSING
-として残り続ける。この挙動は、メンテナに対して、このシンボルをシンボルファイルから削除するか、再度ライブラリに追加する必要があることを通知するために行われる。以前に
-MISSING として宣言していた optional シンボルが突然次のリビジョンで復活した場合は、最小バージョンを変更せずに "existing"
-ステータスに戻される。
+A symbol marked as optional can disappear from the library at any time and
+that will never cause \fBdpkg\-gensymbols\fP to fail. However, disappeared
+optional symbols will continuously appear as MISSING in the diff in each new
+package revision.  This behaviour serves as a reminder for the maintainer
+that such a symbol needs to be removed from the symbol file or readded to
+the library. When the optional symbol, which was previously declared as
+MISSING, suddenly reappears in the next revision, it will be upgraded back
+to the \(lqexisting\(rq status with its minimum version unchanged.
 
 このタグはシンボルの削除が ABI の互換性を損なわないようなプライベートなシンボルに有用である。例えば、C++
 テンプレートのインスタンス化の多くがこれに分類される。その他のタグと同様、このタグには任意の値を設定することができる。これはシンボルが optional
 と見なされる理由を示すために使用することができる。
 .TP 
-\fBarch=\fP\fIarchitecture list\fP
-このタグにより、シンボルが存在しているはずのアーキテクチャを限定することが可能になる。ライブラリで発見されたシンボルにより、シンボルのリストが更新された際にも、現在のホストのアーキテクチャに関連しないアーキテクチャに固有のシンボルは、存在していないものとして扱われる。現在のホストのアーキテクチャに関連するアーキテクチャに固有のシンボルがライブラリに存在していない場合は、シンボルが存在しない場合の通常の処理が行われ、おそらくは、\fBdpkg\-gensymbols\fP
-の停止を引き起こすことになるだろう。一方、アーキテクチャ依存のシンボルが存在している場合に、存在しているはずだとされていない場合
-(現在のホストのアーキテクチャがタグに記載されていない場合) は、アーキテクチャ非依存として扱われる
-(アーキテクチャのタグの削除という変更が行われるため、シンボルは差分情報として現れる) が、新しいシンボルとしては扱われない。
+\fBarch=\fP\fIarchitecture\-list\fP
+.TQ
+\fBarch\-bits=\fP\fIarchitecture\-bits\fP
+.TQ
+\fBarch\-endian=\fP\fIarchitecture\-endianness\fP
+These tags allow one to restrict the set of architectures where the symbol
+is supposed to exist. The \fBarch\-bits\fP and \fBarch\-endian\fP tags are supported
+since dpkg 1.18.0. When the symbols list is updated with the symbols
+discovered in the library, all arch\-specific symbols which do not concern
+the current host architecture are treated as if they did not exist. If an
+arch\-specific symbol matching the current host architecture does not exist
+in the library, normal procedures for missing symbols apply and it may cause
+\fBdpkg\-gensymbols\fP to fail. On the other hand, if the arch\-specific symbol
+is found when it was not supposed to exist (because the current host
+architecture is not listed in the tag or does not match the endianness and
+bits), it is made arch neutral (i.e. the arch, arch\-bits and arch\-endian
+tags are dropped and the symbol will appear in the diff due to this change),
+but it is not considered as new.
 
 デフォルトの非テンプレートモードで動作する際には、アーキテクチャ固有のシンボルの中で、現在のホストのアーキテクチャに合致するもののみがシンボルファイルに書き込まれる。一方、テンプレートモードで動作している場合は、アーキテクチャ固有のシンボルのすべて
 (異なるアーキテクチャのものも含む) がシンボルファイルに書き込まれる。
 
-The format of \fIarchitecture list\fP is the same as the one used in the
+The format of \fIarchitecture\-list\fP is the same as the one used in the
 \fBBuild\-Depends\fP field of \fIdebian/control\fP (except the enclosing square
 brackets []). For example, the first symbol from the list below will be
 considered only on alpha, any\-amd64 and ia64 architectures, the second only
@@ -152,6 +170,20 @@ on linux architectures, while the third one anywhere except on armel.
  (arch=alpha any\-amd64 ia64)a_64bit_specific_symbol@Base 1.0
  (arch=linux\-any)linux_specific_symbol@Base 1.0
  (arch=!armel)symbol_armel_does_not_have@Base 1.0
+
+The \fIarchitecture\-bits\fP is either \fB32\fP or \fB64\fP.
+
+ (arch\-bits=32)a_32bit_specific_symbol@Base 1.0
+ (arch\-bits=64)a_64bit_specific_symbol@Base 1.0
+
+The \fIarchitecture\-endianness\fP is either \fBlittle\fP or \fBbig\fP.
+
+ (arch\-endian=little)a_little_endian_specific_symbol@Base 1.0
+ (arch\-endian=big)a_big_endian_specific_symbol@Base 1.0
+
+Multiple restrictions can be chained.
+
+ (arch\-bits=32|arch\-endian=little)a_32bit_le_symbol@Base 1.0
 .TP 
 \fBignore\-blacklist\fP
 dpkg\-gensymbols

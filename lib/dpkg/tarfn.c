@@ -3,7 +3,7 @@
  * tarfn.c - tar archive extraction functions
  *
  * Copyright © 1995 Bruce Perens
- * Copyright © 2007-2011,2013-2014 Guillem Jover <guillem@debian.org>
+ * Copyright © 2007-2011, 2013-2015 Guillem Jover <guillem@debian.org>
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -182,18 +182,16 @@ tar_header_decode(struct tar_header *h, struct tar_entry *d)
 	d->dev = makedev(OtoM(h->devmajor, sizeof(h->devmajor)),
 			 OtoM(h->devminor, sizeof(h->devminor)));
 
-	if (*h->user) {
+	if (*h->user)
 		d->stat.uname = m_strndup(h->user, sizeof(h->user));
-	} else {
+	else
 		d->stat.uname = NULL;
-	}
 	d->stat.uid = (uid_t)OtoM(h->uid, sizeof(h->uid));
 
-	if (*h->group) {
+	if (*h->group)
 		d->stat.gname = m_strndup(h->group, sizeof(h->group));
-	} else {
+	else
 		d->stat.gname = NULL;
-	}
 	d->stat.gid = (gid_t)OtoM(h->gid, sizeof(h->gid));
 
 	checksum = OtoM(h->checksum, sizeof(h->checksum));
@@ -244,7 +242,7 @@ tar_gnu_long(void *ctx, const struct tar_operations *ops, struct tar_entry *te,
 		copysize = min(long_read, TARBLKSZ);
 		memcpy(bp, buf, copysize);
 		bp += copysize;
-	};
+	}
 
 	return status;
 }
@@ -272,8 +270,8 @@ tar_entry_destroy(struct tar_entry *te)
 	free(te->stat.gname);
 }
 
-struct symlinkList {
-	struct symlinkList *next;
+struct tar_symlink_entry {
+	struct tar_symlink_entry *next;
 	struct tar_entry h;
 };
 
@@ -308,7 +306,7 @@ tar_extractor(void *ctx, const struct tar_operations *ops)
 	struct tar_entry h;
 
 	char *next_long_name, *next_long_link;
-	struct symlinkList *symlink_head, *symlink_tail, *symlink_node;
+	struct tar_symlink_entry *symlink_head, *symlink_tail, *symlink_node;
 
 	next_long_name = NULL;
 	next_long_link = NULL;

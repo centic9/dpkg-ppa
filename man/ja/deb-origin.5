@@ -27,11 +27,13 @@ deb\-origin \- ベンダ固有情報ファイル
 .SH 書式
 \fB/etc/dpkg/origins/\fP\fIfilename\fP
 .SH 説明
-\fB/etc/dpkg/origins\fP にあるファイルは、Debian パッケージを提供する様々なベンダの情報を提供する。ファイルはフィールド行や
-\&\fB'#'\fP で始まるコメント行からなる。各フィールド行は \fBVendor\fP や \fBParent\fP
-といったフィールドタグで始まり、コロンの後にフィールド本体 (値)
-が続く。フィールドがフィールドタグ以外で区切られることはない。言い換えると、フィールド本体のテキストは複数行にまたがっても構わない。ただし、インストールを行うツールは通常フィールド本体を処理する際にそれらを
-1 行にまとめてしまう。
+The files in \fB/etc/dpkg/origins\fP can provide information about various
+vendors who are providing Debian packages. They contain a number of fields,
+or comments when the line starts with \(oq\fB#\fP\(cq.  Each field begins with
+a tag, such as \fBVendor\fP or \fBParent\fP, followed by a colon and the body of
+the field. Fields are delimited only by field tags. In other words, field
+text may be multiple lines in length, but the tools will join lines when
+processing the body of the field.
 .SH 必須フィールド
 .TP 
 \fBVendor:\fP\fI vendor\-name\fP

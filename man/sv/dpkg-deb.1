@@ -3,7 +3,7 @@
 .\" Copyright Â© 1995-1996 Ian Jackson <ian@chiark.chu.cam.ac.uk>
 .\" Copyright Â© 1999 Wichert Akkerman <wakkerma@debian.org>
 .\" Copyright Â© 2006 Frank Lichtenheld <djpig@debian.org>
-.\" Copyright Â© 2007-2014 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2007-2015 Guillem Jover <guillem@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -39,6 +39,11 @@ Använd \fBdpkg\fP för att installera och ta bort paket från ditt system.
 Du kan även starta \fBdpkg\-deb\fP genom att anropa \fBdpkg\fP med de flaggor du
 vill sända till \fBdpkg\-deb\fP. \fBdpkg\fP kommer upptäcka att du ville åt
 \fBdpkg\-deb\fP och kör det åt dig.
+.PP
+For most commands taking an input archive argument, the archive can be read
+from standard input if the archive name is given as a single minus character
+(\fB\-\fP); otherwise lack of support will be documented in their respective
+command description.
 .
 .SH KOMMANDON
 .TP 
@@ -87,12 +92,13 @@ rad, avdelade med tabulatortecken.
 \fB\-f\fP, \fB\-\-field\fP \fIarkiv\fP [\fIcontrol\-fältnamn\fP ...]
 Extraherar styrfilsinformation från ett binärt paketarkiv.
 
-Om du inte anger några \fBstyrfilfält\fP visas hela styrfilen.
+If no \fIcontrol\-field\-name\fPs are specified then it will print the whole
+control file.
 
-Om några anges kommer \fBdpkg\-deb\fP att visa deras innehåll, i den ordning de
-förekommer i styrfilen. Om mer än ett \fBstyrfilsfält\fP anges kommer
-\fBdpkg\-deb\fP visa varje med ett inledande fältnamn (och ett kolon och
-mellanrum).
+If any are specified then \fBdpkg\-deb\fP will print their contents, in the
+order in which they appear in the control file. If more than one
+\fIcontrol\-field\-name\fP is specified then \fBdpkg\-deb\fP will precede each with
+its field name (and a colon and space).
 
 Inga felmeddelande rapporteras för fält som efterfrågas men inte hittas.
 .TP 
@@ -115,11 +121,14 @@ behörighet kommer att ändras till att motsvara innehållet i paketet.
 filer som extraheras under tiden.
 .TP 
 \fB\-R\fP, \fB\-\-raw\-extract\fP \fIarkivkatalog\fP
-Extraherar filsystemsträdet från ett paketarkiv till den angivna katalogen
-och kontrollinformationsfilerna till underkatalogen DEBIAN i den angivna
-katalogen.
+Extracts the filesystem tree from a package archive into a specified
+directory, and the control information files into a \fBDEBIAN\fP subdirectory
+of the specified directory (since dpkg 1.16.1).
 
 Målkatalogen (men inte dess föräldrar) kommer att skapas om nödvändigt.
+
+The input archive is not (currently) processed sequentially, so reading it
+from standard input (\fB\-\fP) is \fBnot\fP supported.
 .TP 
 \fB\-\-ctrl\-tarfile\fP \fIarkiv\fP
 Extraherar kontrolldata från ett binärt paket och sänder det till standard
@@ -154,13 +163,13 @@ Visar version och avslutar.
 Flaggan används för att ange formatet på utdata som skapas av
 \fB\-\-show\fP. Formatet är en sträng som matas ut för varje paket i listan.
 
-Strängen kan referera till statusfält på formen "${\fIfield\-name\fP}", en
-förteckning över giltiga fält kan enkelt skapas genom att använda \fB\-I\fP på
-samma paket. En fullständig förklaring av formateringsflaggorna (inklusive
-ersättningssekvenser och fälttabulering) finns i förklaringen för flaggan
-\fB\-\-showformat\fP i \fBdpkg\-query\fP(1).
+The string may reference any status field using the \(lq${\fIfield\-name\fP}\(rq
+form, a list of the valid fields can be easily produced using \fB\-I\fP on the
+same package. A complete explanation of the formatting options (including
+escape sequences and field tabbing) can be found in the explanation of the
+\fB\-\-showformat\fP option in \fBdpkg\-query\fP(1).
 
-Förvalet för fältet är "${Package}\et${Version}\en".
+The default for this field is \(lq${Package}\et${Version}\en\(rq.
 .TP 
 \fB\-z\fP\fIkomprimeringsnivå\fP
 Ange vilken komprimeringsnivå som skall användas i komprimeringsfunktionen
@@ -170,26 +179,27 @@ och till 1 för bzip2. Före dpkg 1.16.2 var nivå 0 komprimeraren ingen för
 alla komprimerare.
 .TP 
 \fB\-S\fP\fIkomprimeringsstrategi\fP
-Anger vilken komprimeringsstrategi som skall användas i
-komprimeringsfunktionen när paketet byggs (sedan dpkg 1.16.2). Tillåtet
-värde är \fInone\fP (sedan dpkg 1.16.4), \fIfiltered\fP, \fIhuffman\fP, \fIrle\fP och
-\fIfixed\fP för gzip (sedan dpkg 1.17.0) och \fIextreme\fP för xz.
+Specify which compression strategy to use on the compressor backend, when
+building a package (since dpkg 1.16.2). Allowed values are \fBnone\fP (since
+dpkg 1.16.4), \fBfiltered\fP, \fBhuffman\fP, \fBrle\fP and \fBfixed\fP for gzip (since
+dpkg 1.17.0) and \fBextreme\fP for xz.
 .TP 
 \fB\-Z\fP\fIkomprimeringstyp\fP
-Ange vilken komprimeringstyp som skall användas när ett paket
-byggs. Tillåtna värden är \fIgzip\fP, \fIxz\fP, \fIbzip2\fP (avråds), \fIlzma\fP
-(avråds) och \fInone\fP (förval är \fIxz\fP).
+Specify which compression type to use when building a package.  Allowed
+values are \fBgzip\fP, \fBxz\fP (since dpkg 1.15.6), \fBbzip2\fP (deprecated),
+\fBlzma\fP (since dpkg 1.14.0; deprecated), and \fBnone\fP (default is \fBxz\fP).
 .TP 
 \fB\-\-uniform\-compression\fP
-Ange att samma komprimeringsparametrar skall användas för alla
-arkivmedlemmar (dvs. \fBcontrol.tar\fP och \fBdata.tar\fP). I annat fall kommer
-endast medlemmen \fBdata.tar\fP att använda parametrarna. De enda
-komprimeringstyper som kan användas enhetligt är \fInone\fP, \fIgzip\fP och \fIxz\fP.
+Specify that the same compression parameters should be used for all archive
+members (i.e. \fBcontrol.tar\fP and \fBdata.tar\fP; since dpkg 1.17.6).  Otherwise
+only the \fBdata.tar\fP member will use those parameters. The only supported
+compression types allowed to be uniformly used are \fBnone\fP, \fBgzip\fP and
+\fBxz\fP.
 .TP 
 \fB\-\-deb\-format=\fP\fIformat\fP
-Väljer vilket arkivformat som skal användas i bygget (sedan dpkg
-1.17.0). Tillåtna värden är \fI2.0\fP för det nya formatet och \fI0.939000\fP för
-det gamla (förval är \fI2.0\fP).
+Set the archive format version used when building (since dpkg 1.17.0).
+Allowed values are \fB2.0\fP for the new format, and \fB0.939000\fP for the old
+one (default is \fB2.0\fP).
 
 Det gamla arkivformatet är mer svårtolkat av icke\-Debianverktyg och är nu
 utgånget; dess enda användningsområde är för att bygga paket som skall
@@ -208,8 +218,8 @@ i arkivet. Du kan bygga vilket arkiv du än vill, oavsett hur trasigt, på det
 här sätt.
 .TP 
 \fB\-v\fP, \fB\-\-verbose\fP
-Aktiverar pratsam utdata. Påverkar för närvarande bara \fB\-\-extract\fP, vilket
-får det att bete sig som \fB\-\-vextract\fP.
+Enables verbose output (since dpkg 1.16.1).  This currently only affects
+\fB\-\-extract\fP making it behave like \fB\-\-vextract\fP.
 .TP 
 \fB\-D\fP, \fB\-\-debug\fP
 Aktiverar felsökningsutdata. Denna är inte speciellt intressant.

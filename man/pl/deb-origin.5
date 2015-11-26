@@ -27,14 +27,13 @@ deb\-origin \- pliki informacyjne zale¿ne od dostawcy
 .SH SK£ADNIA
 \fB/etc/dpkg/origins/\fP\fInazwa\-pliku\fP
 .SH OPIS
-Pliki w \fB/etc/dpkg/origins\fP mog± zawieraæ informacje o ró¿nych dostawcach
-zapewniaj±cych pakiety Debiana. Sk³adaj± siê z pewnej liczby pól lub linii
-komentarza, czyli linii zaczynaj±cych siê znakiem "\fB#\fP". Ka¿de pole zaczyna
-siê od identyfikatora, takiego jak \fBVendor\fP lub \fBParent\fP (wielko¶æ liter
-nie ma znaczenia), po którym nastêpuj± dwukropek oraz warto¶æ pola. Pola s±
-rozdzielane od siebie identyfikatorami pól. Innymi s³owy, tekst pola mo¿e
-siê sk³adaæ z wielu linii, jednak¿e narzêdzia po³±cz± te linie podczas
-przetwarzania warto¶ci pola.
+The files in \fB/etc/dpkg/origins\fP can provide information about various
+vendors who are providing Debian packages. They contain a number of fields,
+or comments when the line starts with \(oq\fB#\fP\(cq.  Each field begins with
+a tag, such as \fBVendor\fP or \fBParent\fP, followed by a colon and the body of
+the field. Fields are delimited only by field tags. In other words, field
+text may be multiple lines in length, but the tools will join lines when
+processing the body of the field.
 .SH "POLA WYMAGANE"
 .TP 
 \fBVendor:\fP\fI nazwa\-dostawcy\fP

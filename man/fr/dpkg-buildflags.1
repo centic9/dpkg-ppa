@@ -2,7 +2,7 @@
 .\"
 .\" Copyright Â© 2010-2011 RaphaÃ«l Hertzog <hertzog@debian.org>
 .\" Copyright Â© 2011 Kees Cook <kees@debian.org>
-.\" Copyright Â© 2011-2014 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2011-2015 Guillem Jover <guillem@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -73,10 +73,9 @@ ignorées.
 .SH COMMANDES
 .TP 
 \fB\-\-dump\fP
-Affiche sur la sortie standard tous les drapeaux de compilation et leurs
-valeurs. Un drapeau par ligne est affiché, suivi de sa valeur, séparée par
-le caractère «\ égal\ » («\ \fIdrapeau\fP=\fIvaleur\fP\ »). Il s'agit de l'action par
-défaut.
+Print to standard output all compilation flags and their values. It prints
+one flag per line separated from its value by an equal sign
+(\(lq\fIflag\fP=\fIvalue\fP\(rq). This is the default action.
 .TP 
 \fB\-\-list\fP
 Affiche la liste des drapeaux gérés par l'éditeur actuel (un par
@@ -84,10 +83,10 @@ ligne). Voir la section \fBDRAPEAUX GÉRÉS\fP pour plus d'informations sur
 chacun d'eux.
 .TP 
 \fB\-\-status\fP
-Affiche toute information utile pour expliquer le comportement de
-\fBdpkg\-buildflags\fP\ : variables  d'environnement, éditeur actuel, état de
-tous les drapeaux de fonctionnalités. Affiche également les drapeaux de
-compilation résultants ainsi que leur origine.
+Display any information that can be useful to explain the behaviour of
+\fBdpkg\-buildflags\fP (since dpkg 1.16.5): relevant environment variables,
+current vendor, state of all feature flags.  Also print the resulting
+compiler flags with their origin.
 
 Cette option est destinée à être utilisée depuis \fBdebian/rules\fP, afin de
 garder dans le journal de construction une trace claire des drapeaux de
@@ -147,10 +146,11 @@ l'environnement.
 .RE
 .TP 
 \fB\-\-query\-features\fP\fI domaine\fP
-Affiche les fonctionnalités activées pour un domaine donné. Les seuls
-domaines reconnus actuellement sont \fBqa\fP, \fBreproducible\fP et \fBhardening\fP,
-voir la section \fBZONES D'OPTION\fP pour plus de détails. Retourne un code de
-sortie 0 si le domaine est connu et 1 s'il est inconnu.
+Print the features enabled for a given area (since dpkg 1.16.2).  The only
+currently recognized areas on Debian and derivatives are \fBqa\fP,
+\fBreproducible\fP, \fBsanitize\fP and \fBhardening\fP, see the \fBFEATURE AREAS\fP
+section for more details.  Exits with 0 if the area is known otherwise exits
+with 1.
 .IP
 L'affichage est dans le format RFC822, avec une section par
 fonctionnalité. Par exemple\ :
@@ -208,22 +208,22 @@ la prise en charge de nouveaux langages).
 .
 .SH "ZONES D'OPTION"
 .P
-Chaque zone d'options peut être activée ou désactivée avec les valeurs
-\fBDEB_BUILD_OPTIONS\fP et \fBDEB_BUIL_MAINT_OPTIONS\fP de l'espace de variables
-d'environnement gra?e aux modificateurs «\ +\ » et «\ \-\ ». Par exemple, pour
-activer l'option \fBhardening\fP «\ pie\ » et désactiver l'option «\ fortify\ », il
-est possible d'indiquer ceci dans \fBdebian/rules\fP\ :
+Each area feature can be enabled and disabled in the \fBDEB_BUILD_OPTIONS\fP
+and \fBDEB_BUILD_MAINT_OPTIONS\fP environment variable's area value with the
+\(oq\fB+\fP\(cq and \(oq\fB\-\fP\(cq modifier.  For example, to enable the
+\fBhardening\fP \(lqpie\(rq feature and disable the \(lqfortify\(rq feature you
+can do this in \fBdebian/rules\fP:
 .P
   export DEB_BUILD_MAINT_OPTIONS=hardening=+pie,\-fortify
 .P
-L'option spéciale \fBall\fP (valable dans tous les espaces) peut être utilisée
-pour activer ou désactiver toutes les options de l'espace à la fois. Ainsi,
-tout désactiver dans l'espace \fBhardening\fP en n'activant que «\ format\ » et
-«\ fortify\ » peut être réalisé avec\ :
+The special feature \fBall\fP (valid in any area) can be used to enable or
+disable all area features at the same time.  Thus disabling everything in
+the \fBhardening\fP area and enabling only \(lqformat\(rq and \(lqfortify\(rq
+can be achieved with:
 .P
   export DEB_BUILD_MAINT_OPTIONS=hardening=\-all,+format,+fortify
 .
-.SS "Assurance Qualité «\ AQ\ »"
+.SS qa
 Plusieurs options de compilation (détaillées ci\-dessous) peuvent être
 utilisées pour détecter des problèmes dans le code source ou dans le système
 de construction.
@@ -244,7 +244,29 @@ habituels. Les drapeaux actuellement pris en charge sont \fBCPPFLAGS\fP,
 \fB\-D__DEB_CANARY_\fP\fIflag\fP_\fIrandom\-id\fP\fB__\fP, et \fBLDFLAGS\fP paramétré à
 \fB\-Wl,\-z,deb\-canary\-\fP\fIrandom\-id\fP.
 .
-.SS "Compilation renforcée"
+.SS sanitize
+Several compile\-time options (detailed below) can be used to help sanitize a
+resulting binary against memory corruptions, memory leaks, use after free,
+threading data races and undefined behavior bugs.
+.TP 
+\fBaddress\fP
+This setting (disabled by default) adds \fB\-fsanitize=address\fP to \fBLDFLAGS\fP
+and \fB\-fsanitize=address \-fno\-omit\-frame\-pointer\fP to \fBCFLAGS\fP and
+\fBCXXFLAGS\fP.
+.TP 
+\fBthread\fP
+This setting (disabled by default) adds \fB\-fsanitize=thread\fP to \fBCFLAGS\fP,
+\fBCXXFLAGS\fP and \fBLDFLAGS\fP.
+.TP 
+\fBleak\fP
+This setting (disabled by default) adds \fB\-fsanitize=leak\fP to \fBLDFLAGS\fP. It
+gets automatically disabled if either the \fBaddress\fP or the \fBthread\fP
+features are enabled, as they imply it.
+.TP 
+\fBundefined\fP
+This setting (disabled by default) adds \fB\-fsanitize=undefined\fP to
+\fBCFLAGS\fP, \fBCXXFLAGS\fP and \fBLDFLAGS\fP.
+.SS hardening
 Plusieurs options de compilation (détaillées ci\-dessous) peuvent être
 utilisées pour accroître la résistance du binaire compilé face aux attaques
 par corruption de la mémoire ou fournir des messages d'avertissement
@@ -253,29 +275,25 @@ ci\-dessous), ces options sont activées par défaut pour les architectures qui
 les gèrent.
 .TP 
 \fBformat\fP
-Ce réglage, activé par défaut, ajoute \fB\-Wformat \-Werror=format\-security\fP à
-\fBCFLAGS\fP, \fBCXXFLAGS\fP, \fBOBJCFLAGS\fP et \fBOBJCXXFLAGS\fP. Cela provoquera
-l'avertissement en cas d'utilisation de chaînes de formatage incorrectes et
-échouera si les fonctions de formatage sont utilisées d'une façon qui
-présente des risques pour la sécurité. Actuellement, ce réglage crée des
-avertissements pour les appels des fonctions \fBprintf\fP et \fBscanf\fP lorsque
-la chaîne de formatage n'est pas une chaîne littérale et qu'aucun paramètre
-de formatage n'est utilisé (par exemple dans \fBprintf(foo);\fP au lieu de \fB
-printf("%s", foo);\fP. Ce type de syntaxe peut créer un problème de sécurité
-si la chaîne de formatage vient d'une source non sûre et contient «\ %n\ ».
+This setting (enabled by default) adds \fB\-Wformat \-Werror=format\-security\fP
+to \fBCFLAGS\fP, \fBCXXFLAGS\fP, \fBOBJCFLAGS\fP and \fBOBJCXXFLAGS\fP.  This will warn
+about improper format string uses, and will fail when format functions are
+used in a way that represent possible security problems. At present, this
+warns about calls to \fBprintf\fP and \fBscanf\fP functions where the format
+string is not a string literal and there are no format arguments, as in
+\fBprintf(foo);\fP instead of \fBprintf("%s", foo);\fP This may be a security hole
+if the format string came from untrusted input and contains \(oq%n\(cq.
 .
 .TP 
 \fBfortify\fP
-Ce réglage, activé par défaut, ajoute \fB\-D_FORTIFY_SOURCE=2\fP à \fBCFLAGS\fP et
-\fBCPPFLAGS\fP. Lors de la création du code, le compilateur connaît un nombre
-important d'informations relatives aux tailles de tampons (quand c'est
-possible) et tente alors de remplacer des appels de fonctions avec une
-taille illimitée de tampons, peu sûrs, par des appels avec des tampons de
-taille limitée. Cette fonctionnalité est particulièrement utile pour du code
-ancien et mal écrit. De plus, les chaînes de formatage dans la mémoire
-accessible en écriture qui contiennent «\ %n\ » sont bloquées. Si une
-application dépend de telles chaînes de formatage, un contournement devra
-être mis en place.
+This setting (enabled by default) adds \fB\-D_FORTIFY_SOURCE=2\fP to
+\fBCPPFLAGS\fP. During code generation the compiler knows a great deal of
+information about buffer sizes (where possible), and attempts to replace
+insecure unlimited length buffer function calls with length\-limited
+ones. This is especially useful for old, crufty code.  Additionally, format
+strings in writable memory that contain \(oq%n\(cq are blocked. If an
+application depends on such a format string, it will need to be worked
+around.
 
 Veuillez noter que pour que cette option fasse effet, la source devra aussi
 être compilée avec \fB\-O1\fP ou plus. Si la variable d'environnement
@@ -355,7 +373,7 @@ largement les segments de texte\ ; le plus souvent, cette perte de
 performances n'excèdera pas 1\ %. Pour des architectures offrant plus de
 registres globaux (par exemple amd64), cette pénalisation n'existe
 pratiquement pas.
-.SS Reproductibilité
+.SS reproducible
 Les options de compilation (détaillées ci\-dessous) peuvent aider à améliorer
 la reproductibilité de la construction ou fournir des messages
 d'avertissement supplémentaires lors de la compilation. Sauf mention
@@ -363,9 +381,9 @@ contraire (voir ci\-dessous), ces options sont activées par défaut pour les
 architectures qui les gèrent.
 .TP 
 \fBtimeless\fP
-Ce paramètre (désactivé par défaut) ajoute \fB\-Wdate\-time\fP à
-\fBCPPFLAGS\fP. Cela provoquera des avertissements quand les macros
-\fB__TIME__\fP, \fB__DATE__\fP et \fB__TIMESTAMP__\fP sont utilisées.
+This setting (disabled by default) adds \fB\-Wdate\-time\fP to \fBCPPFLAGS\fP.  This
+will cause warnings when the \fB__TIME__\fP, \fB__DATE__\fP and \fB\%__TIMESTAMP__\fP
+macros are used.
 .
 .SH ENVIRONNEMENT
 Deux jeux de variables d'environnement effectuent les mêmes opérations. Le
@@ -417,7 +435,9 @@ détails.
 \fB/etc/dpkg/buildflags.conf\fP
 Fichier de configuration pour l'ensemble du système.
 .TP 
-\fB$XDG_CONFIG_HOME/dpkg/buildflags.conf\fP ou \fB$HOME/.config/dpkg/buildflags.conf\fP
+\fB$XDG_CONFIG_HOME/dpkg/buildflags.conf\fP or 
+.TQ
+\fB$HOME/.config/dpkg/buildflags.conf\fP
 Fichier de configuration propre à l'utilisateur
 .SS "Gestion de l'empaquetage"
 .TP 
@@ -425,6 +445,12 @@ Fichier de configuration propre à l'utilisateur
 Fragment de fichier Makefile qui chargera (et facultativement exportera)
 dans les variables (depuis dpkg 1.16.1) tous les drapeaux pris en charge par
 \fBdpkg\-buildflags\fP.
+.
+.SH ENVIRONNEMENT
+.TP 
+\fBDEB_VENDOR\fP
+This setting defines the current vendor. If not set, it will discover the
+current vendor by reading \fB\%/etc/dpkg/origins/default\fP.
 .
 .SH EXEMPLES
 Pour passer des drapeaux de compilation à une commande de compilation dans
@@ -438,9 +464,8 @@ $(MAKE) $(shell dpkg\-buildflags \-\-export=cmdline)
 .fi
 .RE
 .PP
-Pour définir les drapeaux de compilation dans un script shell ou un fragment
-de shell, on peut utiliser «\ eval\ » pour interpréter la sortie et exporter
-les drapeaux dans l'environnement\ :
+To set build flags in a shell script or shell fragment, \fBeval\fP can be used
+to interpret the output and to export the flags in the environment:
 .PP
 .RS 4
 .nf
@@ -469,11 +494,10 @@ Pour les paquets avec des systèmes de construction du style autoconf, il est
 possible de passer les options appropriées à configure ou \fBmake\fP(1)
 directement, comme vu ci\-dessus.
 .PP
-Pour d'autres système de construction ou si on souhaite un contrôle
-extrêmement précis sur le choix et la position où sont passés les drapeaux,
-\fB\-\-get\fP peut être utilisé. Autrement, il est possible d'inclure
-\fBbuildflags.mk\fP qui s'occupe de l'appel de \fBdpkg\-buildflags\fP et du
-placement des drapeaux de compilation dans les variables de make.
+For other build systems, or when you need more fine\-grained control about
+which flags are passed where, you can use \fB\-\-get\fP. Or you can include
+\fBbuildflags.mk\fP instead, which takes care of calling \fB\%dpkg\-buildflags\fP
+and storing the build flags in make variables.
 .PP
 Si vous voulez exporter tous les drapeaux de compilation dans
 l'environnement (où le système de construction peut les récupérer)\ :

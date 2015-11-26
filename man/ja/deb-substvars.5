@@ -2,6 +2,7 @@
 .\"
 .\" Copyright 息 1995-1996 Ian Jackson <ian@chiark.chu.cam.ac.uk>
 .\" Copyright 息 2000 Wichert Akkerman <wakkerma@debian.org>
+.\" Copyright 息 2006-2009,2012-2015 Guillem Jover <guillem@debian.org>
 .\" Copyright 息 2009-2010 Rapha谷l Hertzog <hertzog@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
@@ -22,7 +23,7 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH deb\-substvars 5 2009\-07\-15 "Debian Project" "dpkg ユーティリティ"
+.TH deb\-substvars 5 2015\-01\-20 "Debian Project" "dpkg ユーティリティ"
 .SH 名前
 deb\-substvars \- Debian ソースにおける変数
 .
@@ -66,7 +67,8 @@ substvars
 その他に、以下の標準変数を使用することができる:
 .TP 
 \fBArch\fP
-現在ビルドしているアーキテクチャ (\fBdpkg \-\-print\-architecture\fP オプションより)。
+The current host architecture (i.e. the architecture the package is being
+built for, the equivalent of \fBDEB_HOST_ARCH\fP).
 .TP 
 \fBsource:Version\fP
 ソースパッケージのバージョン
@@ -83,9 +85,17 @@ substvars
 \fBbinary:Version\fP を使用すること。
 .TP 
 \fBInstalled\-Size\fP
-パッケージによりインストールされるファイルの合計サイズ。この変数の値はcontrol
-ファイルの適切なフィールドにも適用され、該当フィールドの値を上書きする。この変数が設定されていなかった場合、\fBdpkg\-gencontrol\fP
-はデフォルト値として \fBdu \-k debian/tmp\fP の値を設定する。
+The approximate total size of the package's installed files. This value is
+copied into the corresponding control file field; setting it will modify the
+value of that field. If this variable is not set \fBdpkg\-gencontrol\fP will
+compute the default value by accumulating the size of each regular file and
+symlink rounded to 1 KiB used units, and a baseline of 1 KiB for any other
+filesystem object type.
+
+\fBNote:\fP Take into account that this can only ever be an approximation, as
+the actual size used on the installed system will depend greatly on the
+filesystem used and its parameters, which might end up using either more or
+less space than the specified in this field.
 .TP 
 \fBExtra\-Size\fP
 パッケージのインストール時に追加で用いられるディスク領域。この変数が設定されていると、\fBInstalled\-Size\fP 変数の値

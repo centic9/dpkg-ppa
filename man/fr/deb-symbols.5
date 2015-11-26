@@ -1,6 +1,7 @@
 .\" dpkg manual page - deb-symbols(5)
 .\"
 .\" Copyright Â© 2007-2012 RaphaÃ«l Hertzog <hertzog@debian.org>
+.\" Copyright Â© 2011, 2013-2015 Guillem Jover <guillem@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -42,36 +43,36 @@ bibliothèques partagées dans ces fichiers est le suivant\ :
 [...]
  \fIsymbole\fP \fIversion minimum\fP[\fIid du modèle de dépendance\fP]
 .P
-La variable \fIsoname de la bibliothèque\fP est exactement la valeur du champ
-SONAME telle que exportée par \fBobjdump\fP(1). Un \fImodèle de dépendance\fP est
-une dépendance où \fI#MINVER#\fP est dynamiquement remplacé soit par une
-version comme "(>= \fIversion minimum\fP)" soit par rien (si une dépendance
-quelle que soit sa version est reconnue suffisante).
+The \fIlibrary\-soname\fP is exactly the value of the SONAME field as exported
+by \fBobjdump\fP(1). A \fIdependency\-template\fP is a dependency where \fI#MINVER#\fP
+is dynamically replaced either by a version check like \(lq(>=
+\fIminimal\-version\fP)\(rq or by nothing (if an unversioned dependency is
+deemed sufficient).
 .P
-Chaque \fIsymbole\fP exporté (noté \fInom\fP@\fIversion\fP, avec \fIversion\fP qui
-commence par "Base" si la bibliothèque n'a pas de version) est associé à une
-\fIversion minimale\fP dans son modèle de dépendance (le modèle principal de
-dépendance est toujours utilisé et se termine combiné avec le modèle de
-dépendance référencé par l'\fIid du modèle de dépendance\fP est présent). La
-première alternative au modèle de dépendance est numérotée 1, la seconde 2,
-etc.
+Each exported \fIsymbol\fP (listed as \fIname\fP@\fIversion\fP, with \fIversion\fP being
+\(lqBase\(rq if the library is not versioned) is associated to a
+\fIminimal\-version\fP of its dependency template (the main dependency template
+is always used and will end up being combined with the dependency template
+referenced by \fIid\-of\-dependency\-template\fP if present). The first
+alternative dependency template is numbered 1, the second one 2, etc.
 .P
 Chaque entrée pour une bibliothèque peut aussi avoir des champs de
 méta\-information. Ces champs sont enregistrés dans des lignes qui débutent
 par un astérisque («\ *\ »). Actuellement, le seul champ valable est\ :
 .TP 
 \fBBuild\-Depends\-Package\fP
-Il indique le nom du paquet «\ \-dev\ » associé à la bibliothèque et est
-utilisé par \fBdpkg\-shlibdeps\fP pour s'assurer que la dépendance produite est
-au moins aussi stricte que la dépendance de construction correspondante.
+It indicates the name of the \(lq\-dev\(rq package associated to the library
+and is used by \fBdpkg\-shlibdeps\fP to make sure that the dependency generated
+is at least as strict as the corresponding build dependency (since dpkg
+1.14.13).
 .TP 
 \fBIgnore\-Blacklist\-Groups\fP
-Il indique que les groupes blacklistés seront ignorés, sous forme de liste
-séparée par des espaces, afin que les symboles contenus dans ces groupes
-soient inclus dans le fichier de sortie. Cela sera seulement nécessaire pour
-les paquets de chaîne d'outils qui fournissent ces symboles blacklistés. Les
-groupes disponibles dépendent des systèmes et, pour les systèmes basés sur
-ELF et GNU, ce sont \fBaeabi\fP et \fBgomp\fP.
+It indicates what blacklist groups should be ignored, as a whitespace
+separated list, so that the symbols contained in those groups get included
+in the output file (since dpkg 1.17.6).  This should only be necessary for
+toolchain packages providing those blacklisted symbols. The available groups
+are system dependent, for ELF and GNU\-based systems these are \fBaeabi\fP and
+\fBgomp\fP.
 .SH EXEMPLES
 .SS "Simple fichier de symboles"
 .PP

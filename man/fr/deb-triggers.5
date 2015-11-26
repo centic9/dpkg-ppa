@@ -1,6 +1,6 @@
 .\" dpkg manual page - deb-triggers(5)
 .\"
-.\" Copyright Â© 2008, 2013, 2014 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2008, 2013-2015 Guillem Jover <guillem@debian.org>
 .\" Copyright Â© 2011, 2014 RaphaÃ«l Hertzog <hertzog@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
@@ -38,45 +38,33 @@ autres espaces ainsi que ce qui suit le caractère \fB«\ #\ »\fP sont sautés, et
 les lignes vides seront ignorées.
 .PP
 Les directives actuellement gérées sont\ :
-.PP
-.in +5
+.IP "" 5
 \fBinterest\fP \fInom\-action\-différée\fP
-.PP
-.in +5
+.br
 \fBinterest\-await\fP \fInom\-action\-différée\fP
-.PP
-.in +5
+.br
 \fBinterest\-noawait\fP \fInom\-action\-différée\fP
-.PP
-.in +5
-Indique que le paquet est concerné par l'action différée indiquée. Toutes
-les actions différées associées au paquet doivent être listées en utilisant
-cette directive depuis le fichier de contrôle des actions différées. La
-variante «\ noawait\ » ne place toutefois pas les paquets qui provoquent cette
-action différée dans l'état «\ triggers\-awaited\ » (actions différées
-attendues). Elle ne devrait être utilisée que lorsque la fonctionnalité
-fournie par l'action différée n'est pas critique.
-.PP
-.in +5
+.IP
+Specifies that the package is interested in the named trigger. All triggers
+in which a package is interested must be listed using this directive in the
+triggers control file. The \(lqnoawait\(rq variant does not put the
+triggering packages in triggers\-awaited state. This should be used when the
+functionality provided by the trigger is not crucial.
+.IP
 \fBactivate\fP \fInom\-action\-différée\fP
-.PP
-.in +5
+.br
 \fBactivate\-await\fP \fInom\-action\-différée\fP
-.PP
-.in +5
+.br
 \fBactivate\-noawait\fP \fInom\-action\-différée\fP
-.PP
-.in +5
-Cette directive permet que tout changement dans l'état de ce paquet active
-l'action différée spécifiée. L'action différée sera activée au début des
-opérations suivantes\ : dépaquetage, configuration, suppression (y compris en
-cas de remplacement par un paquet conflictuel), purge et déconfiguration. La
-variante «\ noawait\ » ne place toutefois pas les paquets qui provoquent cette
-action différée dans l'état «\ triggers\-awaited\ » (actions différées
-attendues). Elle ne devrait être utilisée que lorsque la fonctionnalité
-fournie par l'action différée n'est pas critique.
-.PP
-.in +5
+.br
+.IP
+Arranges that changes to this package's state will activate the specified
+trigger. The trigger will be activated at the start of the following
+operations: unpack, configure, remove (including for the benefit of a
+conflicting package), purge and deconfigure.  The \(lqnoawait\(rq variant
+does not put the triggering packages in triggers\-awaited state. This should
+be used when the functionality provided by the trigger is not crucial.
+.IP
 Si ce paquet disparaît durant le dépaquetage d'un autre paquet, l'action
 différée sera activée lorsque la disparition est constatée vers la fin du
 dépaquetage. L'exécution d'une action différée, et donc le passage du statut
@@ -88,24 +76,22 @@ activées.
 Les directives inconnues sont des erreurs qui empêcheront l'installation du
 paquet.
 .PP
-Les variantes «\ \-noawait\ » doivent toujours être privilégiées quand c'est
-possible dans la mesure où les paquets provoquant une action différée ne
-sont pas placés en état «\ triggers\-awaited\ » (actions différées attendues),
-et peuvent donc être immédiatement configurés sans recourir à l'exécution de
-l'action différée. Si les paquets provoquant l'action différée sont des
-dépendances d'autres paquets mis à jour, cela évitera le lancement de
-l'action différée et rendra possible l'exécution de l'action différée une
-seule fois au cours des étapes finales de la mise à jour.
+The \(lq\-noawait\(rq variants should always be favored when possible since
+triggering packages are not put in triggers\-awaited state and can thus be
+immediately configured without requiring the processing of the trigger.  If
+the triggering packages are dependencies of other upgraded packages, it will
+avoid an early trigger processing run and make it possible to run the
+trigger only once as one of the last steps of the upgrade.
 .PP
-Les variantes «\ \-noawait\ » ne sont gérées qu'à partir de dpkg 1.16.1 et
-provoqueront des erreurs avec les versions plus anciennes. Il est donc
-conseillé d'utiliser «\ Pre\-Depends: dpkg(>= 1.16.1)\ » pour chaque paquet
-qui a besoin de se servir de telles directives.
+The \(lq\-noawait\(rq variants are only supported since dpkg 1.16.1, and will
+lead to errors if used with an older dpkg. It is thus recommended to add a
+\(lqPre\-Depends: dpkg (>= 1.16.1)\(rq to any package that wish to use
+those directives.
 .PP
-Les alias de variantes «\ \-await\ » ne sont gérés qu'à partir de dpkg 1.17.21
-et provoqueront des erreurs avec les versions plus anciennes. Il est donc
-conseillé d'utiliser «\ Pre\-Depends: dpkg(>= 1.17.21)\ » pour chaque
-paquet qui a besoin de se servir de telles directives.
+The \(lq\-await\(rq alias variants are only supported since dpkg 1.17.21, and
+will lead to errors if used with an older dpkg. It is thus recommended to
+add a \(lqPre\-Depends: dpkg (>= 1.17.21)\(rq to any package that wish to
+use those directives.
 .
 .SH "VOIR AUSSI"
 \fBdpkg\-trigger\fP(1), \fBdpkg\fP(1), \fB/usr/share/doc/dpkg\-dev/triggers.txt.gz\fP.

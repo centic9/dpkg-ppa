@@ -4,7 +4,7 @@
 .\" Copyright Â© 2000 Josip Rodin
 .\" Copyright Â© 2001 Joost Kooij
 .\" Copyright Â© 2001 Wichert Akkerman <wakkerma@debian.org>
-.\" Copyright Â© 2010-2014 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2010-2015 Guillem Jover <guillem@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@
 dselect \- Interface de gestion de paquets Debian.
 .
 .SH SYNOPSIS
-\fBdselect\fP [\fIoption\fP...] [\fIaction\fP]
+\fBdselect\fP [\fIoption\fP...] [\fIcommand\fP...]
 .
 .SH DESCRIPTION
 \fBdselect\fP est une des principales interfaces de gestion des paquets sur un système Debian. À partir du menu principal de \fBdselect\fP, l'administrateur système peut\ :
@@ -50,27 +50,27 @@ serveurs d'archives publics sur Internet, des serveurs locaux ou des
 CDROM. La méthode d'accès recommandée est \fIapt\fP, qui est fournie par le
 paquet \fBapt\fP.
 .PP
-Normalement, \fBdselect\fP est appelé sans paramètre. Un menu interactif est
-présenté, offrant à l'utilisateur une liste d'actions. Si une action est
-donnée en paramètre, alors cette action est démarrée
-immédiatement. Plusieurs paramètres en ligne de commande sont disponibles
-pour modifier le comportement de \fBdselect\fP ou pour montrer des informations
-supplémentaires sur le programme.
+Normally \fBdselect\fP is invoked without parameters. An interactive menu is
+presented, offering the user a list of commands. If a command is given as
+argument, then that command is started immediately. Several command line
+parameters are still available to modify the running behaviour of \fBdselect\fP
+or show additional information about the program.
 .
 .SH OPTIONS
-On peut spécifier une option à la fois sur la ligne de commande et dans le
-fichier de configuration de \fBdselect\fP, \fI/etc/dpkg/dselect.cfg\fP ou dans les
-fichiers du répertoire de configuration \fI/etc/dpkg/dselect.cfg.d/\fP. Chaque
-ligne de ce fichier est soit une option (identique à une option en ligne de
-commande mais sans tiret), soit un commentaire (si il commence par \fB#\fP).
+All options can be specified both on the command line and in the \fBdselect\fP
+configuration file \fI/etc/dpkg/dselect.cfg\fP or the files on the
+configuration directory \fI/etc/dpkg/dselect.cfg.d/\fP. Each line in the
+configuration file is either an option (exactly the same as the command line
+option but without leading hyphens) or a comment (if it starts with a
+\(oq\fB#\fP\(cq).
 .br
 .TP 
 \fB\-\-admindir\fP\fI répertoire\fP
-Change le répertoire où les fichiers «\ \fIstatus\fP\ », «\ \fIavailable\fP\ » et
-autres sont situés. Le répertoire par défaut est \fI/var/lib/dpkg\fP et il ne
-devrait pas y avoir besoin de le modifier.
+Changes the directory where the dpkg \(oq\fIstatus\fP\(cq, \(oq\fIavailable\fP\(cq
+and similar files are located.  This defaults to \fI/var/lib/dpkg\fP and
+normally there shouldn't be any need to change it.
 .TP 
-\fB\-\-debug\fP\fI fichier \fP|\fI \fP\fB\-D\fP\fIfichier\fP
+\fB\-D\fP\fIfile\fP, \fB\-\-debug\fP \fIfile\fP
 Activer le débogage. Les informations de débogage sont envoyées dans
 \fIfichier\fP.
 .TP 
@@ -78,7 +78,7 @@ Activer le débogage. Les informations de débogage sont envoyées dans
 Activer le mode expert, c'est\-à\-dire ne pas afficher les messages d'aide
 ennuyeux.
 .TP 
-\fB\-\-colour\fP|\fB\-\-color\fP \fIpartie_écran:\fP[\fIpremier_plan\fP],[\fIarrière_plan\fP][\fI:attr\fP[\fI+attr+...\fP]]
+\fB\-\-colour\fP|\fB\-\-color\fP \fIscreenpart\fP:[\fIforeground\fP],[\fIbackground\fP][:\fIattr\fP[\fI+attr\fP]...]
 Configure les couleurs des écrans. Cela ne fonctionne que si votre terminal
 gère les couleurs. Cette option peut\-être utilisée plusieurs fois (et il est
 préférable de l'utiliser dans \fIdselect.cfg\fP). Chaque utilisation change la
@@ -131,22 +131,22 @@ spécification des couleurs. Pour surcharger les valeurs des couleurs
 compilées, vous pouvez indiquer la couleur du premier plan, de
 l'arrière\-plan, ou les deux. Utilisez les noms standard de couleurs curses.
 .IP
-En option, les spécifications des couleurs peuvent être suivies d'un signe
-deux\-points et de la spécification d'un attribut. Il s'agit d'une liste
-d'attributs, séparés par des caractères plus («\ +\ »). Parmi les attributs
-disponibles, on trouve (tous ne fonctionnent pas sur tous les terminaux)\ :
-normal, standout, underline, reverse, blink, bright, dim et bold.
+Optionally, after the color specification is another colon, and an attribute
+specification. This is a list of one or more attributes, separated by plus
+(\(oq+\(cq) characters.  Available attributes include (not all of these will
+work on all terminals): \fBnormal\fP, \fBstandout\fP, \fBunderline\fP, \fBreverse\fP,
+\fBblink\fP, \fBbright\fP, \fBdim\fP, \fBbold\fP
 .TP 
-\fB\-\-help\fP
+\fB\-?\fP, \fB\-\-help\fP
 Affiche une aide rapide et se termine normalement.
 .TP 
 \fB\-\-version\fP
 Affiche la version et se termine normalement.
 .
-.SH ACTIONS
-Quand \fBdselect\fP est démarré, il peut effectuer les actions suivantes, soit
-directement si elles sont indiquées dans la ligne de commande, soit
-interactivement avec un menu d'actions possibles\ :
+.SH COMMANDES
+When \fBdselect\fP is started it can perform the following commands, either
+directly if it was specified on the command line or by prompting the user
+with a menu of available commands if running interactively:
 .SS "Accéder (access)"
 Choisir et configurer une méthode d'accès aux dépôts de paquets.
 .sp
@@ -168,9 +168,8 @@ fournies par les dépôts sous la forme de fichiers \fIPackages\fP ou
 \fIPackages.gz\fP. Ces fichiers peuvent être générés par les responsables des
 dépôts grâce au programme \fBdpkg\-scanpackages\fP(1).
 .sp
-Le fonctionnement détaillé des mises à jour dépend de l'implémentation de la
-méthode d'accès. Normalement le processus se passe tout seul, sans
-intervention de l'utilisateur.
+Details of the update command depend on the access method's implementation.
+Normally the process is straightforward and requires no user interaction.
 .sp
 .SS "Sélectionner (select)"
 Voir ou gérer les paquets sélectionnés et les dépendances.
@@ -211,12 +210,12 @@ bogues Debian. Les instructions pour soumettre ces rapports de bogues se
 trouvent sur https://bugs.debian.org/ ou dans la page de manuel de
 \fBreportbug\fP(1), si ce paquet est installé.
 .sp
-Les détails de l'action d'installation dépendent de l'implémentation de la
-méthode d'accès. L'attention et la contribution de l'utilisateur peuvent
-être nécessaires lors de l'installation ou du retrait des paquets. Cela
-dépend des scripts des responsables des paquets. Certains paquets utilisent
-la bibliothèque \fBdebconf\fP(1), ce qui permet la mise en place
-d'installations plus flexibles ou même automatisées.
+Details of the install command depend on the access method's
+implementation.  The user's attention and input may be required during
+installation, configuration or removal of packages. This depends on the
+maintainer scripts in the package. Some packages make use of the
+\fBdebconf\fP(1)  library, allowing for more flexible or even automated
+installation setups.
 .sp
 .SS "Configurer (config)"
 Configure les paquets déjà installés mais n'étant pas complètement
@@ -227,7 +226,7 @@ Retirer ou purger les paquets installés qui sont marqués comme étant à
 retirer.
 .sp
 .SS "Quitter (quit)"
-Quitter \fBdselect\fP
+Quit \fBdselect\fP.
 .sp
 Quitte le programme avec un code d'erreur de 0 (succès).
 .sp
@@ -247,11 +246,11 @@ au système de gestion des paquets Debian. En cas de doute, consultez la page
 de manuel \fBdpkg\fP(1) et la Charte Debian présente dans le paquet
 \fBdebian\-policy\fP.
 .sp
-À moins que \fBdselect\fP ne soit lancé en mode expert ou intermédiaire, un
-message d'aide est d'abord affiché lorsque cette action est choisie dans le
-menu. Il est \fBfortement\fP conseillé à l'utilisateur d'étudier toutes les
-informations dans ces écrans d'aide lorsqu'ils apparaissent. Les écrans
-d'aide peuvent être affichés à tout moment à l'aide de la touche «\ \fB?\fP\ ».
+Unless \fBdselect\fP is run in expert or immediate mode, a help screen is first
+displayed when choosing this command from the menu. The user is \fIstrongly\fP
+advised to study all of the information presented in the online help
+screens, when one pops up.  The online help screens can at any time be
+invoked with the \(oq\fB?\fP\(cq key.
 .sp
 .SS "Disposition de l'écran"
 .sp
@@ -262,16 +261,18 @@ sélectionnant le titre du groupe, si ça s'applique. La moitié inférieure de
 l'écran affiche les détails du paquet sélectionné dans la moitié
 supérieure. Le type de détail affiché peut varier.
 .sp
-Appuyez sur la touche «\ \fBI\fP\ » pour passer d'un affichage de la liste des
-paquets en mode plein\-écran, à un affichage plus important des détails des
-paquets ou à un mode partagé équitablement.
+Pressing the \(oq\fBI\fP\(cq key toggles a full\-screen display of the packages
+list, an enlarged view of the package details, or the equally split screen.
 .sp
 .SS "Vue des détails d'un paquet"
 .sp
-La vue des détails d'un paquet affiche par défaut la description longue du paquet sélectionné dans la liste des paquets. Le type de détail peut être modifié en pressant la touche «\ \fBi\fP\ ». Cela permet de passer de\ :
- \- la description longue
- \- les informations de contrôle de la version installée
- \- les informations de contrôle de la version disponible
+The package details view by default shows the extended package description
+for the package that is currently selected in the packages status list.
+The type of detail can be toggled by pressing the \(oq\fBi\fP\(cq key.
+This alternates between:
+ \- the extended description
+ \- the control information for the installed version
+ \- the control information for the available version
 .sp
 Dans un écran de résolution des dépendances, on peut également voir les
 dépendances et conflits spécifiques au paquet qui expliquent la présence du
@@ -284,15 +285,14 @@ par le système de gestion des paquets Debian. Ceci inclut les paquets
 installés sur le système et les paquets connus par la base de données des
 paquets disponibles.
 .sp
-Pour tous les paquets, la liste affiche sur une ligne l'état du paquet, sa
-priorité, sa section, les architectures installée et disponible, les
-versions installée et disponible, le nom du paquet et sa description
-courte. En appuyant sur la touche «\ \fBA\fP\ », on peut activer ou désactiver
-l'affichage des architectures installée et disponible.En appuyant sur la
-touche «\ \fBV\fP\ », on peut activer ou désactiver l'affichage des versions
-installée et disponible. En appuyant sur la touche «\ \fBv\fP\ », l'affichage de
-l'état passe d'un mode bavard à un mode raccourci. Par défaut, l'état
-raccourci est utilisé.
+For every package, the list shows the package's status, priority, section,
+installed and available architecture, installed and available versions, the
+package name and its short description, all in one line.  By pressing the
+\(oq\fBA\fP\(cq key, the display of the installed and available architecture
+can be toggled between on an off.  By pressing the \(oq\fBV\fP\(cq key, the
+display of the installed and available version can be toggled between on an
+off.  By pressing the \(oq\fBv\fP\(cq key, the package status display is
+toggled between verbose and shorthand.  Shorthand display is the default.
 .sp
 L'état raccourci consiste en 4 parties\ : un drapeau d'erreur, qui est
 habituellement vide, l'état courant, l'état de sélection précédent et l'état
@@ -343,20 +343,22 @@ suivantes\ :
 .sp
 .SS "Recherches et tris"
 .sp
-On peut rechercher un paquet par son nom dans la liste des paquets. Pour
-cela, il faut presser la touche «\ \fB/\fP\ », puis taper le texte à
-rechercher. Ce texte est interprété comme une expression rationnelle (voir
-\fBregex\fP(7)). Si vous ajoutez «\ \fB/d\fP\ » à la recherche, dselect recherchera
-également dans les descriptions. Si vous ajoutez «\ \fB/i\fP\ », la recherche ne
-prend pas en compte la casse. Les deux suffixes peuvent être combinés comme
-ceci\ : «\ \fB/id\fP\ ». La recherche peut être répétée en appuyant sur la touche
-«\ \fBn\fP\ » ou «\ \fB\e\fP\ », jusqu'à ce que le paquet soit trouvé. Lorsque la
-recherche atteint la fin de la liste, elle recommence au début.
+The list of packages can be searched by package name. This is done by
+pressing \(oq\fB/\fP\(cq, and typing a simple search string. The string is
+interpreted as a \fBregex\fP(7)  regular expression.  If you add \(oq\fB/d\fP\(cq
+to the search expression, dselect will also search in descriptions.  If you
+add \(oq\fB/i\fP\(cq the search will be case insensitive.  You may combine
+these two suffixes like this: \(oq\fB/id\fP\(cq.  Repeated searching is
+accomplished by repeatedly pressing the \(oq\fBn\fP\(cq or \(oq\fB\e\fP\(cq keys,
+until the wanted package is found.  If the search reaches the bottom of the
+list, it wraps to the top and continues searching from there.
 .sp
-On peut changer l'ordre du tri en appuyant sur la touche «\ \fBo\fP\ » ou «\ \fBO\fP\ ». Les neuf systèmes de tris suivants existent\ :
- alphabétique      disponible           état
- priorité+section  disponible+priorité  état+priorité
- section+priorité  disponible+section   état+section
+The list sort order can be varied by pressing
+the \(oq\fBo\fP\(cq and \(oq\fBO\fP\(cq keys repeatedly.
+The following nine sort orderings can be selected:
+ alphabet          available           status
+ priority+section  available+priority  status+priority
+ section+priority  available+section   status+section
 .br
 Lorsqu'il n'est pas indiqué, l'ordre alphabétique est utilisé comme dernier
 critère de tri.
@@ -406,12 +408,13 @@ listés, cela afin de résoudre les dépendances ou les conflits qui ont causé
 l'apparition de l'écran de résolution des dépendances. Il est habituellement
 recommandé de suivre les suggestions de \fBdselect\fP.
 .sp
-Le type de sélection des paquets listés peut être remis dans leurs états
-précédents, avant que le problème de dépendance ou le conflit ne soit créé,
-en appuyant sur la touche «\ \fBR\fP\ ». La touche «\ \fBD\fP\ » permet de remettre à
-zéro les suggestions automatiques, tout en conservant les modifications qui
-ont causé l'apparition de l'écran de résolution des dépendances. Enfin, la
-touche «\ \fBU\fP\ » permet de rétablir les suggestions automatiques.
+The listed packages' selection state may be reverted to the original
+settings, as they were before the unresolved depends or conflicts were
+created, by pressing the \(oq\fBR\fP\(cq key.  By pressing the \(oq\fBD\fP\(cq
+key, the automatic suggestions are reset, but the change that caused the
+dependency resolution screen to be prompted is kept as requested.  Finally,
+by pressing \(oq\fBU\fP\(cq, the selections are again set to the automatic
+suggestion values.
 .sp
 .SS "Établir les sélections demandées"
 .sp
@@ -421,23 +424,22 @@ sélections, les nouvelles sélections sont établies. Cependant, si des
 dépendances non résolues sont trouvées, \fBdselect\fP affichera de nouveau un
 écran de résolution des dépendances.
 .sp
-Pour modifier un jeu de sélections qui causent des dépendances non résolues
-ou des conflits, et forcer \fBdselect\fP à l'accepter, appuyez sur la touche
-«\ \fBQ\fP\ ». Ceci fixe les sélections telles qu'elles sont définies par
-l'utilisateur, sans condition. En général, ne faites pas cela, sauf si vous
-avez bien lu ce qu'il y a d'écrit.
+To alter a set of selections that creates unresolved depends or conflicts
+and forcing \fBdselect\fP to accept it, press the \(oq\fBQ\fP\(cq key. This sets
+the selections as specified by the user, unconditionally. Generally, don't
+do this unless you've read the fine print.
 .sp
-L'effet inverse, qui consiste à oublier les demandes de modification des
-sélections et revenir à la liste précédente de sélections, peut être obtenu
-en appuyant sur la touche «\ \fBX\fP\ » ou «\ \fBEchap\fP\ ». En répétant l'opération,
-on peut complètement revenir à la dernière configuration établie.
+The opposite effect, to back out any selections change requests and go back
+to the previous list of selections, is attained by pressing the \(oq\fBX\fP\(cq
+or \fBescape\fP keys. By repeatedly pressing these keys, any possibly
+detrimental changes to the requested package selections can be backed out
+completely to the last established settings.
 .sp
-Si par erreur vous avez fixé certains paramètres et que vous souhaitez
-revenir en arrière sur ce qui est actuellement installé sur le système,
-appuyez sur la touche «\ \fBC\fP\ ». C'est un peu comme utiliser la commande de
-déblocage sur tous les paquets, mais cela offre un bouton panique plus
-évident pour les cas où l'utilisateur a appuyé sur \fBentrée\fP
-accidentellement.
+If you mistakenly establish some settings and wish to revert all the
+selections to what is currently installed on the system, press the
+\(oq\fBC\fP\(cq key.  This is somewhat similar to using the unhold command on
+all packages, but provides a more obvious panic button in cases where the
+user pressed \fBenter\fP by accident.
 .sp
 .
 .SH ENVIRONNEMENT

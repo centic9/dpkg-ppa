@@ -1,7 +1,7 @@
 .\" dpkg manual page - dpkg-name(1)
 .\"
 .\" Copyright Â© 1995-1996 Erick Branderhorst
-.\" Copyright Â© 2007-2012 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2007-2013, 2015 Guillem Jover <guillem@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -57,13 +57,14 @@ Dateien werden in ein Unterverzeichnis verschoben. Falls das als Argument
 existierende Verzeichnis existiert, dann werden die Dateien in das
 Verzeichnis verschoben, andernfalls wird das Zielverzeichnis aus dem
 »section«\-Feld des Steuerteils des Pakets extrahiert. Das Zielverzeichnis
-wird »unstable/binary\-\fIArchitektur\fP/\fIBereich\fP« sein. Falls der Bereich
-nicht in der Steuerdatei gefunden werden kann, dann wird »no\-section«
-angenommen, und in diesem Fall, wie auch für die Bereiche »non\-free« und
-»contrib« ist das Zielverzeichnis »\fIBereich\fP/binary\-\fIArchitektur\fP«. Das
-Bereichsfeld muss nicht angegeben werden, daher werden viele Pakete ihren
-Weg in das »no\-section«\-Gebiet finden. Verwenden Sie diese Option mit
-Vorsicht, sie ist unordentlich.
+wird \(Founstable/binary\-\fIArchitektur\fP/\fIBereich\fP\(Fc sein. Falls der
+Bereich nicht in der Steuerdatei gefunden werden kann, dann wird
+\fBno\-section\fP angenommen, und in diesem Fall, wie auch für die Bereiche
+\fBnon\-free\fP und \fBcontrib\fP ist das Zielverzeichnis
+\(Fo\fIBereich\fP/binary\-\fIArchitektur\fP\(Fc. Das Bereichsfeld muss nicht
+angegeben werden, daher werden viele Pakete ihren Weg in das
+\fBno\-section\fP\-Gebiet finden. Verwenden Sie diese Option mit Vorsicht, sie
+ist unordentlich.
 .TP 
 \fB\-c\fP, \fB\-\-create\-dir\fP
 Diese Option kann zusammen mit der Option \fB\-s\fP verwendet werden. Falls das
@@ -87,12 +88,12 @@ Benennungsstruktur abhängen.
 .SH BEISPIELE
 .TP 
 \fBdpkg\-name bar\-foo.deb\fP
-Die Datei »bar\-foo.deb« wird in bar\-foo_1.0\-2_i386.deb oder etwas ähnliches
-(abhängig von der Information, die in dem Steuerteil von »bar\-foo.deb« ist)
+Die Datei \fBbar\-foo.deb\fP wird in bar\-foo_1.0\-2_i386.deb oder etwas ähnliches
+(abhängig von der Information, die in dem Steuerteil von \fBbar\-foo.deb\fP ist)
 umbenannt.
 .TP 
 \fBfind /root/debian/ \-name \(aq*.deb\(aq | xargs \-n 1 dpkg\-name \-a\fP
-Alle Dateien mit der Endung »deb« im Verzeichnis /root/debian und seiner
+Alle Dateien mit der Endung \fBdeb\fP im Verzeichnis /root/debian und seiner
 Unterverzeichnisse werden von \fBdpkg\-name\fP \- falls notwendig \- ohne
 Architekturinformation umbenannt.
 .TP 

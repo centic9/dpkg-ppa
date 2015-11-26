@@ -1,6 +1,6 @@
 .\" dpkg manual page - deb-triggers(5)
 .\"
-.\" Copyright Â© 2008, 2013, 2014 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2008, 2013-2015 Guillem Jover <guillem@debian.org>
 .\" Copyright Â© 2011, 2014 RaphaÃ«l Hertzog <hertzog@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
@@ -38,43 +38,35 @@ Ende sowie alles nach dem ersten \fB#\fP werden in jeder Zeile entfernt und
 leere Zeilen werden ignoriert.
 .PP
 Die derzeit unterstützten Steuerdirektiven für Trigger sind:
-.PP
-.in +5
+.IP "" 5
 \fBinterest\fP \fITrigger\-Name\fP
-.PP
-.in +5
+.br
 \fBinterest\-await\fP \fITrigger\-Name\fP
-.PP
-.in +5
+.br
 \fBinterest\-noawait\fP \fITrigger\-Name\fP
-.PP
-.in +5
+.IP
 Gibt an, dass das Paket an dem benannten Trigger interessiert ist. Alle
 Trigger, an denen ein Paket interessiert ist, müssen mit dieser Direktive in
-der Trigger\-Steuerdatei aufgeführt werden. Die Variante »noawait« setzt die
-triggernden Pakete nicht in den Zustand »triggers\-awaited«. Dies sollte
-verwandt werden, wenn die von den Triggern bereitgestellte Funktionalität
-nicht äußerst wichtig ist.
-.PP
-.in +5
+der Trigger\-Steuerdatei aufgeführt werden. Die Variante \(lqnoawait\(rq
+setzt die triggernden Pakete nicht in den Zustand »triggers\-awaited«. Dies
+sollte verwandt werden, wenn die von den Triggern bereitgestellte
+Funktionalität nicht äußerst wichtig ist.
+.IP
 \fBactivate\fP \fITrigger\-Name\fP
-.PP
-.in +5
+.br
 \fBactivate\-await\fP \fITrigger\-Name\fP
-.PP
-.in +5
+.br
 \fBactivate\-noawait\fP \fITrigger\-Name\fP
-.PP
-.in +5
+.br
+.IP
 Sorgt dafür, dass Änderungen an dem Zustand dieses Pakets einen
 spezifizierten Trigger aktiviert. Der Trigger wird am Beginn folgender
 Operationen aktiviert: unpack, configure, remove (hinzugefügt zum Nutzen von
 Paketen, die im Konflikt zueinander stehen), purge und deconfigure. Die
-Variante »noawait« setzt die triggernden Pakete nicht in den Zustand
+Variante \(lqnoawait\(rq setzt die triggernden Pakete nicht in den Zustand
 »triggers\-awaited«. Dies sollte verwandt werden, wenn die von den Triggern
 bereitgestellte Funktionalität nicht äußerst wichtig ist.
-.PP
-.in +5
+.IP
 Falls dieses Paket während des Entpackens eines anderen Pakets verschwindet,
 wird der Trigger aktiviert, wenn das Verschwinden während des Endes der
 unpack\-Operation bemerkt wird. Triggerverarbeitung und Übergänge von
@@ -85,24 +77,24 @@ des Pakets angegebenen Trigger aktiviert.
 Unbekannte Direktiven sind ein Fehler, der die Installation eines Pakets
 verhindert.
 .PP
-Die Variante »\-noawait« sollte stets wenn möglich bevorzugt werden, da die
-Trigger\-auslösenden Pakete nicht in den Zustand »triggers\-awaited« überführt
-werden und daher sofort konfiguriert werden können, ohne die Verarbeitung
-des Triggers zu verlangen. Falls die Trigger\-auslösenden Pakete
+Die Variante \(lq\-noawait\(rq sollte stets wenn möglich bevorzugt werden, da
+die Trigger\-auslösenden Pakete nicht in den Zustand »triggers\-awaited«
+überführt werden und daher sofort konfiguriert werden können, ohne die
+Verarbeitung des Triggers zu verlangen. Falls die Trigger\-auslösenden Pakete
 Abhängigkeiten von anderen, im Upgrade befindlichen Paketen sind, wird dies
 einen frühzeitigen Lauf der Trigger\-Verarbeitung vermeiden und es
 ermöglichen, den Trigger nur einmal als einen der letzten Schrittes des
 Upgrades auszuführen.
 .PP
-Die Varianten »\-noawait« werden nur seit Dpkg 1.16.1 unterstützt und werden
-bei älteren Dpkg zu Fehlern führen. Es wird daher empfohlen, ein
-»Pre\-Depends: dpkg (>= 1.16.1)« zu jedem Paket hinzuzufügen, dass diese
-Direktiven nutzen möchte.
-.PP
-Die Alias\-Varianten »\-await« werden nur seit Dpkg 1.17.21 unterstützt und
+Die Varianten \(lq\-noawait\(rq werden nur seit Dpkg 1.16.1 unterstützt und
 werden bei älteren Dpkg zu Fehlern führen. Es wird daher empfohlen, ein
-»Pre\-Depends: dpkg (>= 1.17.21)« zu jedem Paket hinzuzufügen, dass diese
-Direktiven nutzen möchte.
+\(lqPre\-Depends: dpkg (>= 1.16.1)\(rq zu jedem Paket hinzuzufügen, dass
+diese Direktiven nutzen möchte.
+.PP
+Die Alias\-Varianten \(lq\-await\(rq werden nur seit Dpkg 1.17.21 unterstützt
+und werden bei älteren Dpkg zu Fehlern führen. Es wird daher empfohlen, ein
+\(lqPre\-Depends: dpkg (>= 1.17.21)\(rq zu jedem Paket hinzuzufügen, dass
+diese Direktiven nutzen möchte.
 .
 .SH ÜBERSETZUNG
 Die deutsche Übersetzung wurde 2004, 2006-2015 von Helge Kreutzmann

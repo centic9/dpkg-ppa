@@ -2,7 +2,7 @@
 .\"
 .\" Copyright Â© 1995-1996 Ian Jackson <ian@chiark.chu.cam.ac.uk>
 .\" Copyright Â© 2000 Wichert Akkerman <wakkerma@debian.org>
-.\" Copyright Â© 2006, 2012-2013 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2006, 2011-2015 Guillem Jover <guillem@debian.org>
 .\" Copyright Â© 2007-2008 Frank Lichtenheld <djpig@debian.org>
 .\" Copyright Â© 2009 RaphaÃ«l Hertzog <hertzog@debian.org>
 .\"
@@ -38,19 +38,19 @@ Informationen in der Standard\-Ausgabe in maschinenlesbarer Form aus.
 .
 .SH OPTIONEN
 .TP 
-\fB\-l\fP\fIChangelog\-Datei\fP
+\fB\-l\fP \fIChangelog\-Datei\fP
 Gibt die Änderungsprotokolldatei an, aus der Informationen gelesen werden
-sollen. Ein »\-« kann zur Angabe des Lesens von der Standardeingabe verwandt
-werden. Standardmäßig \fBdebian/changelog\fP.
+sollen. Ein \(oq\-\(cq kann zur Angabe des Lesens von der Standardeingabe
+verwandt werden. Standardmäßig \fBdebian/changelog\fP.
 .TP 
-\fB\-F\fP\fIChangelog\-Format\fP
+\fB\-F\fP \fIChangelog\-Format\fP
 Gibt das Format der Änderungsprotokolldatei an. Standardmäßig wird das
 Format aus einer speziellen Zeile in der Nähe des Endes der
 Änderungsprotokolldatei gelesen oder, falls dies fehlschlägt, wird das
 Debian\-Standardformat angenommen. Siehe auch \fBCHANGELOG\-FORMATE\fP.
 .TP 
-\fB\-L\fP\fIlibverzeichnis\fP
-Spezifiziere ein zusätzliches Verzeichnis, das nach Parser\-Skripten
+\fB\-L\fP \fIlibverzeichnis\fP
+Spezifiziere ein zusätzliches Verzeichnis, dass nach Parser\-Skripten
 durchsucht werden soll. Diese Verzeichnis wird vor den
 Standardverzeichnissen (derzeit \fB/usr/local/lib/dpkg/parsechangelog\fP und
 \fB/usr/lib/dpkg/parsechangelog\fP) durchsucht.
@@ -71,7 +71,7 @@ Format der Ausgabe. Sie müssen vom in Frage kommenden Parser\-Skript
 unterstützt werden. Lesen Sie auch \fBBEMERKUNGEN\fP.
 .TP 
 \fB\-\-file\fP\fI Datei\fP
-Setzt den auszuwertenden Changelog\-Dateinamen. Standardmäßig »\-«
+Setzt den auszuwertenden Changelog\-Dateinamen. Standardmäßig \(oq\-\(cq
 (Standardeingabe).
 .TP 
 \fB\-l\fP, \fB\-\-label\fP \fIDatei\fP
@@ -79,8 +79,8 @@ Setzt die bei Fehlermeldungen zu verwendenden Changelog\-Datei, statt den
 Namen von der Option \fB\-\-file\fP oder den Vorgabewert zu verwenden.
 .TP 
 \fB\-\-format\fP\fI Ausgabeformat\fP
-Setze das Ausgabeformat. Derzeit werden die Werte \fIdpkg\fP und \fIrfc822\fP
-unterstützt. \fIdpkg\fP ist das klassische Ausgabeformat (es existiert länger
+Setze das Ausgabeformat. Derzeit werden die Werte \fBdpkg\fP und \fBrfc822\fP
+unterstützt. \fBdpkg\fP ist das klassische Ausgabeformat (es existiert länger
 als diese Option), das voreingestellt ist. Es besteht aus einem Absatz im
 Debian\-Steuerformat (lesen Sie \fBdeb\-control\fP(5)). Falls mehr als ein
 Eintrag angefordert wird, dann werden die meisten Felder aus dem neusten
@@ -121,29 +121,33 @@ Das \fBrfc822\fP\-Format verwendet die gleichen Felder, gibt aber einzelne
 Absätze für jeden Changelog\-Eintrag aus, so dass alle Metadaten für jeden
 Eintrag erhalten bleiben.
 .TP 
-\fB\-\-since\fP \fIVersion\fP, \fB\-s\fP\fIVersion\fP,\fB \-v\fP\fIVersion\fP
-füge alle Änderungen neuer als aus \fIVersion\fP hinzu.
-.TP 
-\fB\-\-until\fP \fIVersion\fP, \fB\-u\fP\fIVersion\fP
-füge alle Änderungen älter als aus \fIVersion\fP hinzu.
-.TP 
-\fB\-\-from\fP \fIVersion\fP, \fB\-f\fP\fIVersion\fP
-füge alle Änderungen aus oder neuer als aus \fIVersion\fP hinzu.
-.TP 
-\fB\-\-to\fP \fIVersion\fP, \fB\-t\fP\fIVersion\fP
-füge alle Änderungen aus oder älter als aus \fIVersion\fP hinzu.
-.TP 
-\fB\-\-count\fP \fIAnzahl\fP, \fB\-c\fP\fIAnzahl\fP, \fB\-n\fP\fIAnzahl\fP
-füge \fIAnzahl\fP Einträge vom Kopf (oder vom Fuß, falls \fIAnzahl\fP negativ ist)
-hinzu.
-.TP 
-\fB\-\-offset\fP \fIZahl\fP, \fB\-o\fP\fIZahl\fP
-ändere den Startpunkt für \fB\-\-count\fP, gezählt vom Kopf (oder Fuß, falls
-\fIZahl\fP negativ ist).
-.TP 
 \fB\-\-all\fP
 alle Änderungen aufnehmen. Hinweis: Andere Optionen haben keine Wirkung,
 wenn diese verwandt wird.
+.TP 
+\fB\-s\fP, \fB\-\-since\fP \fIVersion\fP
+.TQ
+\fB\-v\fP \fIVersion\fP
+füge alle Änderungen neuer als aus \fIVersion\fP hinzu.
+.TP 
+\fB\-u\fP, \fB\-\-until\fP \fIVersion\fP
+füge alle Änderungen älter als aus \fIVersion\fP hinzu.
+.TP 
+\fB\-f\fP, \fB\-\-from\fP \fIVersion\fP
+füge alle Änderungen aus oder neuer als aus \fIVersion\fP hinzu.
+.TP 
+\fB\-t\fP, \fB\-\-to\fP \fIVersion\fP
+füge alle Änderungen aus oder älter als aus \fIVersion\fP hinzu.
+.TP 
+\fB\-c\fP, \fB\-\-count\fP \fIAnzahl\fP
+.TQ
+\fB\-n\fP \fIAnzahl\fP
+füge \fIAnzahl\fP Einträge vom Kopf (oder vom Fuß, falls \fIAnzahl\fP negativ ist)
+hinzu.
+.TP 
+\fB\-o\fP, \fB\-\-offset\fP \fIZahl\fP
+ändere den Startpunkt für \fB\-\-count\fP, gezählt vom Kopf (oder Fuß, falls
+\fIZahl\fP negativ ist).
 .
 .SH CHANGELOG\-FORMATE
 Es ist möglich, ein anderes als das Standardformat zu verwenden, indem ein
@@ -193,6 +197,9 @@ Ein Changelog\-Parser darf nicht mit dem Nutzer interagieren.
 Alle \fBParser\-Optionen\fP außer \fB\-v\fP werden seit Dpkg 1.14.16
 unterstützt. Parser von Dritten für Changelog\-Formate außer \fIdebian\fP
 könnten nicht alle Optionen unterstützen.
+.PP
+Das Auswerten kurzer Optionen mit nicht gebündelten Werten ist nur seit
+Dpkg\-Version 1.18.0 verfügbar.
 .
 .SH DATEIEN
 .TP 

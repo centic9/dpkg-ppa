@@ -1,7 +1,8 @@
 Source: dpkg
 Section: admin
 Priority: required
-Maintainer: Dpkg Developers <debian-dpkg@lists.debian.org>
+Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
+XSBC-Original-Maintainer: Dpkg Developers <debian-dpkg@lists.debian.org>
 Uploaders: Guillem Jover <guillem@debian.org>
 Origin: debian
 Bugs: debbugs://bugs.debian.org
@@ -9,18 +10,19 @@ Homepage: https://wiki.debian.org/Teams/Dpkg
 Vcs-Browser: https://anonscm.debian.org/cgit/dpkg/dpkg.git
 Vcs-Git: git://anonscm.debian.org/dpkg/dpkg.git
 Standards-Version: 3.9.6
-Build-Depends: debhelper (>= 7), pkg-config, flex,
- gettext (>= 0.18), po4a (>= 0.41),
+Build-Depends: debhelper (>= 9), pkg-config, flex,
+ gettext (>= 0.19), po4a (>= 0.41),
  zlib1g-dev, libbz2-dev, liblzma-dev,
  libselinux1-dev (>= 1.28-4) [linux-any],
  libkvm-dev [kfreebsd-any],
  libncursesw5-dev,
- libtimedate-perl, libio-string-perl
+ libio-string-perl <!nocheck>
 
 Package: libdpkg-dev
 Section: libdevel
 Priority: optional
 Architecture: any
+Multi-Arch: same
 Depends: zlib1g-dev, liblzma-dev, libbz2-dev, ${misc:Depends}
 Description: Debian package management static library
  This package provides the header files and static library necessary to
@@ -41,10 +43,11 @@ Breaks: dpkg-dev (<< 1.15.8), libdpkg-perl (<< 1.15.8),
  auctex (<< 11.87-3+deb8u1~),
  ccache (<< 3.1.10-1~),
  cups (<< 1.7.5-10~),
+ dbus (<< 1.8.12-1ubuntu6~),
  debian-security-support (<< 2014.10.26~),
  distcc (<< 3.1-6.1~),
  doc-base (<< 0.10.5~),
- fontconfig (<< 2.11.0-6.2~),
+ fontconfig (<< 2.11.1-0ubuntu5~),
  fusionforge-plugin-mediawiki (<< 5.3.2+20141104-3~),
  gap-core (<< 4r7p5-2~),
  gitweb (<< 1:2.1.4-2.1~),
@@ -61,6 +64,8 @@ Breaks: dpkg-dev (<< 1.15.8), libdpkg-perl (<< 1.15.8),
  php5-fpm (<< 5.6.4+dfsg-3~),
  pypy (<< 2.4.0+dfsg-3~),
  readahead-fedora (<< 2:1.5.6-5.2~),
+ software-center (<< 13.10-0ubuntu9~),
+ ureadahead (<< 0.100.0-17~),
  wordpress (<< 4.1+dfsg-1~),
  xfonts-traditional (<< 1.7~),
  xine-ui (<< 0.99.9-1.2~),
@@ -123,7 +128,7 @@ Section: perl
 Priority: optional
 Architecture: all
 Multi-Arch: foreign
-Depends: dpkg (>= 1.15.8), perl, libtimedate-perl, ${misc:Depends}
+Depends: dpkg (>= 1.16.3), perl, ${misc:Depends}
 Recommends: libfile-fcntllock-perl, bzip2, xz-utils
 Suggests: debian-keyring, gnupg | gnupg2, gpgv | gpgv2,
  gcc | c-compiler, binutils, patch
@@ -135,16 +140,24 @@ Description: Dpkg perl modules
  there are the following public modules:
  .
   - Dpkg: core variables
+  - Dpkg::Arch: architecture handling functions
   - Dpkg::BuildFlags: set, modify and query compilation build flags
   - Dpkg::BuildOptions: parse and manipulate DEB_BUILD_OPTIONS
   - Dpkg::BuildProfile: parse and manipulate build profiles
-  - Dpkg::Changelog: parse Debian changelogs
+  - Dpkg::Changelog: parse changelogs
+  - Dpkg::Changelog::Entry: represents a changelog entry
+  - Dpkg::Changelog::Parse: generic changelog parser for dpkg-parsechangelog
   - Dpkg::Checksums: generate and parse checksums
+  - Dpkg::Compression: simple database of available compression methods
   - Dpkg::Compression::Process: wrapper around compression tools
   - Dpkg::Compression::FileHandle: transparently (de)compress files
   - Dpkg::Conf: parse dpkg configuration files
   - Dpkg::Control: parse and manipulate Debian control information
     (.dsc, .changes, Packages/Sources entries, etc.)
+  - Dpkg::Control::Changelog: represent fields output by dpkg-parsechangelog
+  - Dpkg::Control::Fields: manage (list of known) control fields
+  - Dpkg::Control::Hash: parse and manipulate a block of RFC822-like fields
+  - Dpkg::Control::Info: parse files like debian/control
   - Dpkg::Deps: parse and manipulate dependencies
   - Dpkg::Exit: push, pop and run exit handlers
   - Dpkg::Gettext: wrapper around Locale::gettext

@@ -27,15 +27,13 @@ deb\-origin \- Fichiers d'informations propre à l'éditeur
 .SH SYNOPSIS
 \fB/etc/dpkg/origins/\fP\fIfichier\fP
 .SH DESCRIPTION
-Les fichiers de \fB/etc/dpkg/origins\fP peuvent fournir des informations sur
-les différents distributeurs qui fournissent des paquets Debian. Ils
-contiennent un certain nombre de champs ou de commentaires pour les lignes
-commençant par un caractère «\ \fB#\fP\ ». Chaque champ commence par une
-étiquette, telle que \fBVendor\fP ou \fBParent\fP, suivi du caractère
-«\ deux\-points\ » et du contenu du champ. Les champs sont délimités par les
-étiquettes de champs. En d'autres termes, le contenu d'un champ peut
-s'étendre sur plusieurs lignes, mais les outils d'installation joindront en
-général les lignes pendant le traitement du contenu du champ.
+The files in \fB/etc/dpkg/origins\fP can provide information about various
+vendors who are providing Debian packages. They contain a number of fields,
+or comments when the line starts with \(oq\fB#\fP\(cq.  Each field begins with
+a tag, such as \fBVendor\fP or \fBParent\fP, followed by a colon and the body of
+the field. Fields are delimited only by field tags. In other words, field
+text may be multiple lines in length, but the tools will join lines when
+processing the body of the field.
 .SH "CHAMPS REQUIS"
 .TP 
 \fBVendor:\fP\fI distributeur\fP

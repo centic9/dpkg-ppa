@@ -2,7 +2,7 @@
 .\"
 .\" Copyright Â© 2010-2011 RaphaÃ«l Hertzog <hertzog@debian.org>
 .\" Copyright Â© 2011 Kees Cook <kees@debian.org>
-.\" Copyright Â© 2011-2014 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2011-2015 Guillem Jover <guillem@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -70,19 +70,19 @@ nummertecken (#). Även tomma rader ignoreras.
 .SH KOMMANDON
 .TP 
 \fB\-\-dump\fP
-Skriv alla kompileringsflaggor och deras värde på standard ut. En flagga
-skrivs per rad, avdelade från sitt värde med ett likamedtecken
-("\fIflagga\fP=\fIvärde\fP"). Detta är standardåtgärden.
+Print to standard output all compilation flags and their values. It prints
+one flag per line separated from its value by an equal sign
+(\(lq\fIflag\fP=\fIvalue\fP\(rq). This is the default action.
 .TP 
 \fB\-\-list\fP
 Skriv ut listan över flaggor som stöds av den aktuella leverantören (en per
 rad). Se stycket \fBFLAGGOR SOM STÖDS\fP för mer information om dem.
 .TP 
 \fB\-\-status\fP
-Visa information som kan vara användbar för att förklara \fBdpkg\-buildflags\fP
-beteende: relevanta miljövariabler, aktuell återförsäljare, status för alla
-funktionsflaggor. Skriv även ut slutgiltiga kompilatorflaggor och deras
-källa.
+Display any information that can be useful to explain the behaviour of
+\fBdpkg\-buildflags\fP (since dpkg 1.16.5): relevant environment variables,
+current vendor, state of all feature flags.  Also print the resulting
+compiler flags with their origin.
 
 Detta är tänkt att köras från \fBdebian/rules\fP så att byggloggen innehåller
 ett tydligt spår över de använda byggflaggorna. Det kan vara användbart för
@@ -138,10 +138,11 @@ flaggan är satt/modifierad av en miljöspecifik konfiguration.
 .RE
 .TP 
 \fB\-\-query\-features\fP \fIarea\fP
-Visa funktioner aktiverade för ett givet område. De enda kända områdena är
-för närvarande \fBqa\fP, \fBreproducible\fP och \fBhardening\fP, se avsnittet
-\fBFUNKTIONSOMRÅDEN\fP för fler detaljer. Avslutar med 0 om området är okänt,
-avslutar annars med 1.
+Print the features enabled for a given area (since dpkg 1.16.2).  The only
+currently recognized areas on Debian and derivatives are \fBqa\fP,
+\fBreproducible\fP, \fBsanitize\fP and \fBhardening\fP, see the \fBFEATURE AREAS\fP
+section for more details.  Exits with 0 if the area is known otherwise exits
+with 1.
 .IP
 Utdata är på RFC822\-headerformat, med en sektion per funktion. Till exempel:
 .IP
@@ -197,21 +198,22 @@ exempel för att stöda andra språk).
 .
 .SH FUNKTIONSOMRÅDEN
 .P
-Varje områdesfunktion kan aktiveras och inaktiveras i områdesvärdet i
-miljövariablerna \fBDEB_BUILD_OPTIONS\fP och \fBDEB_BUILD_MAINT_OPTIONS\fP
-modifierarna "+" och "\-". Till exempel, för att aktivera
-\fBhardening\fP\-funktionen "pie" och inaktivera funktionen "fortify" genom att
-ange detta i \fBdebian/rules\fP:
+Each area feature can be enabled and disabled in the \fBDEB_BUILD_OPTIONS\fP
+and \fBDEB_BUILD_MAINT_OPTIONS\fP environment variable's area value with the
+\(oq\fB+\fP\(cq and \(oq\fB\-\fP\(cq modifier.  For example, to enable the
+\fBhardening\fP \(lqpie\(rq feature and disable the \(lqfortify\(rq feature you
+can do this in \fBdebian/rules\fP:
 .P
   export DEB_BUILD_MAINT_OPTIONS=hardening=+pie,\-fortify
 .P
-Den speciella funktionen \fBall\fP kan användas för att aktivera eller
-inaktivera alla områdesfunktioner samtidigt. Du kan till exempel inaktivera
-allt i området \fBhardening\fP och endast aktivera "format" och "fortify" med:
+The special feature \fBall\fP (valid in any area) can be used to enable or
+disable all area features at the same time.  Thus disabling everything in
+the \fBhardening\fP area and enabling only \(lqformat\(rq and \(lqfortify\(rq
+can be achieved with:
 .P
   export DEB_BUILD_MAINT_OPTIONS=hardening=\-all,+format,+fortify
 .
-.SS "Kvalitetskontroll (Quality assurance, QA)"
+.SS qa
 Flera kommandoradsflaggor (beskrivna nedan) kan användas för att göra det
 lättare att hitta problem i källkoden eller byggsystemet.
 .TP 
@@ -229,33 +231,54 @@ när vanliga byggflagor utesluts. De enda flaggor som stöds är för närvarande
 flaggorna satta till \fB\-D__DEB_CANARY_\fP\fIflag\fP_\fIslumpmässigt\-id\fP\fB__\fP, och
 \fBLDFLAGS\fP satt till \fB\-Wl,\-z,deb\-canary\-\fP\fIslumpmässigt\-id\fP.
 .
-.SS Härdning
+.SS sanitize
+Several compile\-time options (detailed below) can be used to help sanitize a
+resulting binary against memory corruptions, memory leaks, use after free,
+threading data races and undefined behavior bugs.
+.TP 
+\fBaddress\fP
+This setting (disabled by default) adds \fB\-fsanitize=address\fP to \fBLDFLAGS\fP
+and \fB\-fsanitize=address \-fno\-omit\-frame\-pointer\fP to \fBCFLAGS\fP and
+\fBCXXFLAGS\fP.
+.TP 
+\fBthread\fP
+This setting (disabled by default) adds \fB\-fsanitize=thread\fP to \fBCFLAGS\fP,
+\fBCXXFLAGS\fP and \fBLDFLAGS\fP.
+.TP 
+\fBleak\fP
+This setting (disabled by default) adds \fB\-fsanitize=leak\fP to \fBLDFLAGS\fP. It
+gets automatically disabled if either the \fBaddress\fP or the \fBthread\fP
+features are enabled, as they imply it.
+.TP 
+\fBundefined\fP
+This setting (disabled by default) adds \fB\-fsanitize=undefined\fP to
+\fBCFLAGS\fP, \fBCXXFLAGS\fP and \fBLDFLAGS\fP.
+.SS hardening
 Du kan använda flera kompileringsflaggor (se detaljer nedan) för att härda
 den färdiga binären mot minnesfördärvningsangrepp, eller för att ge
 ytterligare varningsmeddelanden under kompileringen. Förutom det som anges
 nedan aktiveras dessa som standard för arkitekturer som stöder dem.
 .TP 
 \fBformat\fP
-Inställningen (aktiverad som standard) lägger till \fB\-Wformat
-\-Werror=format\-security\fP till \fBCFLAGS\fP, \fBCXXFLAGS\fP, \fBOBJCFLAGS\fP och
-\fBOBJCXXFLAGS\fP. Detta kommer att varna om olämplig användning av
-formatsträngar, och att misslyckas när formatfunktionerna används på ett
-sätt som representerar möjliga säkerhetsproblem. För närvarande varnar detta
-om anrop till funktionerna \fBprintf\fP och \fBscanf\fP där formatsträngen inte är
-en fast sträng och när det inte finns några formatargument, som i
-\fBprintf(foo);\fP istället för \fBprintf("%s", foo);\fP Detta kan vara ett
-säkerhetshål om formatsträngen kommer från en obetrodd källa och innehåller
-"%n".
+This setting (enabled by default) adds \fB\-Wformat \-Werror=format\-security\fP
+to \fBCFLAGS\fP, \fBCXXFLAGS\fP, \fBOBJCFLAGS\fP and \fBOBJCXXFLAGS\fP.  This will warn
+about improper format string uses, and will fail when format functions are
+used in a way that represent possible security problems. At present, this
+warns about calls to \fBprintf\fP and \fBscanf\fP functions where the format
+string is not a string literal and there are no format arguments, as in
+\fBprintf(foo);\fP instead of \fBprintf("%s", foo);\fP This may be a security hole
+if the format string came from untrusted input and contains \(oq%n\(cq.
 .
 .TP 
 \fBfortify\fP
-Inställningen (aktiverad som standard) lägger till  \fB\-D_FORTIFY_SOURCE=2\fP
-till \fBCPPFLAGS\fP. Kompilatorn har under kodgenereringen kännedom om en hel
-del information om buffertstorlekar (där tillämpligt) och försöker ersätta
-osäkra funktionsanrop med obegränsade buffertlängder med längdbegränsade
-dito. Det här är speciellt användbart för gammal, skräpig kod. Dessutom
-blockeras formatsträngar i skrivbart minne som innehåller "%n". Om ett
-program är beroende av en sådan formatsträng måste det gås runt i kod.
+This setting (enabled by default) adds \fB\-D_FORTIFY_SOURCE=2\fP to
+\fBCPPFLAGS\fP. During code generation the compiler knows a great deal of
+information about buffer sizes (where possible), and attempts to replace
+insecure unlimited length buffer function calls with length\-limited
+ones. This is especially useful for old, crufty code.  Additionally, format
+strings in writable memory that contain \(oq%n\(cq are blocked. If an
+application depends on such a format string, it will need to be worked
+around.
 
 Observera att för att den här flaggan ska ha någon funktion måste källkoden
 också kompileras med \fB\-O1\fP eller högre. Om miljövariabeln
@@ -326,16 +349,16 @@ arkitekturer (huvudsakligen i386) se prestandaförluster upp till 15% i
 väldigt textsegment\-tunga programs körning; de flesta körningar ser mindre
 än 1%. Arkitekturer med många generella register (t.ex amd64) ser inte en
 lika stor värsta falls\-förlust.
-.SS Reproducerbarhet
+.SS reproducible
 Kompileringsflaggorna som anges nedan kan användas för att göra det lättare
 att reproducera byggbarhet eller tillhandahålla ytterligare varningsflaggor
 under kompileringen. Förutom det som anges nedan aktiveras dessa som
 standard för arkitekturer som stöder dem.
 .TP 
 \fBtimeless\fP
-Inställningen (inaktiverad som standard) lägger till \fB\-Wdate\-time\fP till
-\fBCPPFLAGS\fP. Detta ger varningar när makrona \fB__TIME__\fP, \fB__DATE__\fP eller
-\fB__TIMESTAMP__\fP används.
+This setting (disabled by default) adds \fB\-Wdate\-time\fP to \fBCPPFLAGS\fP.  This
+will cause warnings when the \fB__TIME__\fP, \fB__DATE__\fP and \fB\%__TIMESTAMP__\fP
+macros are used.
 .
 .SH MILJÖVARIABLER
 Det finns två uppsättningar miljövariabler som utför samma operationer, den
@@ -385,13 +408,21 @@ för mer information.
 \fB/etc/dpkg/buildflags.conf\fP
 Konfigurationsfil för hela systemet.
 .TP 
-\fB$XDG_CONFIG_HOME/dpkg/buildflags.conf\fP eller \fB$HOME/.config/dpkg/buildflags.conf\fP
+\fB$XDG_CONFIG_HOME/dpkg/buildflags.conf\fP or 
+.TQ
+\fB$HOME/.config/dpkg/buildflags.conf\fP
 Användarens konfigurationsfil.
 .SS Paketeringsstöd
 .TP 
 \fB/usr/share/dpkg/buildflags.mk\fP
 Makefile\-klipp som läser in (och eventuellt exporterar) alla flaggor som
 stöd av \fBdpkg\-buildflags\fP till variabler (sedan dpkg 1.16.1).
+.
+.SH MILJÖVARIABLER
+.TP 
+\fBDEB_VENDOR\fP
+This setting defines the current vendor. If not set, it will discover the
+current vendor by reading \fB\%/etc/dpkg/origins/default\fP.
 .
 .SH EXEMPEL
 För att sända byggflaggor till en byggkommandorad i en makefil:
@@ -404,8 +435,8 @@ $(MAKE) $(shell dpkg\-buildflags \-\-export=cmdline)
 .fi
 .RE
 .PP
-För att sätta byggflaggor i ett skalskript eller skalfragment kan "eval"
-användas för att tolka utdata och exportera flaggorna i miljön:
+To set build flags in a shell script or shell fragment, \fBeval\fP can be used
+to interpret the output and to export the flags in the environment:
 .PP
 .RS 4
 .nf
@@ -433,10 +464,10 @@ manuellt.
 För paket med autoconf\-liknande byggsystem kan du sända relevanta flaggor
 direkt till configure eller \fBmake\fP(1), som visas ovan.
 .PP
-I andra byggsystem, eller om du vill ha mer finkorning styrning av vilka
-flaggor som sänds vart, kan du använda \fB\-\-get\fP. Eller så kan du istället
-inkludera \fBbuildflags.mk\fP, som tar hand om anropet till \fBdpkg\-buildflags\fP
-och lagringen av byggflaggorna i make\-variabler.
+For other build systems, or when you need more fine\-grained control about
+which flags are passed where, you can use \fB\-\-get\fP. Or you can include
+\fBbuildflags.mk\fP instead, which takes care of calling \fB\%dpkg\-buildflags\fP
+and storing the build flags in make variables.
 .PP
 Om du vill exportera alla byggflaggor till miljön (där de kan fångas upp av
 ditt byggsystem):

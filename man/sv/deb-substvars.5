@@ -2,6 +2,7 @@
 .\"
 .\" Copyright Â© 1995-1996 Ian Jackson <ian@chiark.chu.cam.ac.uk>
 .\" Copyright Â© 2000 Wichert Akkerman <wakkerma@debian.org>
+.\" Copyright Â© 2006-2009,2012-2015 Guillem Jover <guillem@debian.org>
 .\" Copyright Â© 2009-2010 RaphaÃ«l Hertzog <hertzog@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
@@ -22,7 +23,7 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH deb\-substvars 5 2009\-07\-15 Debianprojektet dpkg\-verktygen
+.TH deb\-substvars 5 2015\-01\-20 Debianprojektet dpkg\-verktygen
 .SH NAMN
 deb\-substvars \- Debians källkods\-substitueringsvariabler
 .
@@ -79,7 +80,8 @@ som börjar med en \fB#\fP\-symbol (kommentarer) ignoreras.
 I tillägg är följande standardvariabler tillgängliga:
 .TP 
 \fBArch\fP
-Den aktuella byggarkitekturen (från \fBdpkg \-\-print\-architecture\fP).
+The current host architecture (i.e. the architecture the package is being
+built for, the equivalent of \fBDEB_HOST_ARCH\fP).
 .TP 
 \fBsource:Version\fP
 Version för källkodspaketet.
@@ -98,11 +100,17 @@ från eftersom betydelsen skiljer sig från funktionen, använd i stället
 \fBsource:Version\fP eller \fBbinary:Version\fP allt eftersom vad som är lämpligt.
 .TP 
 \fBInstalled\-Size\fP
-Den totala storleken på paketets installerade filer. Värdet kopieras in i
-motsvarande fält i kontrollfilen. Om du ställer in det kommer det att
-ersätta värdet på fältet. Om variabeln inte är satt kommer
-\fBdpkg\-gencontrol\fP att använda \fBdu \-k debian/tmp\fP för att hitta det
-förvalda värdet.
+The approximate total size of the package's installed files. This value is
+copied into the corresponding control file field; setting it will modify the
+value of that field. If this variable is not set \fBdpkg\-gencontrol\fP will
+compute the default value by accumulating the size of each regular file and
+symlink rounded to 1 KiB used units, and a baseline of 1 KiB for any other
+filesystem object type.
+
+\fBNote:\fP Take into account that this can only ever be an approximation, as
+the actual size used on the installed system will depend greatly on the
+filesystem used and its parameters, which might end up using either more or
+less space than the specified in this field.
 .TP 
 \fBExtra\-Size\fP
 Ytterligare diskutrymme som används när paketet installeras. Om värdet är

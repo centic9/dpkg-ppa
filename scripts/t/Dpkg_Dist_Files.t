@@ -16,7 +16,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 15;
+use Test::More tests => 24;
 
 use_ok('Dpkg::Dist::Files');
 
@@ -25,6 +25,16 @@ my $datadir = $srcdir . '/t/Dpkg_Dist_Files';
 
 my $expected;
 my %expected = (
+    'pkg-src_4:2.0+1A~rc1-1.dsc' => {
+        filename => 'pkg-src_4:2.0+1A~rc1-1.dsc',
+        section => 'source',
+        priority => 'extra',
+    },
+    'pkg-src_4:2.0+1A~rc1-1.tar.xz' => {
+        filename => 'pkg-src_4:2.0+1A~rc1-1.tar.xz',
+        section => 'source',
+        priority => 'extra',
+    },
     'pkg-templ_1.2.3_arch.type' => {
         filename => 'pkg-templ_1.2.3_arch.type',
         package => 'pkg-templ',
@@ -62,17 +72,28 @@ my %expected = (
         section => 'webdocs',
         priority => 'optional',
     },
+    'another:filename' => {
+        filename => 'another:filename',
+        section => 'by-hand',
+        priority => 'extra',
+    },
+    'added-on-the-fly' => {
+        filename => 'added-on-the-fly',
+        section => 'void',
+        priority => 'wish',
+    },
 );
 
 my $dist = Dpkg::Dist::Files->new();
 $dist->load("$datadir/files-byhand") or error('cannot parse file');
 
-$expected = 'pkg-templ_1.2.3_arch.type section priority
+$expected = <<'FILES';
+BY-HAND-file webdocs optional
+other_0.txt text optional
 pkg-arch_2.0.0_amd64.deb admin required
 pkg-indep_0.0.1-2_all.deb net standard
-other_0.txt text optional
-BY-HAND-file webdocs optional
-';
+pkg-templ_1.2.3_arch.type section priority
+FILES
 
 is($dist->output(), $expected, 'Parsed dist file');
 foreach my $f ($dist->get_files()) {
@@ -86,18 +107,81 @@ foreach my $f ($dist->get_files()) {
               "Detail for individual dist file $filename, via get_file()");
 }
 
-$expected = 'pkg-templ_1.2.3_arch.type section priority
-pkg-arch_2.0.0_amd64.deb void imperative
-other_0.txt text optional
+$expected = <<'FILES';
 BY-HAND-file webdocs optional
 added-on-the-fly void wish
-';
+other_0.txt text optional
+pkg-arch_2.0.0_amd64.deb void imperative
+pkg-templ_1.2.3_arch.type section priority
+FILES
 
 $dist->add_file('added-on-the-fly', 'void', 'wish');
+is_deeply($dist->get_file('added-on-the-fly'), $expected{'added-on-the-fly'},
+    'Get added file added-on-the-fly');
+
 $dist->add_file('pkg-arch_2.0.0_amd64.deb', 'void', 'imperative');
+my %expected_pkg_arch = %{$expected{'pkg-arch_2.0.0_amd64.deb'}};
+$expected_pkg_arch{section} = 'void';
+$expected_pkg_arch{priority} = 'imperative';
+is_deeply($dist->get_file('pkg-arch_2.0.0_amd64.deb'), \%expected_pkg_arch,
+    'Get modified file pkg-arch_2.0.0_amd64.deb');
+
 $dist->del_file('pkg-indep_0.0.1-2_all.deb');
 is($dist->get_file('unknown'), undef, 'Get unknown file');
 is($dist->get_file('pkg-indep_0.0.1-2_all.deb'), undef, 'Get deleted file');
 is($dist->output(), $expected, 'Modified dist object');
+
+$expected = <<'FILES';
+another:filename by-hand extra
+pkg-src_4:2.0+1A~rc1-1.dsc source extra
+pkg-src_4:2.0+1A~rc1-1.tar.xz source extra
+FILES
+
+$dist->reset();
+$dist->add_file('pkg-src_4:2.0+1A~rc1-1.dsc', 'source', 'extra');
+$dist->add_file('pkg-src_4:2.0+1A~rc1-1.tar.xz', 'source', 'extra');
+$dist->add_file('another:filename', 'by-hand', 'extra');
+
+is_deeply($dist->get_file('pkg-src_4:2.0+1A~rc1-1.dsc'),
+          $expected{'pkg-src_4:2.0+1A~rc1-1.dsc'},
+          'Get added file pkg-src_4:2.0+1A~rc1-1.dsc');
+is_deeply($dist->get_file('pkg-src_4:2.0+1A~rc1-1.tar.xz'),
+          $expected{'pkg-src_4:2.0+1A~rc1-1.tar.xz'},
+          'Get added file pkg-src_4:2.0+1A~rc1-1.tar.xz');
+is_deeply($dist->get_file('another:filename'),
+          $expected{'another:filename'},
+          'Get added file another:filename');
+is($dist->output, $expected, 'Added source files');
+
+$expected = <<'FILES';
+pkg-arch_2.0.0_amd64.deb admin required
+pkg-indep_0.0.1-2_all.deb net standard
+pkg-templ_1.2.3_arch.type section priority
+FILES
+
+$dist->reset();
+$dist->load("$datadir/files-byhand") or error('cannot parse file');
+$dist->filter(remove => sub { $_[0]->{priority} eq 'optional' });
+is($dist->output(), $expected, 'Filter remove piority optional');
+
+$expected = <<'FILES';
+BY-HAND-file webdocs optional
+other_0.txt text optional
+FILES
+
+$dist->reset();
+$dist->load("$datadir/files-byhand") or error('cannot parse file');
+$dist->filter(keep => sub { $_[0]->{priority} eq 'optional' });
+is($dist->output(), $expected, 'Filter keep priority optional');
+
+$expected = <<'FILES';
+BY-HAND-file webdocs optional
+FILES
+
+$dist->reset();
+$dist->load("$datadir/files-byhand") or error('cannot parse file');
+$dist->filter(remove => sub { $_[0]->{section} eq 'text' },
+              keep => sub { $_[0]->{priority} eq 'optional' });
+is($dist->output(), $expected, 'Filter remove section text, keep priority optional');
 
 1;

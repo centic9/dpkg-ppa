@@ -4,7 +4,7 @@
 .\" Copyright Â© 2000 Josip Rodin
 .\" Copyright Â© 2001 Joost Kooij
 .\" Copyright Â© 2001 Wichert Akkerman <wakkerma@debian.org>
-.\" Copyright Â© 2010-2014 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2010-2015 Guillem Jover <guillem@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@
 dselect \- Debian\-Paketverwaltungsoberfläche
 .
 .SH ÜBERSICHT
-\fBdselect\fP [\fIOption\fP ?] \fIAktion\fP
+\fBdselect\fP [\fIOption\fP?] [\fIBefehl\fP?]
 .
 .SH BESCHREIBUNG
 \fBdselect\fP
@@ -52,34 +52,35 @@ Internet, lokale Archiv\-Server oder CD\-ROMs sein. Die empfohlene
 Zugriffsmethode ist \fIapt\fP, die vom Paket \fBapt\fP bereitgestellt wird.
 .PP
 Normalerweise wird \fBdselect\fP ohne Parameter aufgerufen. Es wird ein
-interaktives Menü präsentiert, das dem Benutzer eine Liste von Aktionen
-anbietet. Falls eine Aktion als Argument übergeben wird, wird diese Aktion
-sofort begonnen. Es sind noch mehrere Befehlszeilenparameter vorhanden, um
+interaktives Menü präsentiert, das dem Benutzer eine Liste von Befehlen
+anbietet. Falls ein Befehl als Argument übergeben wird, wird dieser Befehl
+sofort begonnen. Es sind noch mehrere Kommandozeilenparameter vorhanden, um
 das Laufzeitverhalten von \fBdselect\fP zu verändern oder zusätzliche
 Informationen über das Programm anzuzeigen.
 .
 .SH OPTIONEN
-Alle Optionen können sowohl auf der Befehlszeile als auch in der
+Alle Optionen können sowohl auf der Kommandozeile als auch in der
 Konfigurationsdatei \fI/etc/dpkg/dselect.cfg\fP oder in den Dateien im
 Konfigurationsverzeichnis \fI/etc/dpkg/dselect.cfg.d/\fP von \fBdselect\fP
 angegeben werden. Jede Zeile in der Konfigurationsdatei ist entweder eine
-Option (exakt identisch mit der Befehlszeilenoption, nur ohne einleitende
-Bindestriche) oder ein Kommentar (falls sie mit \fB#\fP beginnt).
+Option (exakt identisch mit der Kommandozeilenoption, nur ohne einleitende
+Bindestriche) oder ein Kommentar (falls sie mit \(oq\fB#\fP\(cq beginnt).
 .br
 .TP 
 \fB\-\-admindir\fP\fI Verzeichnis\fP
-Ändert das Verzeichnis, in dem die Dateien »\fIstatus\fP«, »\fIavailable\fP« und
-ähnliche Dateien von Dpkg liegen. Standardmäßig ist dies \fI/var/lib/dpkg\fP
-und normalerweise sollte es keinen Grund geben, dieses zu ändern.
+Ändert das Verzeichnis, in dem die Dateien \(oq\fIstatus\fP\(cq,
+\(oq\fIavailable\fP\(cq und ähnliche Dateien von Dpkg liegen. Standardmäßig ist
+dies \fI/var/lib/dpkg\fP und normalerweise sollte es keinen Grund geben, dieses
+zu ändern.
 .TP 
-\fB\-\-debug\fP\fI Datei\fP|\fI \fP\fB\-D\fP\fIDatei\fP
+\fB\-D\fP\fIDatei\fP, \fB\-\-debug\fP \fIDatei\fP
 Aktiviere Debugging. Debug\-Informationen werden nach \fIDatei\fP gesendet.
 .TP 
 \fB\-\-expert\fP
 Aktiviert den Expertenmodus, d.h. zeigt keine möglicherweise nervenden
 Hilfeinformationen an.
 .TP 
-[\fB\-\-colour\fP|\fB\-\-color\fP \fIBildschirmteil:\fP[\fIVordergrund\fP],[\fIHintergrund\fP][\fI:Attr\fP[\fI+Attr+?\fP]]]
+\fB\-\-colour\fP|\fB\-\-color\fP \fIBildschirmteil\fP:[\fIVordergrund\fP],[\fIHintergrund\fP][:\fIAttr\fP[\fI+Attr\fP]?]
 Konfiguriert die Bildschirmfarben. Dies funktioniert nur, falls Ihr
 Bildschirm Farben unterstützt. Diese Option kann mehrfach verwendet werden
 (und wird am besten in \fIdselect.cfg\fP verwendet). Jede Verwendung ändert die
@@ -133,20 +134,21 @@ Standard\-Farbnamen von Curses.
 .IP
 Optional kann nach der Farbangabe ein weiterer Doppelpunkt und eine
 Attribut\-Angabe folgen. Dies ist eine Liste von einem oder mehreren
-Attribut(en), getrennt durch Plus\-Zeichen (»+«). Folgende Attribute sind
-verfügbar (aber nicht alle funktionieren in allen Terminals): normal,
-standout, underline, reverse, blink, bright, dim, bold
+Attribut(en), getrennt durch Plus\-Zeichen (\(oq+\(cq). Folgende Attribute
+sind verfügbar (aber nicht alle funktionieren in allen Terminals):
+\fBnormal\fP, \fBstandout\fP, \fBunderline\fP, \fBreverse\fP, \fBblink\fP, \fBbright\fP,
+\fBdim\fP, \fBbold\fP
 .TP 
-\fB\-\-help\fP
+\fB\-?\fP, \fB\-\-help\fP
 Gib einen kurzen Hilfetext aus und beende sich erfolgreich.
 .TP 
 \fB\-\-version\fP
 Gebe Versionsinformationen aus und beende sich erfolgreich.
 .
-.SH AKTIONEN
-Wenn \fBDselect\fP gestartet wird, kann es die folgenden Aktionen durchführen,
-entweder direkt, falls sie auf der Befehlszeile angegeben wurde oder indem
-dem Benutzer ein Menü der verfügbaren Aktionen bei interkativen Betrieb
+.SH BEFEHLE
+Wenn \fBDselect\fP gestartet wird, kann es die folgenden Befehle ausführen,
+entweder direkt, falls sie auf der Kommandozeile angegeben wurde oder indem
+dem Benutzer ein Menü der verfügbaren Befehle bei interkativen Betrieb
 angezeigt wird:
 .SS Zugriff
 Wähle und konfiguriere eine Zugriffsmethode für Paketdepots.
@@ -169,7 +171,7 @@ mit den Namen \fIPackages\fP oder \fIPackages.gz\fP bereitgestellt. Diese Dateie
 können von den Betreuern des Depots mit dem Programm \fBdpkg\-scanpackages\fP(1)
 erstellt werden.
 .sp
-Die Details der Aktion »Erneuern« hängen von der Implementierung der
+Die Details des Befehls »Erneuern« hängen von der Implementierung der
 Zugriffsmethode ab. Normalerweise ist der Prozess unkompliziert und verlangt
 keine Benutzerinteraktionen.
 .sp
@@ -215,7 +217,7 @@ https://bugs.debian.org/ verfügbar oder können durch Lesen der Dokumentation
 für \fBbug\fP(1) oder \fBreportbug\fP(1) (falls diese installiert sind) erhalten
 werden.
 .sp
-Details der Installationsaktion hängen von der Implementierung der
+Details des Installationsbefehls hängen von der Implementierung der
 Zugriffsmethode ab. Die Aufmerksamkeit und Eingabe des Benutzers könnten
 während der Installation, Konfiguration oder dem Entfernen von Paketen
 notwendig sein. Dies hängt von den Betreuerskripten im Paket ab. Einige
@@ -254,11 +256,11 @@ Debian\-Richtlinien\-Handbuch zu Rate. Letzteres ist auf Englisch im Paket
 \fBdebian\-policy\fP enthalten.
 .sp
 Falls \fBdselect\fP nicht im Experten\- oder direkten Modus läuft wird zuerst
-ein Hilfebildschirm angezeigt, wenn diese Aktion vom Menü ausgewählt
+ein Hilfebildschirm angezeigt, wenn dieser Befehl vom Menü ausgewählt
 wird. Dem Benutzer wird \fInachdrücklich\fP empfohlen, die gesamten in der
 Online\-Hilfe angezeigten Informationen zu prüfen, wenn diese angezeigt
-werden. Die Online\-Hilfebildschirme können jederzeit mit der Taste \fB»?«\fP
-aufgerufen werden.
+werden. Die Online\-Hilfebildschirme können jederzeit mit der Taste
+\(oq\fB?\fP\(cq aufgerufen werden.
 .sp
 .SS Bildschirmlayout
 .sp
@@ -269,7 +271,7 @@ durch Auswahl der Gruppenkopfzeile aus. Die untere Hälfte des Bildschirms
 zeigt einige Details über das derzeit in der oberen Hälfte des Bildschirms
 ausgewählte Paket an. Die Art der angezeigten Details kann variiert werden.
 .sp
-Drücken der Taste \fB»I«\fP schaltet zwischen der Vollbilddarstellung der
+Drücken der Taste \(oq\fBI\fP\(cq schaltet zwischen der Vollbilddarstellung der
 Paketliste, einer vergrößerten Darstellung der Paketdetails und dem
 gleichmäßig geteilten Bildschirm um.
 .sp
@@ -277,7 +279,7 @@ gleichmäßig geteilten Bildschirm um.
 .sp
 Standardmäßig zeigt die Paket\-Detailbetrachtung die ausführliche
 Paketbeschreibung des derzeit in der Paketstatusliste ausgewählten Pakets.
-Die Art der Details kann durch Drücken der Taste \fB»i«\fP umgeschaltet werden.
+Die Art der Details kann durch Drücken der Taste \(oq\fBi\fP\(cq umgeschaltet werden.
 Diese wechseln zwischen:
  \- der ausführlichen Beschreibung
  \- der Steuerinformation für die installierte Version
@@ -297,12 +299,13 @@ Paketdatenbanken bekannt sind.
 Für jedes Paket zeigt die Liste den Paketstatus, die Priorität, den Bereich,
 installierte und verfügbare Architektur, installierte und verfügbare
 Versionen, den Namen und die Kurzbeschreibung des Paketes, alles in einer
-Zeile. Durch Drücken der Taste \fB»A«\fP kann die Anzeige der installierten und
-verfügbaren Architektur an\- und ausgeschaltet werden. Durch Drücken der
-Taste \fB»V«\fP kann die Anzeige der installierten und verfügbaren Version
-zwischen ein und aus umgeschaltet werden. Durch Drücken der Taste \fB»v«\fP
-wird die Anzeige des Paketstatus zwischen ausführlich und verkürzt
-umgeschaltet. Die verkürzte Anzeige ist voreingestellt.
+Zeile. Durch Drücken der Taste \(oq\fBA\fP\(cq kann die Anzeige der
+installierten und verfügbaren Architektur an\- und ausgeschaltet
+werden. Durch Drücken der Taste \(oq\fBV\fP\(cq kann die Anzeige der
+installierten und verfügbaren Version zwischen ein und aus umgeschaltet
+werden. Durch Drücken der Taste \(oq\fBv\fP\(cq wird die Anzeige des
+Paketstatus zwischen ausführlich und verkürzt umgeschaltet. Die verkürzte
+Anzeige ist voreingestellt.
 .sp
 Die Kurzstatusangabe besteht aus vier Teilen: einer Fehlermarkierung, die
 normalerweise leer sein sollte, dem aktuellen Status, dem letzten
@@ -354,18 +357,18 @@ Tasten abgebildet sind:
 .SS "Suchen und Sortieren"
 .sp
 Die Liste der Pakete kann nach Paketnamen durchsucht werden. Dies erfolgt
-durch Drücken von \fB»/«\fP und der Eingabe einer einfachen
+durch Drücken von \(oq\fB/\fP\(cq und der Eingabe einer einfachen
 Suchzeichenkette. Die Zeichenkette wird als regulärer Ausdruck gemäß
-\fBregex\fP(7) interpretiert. Falls Sie zu dem Suchausdruck \fB»/d«\fP hinzufügen
-wird Dselect auch in Beschreibungen suchen. Falls Sie \fB»/i«\fP hinzufügen,
-wird Groß\-/Kleinschreibung ignoriert. Sie können die Suffixe wie folgt
-kombinieren: \fB»/id«\fP. Wiederholtes Suchen wird durch Drücken von \fB»n«\fP
-oder \fB»\e«\fP erreicht, bis das gewünschte Paket gefunden wurde. Falls die
-Suche das Ende der Liste erreicht, springt sie zum Anfang und fährt von dort
-fort.
+\fBregex\fP(7) interpretiert. Falls Sie zu dem Suchausdruck \(oq\fB/d\fP\(cq
+hinzufügen wird Dselect auch in Beschreibungen suchen. Falls Sie
+\(oq\fB/id\fP\(cq hinzufügen, wird Groß\-/Kleinschreibung ignoriert. Sie können
+die Suffixe wie folgt kombinieren: \fB»/id«\fP. Wiederholtes Suchen wird durch
+Drücken von \(oq\fBn\fP\(cq oder \(oq\fB\e\fP\(cq erreicht, bis das gewünschte
+Paket gefunden wurde. Falls die Suche das Ende der Liste erreicht, springt
+sie zum Anfang und fährt von dort fort.
 .sp
 Die List\-Sortierreihenfolge kann durch wiederholtes
-Drücken der Tasten \fB»o«\fP and \fB»O«\fP verändert werden.
+Drücken der Tasten \(oq\fBo\fP\(cq and \(oq\fBO\fP\(cq verändert werden.
 Die folgenden Sortierreihenfolgen können ausgewählt werden:
  alphabetisch      verfügbar           Status
  Priorität+Bereich verfügbar+Priorität Status+Priorität
@@ -422,14 +425,14 @@ dazu geführt hatten, dass der Bildschirm zu Abhängigkeitsauflösung angezeigt
 wurde. Normalerweise ist es am besten, den Vorschlägen von \fBdselect\fP zu
 folgen.
 .sp
-Durch Drücken der Taste \fB»R«\fP kann der Auswahlzustand der aufgeführten
-Pakete zu den Originaleinstellungen zurückgesetzt werden, wie er vor den
-unaufgelösten Abhängigkeiten oder Konflikten war. Durch Drücken der Taste
-\fB»D«\fP werden die automatischen Vorschläge zurückgesetzt, aber die
-Änderungen, die zu der Anzeige des Abhängigkeitsauflösungsbildschirms
-geführt hatten, werden wie gebeten beibehalten. Schließlich werden durch
-Drücken der Taste \fB»U«\fP die Auswahlen wieder auf die automatischen
-Auswahlwerte gesetzt.
+Durch Drücken der Taste \(oq\fBR\fP\(cq kann der Auswahlzustand der
+aufgeführten Pakete zu den Originaleinstellungen zurückgesetzt werden, wie
+er vor den unaufgelösten Abhängigkeiten oder Konflikten war. Durch Drücken
+der Taste \(oq\fBD\fP\(cq werden die automatischen Vorschläge zurückgesetzt,
+aber die Änderungen, die zu der Anzeige des
+Abhängigkeitsauflösungsbildschirms geführt hatten, werden wie gebeten
+beibehalten. Schließlich werden durch Drücken der Taste \(oq\fBU\fP\(cq die
+Auswahlen wieder auf die automatischen Auswahlwerte gesetzt.
 .sp
 .SS "Die angeforderten Auswahlen einrichten"
 .sp
@@ -441,23 +444,23 @@ erneut den Bildschirm mit der Abhängigkeitsauflösung anzeigen.
 .sp
 Um die Menge der Auswahlen zu ändern, die unaufgelöste Abhängigkeiten oder
 Konflikte erzeugt und \fBdselect\fP zu zwingen, diese zu akzeptieren, drücken
-Sie die Taste \fB»Q«\fP. Dies setzt die Auswahl wie vom Benutzer angegeben,
-ohne Bedingungen. Machen Sie dies nur, wenn Sie sich über die Konsequenzen
-im Klaren sind.
+Sie die Taste \(oq\fBQ\fP\(cq. Dies setzt die Auswahl wie vom Benutzer
+angegeben, ohne Bedingungen. Machen Sie dies nur, wenn Sie sich über die
+Konsequenzen im Klaren sind.
 .sp
 Der gegenteilige Effekt, um alle Auswahländerungen zurückzusetzen und zurück
 auf die vorherige Auswahlliste zu gehen, wird durch Drücken der Tasten
-\fB»X«\fP oder \fB»Esc«\fP erreicht. Durch wiederholtes Drücken dieser Tasten
-können möglicherweise schädliche Änderungen an der angeforderten
+\(oq\fBX\fP\(cq oder \fB»Esc«\fP erreicht. Durch wiederholtes Drücken dieser
+Tasten können möglicherweise schädliche Änderungen an der angeforderten
 Paketauswahl komplett auf die letzten bestehenden Einstellungen
 zurückgesetzt werden.
 .sp
 Falls Sie bestimmte Einstellungen aus Versehen vornehmen und alle Auswahlen
 so zurücksetzen wollen, dass diese den bereits auf dem System installierten
-Paketen entsprechen, dann drücken Sie die Taste \fB»C«\fP. Dies ähnelt etwas
-der Verwendung des Befehls Loslassen, angewendet auf alle Pakete, bietet
-aber einen etwas deutlicheren Panikknopf, falls der Benutzer aus Versehen
-die \fBEingabetaste\fP gedrückt hat.
+Paketen entsprechen, dann drücken Sie die Taste \(oq\fBC\fP\(cq. Dies ähnelt
+etwas der Verwendung des Befehls Loslassen, angewendet auf alle Pakete,
+bietet aber einen etwas deutlicheren Panikknopf, falls der Benutzer aus
+Versehen die \fBEingabetaste\fP gedrückt hat.
 .sp
 .
 .SH UMGEBUNG

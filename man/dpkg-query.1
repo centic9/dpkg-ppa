@@ -2,7 +2,7 @@
 .\"
 .\" Copyright © 2001 Wichert Akkerman <wakkerma@debian.org>
 .\" Copyright © 2006-2007 Frank Lichtenheld <djpig@debian.org>
-.\" Copyright © 2006-2012 Guillem Jover <guillem@debian.org>
+.\" Copyright © 2006-2015 Guillem Jover <guillem@debian.org>
 .\" Copyright © 2008-2011 Raphaël Hertzog <hertzog@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
@@ -18,7 +18,7 @@
 .\" You should have received a copy of the GNU General Public License
 .\" along with this program.  If not, see <https://www.gnu.org/licenses/>.
 .
-.TH dpkg\-query 1 "2012-04-03" "Debian Project" "dpkg suite"
+.TH dpkg\-query 1 "2015-01-17" "Debian Project" "dpkg suite"
 .SH NAME
 dpkg\-query \- a tool to query the dpkg database
 .
@@ -36,7 +36,7 @@ the \fBdpkg\fP database.
 List packages matching given pattern. If no \fIpackage-name-pattern\fP
 is given, list all packages in \fI/var/lib/dpkg/status\fP, excluding
 the ones marked as not-installed (i.e. those which have been previously
-purged). Normal shell wildchars are allowed
+purged). Normal shell wildcard characters are allowed
 in \fIpackage-name-pattern\fP. Please note you will probably have to
 quote \fIpackage-name-pattern\fP to prevent the shell from performing
 filename expansion. For example this will list all package names starting
@@ -108,15 +108,17 @@ However, note that files created by package-specific installation-scripts
 are not listed.
 .TP
 .BR \-\-control\-list " \fIpackage-name\fP
-List control files installed to your system from \fIpackage-name\fP.
+List control files installed to your system from \fIpackage-name\fP
+(since dpkg 1.16.5).
 These can be used as input arguments to \fB\-\-control\-show\fP.
 .TP
 .BR \-\-control\-show " \fIpackage-name\fP \fIcontrol-file\fP"
 Print the \fIcontrol-file\fP installed to your system from \fIpackage-name\fP
-to the standard output.
+to the standard output (since dpkg 1.16.5).
 .TP
 .BR \-c ", " \-\-control\-path " \fIpackage-name\fP [\fIcontrol-file\fP]"
-List paths for control files installed to your system from \fIpackage-name\fP.
+List paths for control files installed to your system from \fIpackage-name\fP
+(since dpkg 1.15.4).
 If \fIcontrol-file\fP is specified then only list the path for that control
 file if it is present.
 
@@ -130,7 +132,18 @@ for that, this command will not get removed.
 .TP
 .BR \-S ", " \-\-search " \fIfilename-search-pattern\fP..."
 Search for packages that own files corresponding to the given pattern.
-Standard shell wildchars can be used in the pattern.
+Standard shell wildcard characters can be used in the pattern, where
+asterisk (*) and question mark (?) will match a slash, and blackslash
+(\\) will be used as an escape character.
+
+If the first character in the \fIfilename-search-pattern\fP is none of
+\(oq\fB*[?/\fP\(cq then it will be considered a substring match and will be
+implicitly surrounded by \(oq\fB*\fP\(cq (as in
+\fB*\fP\fIfilename-search-pattern\fP\fB*\fP).
+If the subsequent string contains any of \(oq\fB*[?\\\fP\(cq, then it will
+handled like a glob pattern, otherwise any trailing \(oq\fB/\fP\(cq or
+\(oq\fB/.\fP\(cq will be removed and a literal path lookup will be performed.
+
 This command will not list extra files created by maintainer scripts,
 nor will it list alternatives.
 .TP
@@ -159,7 +172,8 @@ Change the location of the \fBdpkg\fR database. The default location is
 .TP
 .B \-\-load\-avail
 Also load the available file when using the \fB\-\-show\fP and \fB\-\-list\fP
-commands, which now default to only querying the status file.
+commands, which now default to only querying the status file
+(since dpkg 1.16.2).
 .TP
 .BR \-f ", " \-\-showformat=\fIformat\fR
 This option is used to specify the format of the output \fB\-\-show\fP
@@ -229,9 +243,10 @@ fields in control files):
 .TP
 .B binary:Package
 It contains the binary package name with a possible architecture qualifier
-like "libc6:amd64" (since dpkg 1.16.2). The architecture qualifier will
-only be present if the package has a \fBMulti\-Arch\fP field with a value
-of \fBsame\fP. This makes the package name unambiguous.
+like \(lqlibc6:amd64\(rq (since dpkg 1.16.2).
+The architecture qualifier will only be present if the package has a
+\fBMulti\-Arch\fP field with a value of \fBsame\fP.
+This makes the package name unambiguous.
 .TP
 .B binary:Summary
 It contains the package short description (since dpkg 1.16.2).

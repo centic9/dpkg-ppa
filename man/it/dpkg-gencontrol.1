@@ -2,7 +2,7 @@
 .\"
 .\" Copyright Â© 1995-1996 Ian Jackson <ian@chiark.chu.cam.ac.uk>
 .\" Copyright Â© 2000 Wichert Akkerman <wakkerma@debian.org>
-.\" Copyright Â© 2006, 2012-2013 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2006, 2012-2013, 2015 Guillem Jover <guillem@debian.org>
 .\" Copyright Â© 2007-2008 RaphaÃ«l Hertzog <hertzog@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
@@ -64,9 +64,9 @@ Imposta una variabile di sostituzione per l'output. Vedere
 \fBdeb\-substvars\fP(5) per informazioni sulle sostituzioni per l'output.
 .TP 
 \fB\-T\fP\fIsubstvars\-file\fP
-Legge le variabili di sostituzione in \fIfile\-substvars\fP; il valore
-predefinito è \fBdebian/substvars\fP. Questa opzione può essere usata più volte
-per leggere variabili di sostituzione da più file.
+Read substitution variables in \fIsubstvars\-file\fP; the default is
+\fBdebian/substvars\fP.  This option can be used multiple times to read
+substitution variables from multiple files (since dpkg 1.15.6).
 .TP 
 \fB\-D\fP\fIcampo\fP\fB=\fP\fIvalore\fP
 Override or add an output control file field.
@@ -115,9 +115,9 @@ the \fBInstalled\-Size\fP substitution variable and control file field (using
 \fBdu\fP), and for the default location of the output file.
 .TP 
 \fB\-O\fP[\fInomefile\fP]
-Stampa il file di controllo sullo standard output (o \fIfilename\fP se
-specificato), invece che in \fBdebian/tmp/DEBIAN/control\fP (o
-\fIdir\-di\-generazione\-pacchetto\fP\fB/DEBIAN/control\fP se è stato usato \fB\-P\fP).
+Print the control file to standard output (or \fIfilename\fP if specified,
+since dpkg 1.17.2), rather than to \fBdebian/tmp/DEBIAN/control\fP (or
+\fIpackage\-build\-dir\fP\fB/DEBIAN/control\fP if \fB\-P\fP was used).
 .TP 
 \fB\-?\fP, \fB\-\-help\fP
 Mostra il messaggio sull'uso ed esce.

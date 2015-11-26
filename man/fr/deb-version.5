@@ -3,6 +3,7 @@
 .\" Copyright Â© 1996-1998 Ian Jackson and Christian Schwarz
 .\"   for parts of the text reused from the Debian Policy
 .\" Copyright Â© 2007 Frank Lichtenheld <djpig@debian.org>
+.\" Copyright Â© 2011, 2013, 2015 Guillem Jover <guillem@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -42,23 +43,22 @@ numéros de version d'un paquet ou un changement dans la méthode de
 numérotation des versions amont.
 .TP 
 \fIversion_amont\fP
-Ceci est la partie principale du numéro de version. Cela correspond
-normalement au numéro de version du paquet d'origine qui a servi à créer le
-fichier \fI.deb\fP. Le format d'origine spécifié par l'auteur est généralement
-conservé\ ; cependant, il arrive qu'il soit nécessaire d'adapter ce numéro
-pour qu'il se conforme au format du système de gestion de paquet et du
-procédé de comparaison des numéros de version.
+This is the main part of the version number.  It is usually the version
+number of the original (\(lqupstream\(rq)  package from which the \fI.deb\fP
+file has been made, if this is applicable.  Usually this will be in the same
+format as that specified by the upstream author(s); however, it may need to
+be reformatted to fit into the package management system's format and
+comparison scheme.
 .IP
 Le principe de comparaison du système de gestion de paquets en ce qui
 concerne la \fIversion_amont\fP est décrit ci\-dessous. La partie
 \fIversion_amont\fP du numéro de version est obligatoire.
 .IP
-La \fIversion_amont\fP ne doit contenir que des caractères alphanumériques
-("A\-Za\-z0\-9") et les caractères \fB.\fP \fB+\fP \fB\-\fP \fB:\fP \fB~\fP" (point, plus,
-tiret, deux\-points, tilde) et devrait commencer par un chiffre. S'il n'y a
-pas de partie \fIrevision_Debian\fP alors le tiret n'est pas autorisé\ ; s'il
-n'y a pas d'\fIepoch\fP, alors c'est le caractère deux\-points qui n'est pas
-autorisé.
+The \fIupstream\-version\fP may contain only alphanumerics (\(lqA\-Za\-z0\-9\(rq)
+and the characters \fB.\fP \fB+\fP \fB\-\fP \fB:\fP \fB~\fP (full stop, plus, hyphen, colon,
+tilde) and should start with a digit.  If there is no \fIdebian\-revision\fP
+then hyphens are not allowed; if there is no \fIepoch\fP then colons are not
+allowed.
 .TP 
 \fIrévision_Debian\fP
 Cette partie du numéro de version indique la version du paquet Debian à
@@ -66,14 +66,14 @@ partir du numéro de la version amont. Elle ne doit contenir que des symboles
 alphanumériques et les caractères \fB+\fP \fB.\fP \fB~\fP (plus, point, tilde). Elle
 est analysée de la même façon que la \fIversion_amont\fP.
 .IP
-Cette partie est facultative\ ; si elle n'est pas présente, la
-\fIversion_amont\fP ne doit pas contenir de tiret. Ce format est prévu pour le
-cas où un logiciel a été directement conçu comme paquet Debian, il n'y a
-donc qu'une seule «\ debianisation\ » et donc par la suite pas besoin
-d'indication de révision.
+It is optional; if it isn't present then the \fIupstream\-version\fP may not
+contain a hyphen.  This format represents the case where a piece of software
+was written specifically to be turned into a Debian package, and so there is
+only one \(lqdebianisation\(rq of it and therefore no revision indication is
+required.
 .IP
-Il est convenu de repartir à 1 pour la \fIrévision_debian\fP à chaque fois que
-la \fIversion_amont\fP est incrémentée.
+It is conventional to restart the \fIdebian\-revision\fP at \(oq1\(cq each time
+time the \fIupstream\-version\fP is increased.
 .IP
 Dpkg s'arrêtera au dernier tiret du numéro de version (s'il y en a un) pour
 déterminer la partie \fIversion_amont\fP et la \fIrévision_Debian\fP. L'absence de
@@ -86,14 +86,13 @@ système de gestion de paquet en utilisant le même algorithme\ :
 .PP
 Les chaînes sont comparées de la gauche vers la droite.
 .PP
-Pour commencer, la première partie de chaque chaîne composée uniquement de
-caractères non numériques est déterminée. Puis ces deux parties (l'une peut
-être vide) sont comparées lexicalement. Si une différence est trouvée, elle
-est retournée. La comparaison lexicale est effectuée sur une version
-modifiée des valeurs ASCII afin que les lettres passent avant les autres
-caractères et que les tildes ("~") passent avant tous les caractères, même
-la fin d'une partie. Par exemple, les éléments suivants sont ordonnés
-ainsi\ : «\ ~~\ », «\ ~~a\ », «\ ~\ », partie vide, «\ a\ ».
+First the initial part of each string consisting entirely of non\-digit
+characters is determined.  These two parts (one of which may be empty) are
+compared lexically.  If a difference is found it is returned.  The lexical
+comparison is a comparison of ASCII values modified so that all the letters
+sort earlier than all the non\-letters and so that a tilde sorts before
+anything, even the end of a part.  For example, the following parts are in
+sorted order: \(oq~~\(cq, \(oq~~a\(cq, \(oq~\(cq, the empty part, \(oqa\(cq.
 .PP
 Puis, le début de ce qui reste des chaînes de caractères qui ne doivent plus
 contenir que des chiffres est déterminé. Ces valeurs numériques sont
@@ -106,12 +105,11 @@ puis de suppression des caractères numériques dans le début de la chaîne)
 sont répétées jusqu'à ce qu'une différence soit trouvée ou la fin des
 chaînes atteinte.
 .PP
-Notez que le rôle de epoch est de permettre de se sortir des problèmes de
-numérotation de version, et de faire face à des situations de changement de
-logique de numérotation. Cela n'est \fBpas\fP destiné à faire face à des
-numéros de version qui contiennent des chaînes de lettres que le système de
-gestion de paquet ne sait pas interpréter (comme «\ ALPHA\ », «\ pre\-\ ») ou
-d'autres choses stupides.
+Note that the purpose of epochs is to allow us to leave behind mistakes in
+version numbering, and to cope with situations where the version numbering
+scheme changes.  It is \fBnot\fP intended to cope with version numbers
+containing strings of letters which the package management system cannot
+interpret (such as \(oqALPHA\(cq or \(oqpre\-\(cq), or with silly orderings.
 .SH NOTES
 Le caractère tilde («\ ~\ ») et sa propriété spéciale pour les comparaisons
 ont été introduites dans la version 1.10 de dpkg. Ce n'est qu'à partir des

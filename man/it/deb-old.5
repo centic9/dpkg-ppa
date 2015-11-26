@@ -50,12 +50,11 @@ Il primo file tar contiene le informazioni di controllo, in forma di una
 serie di file ordinari. Il file \fBcontrol\fP deve essere presente dato che
 contiene le informazioni principali di controllo.
 .PP
-In alcuni archivi molto vecchi, i file nel file tar di controllo possono
-essere opzionalmente in una sottodirectory \fBDEBIAN\fP. In tal caso, la
-sottodirectory \fBDEBIAN\fP è anch'essa nel file tar di controllo e
-quest'ultimo ha in quella directory solamente file. In modo opzionale il
-file tar di controllo può contenere un elemento per «\fB.\fP», cioè la
-directory corrente.
+In some very old archives, the files in the control tarfile may optionally
+be in a \fBDEBIAN\fP subdirectory. In that case, the \fBDEBIAN\fP subdirectory
+will be in the control tarfile too, and the control tarfile will have only
+files in that directory. Optionally the control tarfile may contain an entry
+for \(oq\fB.\fP\(cq, that is, the current directory.
 .PP
 Il secondo file tar compresso con gpiz è l'archivio del file system che
 contiene i nomi di percorso relativi alla directory root del sistema su cui

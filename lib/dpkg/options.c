@@ -4,7 +4,7 @@
  *
  * Copyright © 1994,1995 Ian Jackson <ian@chiark.greenend.org.uk>
  * Copyright © 2000,2002 Wichert Akkerman <wichert@deephackmode.org>
- * Copyright © 2008,2009 Guillem Jover <guillem@debian.org>
+ * Copyright © 2008-2015 Guillem Jover <guillem@debian.org>
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,7 +24,6 @@
 #include <compat.h>
 
 #include <errno.h>
-#include <ctype.h>
 #include <limits.h>
 #include <string.h>
 #include <dirent.h>
@@ -32,6 +31,7 @@
 #include <stdlib.h>
 
 #include <dpkg/i18n.h>
+#include <dpkg/c-ctype.h>
 #include <dpkg/dpkg.h>
 #include <dpkg/string.h>
 #include <dpkg/options.h>
@@ -87,18 +87,21 @@ dpkg_options_load_file(const char *fn, const struct cmdinfo *cmdinfos)
 
     line_num++;
 
-    if ((linebuf[0] == '#') || (linebuf[0] == '\n') || (linebuf[0] == '\0'))
+    l = strlen(linebuf);
+    while (l && c_isspace(linebuf[l - 1]))
+      l--;
+    linebuf[l] = '\0';
+
+    if ((linebuf[0] == '#') || (linebuf[0] == '\0'))
       continue;
-    l=strlen(linebuf);
-    if (linebuf[l - 1] == '\n')
-      linebuf[l - 1] = '\0';
-    for (opt=linebuf;isalnum(*opt)||*opt=='-';opt++) ;
+    for (opt = linebuf; c_isalnum(*opt) || *opt == '-'; opt++) ;
     if (*opt == '\0')
       opt=NULL;
     else {
       *opt++ = '\0';
       if (*opt=='=') opt++;
-      while (isspace(*opt)) opt++;
+      while (c_isspace(*opt))
+        opt++;
 
       opt = str_strip_quotes(opt);
       if (opt == NULL)
@@ -134,8 +137,10 @@ dpkg_options_load_file(const char *fn, const struct cmdinfo *cmdinfos)
         *cip->iassignto = cip->arg_int;
     }
   }
-  if (ferror(file)) ohshite(_("read error in configuration file `%.255s'"), fn);
-  if (fclose(file)) ohshite(_("error closing configuration file `%.255s'"), fn);
+  if (ferror(file))
+    ohshite(_("read error in configuration file '%.255s'"), fn);
+  if (fclose(file))
+    ohshite(_("error closing configuration file '%.255s'"), fn);
 }
 
 static int
@@ -147,7 +152,7 @@ valid_config_filename(const struct dirent *dent)
     return 0;
 
   for (c = dent->d_name; *c; c++)
-    if (!isalnum(*c) && *c != '_' && *c != '-')
+    if (!c_isalnum(*c) && *c != '_' && *c != '-')
       return 0;
 
   if (*c == '\0')
@@ -218,7 +223,7 @@ dpkg_options_parse(const char *const **argvp, const struct cmdinfo *cmdinfos,
   printforhelp = help_str;
 
   ++(*argvp);
-  while ((p= **argvp) && *p == '-') {
+  while ((p = **argvp) && p[0] == '-' && p[1] != '\0') {
     ++(*argvp);
     if (strcmp(p, "--") == 0)
       break;
@@ -283,7 +288,7 @@ dpkg_options_parse_arg_int(const struct cmdinfo *cmd, const char *str)
   errno = 0;
   value = strtol(str, &end, 0);
   if (str == end || *end || value < 0 || value > INT_MAX || errno != 0)
-    badusage(_("invalid integer for --%s: `%.250s'"), cmd->olong, str);
+    badusage(_("invalid integer for --%s: '%.250s'"), cmd->olong, str);
 
   return value;
 }
@@ -291,7 +296,7 @@ dpkg_options_parse_arg_int(const struct cmdinfo *cmd, const char *str)
 void
 setobsolete(const struct cmdinfo *cip, const char *value)
 {
-  warning(_("obsolete option '--%s'\n"), cip->olong);
+  warning(_("obsolete option '--%s'"), cip->olong);
 }
 
 const struct cmdinfo *cipaction = NULL;

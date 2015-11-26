@@ -40,11 +40,11 @@ Dpkg::Conf - parse dpkg configuration files
 The Dpkg::Conf object can be used to read options from a configuration
 file. It can exports an array that can then be parsed exactly like @ARGV.
 
-=head1 FUNCTIONS
+=head1 METHODS
 
 =over 4
 
-=item my $conf = Dpkg::Conf->new(%opts)
+=item $conf = Dpkg::Conf->new(%opts)
 
 Create a new Dpkg::Conf object. Some options can be set through %opts:
 if allow_short evaluates to true (it defaults to false), then short
@@ -78,7 +78,7 @@ Returns the list of options that can be parsed like @ARGV.
 =cut
 
 sub get_options {
-    my ($self) = @_;
+    my $self = shift;
     return @{$self->{options}};
 }
 
@@ -99,13 +99,14 @@ sub parse {
 
     while (<$fh>) {
 	chomp;
-	s/^\s+//; s/\s+$//;   # Strip leading/trailing spaces
+	s/^\s+//;             # Strip leading spaces
+	s/\s+$//;             # Strip trailing spaces
 	s/\s+=\s+/=/;         # Remove spaces around the first =
 	s/\s+/=/ unless m/=/; # First spaces becomes = if no =
 	# Skip empty lines and comments
 	next if /^#/ or length == 0;
 	if (/^-[^-]/ and not $self->{allow_short}) {
-	    warning(_g('short option not allowed in %s, line %d'), $desc, $.);
+	    warning(g_('short option not allowed in %s, line %d'), $desc, $.);
 	    next;
 	}
 	if (/^([^=]+)(?:=(.*))?$/) {
@@ -119,7 +120,7 @@ sub parse {
 	    }
 	    $count++;
 	} else {
-	    warning(_g('invalid syntax for option in %s, line %d'), $desc, $.);
+	    warning(g_('invalid syntax for option in %s, line %d'), $desc, $.);
 	}
     }
     return $count;
@@ -136,14 +137,11 @@ return true when &$rmfunc($option) or &keepfunc($option) is called.
 
 sub filter {
     my ($self, %opts) = @_;
-    if (defined($opts{remove})) {
-	@{$self->{options}} = grep { not &{$opts{remove}}($_) }
-				     @{$self->{options}};
-    }
-    if (defined($opts{keep})) {
-	@{$self->{options}} = grep { &{$opts{keep}}($_) }
-				     @{$self->{options}};
-    }
+    my $remove = $opts{remove} // sub { 0 };
+    my $keep = $opts{keep} // sub { 1 };
+
+    @{$self->{options}} = grep { not &$remove($_) and &$keep($_) }
+                               @{$self->{options}};
 }
 
 =item $string = $conf->output($fh)
@@ -180,11 +178,11 @@ sub output {
 
 =head1 CHANGES
 
-=head2 Version 1.01
+=head2 Version 1.01 (dpkg 1.15.8)
 
 New method: $conf->filter()
 
-=head2 Version 1.00
+=head2 Version 1.00 (dpkg 1.15.6)
 
 Mark the module as public.
 

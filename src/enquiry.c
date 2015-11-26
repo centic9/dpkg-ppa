@@ -3,7 +3,7 @@
  * enquiry.c - status enquiry and listing options
  *
  * Copyright © 1995,1996 Ian Jackson <ian@chiark.greenend.org.uk>
- * Copyright © 2006,2008-2014 Guillem Jover <guillem@debian.org>
+ * Copyright © 2006, 2008-2015 Guillem Jover <guillem@debian.org>
  * Copyright © 2011 Linaro Limited
  * Copyright © 2011 Raphaël Hertzog <hertzog@debian.org>
  *
@@ -143,7 +143,7 @@ static const struct audit_problem audit_problems[] = {
     "database, they need to be reinstalled:\n")
   }, {
     .check = audit_arch,
-    .value.number = DPKG_ARCH_NONE,
+    .value.number = DPKG_ARCH_EMPTY,
     .explanation = N_("The following packages do not have an architecture:\n")
   }, {
     .check = audit_arch,
@@ -612,6 +612,7 @@ cmpversions(const char *const *argv)
     /* These values are exit status codes, so 0 = true, 1 = false. */
     int if_lesser, if_equal, if_greater;
     int if_none_a, if_none_both, if_none_b;
+    bool obsolete;
   };
 
   static const struct relationinfo relationinfos[]= {
@@ -630,11 +631,11 @@ cmpversions(const char *const *argv)
     { "gt-nl",     1,1,0, 0,1,1  },
 
     /* For compatibility with dpkg control file syntax. */
-    { "<",         0,0,1, 0,0,1  },
+    { "<",         0,0,1, 0,0,1, .obsolete = true },
     { "<=",        0,0,1, 0,0,1  },
     { "<<",        0,1,1, 0,1,1  },
     { "=",         1,0,1, 1,0,1  },
-    { ">",         1,0,0, 1,0,0  },
+    { ">",         1,0,0, 1,0,0, .obsolete = true },
     { ">=",        1,0,0, 1,0,0  },
     { ">>",        1,1,0, 1,1,0  },
     { NULL                       }
@@ -653,12 +654,13 @@ cmpversions(const char *const *argv)
 
   if (!rip->string) badusage(_("--compare-versions bad relation"));
 
+  if (rip->obsolete)
+    warning(_("--%s used with obsolete relation operator '%s'"),
+            cipaction->olong, rip->string);
+
   if (*argv[0] && strcmp(argv[0],"<unknown>")) {
     if (parseversion(&a, argv[0], &err) < 0) {
-      if (err.type == DPKG_MSG_WARN)
-        warning(_("version '%s' has bad syntax: %s"), argv[0], err.str);
-      else
-        ohshit(_("version '%s' has bad syntax: %s"), argv[0], err.str);
+      dpkg_error_print(&err, _("version '%s' has bad syntax"), argv[0]);
       dpkg_error_destroy(&err);
     }
   } else {
@@ -666,10 +668,7 @@ cmpversions(const char *const *argv)
   }
   if (*argv[2] && strcmp(argv[2],"<unknown>")) {
     if (parseversion(&b, argv[2], &err) < 0) {
-      if (err.type == DPKG_MSG_WARN)
-        warning(_("version '%s' has bad syntax: %s"), argv[2], err.str);
-      else
-        ohshit(_("version '%s' has bad syntax: %s"), argv[2], err.str);
+      dpkg_error_print(&err, _("version '%s' has bad syntax"), argv[2]);
       dpkg_error_destroy(&err);
     }
   } else {

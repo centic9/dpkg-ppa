@@ -19,8 +19,12 @@ use strict;
 use warnings;
 
 our $VERSION = '1.00';
-our @EXPORT_OK = qw(get_build_profiles set_build_profiles parse_build_profiles
-                    evaluate_restriction_formula);
+our @EXPORT_OK = qw(
+    get_build_profiles
+    set_build_profiles
+    parse_build_profiles
+    evaluate_restriction_formula
+);
 
 use Exporter qw(import);
 
@@ -45,7 +49,7 @@ profiles.
 
 =over 4
 
-=item my @profiles = get_build_profiles()
+=item @profiles = get_build_profiles()
 
 Get an array with the currently active build profiles, taken from
 the environment variable B<DEB_BUILD_PROFILES>.
@@ -73,11 +77,12 @@ the environment variable B<DEB_BUILD_PROFILES>.
 sub set_build_profiles {
     my (@profiles) = @_;
 
+    $cache_profiles = 1;
     @build_profiles = @profiles;
     Dpkg::BuildEnv::set('DEB_BUILD_PROFILES', join ' ', @profiles);
 }
 
-=item my @profiles = parse_build_profiles($string)
+=item @profiles = parse_build_profiles($string)
 
 Parses a build profiles specification, into an array of array references.
 
@@ -132,7 +137,7 @@ sub evaluate_restriction_formula {
 
 =head1 CHANGES
 
-=head2 Version 1.00
+=head2 Version 1.00 (dpkg 1.17.17)
 
 Mark the module as public.
 

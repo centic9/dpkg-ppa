@@ -4,7 +4,7 @@
 .\" Copyright Â© 2000 Wichert Akkerman <wakkerma@debian.org>
 .\" Copyright Â© 2006 Frank Lichtenheld <djpig@debian.org>
 .\" Copyright Â© 2007-2011 RaphaÃ«l Hertzog <hertzog@debian.org>
-.\" Copyright Â© 2012-2013 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2011-2013, 2015 Guillem Jover <guillem@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -147,16 +147,16 @@ inleds med \fIvariabelnamnsprefix\fP\fB:\fP (i stället för \fBshlibs:\fP) att ta
 bort från substitueringsvariabelfilen.
 .TP 
 \fB\-O\fP[\fIfilnamn\fP]
-Skriv substitueringsvariabelinställningar på standard ut (eller \fIfilnamn\fP
-om angivet), i stället för att försöka lägga till dem i
-substitueringsvariabelfilen (som standard \fBdebian/substvars\fP).
+Print substitution variable settings to standard output (or \fIfilename\fP if
+specified, since dpkg 1.17.2), rather than being added to the substitution
+variables file (\fBdebian/substvars\fP by default).
 .TP 
 \fB\-t\fP\fItyp\fP
-Föredra information om delade bibliotek som märkts för den givna
-pakettypen. Om det inte finns någon märkt information används
-omärkt. Standardpakettypen är "deb". Beroendeinformation för delade
-bibliotek märks för en given typ genom att inleda det med namnet på typen,
-ett kolon, samt blanktecken.
+Prefer shared library dependency information tagged for the given package
+type. If no tagged information is available, falls back to untagged
+information. The default package type is \fBdeb\fP. Shared library dependency
+information is tagged for a given type by prefixing it with the name of the
+type, a colon, and whitespace.
 .TP 
 \fB\-L\fP\fIlokal\-shlibs\-fil\fP
 Läs överstyrande beroendeinformation om delade bibliotek från
@@ -167,40 +167,43 @@ Skriv substitueringsvariabler i \fIsubstvars\-fil\fP; standard är
 \fBdebian/substvars\fP.
 .TP 
 \fB\-V\fP
-Aktiverar pratsamt läge. Flera meddelanden visas för att förklara vad
-\fBdpkg\-shlibs\fP håller på med.
+Enable verbose mode (since dpkg 1.14.8).  Numerous messages are displayed to
+explain what \fBdpkg\-shlibdeps\fP does.
 .TP 
 \fB\-x\fP\fIpaket\fP
-Uteslut paketet från de genererade beroendena. Flaggan är användbar för att
-undvika självberoenden för paket som innehåller ELF\-binärer (exekverbara
-eller biblioteksinsticksprogram) som använder ett bibliotek som ligger i
-samma paket. Flaggan kan användas flera gånger för att utesluta flera paket.
+Exclude the package from the generated dependencies (since dpkg 1.14.8).
+This is useful to avoid self\-dependencies for packages which provide ELF
+binaries (executables or library plugins) using a library contained in the
+same package. This option can be used multiple times to exclude several
+packages.
 .TP 
 \fB\-S\fP\fIpaketbyggkatalog\fP
-Se först i \fIpaketbyggkatalog\fP vid försök att hitta ett
-bibliotek. Användbart när källkodspaketet bygger flera varianter av samma
-bibliotek och du vill se till att du får beroendet från ett givet
-binärpaket. Flaggan kan inte användas flera gånger: kataloger söks efter i
-samma ordning före kataloger från andra binärpaket.
+Look into \fIpackage\-build\-dir\fP first when trying to find a library (since
+dpkg 1.14.15).  This is useful when the source package builds multiple
+flavors of the same library and you want to ensure that you get the
+dependency from a given binary package. You can use this option multiple
+times: directories will be tried in the same order before directories of
+other binary packages.
 .TP 
 \fB\-\-ignore\-missing\-info\fP
-Misslyckas inte om det inte upptäcks någon beroendeinformation för ett delat
-bibliotek. Alla bibliotek bör tillhandahålla beroendeinformation (antingen
-med shlibs\-filer eller med symbols\-filer), även om de ännu inte används av
-andra paket.
+Do not fail if dependency information can't be found for a shared library
+(since dpkg 1.14.8).  Usage of this option is discouraged, all libraries
+should provide dependency information (either with shlibs files, or with
+symbols files)  even if they are not yet used by other packages.
 .TP 
 \fB\-\-warnings=\fP\fIvärde\fP
-\fIVärde\fP är ett bitfält som anger de varningar som kan ges av
-\fBdpkg\-shlibdeps\fP. Bit 0 (värde=1) aktiverar varningen "symbolen \fIsym\fP, som
-används av \fIbinär\fP, hittades inte i något av biblioteken", bit 1 (värde=2)
-aktiverar varningen "paketet kunde undvika ett onödigt beroende" och bit 2
-(värde=4) aktiverar varningen "\fIbinär\fP borde inte vara länkat mot
-\fIbibliotek\fP". Standard för \fIvärde\fP är 3: de första två varningarna är
-aktiva som standard, men inte den sista. Sätt \fIvärde\fP till 7 om du vill att
-alla varningar skall vara aktiva.
+\fIvalue\fP is a bit field defining the set of warnings that can be emitted by
+\fBdpkg\-shlibdeps\fP (since dpkg 1.14.17).  Bit 0 (value=1) enables the warning
+\(lqsymbol \fIsym\fP used by \fIbinary\fP found in none of the libraries\(rq, bit
+1 (value=2) enables the warning \(lqpackage could avoid a useless
+dependency\(rq and bit 2 (value=4) enables the warning \(lq\fIbinary\fP should
+not be linked against \fIlibrary\fP\(rq.  The default \fIvalue\fP is 3: the first
+two warnings are active by default, the last one is not. Set \fIvalue\fP to 7
+if you want all warnings to be active.
 .TP 
 \fB\-\-admindir=\fP\fIkat\fP
-Ändra platsen för \fBdpkg\fP\-databasen. Förval är \fI/var/lib/dpkg\fP.
+Change the location of the \fBdpkg\fP database (since dpkg 1.14.0).  The
+default location is \fI/var/lib/dpkg\fP.
 .TP 
 \fB\-?\fP, \fB\-\-help\fP
 Visar hjälpskärm och avslutar.

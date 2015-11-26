@@ -16,15 +16,24 @@ use strict;
 use warnings;
 
 our $VERSION = '0.02';
+our @EXPORT = qw(
+    %CONFIG
+    yesno
+    nb
+    do_connect
+    do_mdtm
+    view_mirrors
+    add_site
+    edit_site
+    edit_config
+    read_config
+    store_config
+);
 
 use Exporter qw(import);
-
 use Carp;
 use Net::FTP;
 use Data::Dumper;
-
-our @EXPORT = qw(%CONFIG yesno do_connect do_mdtm add_site edit_site
-                 edit_config read_config store_config view_mirrors nb);
 
 my %CONFIG;
 
@@ -79,13 +88,10 @@ sub store_config {
 }
 
 sub view_mirrors {
-  if (-f '/usr/lib/dpkg/methods/ftp/README.mirrors.txt') {
-    system('pager', '/usr/lib/dpkg/methods/ftp/README.mirrors.txt');
-  } elsif (-f '/usr/lib/dpkg/methods/ftp/README.mirrors.txt.gz') {
-    system('gzip -dc /usr/lib/dpkg/methods/ftp/README.mirrors.txt.gz | pager');
-  } else {
-    print "/usr/lib/dpkg/methods/ftp/README.mirrors.txt(.gz): file not found.\n";
-  }
+  print <<'MIRRORS';
+Please see <http://ftp.debian.org/debian/README.mirrors.txt> for a current
+list of Debian mirror sites.
+MIRRORS
 }
 
 sub edit_config {
@@ -149,9 +155,9 @@ sub edit_config {
 sub add_site {
   my $pas = 1;
   my $user = 'anonymous';
-  my $email = `whoami`;
+  my $email = qx(whoami);
   chomp $email;
-  $email .= '@' . `cat /etc/mailname || dnsdomainname`;
+  $email .= '@' . qx(cat /etc/mailname || dnsdomainname);
   chomp $email;
   my $dir = '/debian';
 

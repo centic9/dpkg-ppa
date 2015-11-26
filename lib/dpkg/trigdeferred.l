@@ -72,8 +72,8 @@ static const struct trigdefmeths *trigdef;
 <midline>[ \t]	/* whitespace */
 <midline>[-0-9a-z][-:+.0-9a-z]*	{
 	if (trigdef_yytext[0] == '-' && trigdef_yytext[1])
-		ohshit(_("invalid package name `%.250s' in triggers deferred "
-		         "file `%.250s'"), trigdef_yytext, fn.buf);
+		ohshit(_("invalid package name '%.250s' in triggers deferred "
+		         "file '%.250s'"), trigdef_yytext, fn.buf);
 	trigdef->package(trigdef_yytext);
 	}
 <midline>\n|#.*\n	{
@@ -81,12 +81,12 @@ static const struct trigdefmeths *trigdef;
 	BEGIN(0);
 	}
 <midline><<EOF>>	{
-	ohshit(_("truncated triggers deferred file `%.250s'"), fn.buf);
+	ohshit(_("truncated triggers deferred file '%.250s'"), fn.buf);
 	}
 
 <*>.	{
-	ohshit(_("syntax error in triggers deferred file `%.250s' at "
-	         "character `%s'%s"),
+	ohshit(_("syntax error in triggers deferred file '%.250s' at "
+	         "character '%s'%s"),
 	       fn.buf, yytext, YY_START == midline ? " midline": "");
 	}
 
@@ -132,16 +132,13 @@ trigdef_update_start(enum trigdef_update_flags uf)
 			if (lock_fd == -1) {
 				if (!(errno == ENOENT && (uf & TDUF_NO_LOCK_OK)))
 					ohshite(_("unable to open/create "
-					          "triggers lockfile `%.250s'"),
+					          "triggers lockfile '%.250s'"),
 					        fn.buf);
 				return TDUS_ERROR_NO_DIR;
 			}
 		}
 
 		file_lock(&lock_fd, FILE_LOCK_WAIT, fn.buf, _("triggers area"));
-	} else {
-		/* Dummy for pop_cleanups. */
-		push_cleanup(NULL, 0, NULL, 0, 0);
 	}
 
 	constructfn(&fn, triggersdir, TRIGGERSDEFERREDFILE);
@@ -151,10 +148,11 @@ trigdef_update_start(enum trigdef_update_flags uf)
 	old_deferred = fopen(fn.buf, "r");
 	if (!old_deferred) {
 		if (errno != ENOENT)
-			ohshite(_("unable to open triggers deferred file `%.250s'"),
+			ohshite(_("unable to open triggers deferred file '%.250s'"),
 			        fn.buf);
 		if (!(uf & TDUF_WRITE_IF_ENOENT)) {
-			pop_cleanup(ehflag_normaltidy);
+			if (uf & TDUF_WRITE)
+				pop_cleanup(ehflag_normaltidy);
 			return TDUS_ERROR_NO_DEFERRED;
 		}
 	} else {
@@ -165,11 +163,12 @@ trigdef_update_start(enum trigdef_update_flags uf)
 
 		rc = fstat(fileno(old_deferred), &stab);
 		if (rc < 0)
-			ohshite(_("unable to stat triggers deferred file `%.250s'"),
+			ohshite(_("unable to stat triggers deferred file '%.250s'"),
 			        fn.buf);
 
 		if (stab.st_size == 0 && !(uf & TDUF_WRITE_IF_EMPTY)) {
-			pop_cleanup(ehflag_normaltidy);
+			if (uf & TDUF_WRITE)
+				pop_cleanup(ehflag_normaltidy);
 			return TDUS_ERROR_EMPTY_DEFERRED;
 		}
 	}
@@ -180,7 +179,7 @@ trigdef_update_start(enum trigdef_update_flags uf)
 			fclose(trig_new_deferred);
 		trig_new_deferred = fopen(newfn.buf, "w");
 		if (!trig_new_deferred)
-			ohshite(_("unable to open/create new triggers deferred file `%.250s'"),
+			ohshite(_("unable to open/create new triggers deferred file '%.250s'"),
 			        newfn.buf);
 
 		setcloexec(fileno(trig_new_deferred), newfn.buf);
@@ -218,7 +217,7 @@ trigdef_process_done(void)
 
 	if (old_deferred) {
 		if (ferror(old_deferred))
-			ohshite(_("error reading triggers deferred file `%.250s'"),
+			ohshite(_("error reading triggers deferred file '%.250s'"),
 			        fn.buf);
 		fclose(old_deferred);
 		old_deferred = NULL;
@@ -227,16 +226,16 @@ trigdef_process_done(void)
 	if (trig_new_deferred) {
 		if (ferror(trig_new_deferred))
 			ohshite(_("unable to write new triggers deferred "
-			          "file `%.250s'"), newfn.buf);
+			          "file '%.250s'"), newfn.buf);
 		r = fclose(trig_new_deferred);
 		trig_new_deferred = NULL;
 		if (r)
 			ohshite(_("unable to close new triggers deferred "
-			          "file `%.250s'"), newfn.buf);
+			          "file '%.250s'"), newfn.buf);
 
 		if (rename(newfn.buf, fn.buf))
 			ohshite(_("unable to install new triggers deferred "
-			          "file `%.250s'"), fn.buf);
+			          "file '%.250s'"), fn.buf);
 
 		dir_sync_path(triggersdir);
 	}
@@ -245,5 +244,6 @@ trigdef_process_done(void)
 	triggersdir = NULL;
 
 	/* Unlock. */
-	pop_cleanup(ehflag_normaltidy);
+	if (lock_fd >= 0)
+		pop_cleanup(ehflag_normaltidy);
 }

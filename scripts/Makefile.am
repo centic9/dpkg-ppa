@@ -116,6 +116,10 @@ nobase_dist_perllib_DATA = \
 	Dpkg/Version.pm \
 	Dpkg.pm
 
+EXTRA_DIST += \
+	Test/Dpkg.pm \
+	$(nil)
+
 # Keep it even if empty to have man3dir correctly set
 man3_MANS =
 
@@ -130,12 +134,14 @@ do_perl_subst = $(AM_V_GEN) \
 do_shell_subst = $(AM_V_GEN) \
 		 sed -e "s:^version[[:space:]]*=[[:space:]]*['\"][^'\"]*[\"']:version=\"$(PACKAGE_VERSION)\":"
 
-%: %.pl Makefile
+SUFFIXES = .pl .sh
+
+.pl: Makefile
 	@test -d `dirname $@` || $(MKDIR_P) `dirname $@`
 	$(do_perl_subst) <$< >$@
 	$(AM_V_at) chmod +x $@
 
-%: %.sh Makefile
+.sh: Makefile
 	@test -d `dirname $@` || $(MKDIR_P) `dirname $@`
 	$(do_shell_subst) <$< >$@
 	$(AM_V_at) chmod +x $@
@@ -158,11 +164,11 @@ endif
 
 # Ideally we'd use 'sed -i', but unfortunately that's not portable.
 install-data-hook:
-	cp -p $(DESTDIR)$(perllibdir)/Dpkg.pm \
-	      $(DESTDIR)$(perllibdir)/Dpkg.pm.tmp
+	mv $(DESTDIR)$(perllibdir)/Dpkg.pm \
+	   $(DESTDIR)$(perllibdir)/Dpkg.pm.tmp
 	$(do_perl_subst) <$(DESTDIR)$(perllibdir)/Dpkg.pm.tmp \
 	                 >$(DESTDIR)$(perllibdir)/Dpkg.pm
-	rm $(DESTDIR)$(perllibdir)/Dpkg.pm.tmp
+	rm -f $(DESTDIR)$(perllibdir)/Dpkg.pm.tmp
 
 uninstall-local:
 if BUILD_POD_DOC
@@ -225,7 +231,9 @@ test_scripts = \
 	t/Dpkg_Source_Archive.t \
 	t/Dpkg_Source_Package.t \
 	t/Dpkg_Dist_Files.t \
-	t/merge_changelogs.t
+	t/merge_changelogs.t \
+	t/mk.t \
+	$(nil)
 
 test_data = \
 	t/Dpkg_Shlibs/symbols.blacklisted \
@@ -249,8 +257,10 @@ test_data = \
 	t/Dpkg_Shlibs/ld.so.conf.d/inf_recurse.conf \
 	t/Dpkg_Shlibs/ld.so.conf.d/recursive.conf \
 	t/Dpkg_Shlibs/objdump.space \
+	t/Dpkg_Shlibs/objdump.spacesyms \
 	t/Dpkg_Shlibs/objdump.basictags-amd64 \
 	t/Dpkg_Shlibs/objdump.basictags-i386 \
+	t/Dpkg_Shlibs/objdump.basictags-mips \
 	t/Dpkg_Shlibs/objdump.blacklisted \
 	t/Dpkg_Shlibs/objdump.patterns \
 	t/Dpkg_Shlibs/objdump.glib-ia64 \
@@ -258,6 +268,9 @@ test_data = \
 	t/Dpkg_Shlibs/objdump.libc6-2.6 \
 	t/Dpkg_Shlibs/objdump.dbd-pg \
 	t/Dpkg_Shlibs/objdump.ls \
+	t/Dpkg_Shlibs/spacesyms.map \
+	t/Dpkg_Shlibs/spacesyms-c-gen.pl \
+	t/Dpkg_Shlibs/spacesyms-o-map.pl \
 	t/Dpkg_Source_Patch/c-style.patch \
 	t/Dpkg_Source_Patch/ghost-hunk.patch \
 	t/Dpkg_Source_Patch/index-+++.patch \
@@ -265,10 +278,15 @@ test_data = \
 	t/Dpkg_Source_Patch/index-inert.patch \
 	t/Dpkg_Source_Patch/partial.patch \
 	t/Dpkg_Changelog/countme \
+	t/Dpkg_Changelog/date-format \
 	t/Dpkg_Changelog/fields \
 	t/Dpkg_Changelog/misplaced-tz \
 	t/Dpkg_Changelog/regressions \
 	t/Dpkg_Changelog/shadow \
+	t/Dpkg_Checksums/empty \
+	t/Dpkg_Checksums/data-1 \
+	t/Dpkg_Checksums/data-2 \
+	t/Dpkg_Conf/config-mixed \
 	t/Dpkg_Control/control-1 \
 	t/Dpkg_Control/bogus-unsigned.dsc \
 	t/Dpkg_Control/bogus-armor-double.dsc \
@@ -280,6 +298,7 @@ test_data = \
 	t/Dpkg_Control/bogus-armor-spaces.dsc \
 	t/Dpkg_Source_Quilt/parse/debian/patches/series \
 	t/Dpkg_Substvars/substvars1 \
+	t/Dpkg_Substvars/substvars2 \
 	t/Dpkg_Dist_Files/files-byhand \
 	t/merge_changelogs/ch-old \
 	t/merge_changelogs/ch-a \
@@ -292,6 +311,11 @@ test_data = \
 	t/merge_changelogs/ch-merged-basic \
 	t/merge_changelogs/ch-merged-pr \
 	t/merge_changelogs/ch-merged-pr-basic \
+	t/mk/debian/changelog \
+	t/mk/architecture.mk \
+	t/mk/buildflags.mk \
+	t/mk/pkg-info.mk \
+	t/mk/vendor.mk \
 	t/origins/debian \
 	t/origins/default \
 	t/origins/gnewsense \
@@ -300,19 +324,39 @@ test_data = \
 test_data_objects = \
 	t/Dpkg_Shlibs/libobjdump.basictags-amd64.so \
 	t/Dpkg_Shlibs/libobjdump.basictags-i386.so \
-	t/Dpkg_Shlibs/libobjdump.patterns.so
+	t/Dpkg_Shlibs/libobjdump.basictags-mips.so \
+	t/Dpkg_Shlibs/libobjdump.patterns.so \
+	t/Dpkg_Shlibs/libobjdump.spacesyms.so \
+	$(nil)
 
 $(srcdir)/t/Dpkg_Shlibs/libobjdump.basictags-amd64.so: $(srcdir)/t/Dpkg_Shlibs/basictags.c
 	$(CC) $(CFLAGS) -shared -fPIC -Wl,-soname -Wl,libbasictags.so.1 $< \
 	  -DAMD64 -o $@
 
+$(srcdir)/t/Dpkg_Shlibs/libobjdump.basictags-mips.so: $(srcdir)/t/Dpkg_Shlibs/basictags.c
+	$(CC) $(CFLAGS) -shared -fPIC -Wl,-soname -Wl,libbasictags.so.1 $< \
+	  -DMIPS -o $@
+
 $(srcdir)/t/Dpkg_Shlibs/libobjdump.basictags-i386.so: $(srcdir)/t/Dpkg_Shlibs/basictags.c
 	$(CC) $(CFLAGS) -shared -fPIC -Wl,-soname -Wl,libbasictags.so.1 $< \
-	  -o $@
+	  -DI386 -o $@
 
 $(srcdir)/t/Dpkg_Shlibs/libobjdump.patterns.so: $(srcdir)/t/Dpkg_Shlibs/patterns.cpp $(srcdir)/t/Dpkg_Shlibs/patterns.map
 	$(CXX) $(CXXFLAGS) -shared -fPIC -Wl,-soname -Wl,libpatterns.so.1 \
 	    -Wl,--version-script=$(srcdir)/t/Dpkg_Shlibs/patterns.map $< \
+	    -o $@
+
+$(srcdir)/t/Dpkg_Shlibs/spacesyms.c: $(srcdir)/t/Dpkg_Shlibs/spacesyms-c-gen.pl
+	$(srcdir)/t/Dpkg_Shlibs/spacesyms-c-gen.pl > $@
+
+$(srcdir)/t/Dpkg_Shlibs/spacesyms.o: $(srcdir)/t/Dpkg_Shlibs/spacesyms.c $(srcdir)/t/Dpkg_Shlibs/spacesyms-o-map.pl
+	$(CC) $(CFLAGS) -c -fPIC -o $@.tmp $<
+	$(srcdir)/t/Dpkg_Shlibs/spacesyms-o-map.pl $@.tmp $@
+	rm -f $@.tmp
+
+$(srcdir)/t/Dpkg_Shlibs/libobjdump.spacesyms.so: $(srcdir)/t/Dpkg_Shlibs/spacesyms.o $(srcdir)/t/Dpkg_Shlibs/spacesyms.map
+	$(CC) -shared -Wl,-soname -Wl,libspacesyms.so.1 \
+	    -Wl,--version-script=$(srcdir)/t/Dpkg_Shlibs/spacesyms.map $< \
 	    -o $@
 
 .PHONY: refresh-test-data
@@ -324,8 +368,12 @@ refresh-test-data: $(test_data_objects)
 	  >$(srcdir)/t/Dpkg_Shlibs/objdump.basictags-amd64
 	$(OBJDUMP) $(srcdir)/t/Dpkg_Shlibs/libobjdump.basictags-i386.so \
 	  >$(srcdir)/t/Dpkg_Shlibs/objdump.basictags-i386
+	$(OBJDUMP) $(srcdir)/t/Dpkg_Shlibs/libobjdump.basictags-mips.so \
+	  >$(srcdir)/t/Dpkg_Shlibs/objdump.basictags-mips
 	$(OBJDUMP) $(srcdir)/t/Dpkg_Shlibs/libobjdump.patterns.so \
 	  >$(srcdir)/t/Dpkg_Shlibs/objdump.patterns
+	$(OBJDUMP) $(srcdir)/t/Dpkg_Shlibs/libobjdump.spacesyms.so \
+	  >$(srcdir)/t/Dpkg_Shlibs/objdump.spacesyms
 	$(OBJDUMP) `which ls` >$(srcdir)/t/Dpkg_Shlibs/objdump.ls
 
 include $(top_srcdir)/check.am

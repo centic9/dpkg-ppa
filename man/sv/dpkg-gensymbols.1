@@ -2,7 +2,7 @@
 .\"
 .\" Copyright Â© 2007-2011 RaphaÃ«l Hertzog <hertzog@debian.org>
 .\" Copyright Â© 2009-2010 Modestas Vainius <modestas@vainius.eu>
-.\" Copyright Â© 2012-2013 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2012-2015 Guillem Jover <guillem@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH dpkg\-gensymbols 1 2013\-09\-06 Debianprojektet dpkg\-verktygen
+.TH dpkg\-gensymbols 1 2014\-12\-29 Debianprojektet dpkg\-verktygen
 .SH NAMN
 dpkg\-gensymbols \- generera symbolfiler (information om delade bibliotek)
 .
@@ -62,31 +62,29 @@ ut en differens mellan de två versionerna. Om ändringarna är för stora
 kommer programmet dessutom att misslyckas (du kan justera hur stora
 ändringar du kan tolerera, se flaggan \fB\-c\fP).
 .SH "UNDERHÅLLA SYMBOLFILER"
-Symbolfilerna är bara riktigt nyttiga om de motsvarar hur paketet har
-utvecklats över flera versioner. De paketansvariga måste därför uppdatera
-dem varje gång en ny symbol läggs till så att dess associerade minimala
-version motsvarar verkligheten. Diffarna som finns i byggloggarna kan
-användas som startpunkt, men paketansvariga måste dessutom se till att
-beteendet på dessa symboler inte på något sätt har ändrat sig på ett sådant
-sätt att något som använder symbolerna och länkar mot den nya versionen
-slutar fungera med den gamla versionen. I de flesta fall kan differensfilen
-appliceras direkt på filen debian/\fIpaket\fP. Med det i åtanke så behövs det
-oftast ytterligare justeringar: det rekommenderas att skippa
-Debianrevisionen från det minimala versionsnummer så att den
-bakåtanpassningar med ett lägre versionsnummer, men från samma
-uppströmsversion, fortfarande uppfyller de genererade beroendena. Om
-Debianrevisionen inte kan tas bort på grund av att en symbol faktiskt lades
-till av en Debianspecifik ändring så bör ett "~" läggs till i slutet av
-versionen.
+The symbols files are really useful only if they reflect the evolution of
+the package through several releases. Thus the maintainer has to update them
+every time that a new symbol is added so that its associated minimal version
+matches reality.  The diffs contained in the build logs can be used as a
+starting point, but the maintainer, additionally, has to make sure that the
+behaviour of those symbols has not changed in a way that would make anything
+using those symbols and linking against the new version, stop working with
+the old version.  In most cases, the diff applies directly to the
+debian/\fIpackage\fP.symbols file. That said, further tweaks are usually
+needed: it's recommended for example to drop the Debian revision from the
+minimal version so that backports with a lower version number but the same
+upstream version still satisfy the generated dependencies.  If the Debian
+revision can't be dropped because the symbol really got added by the Debian
+specific change, then one should suffix the version with \(oq\fB~\fP\(cq.
 .P
 Innan man applicerar en patch på symbolfilen bör de ansvariga dubbelchecka
 att den är korrekt. Publicerade symboler bör inte försvinna, så patchen bör
 ideellt sett bara lägga till nya rader.
 .P
-Obsevera att du kan skriva kommentarer i symbols\-filer: alla rader med "#"
-som första tecken är kommentarer, såvida inte det börjar med "#include" (se
-stycket \fBAnvända inkluderingar\fP). Rader som börjar med "#MISSING:" är
-speciella kommentarer som dokumenterar symboler som har försvunnit.
+Note that you can put comments in symbols files: any line with \(oq#\(cq as
+the first character is a comment except if it starts with \(oq#include\(cq
+(see section \fBUsing includes\fP).  Lines starting with \(oq#MISSING:\(cq are
+special comments documenting symbols that have disappeared.
 .P
 Glöm inte att kontrollera om de gamla symbolversionerna måste ökas. Det
 finns inget sätt för \fBdpkg\-gensymbols\fP att varna om detta. Att blint
@@ -145,15 +143,14 @@ och skrivas i sin originalform så som de lästes in.
 .SS Standardsymboltaggar
 .TP 
 \fBoptional\fP
-En symbol markerad som valfri (optional) kan försvinna från bibliotektet när
-som helst och kommer aldrig göra så att \fBdpkg\-gensymbols\fP
-misslyckas. Försvunna symboler kommer dock fortfarande visas som saknade
-(MISSING) i differensen för varje ny paketversion. Detta beteende fungerar
-som en påminnelse för de paketansvariga om att symbolen måste tas bort från
-symbolfilen eller läggas tillbaka till biblioteket. När en valfri symbol som
-tidigare markerats som saknad (MISSING) plötsligt dyker upp igen i en senare
-version kommer den att uppgraderas tillbaka till befintligstatus
-("existing") med den minsta tillgängliga versionen oförändrad.
+A symbol marked as optional can disappear from the library at any time and
+that will never cause \fBdpkg\-gensymbols\fP to fail. However, disappeared
+optional symbols will continuously appear as MISSING in the diff in each new
+package revision.  This behaviour serves as a reminder for the maintainer
+that such a symbol needs to be removed from the symbol file or readded to
+the library. When the optional symbol, which was previously declared as
+MISSING, suddenly reappears in the next revision, it will be upgraded back
+to the \(lqexisting\(rq status with its minimum version unchanged.
 
 Taggen är användbar för symboler som är privata och vars försvinnande inte
 gör att ABI:et går sönder. De flesta C++\-mallinstansieringar faller till
@@ -161,34 +158,53 @@ exempel in under denna kategori. Som andra taggar kan den här även ha ett
 godtyckligt värde: det kan användas för att indikera varför symbolen är att
 anse som valfri.
 .TP 
-\fBarch=\fP\fIarkitekturlista\fP
-Denna tag gör det möjligt att begränsa vilken uppsättning arkitekturer
-symbolen är tänkt att finnas för. När symbollistan uppdateras med symboler
-som upptäcks i biblioteket behandlas alla arkitekturspecifika symboler som
-inte gäller den aktuella värdarkitekturen som om de inte fanns. Om en
-arkitekturspecifik symbol som motsvarar den aktuella värdarkitekturen inte
-existerar i biblioteket gäller de vanliga reglerna för saknade symboler, och
-kan få \fBdpkg\-gensymbols\fP att misslyckas. Å andra sidan, om en
-arkitekturspecifik symbol hittas där den inte var menad att finnas (då den
-aktuella värdarkitekturen inte är listad i taggen), görs den
-arkitekturneutral (dvs. "arch"\-taggen tas bort och symbolen kommer finnas
-med i differensen på grund av denna ändring), men den anses inte som ny.
+\fBarch=\fP\fIarchitecture\-list\fP
+.TQ
+\fBarch\-bits=\fP\fIarchitecture\-bits\fP
+.TQ
+\fBarch\-endian=\fP\fIarchitecture\-endianness\fP
+These tags allow one to restrict the set of architectures where the symbol
+is supposed to exist. The \fBarch\-bits\fP and \fBarch\-endian\fP tags are supported
+since dpkg 1.18.0. When the symbols list is updated with the symbols
+discovered in the library, all arch\-specific symbols which do not concern
+the current host architecture are treated as if they did not exist. If an
+arch\-specific symbol matching the current host architecture does not exist
+in the library, normal procedures for missing symbols apply and it may cause
+\fBdpkg\-gensymbols\fP to fail. On the other hand, if the arch\-specific symbol
+is found when it was not supposed to exist (because the current host
+architecture is not listed in the tag or does not match the endianness and
+bits), it is made arch neutral (i.e. the arch, arch\-bits and arch\-endian
+tags are dropped and the symbol will appear in the diff due to this change),
+but it is not considered as new.
 
 I det vanliga icke\-mall\-läget skrivs endast de arkitekturspecifika symboler
 som motsvarar den aktuella värdarkitekturen till symbolfilen. Å andra sidan
 skrivs alla arkitekturspecifika symboler (inklusive de från andra
 arkitekturer) till symbolfilen i mall\-läget.
 
-Formatet på \fIarkitekturlista\fP är detsamma som det som används i
-\fBBuild\-Depends\fP\-fältet i \fIdebian/control\fP (bortsett från de omslutande
-hakparenteserna []). Den första symbolen från listan nedan, till exempel,
-kommer endast att tas med på arkitekturerna alpha, valfri\-amd64, ia64, den
-andra bara på linux\-arkitekturer medan den tredje tas med överallt förutom
-på armel.
+The format of \fIarchitecture\-list\fP is the same as the one used in the
+\fBBuild\-Depends\fP field of \fIdebian/control\fP (except the enclosing square
+brackets []). For example, the first symbol from the list below will be
+considered only on alpha, any\-amd64 and ia64 architectures, the second only
+on linux architectures, while the third one anywhere except on armel.
 
  (arch=alpha any\-amd64 ia64)a_64bit_specific_symbol@Base 1.0
  (arch=linux\-any)linux_specific_symbol@Base 1.0
  (arch=!armel)symbol_armel_does_not_have@Base 1.0
+
+The \fIarchitecture\-bits\fP is either \fB32\fP or \fB64\fP.
+
+ (arch\-bits=32)a_32bit_specific_symbol@Base 1.0
+ (arch\-bits=64)a_64bit_specific_symbol@Base 1.0
+
+The \fIarchitecture\-endianness\fP is either \fBlittle\fP or \fBbig\fP.
+
+ (arch\-endian=little)a_little_endian_specific_symbol@Base 1.0
+ (arch\-endian=big)a_big_endian_specific_symbol@Base 1.0
+
+Multiple restrictions can be chained.
+
+ (arch\-bits=32|arch\-endian=little)a_32bit_le_symbol@Base 1.0
 .TP 
 \fBignore\-blacklist\fP
 dpkg\-gensymbols har en intern svartlista över symboler som inte skall

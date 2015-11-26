@@ -11,10 +11,10 @@ AC_CONFIG_AUX_DIR([build-aux])
 
 AC_USE_SYSTEM_EXTENSIONS
 
-AM_INIT_AUTOMAKE([1.11 foreign nostdinc no-dist-gzip dist-xz])
+AM_INIT_AUTOMAKE([1.11 -Wall foreign nostdinc no-dist-gzip dist-xz])
 AM_SILENT_RULES([yes])
 
-AM_GNU_GETTEXT_VERSION([0.18.2])
+AM_GNU_GETTEXT_VERSION([0.19])
 AM_GNU_GETTEXT([external])
 DPKG_DIST_CHECK([test "$GMSGFMT" = ":" && test "$USE_NLS" = "yes"],
                 [gettext required when NLS support enabled])
@@ -22,6 +22,7 @@ DPKG_DIST_CHECK([test "$GMSGFMT" = ":" && test "$USE_NLS" = "yes"],
 # Shared libraries are disabled on purpose, currently there is no ABI stability
 # guarantee, and it will be broken at will. The infrastructure is in place just
 # to be able to test that its future activation will work.
+AM_PROG_AR
 LT_INIT([disable-shared])
 DPKG_BUILD_SHARED_LIBS
 DPKG_LINKER_VERSION_SCRIPT
@@ -32,6 +33,8 @@ DPKG_BUILD_PROG([start-stop-daemon])
 DPKG_BUILD_PROG([update-alternatives])
 
 # Allow alternate directories
+DPKG_WITH_DIR([devlibdir], [${libdir}],
+              [dpkg development library directory [LIBDIR]])
 DPKG_WITH_DIR([pkgconfdir], [${sysconfdir}/${PACKAGE_NAME}],
               [dpkg configuration directory [SYSCONFDIR/dpkg]])
 DPKG_WITH_DIR([admindir], [${localstatedir}/lib/${PACKAGE_NAME}],
@@ -61,6 +64,7 @@ DPKG_CODE_COVERAGE
 AC_SYS_LARGEFILE
 
 # Checks for libraries.
+DPKG_LIB_MD
 DPKG_LIB_ZLIB
 DPKG_LIB_BZ2
 DPKG_LIB_LZMA
@@ -108,7 +112,6 @@ DPKG_CHECK_PROGNAME
 DPKG_CHECK_COMPAT_FUNCS([getopt getopt_long obstack_free \
                          strnlen strndup strerror strsignal asprintf \
                          scandir alphasort unsetenv])
-AC_CHECK_DECLS([strnlen], [[#include <string.h>]])
 AC_CHECK_FUNCS([memcpy lchown],
                [], [AC_MSG_ERROR([missing required function])])
 AC_CHECK_FUNCS([strtoimax isascii setsid getdtablesize \
@@ -123,6 +126,8 @@ DPKG_COMPILER_WARNINGS
 DPKG_COMPILER_OPTIMISATIONS
 DPKG_LINKER_OPTIMISATIONS
 DPKG_ARCHITECTURE
+AC_DEFINE([PACKAGE_RELEASE], [PACKAGE_VERSION " (" ARCHITECTURE ")"],
+          [Define the project release information, version and architecture])
 
 AC_CONFIG_FILES([ Makefile
 		  dpkg-deb/Makefile
@@ -134,7 +139,7 @@ AC_CONFIG_FILES([ Makefile
 		  lib/compat/Makefile
 		  lib/dpkg/Makefile
 		  lib/dpkg/libdpkg.pc
-		  lib/dpkg/test/Makefile
+		  lib/dpkg/t/Makefile
 		  doc/Doxyfile
 		  man/Makefile
 		  po/Makefile.in

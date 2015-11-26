@@ -2,7 +2,7 @@
 .\"
 .\" Copyright Â© 1995-1996 Ian Jackson <ian@chiark.chu.cam.ac.uk>
 .\" Copyright Â© 2000 Wichert Akkerman <wakkerma@debian.org>
-.\" Copyright Â© 2006-2014 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2006-2015 Guillem Jover <guillem@debian.org>
 .\" Copyright Â© 2008-2010 RaphaÃ«l Hertzog <hertzog@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
@@ -40,21 +40,23 @@ crea un fichero de control de subida de Debian, el fichero \fB.changes\fP.
 .TP 
 \fB\-g\fP
 Specifies that only source and architecture independent packages should be
-uploaded (no architecture specific packages will be included).
+uploaded, thus no architecture specific packages will be included (since
+dpkg 1.17.11).
 .TP 
 \fB\-G\fP
 Specifies that only source and architecture specific packages should be
-uploaded (no architecture independent packages will be included).
+uploaded, thus no architecture independent packages will be included (since
+dpkg 1.17.11).
 .TP 
 \fB\-b\fP, \fB\-B\fP, \fB\-A\fP
-Define que sólo se va a realizar una construcción binaria (no se incluyen
-los ficheros de fuente). No hay diferencias entre \fB\-b\fP, \fB\-B\fP y \fB\-A\fP, y el
-fichero \fB.changes\fP incluirá aquellos ficheros creados mediante el o los
-«target» de make binarios (\fBbinary\-*\fP) del paquete a construir.
+Specifies that a binary\-only build is taking place, thus no source files are
+to be included.  There's no distinction between \fB\-b\fP, \fB\-B\fP and \fB\-A\fP, the
+produced \fB.changes\fP file will include whatever files were created by the
+\fBbinary\-*\fP target(s) of the package being built.
 .TP 
 \fB\-S\fP
-Define que sólo se deben subir las fuentes (no se incluirán paquetes
-binarios).
+Specifies that only the source should be uploaded, thus no binary packages
+will be included.
 .PP
 Las opciones \fB\-s\fP\fIx\fP controlan si el archivo original de las fuentes se
 incluye en la subida generada, en caso de generar alguna fuente (por
@@ -100,12 +102,11 @@ Define una variable de sustitución de la salida. Consulte
 salida.
 .TP 
 \fB\-T\fP\fIfichero\-variables\-sustitución\fP
-Lee variables de sustitución desde el \fIfichero\-variables\-sustitución\fP;
-\fBdebian/substvars\fP es el valor por omisión. No se realiza ninguna
-sustitución de variables en ninguno de los campos que son parte de la
-salida. Por otra para, la variable especial \fIFormat\fP sobreescribirá el
-campo del mismo nombre. Puede utilizar esta opción varias veces para leer
-variables de sustitución de varios ficheros.
+Read substitution variables in \fIsubstvars\-file\fP; the default is
+\fBdebian/substvars\fP.  No variable substitution is done on any of the fields
+that are output, however the special variable \fIFormat\fP will override the
+field of the same name. This option can be used multiple times to read
+substitution variables from multiple files (since dpkg 1.15.6).
 
 .TP 
 \fB\-D\fP\fIcampo\fP\fB=\fP\fIvalor\fP

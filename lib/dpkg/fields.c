@@ -4,7 +4,7 @@
  *
  * Copyright © 1995 Ian Jackson <ian@chiark.greenend.org.uk>
  * Copyright © 2001 Wichert Akkerman
- * Copyright © 2006-2014 Guillem Jover <guillem@debian.org>
+ * Copyright © 2006-2015 Guillem Jover <guillem@debian.org>
  * Copyright © 2009 Canonical Ltd.
  * Copyright © 2011 Linaro Limited
  * Copyright © 2011 Raphaël Hertzog <hertzog@debian.org>
@@ -26,11 +26,11 @@
 #include <config.h>
 #include <compat.h>
 
-#include <ctype.h>
 #include <string.h>
 #include <stdio.h>
 
 #include <dpkg/i18n.h>
+#include <dpkg/c-ctype.h>
 #include <dpkg/dpkg.h>
 #include <dpkg/dpkg-db.h>
 #include <dpkg/arch.h>
@@ -40,44 +40,56 @@
 #include <dpkg/pkg-spec.h>
 #include <dpkg/triglib.h>
 
+/**
+ * Flags to parse a name associated to a value.
+ */
+enum parse_nv_flags {
+  /** Expect no more words (default). */
+  PARSE_NV_LAST		= 0,
+  /** Expect another word after the parsed name. */
+  PARSE_NV_NEXT		= DPKG_BIT(0),
+  /** Do not fail if there is no name with an associated value found. */
+  PARSE_NV_FALLBACK	= DPKG_BIT(1),
+};
+
+/**
+ * Parses a name and returns its associated value.
+ *
+ * Gets a pointer to the string to parse in @a strp, and modifies the pointer
+ * to the string to point to the end of the parsed text. If no value is found
+ * for the name and #PARSE_NV_FALLBACK is set in @a flags then @a strp is set
+ * to NULL and returns -1, otherwise a parse error is emitted.
+ */
 static int
-parse_nv_next(struct parsedb_state *ps,
-              const char *what, const struct namevalue *nv_head,
-              const char **strp)
+parse_nv(struct parsedb_state *ps, enum parse_nv_flags flags,
+         const char **strp, const struct namevalue *nv_head, const char *what)
 {
   const char *str_start = *strp, *str_end;
   const struct namevalue *nv;
+  int value;
 
   if (str_start[0] == '\0')
     parse_error(ps, _("%s is missing"), what);
 
   nv = namevalue_find_by_name(nv_head, str_start);
-  if (nv == NULL)
-    parse_error(ps, _("'%.50s' is not allowed for %s"), str_start, what);
+  if (nv == NULL) {
+    /* We got no match, skip further string validation. */
+    if (!(flags & PARSE_NV_FALLBACK))
+      parse_error(ps, _("'%.50s' is not allowed for %s"), str_start, what);
 
-  /* We got the fallback value, skip further string validation. */
-  if (nv->length == 0) {
     str_end = NULL;
+    value = -1;
   } else {
     str_end = str_start + nv->length;
-    while (isspace(str_end[0]))
+    while (c_isspace(str_end[0]))
       str_end++;
+    value = nv->value;
   }
-  *strp = str_end;
 
-  return nv->value;
-}
-
-static int
-parse_nv_last(struct parsedb_state *ps,
-              const char *what, const struct namevalue *nv_head,
-              const char *str)
-{
-  int value;
-
-  value = parse_nv_next(ps, what, nv_head, &str);
-  if (str_is_set(str))
+  if (!(flags & PARSE_NV_NEXT) && str_is_set(str_end))
     parse_error(ps, _("junk after %s"), what);
+
+  *strp = str_end;
 
   return value;
 }
@@ -106,23 +118,25 @@ f_filecharf(struct pkginfo *pkg, struct pkgbin *pkgbin,
   int allowextend;
 
   if (!*value)
-    parse_error(ps, _("empty file details field `%s'"), fip->name);
+    parse_error(ps, _("empty file details field '%s'"), fip->name);
   if (!(ps->flags & pdb_recordavailable))
     parse_error(ps,
-                _("file details field `%s' not allowed in status file"),
+                _("file details field '%s' not allowed in status file"),
                fip->name);
   allowextend = !pkg->files;
   fdpp = &pkg->files;
   cpos= nfstrsave(value);
   while (*cpos) {
-    space= cpos; while (*space && !isspace(*space)) space++;
+    space = cpos;
+    while (*space && !c_isspace(*space))
+      space++;
     if (*space)
       *space++ = '\0';
     fdp= *fdpp;
     if (!fdp) {
       if (!allowextend)
         parse_error(ps,
-                    _("too many values in file details field `%s' "
+                    _("too many values in file details field '%s' "
                       "(compared to others)"), fip->name);
       fdp= nfmalloc(sizeof(struct filedetails));
       fdp->next= NULL;
@@ -131,12 +145,13 @@ f_filecharf(struct pkginfo *pkg, struct pkgbin *pkgbin,
     }
     STRUCTFIELD(fdp, fip->integer, const char *) = cpos;
     fdpp= &fdp->next;
-    while (*space && isspace(*space)) space++;
+    while (*space && c_isspace(*space))
+      space++;
     cpos= space;
   }
   if (*fdpp)
     parse_error(ps,
-                _("too few values in file details field `%s' "
+                _("too few values in file details field '%s' "
                   "(compared to others)"), fip->name);
 }
 
@@ -159,8 +174,8 @@ f_boolean(struct pkginfo *pkg, struct pkgbin *pkgbin,
   if (!*value)
     return;
 
-  boolean = parse_nv_last(ps, _("yes/no in boolean field"),
-                          booleaninfos, value);
+  boolean = parse_nv(ps, PARSE_NV_LAST, &value, booleaninfos,
+                     _("yes/no in boolean field"));
   STRUCTFIELD(pkgbin, fip->integer, bool) = boolean;
 }
 
@@ -174,8 +189,8 @@ f_multiarch(struct pkginfo *pkg, struct pkgbin *pkgbin,
   if (!*value)
     return;
 
-  multiarch = parse_nv_last(ps, _("foreign/allowed/same/no in quadstate field"),
-                            multiarchinfos, value);
+  multiarch = parse_nv(ps, PARSE_NV_LAST, &value, multiarchinfos,
+                       _("foreign/allowed/same/no in quadstate field"));
   STRUCTFIELD(pkgbin, fip->integer, int) = multiarch;
 }
 
@@ -204,11 +219,20 @@ f_priority(struct pkginfo *pkg, struct pkgbin *pkgbin,
            struct parsedb_state *ps,
            const char *value, const struct fieldinfo *fip)
 {
+  const char *str = value;
+  int priority;
+
   if (!*value) return;
-  pkg->priority = parse_nv_last(ps, _("word in 'Priority' field"),
-                                priorityinfos, value);
-  if (pkg->priority == PKG_PRIO_OTHER)
+
+  priority = parse_nv(ps, PARSE_NV_LAST | PARSE_NV_FALLBACK, &str,
+                      priorityinfos, _("word in 'Priority' field"));
+
+  if (str == NULL) {
+    pkg->priority = PKG_PRIO_OTHER;
     pkg->otherpriority = nfstrsave(value);
+  } else {
+    pkg->priority = priority;
+  }
 }
 
 void
@@ -223,12 +247,12 @@ f_status(struct pkginfo *pkg, struct pkgbin *pkgbin,
   if (ps->flags & pdb_recordavailable)
     return;
 
-  pkg->want = parse_nv_next(ps, _("first (want) word in 'Status' field"),
-                            wantinfos, &value);
-  pkg->eflag = parse_nv_next(ps, _("second (error) word in 'Status' field"),
-                             eflaginfos, &value);
-  pkg->status = parse_nv_last(ps, _("third (status) word in 'Status' field"),
-                              statusinfos, value);
+  pkg->want = parse_nv(ps, PARSE_NV_NEXT, &value, wantinfos,
+                       _("first (want) word in 'Status' field"));
+  pkg->eflag = parse_nv(ps, PARSE_NV_NEXT, &value, eflaginfos,
+                        _("second (error) word in 'Status' field"));
+  pkg->status = parse_nv(ps, PARSE_NV_LAST, &value, statusinfos,
+                         _("third (status) word in 'Status' field"));
 }
 
 void
@@ -396,13 +420,13 @@ f_dependency(struct pkginfo *pkg, struct pkgbin *pkgbin,
     for (;;) {
       depnamestart= p;
       /* Skip over package name characters. */
-      while (*p && !isspace(*p) && *p != ':' && *p != '(' && *p != ',' &&
+      while (*p && !c_isspace(*p) && *p != ':' && *p != '(' && *p != ',' &&
              *p != '|')
         p++;
       depnamelength= p - depnamestart ;
       if (depnamelength == 0)
         parse_error(ps,
-                    _("`%s' field, missing package name, or garbage where "
+                    _("'%s' field, missing package name, or garbage where "
                       "package name expected"), fip->name);
 
       varbuf_reset(&depname);
@@ -412,7 +436,7 @@ f_dependency(struct pkginfo *pkg, struct pkgbin *pkgbin,
       emsg = pkg_name_is_illegal(depname.buf);
       if (emsg)
         parse_error(ps,
-                    _("`%s' field, invalid package name `%.255s': %s"),
+                    _("'%s' field, invalid package name '%.255s': %s"),
                     fip->name, depname.buf, emsg);
       dop= nfmalloc(sizeof(struct deppossi));
       dop->up= dyp;
@@ -437,7 +461,7 @@ f_dependency(struct pkginfo *pkg, struct pkgbin *pkgbin,
         int archlength;
 
         archstart = ++p;
-        while (*p && !isspace(*p) && *p != '(' && *p != ',' && *p != '|')
+        while (*p && !c_isspace(*p) && *p != '(' && *p != ',' && *p != '|')
           p++;
         archlength = p - archstart;
         if (archlength == 0)
@@ -471,11 +495,14 @@ f_dependency(struct pkginfo *pkg, struct pkgbin *pkgbin,
       }
 
       /* Skip whitespace after package name. */
-      while (isspace(*p)) p++;
+      while (c_isspace(*p))
+        p++;
 
       /* See if we have a versioned relation. */
       if (*p == '(') {
-        p++; while (isspace(*p)) p++;
+        p++;
+        while (c_isspace(*p))
+          p++;
         c1= *p;
         if (c1 == '<' || c1 == '>') {
           c2= *++p;
@@ -488,14 +515,14 @@ f_dependency(struct pkginfo *pkg, struct pkgbin *pkgbin,
             p++;
           } else if (c2 == '<' || c2 == '>') {
             parse_error(ps,
-                        _("`%s' field, reference to `%.255s':\n"
+                        _("'%s' field, reference to '%.255s':\n"
                           " bad version relationship %c%c"),
                         fip->name, depname.buf, c1, c2);
             dop->verrel = DPKG_RELATION_NONE;
           } else {
             parse_warn(ps,
-                       _("`%s' field, reference to `%.255s':\n"
-                         " `%c' is obsolete, use `%c=' or `%c%c' instead"),
+                       _("'%s' field, reference to '%.255s':\n"
+                         " '%c' is obsolete, use '%c=' or '%c%c' instead"),
                        fip->name, depname.buf, c1, c1, c1, c1);
             dop->verrel |= DPKG_RELATION_EQ;
           }
@@ -504,9 +531,9 @@ f_dependency(struct pkginfo *pkg, struct pkgbin *pkgbin,
           p++;
         } else {
           parse_warn(ps,
-                     _("`%s' field, reference to `%.255s':\n"
+                     _("'%s' field, reference to '%.255s':\n"
                        " implicit exact match on version number, "
-                       "suggest using `=' instead"),
+                       "suggest using '=' instead"),
                      fip->name, depname.buf);
           dop->verrel = DPKG_RELATION_EQ;
         }
@@ -515,34 +542,37 @@ f_dependency(struct pkginfo *pkg, struct pkgbin *pkgbin,
                      _("only exact versions may be used for '%s' field"),
                      "Provides");
 
-        if (!isspace(*p) && !isalnum(*p)) {
+        if (!c_isspace(*p) && !c_isalnum(*p)) {
           parse_warn(ps,
-                     _("`%s' field, reference to `%.255s':\n"
+                     _("'%s' field, reference to '%.255s':\n"
                        " version value starts with non-alphanumeric, "
                        "suggest adding a space"),
                      fip->name, depname.buf);
         }
         /* Skip spaces between the relation and the version. */
-        while (isspace(*p)) p++;
+        while (c_isspace(*p))
+          p++;
 
 	versionstart= p;
         while (*p && *p != ')' && *p != '(') {
-          if (isspace(*p)) break;
+          if (c_isspace(*p))
+            break;
           p++;
         }
 	versionlength= p - versionstart;
-        while (isspace(*p)) p++;
+        while (c_isspace(*p))
+          p++;
         if (*p == '(')
           parse_error(ps,
-                      _("`%s' field, reference to `%.255s': "
-                        "version contains `%c'"), fip->name, depname.buf, ')');
+                      _("'%s' field, reference to '%.255s': "
+                        "version contains '%c'"), fip->name, depname.buf, ')');
         else if (*p != ')')
           parse_error(ps,
-                      _("`%s' field, reference to `%.255s': "
-                        "version contains `%c'"), fip->name, depname.buf, ' ');
+                      _("'%s' field, reference to '%.255s': "
+                        "version contains '%c'"), fip->name, depname.buf, ' ');
         else if (*p == '\0')
           parse_error(ps,
-                      _("`%s' field, reference to `%.255s': "
+                      _("'%s' field, reference to '%.255s': "
                         "version unterminated"), fip->name, depname.buf);
         varbuf_reset(&version);
         varbuf_add_buf(&version, versionstart, versionlength);
@@ -550,7 +580,9 @@ f_dependency(struct pkginfo *pkg, struct pkgbin *pkgbin,
         parse_db_version(ps, &dop->version, version.buf,
                          _("'%s' field, reference to '%.255s': "
                            "error in version"), fip->name, depname.buf);
-        p++; while (isspace(*p)) p++;
+        p++;
+        while (c_isspace(*p))
+          p++;
       } else {
         dop->verrel = DPKG_RELATION_NONE;
         dpkg_version_blank(&dop->version);
@@ -558,18 +590,22 @@ f_dependency(struct pkginfo *pkg, struct pkgbin *pkgbin,
       if (!*p || *p == ',') break;
       if (*p != '|')
         parse_error(ps,
-                    _("`%s' field, syntax error after reference to package `%.255s'"),
+                    _("'%s' field, syntax error after reference to package '%.255s'"),
                     fip->name, dop->ed->name);
       if (fip->integer == dep_conflicts ||
           fip->integer == dep_breaks ||
           fip->integer == dep_provides ||
           fip->integer == dep_replaces)
         parse_error(ps,
-                    _("alternatives (`|') not allowed in %s field"), fip->name);
-      p++; while (isspace(*p)) p++;
+                    _("alternatives ('|') not allowed in %s field"), fip->name);
+      p++;
+      while (c_isspace(*p))
+        p++;
     }
     if (!*p) break;
-    p++; while (isspace(*p)) p++;
+    p++;
+    while (c_isspace(*p))
+      p++;
   }
 }
 
@@ -585,7 +621,7 @@ scan_word(const char **valp)
       *valp = p;
       return NULL;
     }
-    if (cisspace(*p)) {
+    if (c_iswhite(*p)) {
       p++;
       continue;
     }
@@ -593,7 +629,7 @@ scan_word(const char **valp)
     break;
   }
   for (;;) {
-    if (*p && !cisspace(*p)) {
+    if (*p && !c_iswhite(*p)) {
       p++;
       continue;
     }
@@ -626,11 +662,11 @@ f_trigpend(struct pkginfo *pend, struct pkgbin *pkgbin,
     emsg = trig_name_is_illegal(word);
     if (emsg)
       parse_error(ps,
-                  _("illegal pending trigger name `%.255s': %s"), word, emsg);
+                  _("illegal pending trigger name '%.255s': %s"), word, emsg);
 
     if (!trig_note_pend_core(pend, nfstrsave(word)))
       parse_error(ps,
-                  _("duplicate pending trigger `%.255s'"), word);
+                  _("duplicate pending trigger '%.255s'"), word);
   }
 }
 
@@ -653,12 +689,12 @@ f_trigaw(struct pkginfo *aw, struct pkgbin *pkgbin,
     pend = pkg_spec_parse_pkg(word, &err);
     if (pend == NULL)
       parse_error(ps,
-                  _("illegal package name in awaited trigger `%.255s': %s"),
+                  _("illegal package name in awaited trigger '%.255s': %s"),
                   word, err.str);
 
     if (!trig_note_aw(pend, aw))
       parse_error(ps,
-                  _("duplicate awaited trigger package `%.255s'"), word);
+                  _("duplicate awaited trigger package '%.255s'"), word);
 
     trig_awaited_pend_enqueue(pend);
   }

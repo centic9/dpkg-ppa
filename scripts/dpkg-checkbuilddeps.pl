@@ -3,7 +3,7 @@
 # dpkg-checkbuilddeps
 #
 # Copyright © 2001 Joey Hess <joeyh@debian.org>
-# Copyright © 2006-2009,2011-2012 Guillem Jover <guillem@debian.org>
+# Copyright © 2006-2009, 2011-2015 Guillem Jover <guillem@debian.org>
 # Copyright © 2007-2011 Raphael Hertzog <hertzog@debian.org>
 #
 # This program is free software; you can redistribute it and/or modify
@@ -28,6 +28,7 @@ use Dpkg ();
 use Dpkg::Gettext;
 use Dpkg::ErrorHandling;
 use Dpkg::Arch qw(get_host_arch);
+use Dpkg::Vendor qw(run_vendor_hook);
 use Dpkg::BuildProfiles qw(get_build_profiles set_build_profiles);
 use Dpkg::Deps;
 use Dpkg::Control::Info;
@@ -36,17 +37,17 @@ textdomain('dpkg-dev');
 
 sub version()
 {
-	printf(_g("Debian %s version %s.\n"), $Dpkg::PROGNAME, $Dpkg::PROGVERSION);
-	exit(0);
+    printf g_("Debian %s version %s.\n"), $Dpkg::PROGNAME, $Dpkg::PROGVERSION;
 }
 
 sub usage {
-	printf _g(
+    printf g_(
 'Usage: %s [<option>...] [<control-file>]')
-	. "\n\n" . _g(
+    . "\n\n" . g_(
 'Options:
   -A             ignore Build-Depends-Arch and Build-Conflicts-Arch.
   -B             ignore Build-Depends-Indep and Build-Conflicts-Indep.
+  -I             ignore built-in build dependencies and conflicts.
   -d build-deps  use given string as build dependencies instead of
                  retrieving them from control file
   -c build-conf  use given string for build conflicts instead of
@@ -57,22 +58,24 @@ sub usage {
                  change the administrative directory.
   -?, --help     show this help message.
       --version  show the version.')
-	. "\n\n" . _g(
+    . "\n\n" . g_(
 '<control-file> is the control file to process (default: debian/control).')
 	. "\n", $Dpkg::PROGNAME;
 }
 
 my $ignore_bd_arch = 0;
 my $ignore_bd_indep = 0;
+my $ignore_bd_builtin = 0;
 my ($bd_value, $bc_value);
 my $bp_value;
 my $host_arch = get_host_arch();
 my $admindir = $Dpkg::ADMINDIR;
 my @options_spec = (
     'help|?' => sub { usage(); exit(0); },
-    'version' => \&version,
+    'version' => sub { version(); exit 0; },
     'A' => \$ignore_bd_arch,
     'B' => \$ignore_bd_indep,
+    'I' => \$ignore_bd_builtin,
     'd=s' => \$bd_value,
     'c=s' => \$bc_value,
     'a=s' => \$host_arch,
@@ -97,12 +100,18 @@ my $fields = $control->get_source();
 my $facts = parse_status("$admindir/status");
 
 unless (defined($bd_value) or defined($bc_value)) {
-    my @bd_list = ('build-essential:native', $fields->{'Build-Depends'});
+    my @bd_list;
+    push @bd_list, run_vendor_hook('builtin-build-depends')
+        if not $ignore_bd_builtin;
+    push @bd_list, $fields->{'Build-Depends'};
     push @bd_list, $fields->{'Build-Depends-Arch'} if not $ignore_bd_arch;
     push @bd_list, $fields->{'Build-Depends-Indep'} if not $ignore_bd_indep;
     $bd_value = deps_concat(@bd_list);
 
-    my @bc_list = ($fields->{'Build-Conflicts'});
+    my @bc_list;
+    push @bc_list, run_vendor_hook('builtin-build-conflicts')
+        if not $ignore_bd_builtin;
+    push @bc_list, $fields->{'Build-Conflicts'};
     push @bc_list, $fields->{'Build-Conflicts-Arch'} if not $ignore_bd_arch;
     push @bc_list, $fields->{'Build-Conflicts-Indep'} if not $ignore_bd_indep;
     $bc_value = deps_concat(@bc_list);
@@ -113,7 +122,7 @@ if ($bd_value) {
     my $dep = deps_parse($bd_value, reduce_restrictions => 1,
                          build_dep => 1, build_profiles => \@build_profiles,
                          host_arch => $host_arch);
-    error(_g('error occurred while parsing %s'),
+    error(g_('error occurred while parsing %s'),
           'Build-Depends/Build-Depends-Arch/Build-Depends-Indep')
         unless defined $dep;
     push @unmet, build_depends($dep, $facts);
@@ -122,18 +131,18 @@ if ($bc_value) {
     my $dep = deps_parse($bc_value, reduce_restrictions => 1, union => 1,
                          build_dep => 1, build_profiles => \@build_profiles,
                          host_arch => $host_arch);
-    error(_g('error occurred while parsing %s'),
+    error(g_('error occurred while parsing %s'),
           'Build-Conflicts/Build-Conflicts-Arch/Build-Conflicts-Indep')
         unless defined $dep;
     push @conflicts, build_conflicts($dep, $facts);
 }
 
 if (@unmet) {
-	printf { *STDERR } _g('%s: Unmet build dependencies: '), $Dpkg::PROGNAME;
+	printf { *STDERR } g_('%s: Unmet build dependencies: '), $Dpkg::PROGNAME;
 	print { *STDERR } join(' ', map { $_->output() } @unmet), "\n";
 }
 if (@conflicts) {
-	printf { *STDERR } _g('%s: Build conflicts: '), $Dpkg::PROGNAME;
+	printf { *STDERR } g_('%s: Build conflicts: '), $Dpkg::PROGNAME;
 	print { *STDERR } join(' ', map { $_->output() } @conflicts), "\n";
 }
 exit 1 if @unmet || @conflicts;
@@ -145,7 +154,7 @@ sub parse_status {
 	my $facts = Dpkg::Deps::KnownFacts->new();
 	local $/ = '';
 	open(my $status_fh, '<', $status)
-		or syserr(_g('cannot open %s'), $status);
+		or syserr(g_('cannot open %s'), $status);
 	while (<$status_fh>) {
 		next unless /^Status: .*ok installed$/m;
 

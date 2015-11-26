@@ -20,10 +20,9 @@ use warnings;
 
 our $VERSION = '0.01';
 
-# Based on wig&pen implementation
-use parent qw(Dpkg::Source::Package::V2);
+use File::Spec;
+use File::Copy;
 
-use Dpkg;
 use Dpkg::Gettext;
 use Dpkg::ErrorHandling;
 use Dpkg::Util qw(:list);
@@ -33,13 +32,13 @@ use Dpkg::Source::Functions qw(erasedir fs_time);
 use Dpkg::Source::Quilt;
 use Dpkg::Exit;
 
-use File::Spec;
-use File::Copy;
+# Based on wig&pen implementation
+use parent qw(Dpkg::Source::Package::V2);
 
 our $CURRENT_MINOR_VERSION = '0';
 
 sub init_options {
-    my ($self) = @_;
+    my $self = shift;
     $self->{options}{single_debian_patch} //= 0;
     $self->{options}{allow_version_of_quilt_db} //= [];
 
@@ -74,7 +73,7 @@ sub can_build {
     return ($code, $msg) if $code == 0;
 
     my $v = Dpkg::Version->new($self->{fields}->{'Version'});
-    return (0, _g('non-native package version does not contain a revision'))
+    warning (g_('non-native package version does not contain a revision'))
         if $v->is_native();
 
     my $quilt = $self->build_quilt_object($dir);
@@ -84,7 +83,7 @@ sub can_build {
 }
 
 sub get_autopatch_name {
-    my ($self) = @_;
+    my $self = shift;
     if ($self->{options}{single_debian_patch}) {
         return 'debian-changes';
     } else {
@@ -117,7 +116,7 @@ sub apply_patches {
         unlink($dest) if -l $dest;
         unless (-f _) { # Don't overwrite real files
             symlink($basename, $dest)
-                or syserr(_g("can't create symlink %s"), $dest);
+                or syserr(g_("can't create symlink %s"), $dest);
         }
     }
 
@@ -129,7 +128,7 @@ sub apply_patches {
         # them afterwards in --after-build
         my $pc_unapply = $quilt->get_db_file('.dpkg-source-unapply');
         open(my $unapply_fh, '>', $pc_unapply)
-            or syserr(_g('cannot write %s'), $pc_unapply);
+            or syserr(g_('cannot write %s'), $pc_unapply);
         close($unapply_fh);
     }
 
@@ -187,9 +186,9 @@ sub do_build {
         if (any { $version eq $_ }
             @{$self->{options}{allow_version_of_quilt_db}})
         {
-            warning(_g('unsupported version of the quilt metadata: %s'), $version);
+            warning(g_('unsupported version of the quilt metadata: %s'), $version);
         } else {
-            error(_g('unsupported version of the quilt metadata: %s'), $version);
+            error(g_('unsupported version of the quilt metadata: %s'), $version);
         }
     }
 
@@ -229,11 +228,11 @@ sub register_patch {
 
     if (-s $tmpdiff) {
         copy($tmpdiff, $patch)
-            or syserr(_g('failed to copy %s to %s'), $tmpdiff, $patch);
+            or syserr(g_('failed to copy %s to %s'), $tmpdiff, $patch);
         chmod(0666 & ~ umask(), $patch)
-            or syserr(_g("unable to change permission of `%s'"), $patch);
+            or syserr(g_("unable to change permission of '%s'"), $patch);
     } elsif (-e $patch) {
-        unlink($patch) or syserr(_g('cannot remove %s'), $patch);
+        unlink($patch) or syserr(g_('cannot remove %s'), $patch);
     }
 
     if (-e $patch) {

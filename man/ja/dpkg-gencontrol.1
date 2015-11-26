@@ -2,7 +2,7 @@
 .\"
 .\" Copyright 息 1995-1996 Ian Jackson <ian@chiark.chu.cam.ac.uk>
 .\" Copyright 息 2000 Wichert Akkerman <wakkerma@debian.org>
-.\" Copyright 息 2006, 2012-2013 Guillem Jover <guillem@debian.org>
+.\" Copyright 息 2006, 2012-2013, 2015 Guillem Jover <guillem@debian.org>
 .\" Copyright 息 2007-2008 Rapha谷l Hertzog <hertzog@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
@@ -60,8 +60,9 @@ field.
 変数を設定する。出力時の置換に関する詳細は、\fBdeb\-substvars\fP(5) を参照のこと。
 .TP 
 \fB\-T\fP\fIsubstvars\-file\fP
-変数の設定を \fIsubstvars\-file\fP から読み取る。デフォルトは \fBdebian/substvars\fP
-である。このオプションを複数回設定することで、複数のファイルから変数置換の設定を読み取ることができる。
+Read substitution variables in \fIsubstvars\-file\fP; the default is
+\fBdebian/substvars\fP.  This option can be used multiple times to read
+substitution variables from multiple files (since dpkg 1.15.6).
 .TP 
 \fB\-D\fP\fIfield\fP\fB=\fP\fIvalue\fP
 出力制御ファイルのフィールドを上書きもしくは追加する。
@@ -103,8 +104,8 @@ file.
 算出する際に用いられる他、出力ファイルのデフォルトの場所としても用いられる。
 .TP 
 \fB\-O\fP[\fIfilename\fP]
-Print the control file to standard output (or \fIfilename\fP if specified),
-rather than to \fBdebian/tmp/DEBIAN/control\fP (or
+Print the control file to standard output (or \fIfilename\fP if specified,
+since dpkg 1.17.2), rather than to \fBdebian/tmp/DEBIAN/control\fP (or
 \fIpackage\-build\-dir\fP\fB/DEBIAN/control\fP if \fB\-P\fP was used).
 .TP 
 \fB\-?\fP, \fB\-\-help\fP

@@ -3,6 +3,7 @@
  * mlib.c - ‘must’ library: routines will succeed or longjmp
  *
  * Copyright © 1994,1995 Ian Jackson <ian@chiark.greenend.org.uk>
+ * Copyright © 2006-2013, 2015 Guillem Jover <guillem@debian.org>
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -62,9 +63,9 @@ void *m_malloc(size_t amount) {
 }
 
 void *
-m_calloc(size_t size)
+m_calloc(size_t nmemb, size_t size)
 {
-  return must_alloc(calloc(1, size));
+  return must_alloc(calloc(nmemb, size));
 }
 
 void *m_realloc(void *r, size_t amount) {
@@ -84,19 +85,27 @@ m_strndup(const char *str, size_t n)
 }
 
 int
+m_vasprintf(char **strp, const char *fmt, va_list args)
+{
+  int n;
+
+  n = vasprintf(strp, fmt, args);
+  if (n >= 0)
+    return n;
+
+  onerr_abort++;
+  ohshite(_("failed to allocate memory"));
+}
+
+int
 m_asprintf(char **strp, const char *fmt, ...)
 {
   va_list args;
   int n;
 
   va_start(args, fmt);
-  n = vasprintf(strp, fmt, args);
+  n = m_vasprintf(strp, fmt, args);
   va_end(args);
-
-  onerr_abort++;
-  if (n < 0)
-    ohshite(_("failed to allocate memory"));
-  onerr_abort--;
 
   return n;
 }

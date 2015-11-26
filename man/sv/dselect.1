@@ -4,7 +4,7 @@
 .\" Copyright Â© 2000 Josip Rodin
 .\" Copyright Â© 2001 Joost Kooij
 .\" Copyright Â© 2001 Wichert Akkerman <wakkerma@debian.org>
-.\" Copyright Â© 2010-2014 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2010-2015 Guillem Jover <guillem@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@
 dselect \- Debians pakethanteringsskal
 .
 .SH SYNOPS
-\fBdselect\fP [\fIflagga\fP...] [\fIåtgärd\fP]
+\fBdselect\fP [\fIoption\fP...] [\fIcommand\fP...]
 .
 .SH BESKRIVNING
 \fBdselect\fP
@@ -51,34 +51,34 @@ arkivservrar på Internet, lokala arkivservrar eller finnas på cd\-rom. Den
 rekommenderade åtkomstmetoden är \fIapt\fP, vilken tillhandahålls av paketet
 \fBapt\fP.
 .PP
-Vanligtvis anropas \fBdselect\fP utan parametrar. En interaktiv meny visas då,
-vilken ger användaren ett antal handlingsmöjligheter. Om en handling ges som
-kommandoradsflagga startas denna med en gång. Flera kommandoradsflaggor
-finns ändå att tillgå för att förändra hur \fBdselect\fP arbetar eller för att
-visa ytterligare information om programmet.
+Normally \fBdselect\fP is invoked without parameters. An interactive menu is
+presented, offering the user a list of commands. If a command is given as
+argument, then that command is started immediately. Several command line
+parameters are still available to modify the running behaviour of \fBdselect\fP
+or show additional information about the program.
 .
 .SH FLAGGOR
-Alla flaggorna kan ges både på kommandoraden och i \fBdselect\fPs
-konfigurationsfil \fI/etc/dpkg/dselect.cfg\fP eller filerna i
-konfigurationskatalogen \fI/etc/dpkg/dpkg.cfg.d/\fP. En rad i
-konfigurationsfilen är antingen en flagga (precis samma som på
-kommandoraden, men utan inledande bindestreck) eller en kommentar (om den
-börjar med ett \fB#\fP).
+All options can be specified both on the command line and in the \fBdselect\fP
+configuration file \fI/etc/dpkg/dselect.cfg\fP or the files on the
+configuration directory \fI/etc/dpkg/dselect.cfg.d/\fP. Each line in the
+configuration file is either an option (exactly the same as the command line
+option but without leading hyphens) or a comment (if it starts with a
+\(oq\fB#\fP\(cq).
 .br
 .TP 
 \fB\-\-admindir\fP\fI katalog\fP
-Ändrar namnet på katalogen där dpkg letar efter filerna "status",
-"available" m.fl. Förval är \fI/var/lib/dpkg\fP och du bör normalt sett inte
-behöva ändra det.
+Changes the directory where the dpkg \(oq\fIstatus\fP\(cq, \(oq\fIavailable\fP\(cq
+and similar files are located.  This defaults to \fI/var/lib/dpkg\fP and
+normally there shouldn't be any need to change it.
 .TP 
-\fB\-\-debug\fP\fI fil \fP|\fI \fP\fB\-D\fP\fIfil\fP
+\fB\-D\fP\fIfile\fP, \fB\-\-debug\fP \fIfile\fP
 Slå på felsökningsläge. Felsökningsinformation lagras i \fIfil\fP.
 .TP 
 \fB\-\-expert\fP
 Slår på expertläge, dvs. visar inte hjälpmeddelanden som kanske kan vara
 irriterande.
 .TP 
-\fB\-\-colour\fP|\fB\-\-color\fP \fIskärmdel:\fP[\fIförgrund\fP],[\fIbakgrund\fP][\fI:attr\fP[\fI+attr+...\fP]]
+\fB\-\-colour\fP|\fB\-\-color\fP \fIscreenpart\fP:[\fIforeground\fP],[\fIbackground\fP][:\fIattr\fP[\fI+attr\fP]...]
 Ställer in skärmfärger. Detta fungerar bara om din skärm kan visa
 färger. Flaggan kan användas flera gånger (och fungerar bäst i
 \fIdselect.cfg\fP). Varje användning ändrar färgen (och kanske andra attribut)
@@ -129,22 +129,22 @@ Efter skärmdelen följer ett kolon och färgangivelsen. Du kan ange antingen
 förgrundsfärgen, bakgrundsfärgen eller båda två, vilka kommer att ersätta de
 inkompilerade färgerna. Använd de normala curses\-namnen för färgerna.
 .IP
-Du kan även ange ytterligare ett kolon efter färgangivelsen och där ge
-attribut. Detta är en lista med ett eller flera attribut, avdelade med
-plustecken ("+"). Tillgängliga attribut är (alla fungerar inte på alla
-terminaler): normal, standout (uthävd), underline (understruken), reverse
-(omvänd), blink, bright (ljus), dim (mörk), bold (fet)
+Optionally, after the color specification is another colon, and an attribute
+specification. This is a list of one or more attributes, separated by plus
+(\(oq+\(cq) characters.  Available attributes include (not all of these will
+work on all terminals): \fBnormal\fP, \fBstandout\fP, \fBunderline\fP, \fBreverse\fP,
+\fBblink\fP, \fBbright\fP, \fBdim\fP, \fBbold\fP
 .TP 
-\fB\-\-help\fP
+\fB\-?\fP, \fB\-\-help\fP
 Visar en kort hjälptext och ger lyckat avslut.
 .TP 
 \fB\-\-version\fP
 Visar versionsinformation och ger lyckat avslut.
 .
-.SH ÅTGÄRDER
-När \fBdselect\fP startas kan det utföra följande åtgärder, antingen direkt om
-de anges på kommandoraden eller genom att fråga användaren med en meny om
-det körs interaktivt:
+.SH KOMMANDON
+When \fBdselect\fP is started it can perform the following commands, either
+directly if it was specified on the command line or by prompting the user
+with a menu of available commands if running interactively:
 .SS "Access (Åtkomst)"
 Väljer och konfigurerar en "åtkomstmetod" för att komma åt paketsamlingen.
 .sp
@@ -165,9 +165,8 @@ databas. Paketlistor finns normalt på paketsamlingarna i filer vid namn
 underhåller samlingarna genom att använda programmet
 \fBdpkg\-scanpackages(1)\fP.
 .sp
-Vilka detaljer som ges om uppdateringen beror på hur åtkomstmetoden är
-implementerad. Normalt är processen självförklarande och behöver ingen
-interaktion med användaren.
+Details of the update command depend on the access method's implementation.
+Normally the process is straightforward and requires no user interaction.
 .sp
 .SS "Select (Välj)"
 Visar eller väljer paketval och beroenden.
@@ -206,12 +205,12 @@ gör det finns på https://bugs.debian.org/ eller genom att läsa
 dokumentationen för \fBbug\fP(1) eller \fBreportbug\fP(1), om dessa är
 installerade.
 .sp
-Detaljerna för hur installationen genomförs beror på hur åtkomstmetoden är
-implementerad. Uppmärksamhet och indata från användaren kan behövas under
-installation, konfiguration eller borttagning av paket, beroende på hur
-utvecklarskripten i paketen ser ut. Vissa paket använder
-\fBdebconf\fP(1)\-biblioteket, vilket möjliggör mer flexibel, eller till och med
-automatiserad, installation och inställning.
+Details of the install command depend on the access method's
+implementation.  The user's attention and input may be required during
+installation, configuration or removal of packages. This depends on the
+maintainer scripts in the package. Some packages make use of the
+\fBdebconf\fP(1)  library, allowing for more flexible or even automated
+installation setups.
 .sp
 .SS "Config (Konfigurera)"
 Konfigurera paket som tidigare installerats, men ej till fullo
@@ -222,7 +221,7 @@ Tar bort eller raderar helt installerade paket som markerats för
 borttagning.
 .sp
 .SS "Quit (Avsluta)"
-Avslutar \fBdselect\fP
+Quit \fBdselect\fP.
 .sp
 Avslutar dselect med felkod noll (lyckat).
 .sp
@@ -242,10 +241,11 @@ tillräckligt substitut för administratörsfärdighet och
 paketsystemet i Debian. Om tvivel föreligger, konsultera manualsidan
 \fBdpkg\fP(1) och Debians policymanual.
 .sp
-Så länge inte \fBdselect\fP körs i expert\- eller direktläge visas en hjälpskärm
-först när val görs i menyn.  Användaren rekommenderas \fIå det bestämdaste\fP
-att studera all information som finns i direkthjälpskärmarna när de dyker
-upp. Direkthjälpskärmarna kan när som helst nås via tangenten \fB"?"\fP.
+Unless \fBdselect\fP is run in expert or immediate mode, a help screen is first
+displayed when choosing this command from the menu. The user is \fIstrongly\fP
+advised to study all of the information presented in the online help
+screens, when one pops up.  The online help screens can at any time be
+invoked with the \(oq\fB?\fP\(cq key.
 .sp
 .SS Skärmutseende
 .sp
@@ -255,19 +255,18 @@ eller i grupp (när tillämpligt) genom att välja en grupprubrik. Den nedre
 halvan av skärmen visar detaljer om det paket som just nu visas i den övre
 halvan. Vilken sorts detaljer som visas kan varieras.
 .sp
-Genom att trycka \fB"I"\fP växlas vyn mellan en fullskärmsvisning av
-paketlistan, en förstorad vy för paketdetaljer, eller en skärm med två lika
-stora delar.
+Pressing the \(oq\fBI\fP\(cq key toggles a full\-screen display of the packages
+list, an enlarged view of the package details, or the equally split screen.
 .sp
 .SS Paketdetaljvy
 .sp
-Paketdetaljvyn visar normalt den utökade paketbeskrivningen för det paket
-som just nu är markerat i paketvallistan.
-Vilken sorts detaljer som visas kan växlas genom att trycka på \fB"i"\fP,
-vilken växlar mellan:
- \- den utökade beskrivningen
- \- kontrollinformationen för den installerade versionen
- \- kontrollinformationen för den tillgängliga versionen
+The package details view by default shows the extended package description
+for the package that is currently selected in the packages status list.
+The type of detail can be toggled by pressing the \(oq\fBi\fP\(cq key.
+This alternates between:
+ \- the extended description
+ \- the control information for the installed version
+ \- the control information for the available version
 .sp
 I en beroendelösningsskärm är det även möjligt att visa specifika
 otillfredsställda beroenden eller konflikter för paketet.
@@ -278,14 +277,14 @@ Huvudvalskärmen visar en lista över samtliga paket som är kända för Debians
 pakethanteringssystem, vilket inbegriper paket installerade på systemet och
 paket kända från databasen över tillgängliga paket.
 .sp
-För varje paket visar listan paketets status, prioritet, avdelning,
-installerade och tillgängliga arkitekturer, installerade och tillgängliga
-versioner, paketets namn och dess korta beskrivning, allt på en rad. Genom
-att trycka på knappen \fB"A"\fP slås visningen av installerade och tillgängliga
-arkitekturer på och av. Genom att trycka på tangenten \fB"V"\fP slås visningen
-av den installerade och den aktiva versionen på och av. Genom att trycka på
-tangenten \fB"v"\fP växlas paketstatusvisningen mellan ordrik och förkortad,
-med den förkortade visningen som förval.
+For every package, the list shows the package's status, priority, section,
+installed and available architecture, installed and available versions, the
+package name and its short description, all in one line.  By pressing the
+\(oq\fBA\fP\(cq key, the display of the installed and available architecture
+can be toggled between on an off.  By pressing the \(oq\fBV\fP\(cq key, the
+display of the installed and available version can be toggled between on an
+off.  By pressing the \(oq\fBv\fP\(cq key, the package status display is
+toggled between verbose and shorthand.  Shorthand display is the default.
 .sp
 Den förkortade statusindikeringen består av fyra delar: en felflagga, vilken
 normalt skall vara blank, aktuell status, senast vald status och nu vald
@@ -335,22 +334,22 @@ att använda rörelsekommandon kopplade till följande tangenter:
 .sp
 .SS "Sökning och sortering"
 .sp
-Det går att söka i paketlistan efter paketnamn. Detta görs genom att trycka
-\fB"/"\fP och ange en enkel söksträng. Strängen tolkas som ett reguljärt
-uttryck enligt \fBregex\fP(7). Om du lägger till \fB"/d"\fP till sökuttrycket
-kommer dselect även söka beskrivningar. Om du lägger till \fB"/i"\fP kommer
-sökningen att ignorera skillnader mellan gemener och versaler. Du kan
-kombinera dessa båda suffix så här: \fB"/id"\fP. Sökningen kan upprepas genom
-att trycka på \fB"n"\fP eller \fB"\e"\fP tills det önskade paketet hittas. Om
-sökningen når slutet på listan hoppar den till början och fortsätter
-sökningen därifrån.
+The list of packages can be searched by package name. This is done by
+pressing \(oq\fB/\fP\(cq, and typing a simple search string. The string is
+interpreted as a \fBregex\fP(7)  regular expression.  If you add \(oq\fB/d\fP\(cq
+to the search expression, dselect will also search in descriptions.  If you
+add \(oq\fB/i\fP\(cq the search will be case insensitive.  You may combine
+these two suffixes like this: \(oq\fB/id\fP\(cq.  Repeated searching is
+accomplished by repeatedly pressing the \(oq\fBn\fP\(cq or \(oq\fB\e\fP\(cq keys,
+until the wanted package is found.  If the search reaches the bottom of the
+list, it wraps to the top and continues searching from there.
 .sp
-Listans sorteringsordning kan ändras genom att trycka på tangenterna
-\fB"o"\fP och \fB"O"\fP upprepade gånger.
-Följande nio sorteringsordningar kan väljas:
- alfabetisk         tillgänglig            status
- prioritet+sektion  tillgänglig+prioritet  status+prioritet
- sektion+prioritet  tillgänglig+sektion    status+sektion
+The list sort order can be varied by pressing
+the \(oq\fBo\fP\(cq and \(oq\fBO\fP\(cq keys repeatedly.
+The following nine sort orderings can be selected:
+ alphabet          available           status
+ priority+section  available+priority  status+priority
+ section+priority  available+section   status+section
 .br
 När det inte anges explicit ovan används alfabetisk ordning som den slutliga
 sorteringsnyckeln.
@@ -397,12 +396,13 @@ efterfrågad valstatus för några av de listade paketen, för att lösa de
 beroenden eller konflikter som fick beroendelösningsskärmen att visas. Det
 är oftast bäst att följa upp de förslag \fBdselect\fP ger.
 .sp
-De listade paketens valstatus kan återställas till ursprungsinställningarna,
-såsom de var innan de otillfredsställda beroendena eller konflikterna
-skapades, genom att trycka på tangenten \fB"R"\fP. Genom att trycka på \fB"D"\fP
-återställs de föreslagna lösningarna, men ändringen som fick skärmen att
-visas behålls i den status de valdes. Slutligen, genom att trycka \fB"U"\fP
-återställs valen återigen till de automatiskt föreslagna värdena.
+The listed packages' selection state may be reverted to the original
+settings, as they were before the unresolved depends or conflicts were
+created, by pressing the \(oq\fBR\fP\(cq key.  By pressing the \(oq\fBD\fP\(cq
+key, the automatic suggestions are reset, but the change that caused the
+dependency resolution screen to be prompted is kept as requested.  Finally,
+by pressing \(oq\fBU\fP\(cq, the selections are again set to the automatic
+suggestion values.
 .sp
 .SS "Bekräfta de efterfrågade valen"
 .sp
@@ -412,22 +412,22 @@ följd av de efterfrågade valen kommer de nya valen att lagras. Om det
 däremot finns några otillfredsställda beroenden kommer \fBdselect\fP återigen
 gå till beroendelösningsskärmen.
 .sp
-För att ändra en uppsättning val som skapar otillfredsställda beroenden
-eller konflikter, och tvinga \fBdselect\fP att godta dem trycker du på
-\fB"Q"\fP\-tangenten. Detta ställer ovillkorligen in de val användaren gjort,
-vilket vanligtvis inte bör göras om man inte har läst det finstilta.
+To alter a set of selections that creates unresolved depends or conflicts
+and forcing \fBdselect\fP to accept it, press the \(oq\fBQ\fP\(cq key. This sets
+the selections as specified by the user, unconditionally. Generally, don't
+do this unless you've read the fine print.
 .sp
-Motsatt effekt, att backa ut från valändringar och återgå till föregående
-vallista, kan fås genom att trycka på tangenterna \fB"X"\fP eller
-\fBEscape\fP. Genom att upprepade gånger trycka dessa tangenter, kan eventuella
-skadliga paketval backas ut helt och hållet för att återgå till senast
-etablerade inställningar.
+The opposite effect, to back out any selections change requests and go back
+to the previous list of selections, is attained by pressing the \(oq\fBX\fP\(cq
+or \fBescape\fP keys. By repeatedly pressing these keys, any possibly
+detrimental changes to the requested package selections can be backed out
+completely to the last established settings.
 .sp
-Om du av misstag väljer några inställningar och vill återställa alla val
-till det som för närvarande är installerat på systemet trycker du på knappen
-\fB"C"\fP. Det motsvarar på ett ungefär att använda kommandot "avbryt håll" på
-alla paket, men det ger en tydligare panikknapp om användaren av misstag
-tryckte på \fBEnter\fP.
+If you mistakenly establish some settings and wish to revert all the
+selections to what is currently installed on the system, press the
+\(oq\fBC\fP\(cq key.  This is somewhat similar to using the unhold command on
+all packages, but provides a more obvious panic button in cases where the
+user pressed \fBenter\fP by accident.
 .sp
 .
 .SH MILJÖVARIABLER

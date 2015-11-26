@@ -43,11 +43,11 @@ This object represents a changelog entry. It is composed
 of a set of lines with specific purpose: an header line, changes lines, a
 trailer line. Blank lines can be between those kind of lines.
 
-=head1 FUNCTIONS
+=head1 METHODS
 
 =over 4
 
-=item my $entry = Dpkg::Changelog::Entry->new()
+=item $entry = Dpkg::Changelog::Entry->new()
 
 Creates a new object. It doesn't represent a real changelog entry
 until one has been successfully parsed or built from scratch.
@@ -55,7 +55,7 @@ until one has been successfully parsed or built from scratch.
 =cut
 
 sub new {
-    my ($this) = @_;
+    my $this = shift;
     my $class = ref($this) || $this;
 
     my $self = {
@@ -70,7 +70,7 @@ sub new {
     return $self;
 }
 
-=item my $str = $entry->output()
+=item $str = $entry->output()
 
 =item "$entry"
 
@@ -176,7 +176,7 @@ parts.
 =cut
 
 sub is_empty {
-    my ($self) = @_;
+    my $self = shift;
     return !(defined($self->{header}) || defined($self->{trailer}) ||
 	     scalar(@{$self->{changes}}));
 }
@@ -189,7 +189,7 @@ empty line to separate each part.
 =cut
 
 sub normalize {
-    my ($self) = @_;
+    my $self = shift;
     if (defined($self->{header})) {
 	$self->{header} =~ s/\s+$//g;
 	$self->{blank_after_header} = [''];
@@ -210,7 +210,7 @@ sub normalize {
     }
 }
 
-=item my $src = $entry->get_source()
+=item $src = $entry->get_source()
 
 Return the name of the source package associated to the changelog entry.
 
@@ -220,7 +220,7 @@ sub get_source {
     return;
 }
 
-=item my $ver = $entry->get_version()
+=item $ver = $entry->get_version()
 
 Return the version associated to the changelog entry.
 
@@ -230,7 +230,7 @@ sub get_version {
     return;
 }
 
-=item my @dists = $entry->get_distributions()
+=item @dists = $entry->get_distributions()
 
 Return a list of target distributions for this version.
 
@@ -261,7 +261,7 @@ sub get_urgency {
     return;
 }
 
-=item my $maint = $entry->get_maintainer()
+=item $maint = $entry->get_maintainer()
 
 Return the string identifying the person who signed this changelog entry.
 
@@ -271,7 +271,7 @@ sub get_maintainer {
     return;
 }
 
-=item my $time = $entry->get_timestamp()
+=item $time = $entry->get_timestamp()
 
 Return the timestamp of the changelog entry.
 
@@ -281,7 +281,7 @@ sub get_timestamp {
     return;
 }
 
-=item my $str = $entry->get_dpkg_changes()
+=item $str = $entry->get_dpkg_changes()
 
 Returns a string that is suitable for usage in a C<Changes> field
 in the output format of C<dpkg-parsechangelog>.
@@ -289,7 +289,7 @@ in the output format of C<dpkg-parsechangelog>.
 =cut
 
 sub get_dpkg_changes {
-    my ($self) = @_;
+    my $self = shift;
     my $header = $self->get_part('header') // '';
     $header =~ s/\s+$//;
     return "\n$header\n\n" . join("\n", @{$self->get_part('changes')});
@@ -299,7 +299,7 @@ sub get_dpkg_changes {
 
 =head1 CHANGES
 
-=head2 Version 1.00
+=head2 Version 1.00 (dpkg 1.15.6)
 
 Mark the module as public.
 

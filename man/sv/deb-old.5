@@ -50,11 +50,11 @@ Den första tar\-filen innehåller kontrollinformationen, lagrade som ett antal
 vanliga filer. Filen \fBcontrol\fP måste finnas, eftersom den innehåller
 grundläggande kontrollinformation.
 .PP
-I vissa väldigt gamla arkiv kan filerna i kontroll\-tarfilen eventuellt ligga
-i en underkatalog vid namn \fBDEBIAN\fP. Om så är fallet kommer underkatalogen
-\fBDEBIAN\fP även att finnas i kontroll\-tarfilen, och kontroll\-tarfilen kommer
-bara innehålla filer i den katalogen. Eventuellt kan kontroll\-tarfilen
-innehålla en post för "\fB.\fP", det vill säga aktuell katalog.
+In some very old archives, the files in the control tarfile may optionally
+be in a \fBDEBIAN\fP subdirectory. In that case, the \fBDEBIAN\fP subdirectory
+will be in the control tarfile too, and the control tarfile will have only
+files in that directory. Optionally the control tarfile may contain an entry
+for \(oq\fB.\fP\(cq, that is, the current directory.
 .PP
 Den andra gzip\-packade tar\-filen är filsystemsarkivet, vilken innehåller
 sökvägar relativt rotkatalogen för systemet det skall installeras

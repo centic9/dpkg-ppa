@@ -27,13 +27,13 @@ deb\-origin \- file con informazioni specifiche del produttore
 .SH SINTASSI
 \fB/etc/dpkg/origins/\fP\fInomefile\fP
 .SH DESCRIZIONE
-I file in \fB/etc/dpkg/origins\fP possono fornire informazioni su vari
-produttori che forniscono pacchetti Debian. Contengono un certo numero di
-campi, o di commenti quando la riga inizia con \fB«#»\fP. Ogni campo inizia con
-un'etichetta, come \fBVendor\fP o \fBParent\fP, seguita da due punti («:») e dal
-corpo del campo. I campi sono delimitati solamente dalle etichette dei
-campi. In altre parole, il testo dei campi può essere lungo più righe, ma
-gli strumenti le uniscono quando elaborano il corpo del campo.
+The files in \fB/etc/dpkg/origins\fP can provide information about various
+vendors who are providing Debian packages. They contain a number of fields,
+or comments when the line starts with \(oq\fB#\fP\(cq.  Each field begins with
+a tag, such as \fBVendor\fP or \fBParent\fP, followed by a colon and the body of
+the field. Fields are delimited only by field tags. In other words, field
+text may be multiple lines in length, but the tools will join lines when
+processing the body of the field.
 .SH "CAMPI OBBLIGATORI"
 .TP 
 \fBVendor:\fP\fI nome\-produttore\fP

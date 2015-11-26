@@ -3,6 +3,7 @@
 .\" Copyright Â© 1996-1998 Ian Jackson and Christian Schwarz
 .\"   for parts of the text reused from the Debian Policy
 .\" Copyright Â© 2007 Frank Lichtenheld <djpig@debian.org>
+.\" Copyright Â© 2011, 2013, 2015 Guillem Jover <guillem@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -43,18 +44,18 @@ aufzugeben.
 .TP 
 \fIUpstream\-Version\fP
 Dies ist der Hauptteil der Versionsnummer. Normalerweise ist dies die
-Versionsnummer des Originalpakets (»Upstream«), aus dem die \fI.deb\fP\-Datei
-erstellt wurde, falls dies zutrifft. Normalerweise wird diese im gleichen
-Format vorliegen, wie sie von den Originalautoren angegeben wurde;
-allerdings mag es notwendig sein, sie umzuformatieren, damit sie in das
-Format des Paketverwaltungssystems und des Vergleichsschemas passt.
+Versionsnummer des Originalpakets (\(lqUpstream\(rq), aus dem die
+\&\fI.deb\fP\-Datei erstellt wurde, falls dies zutrifft. Normalerweise wird diese
+im gleichen Format vorliegen, wie sie von den Originalautoren angegeben
+wurde; allerdings mag es notwendig sein, sie umzuformatieren, damit sie in
+das Format des Paketverwaltungssystems und des Vergleichsschemas passt.
 .IP
 Das Vergleichsverhalten des Paketverwaltungssystems in Hinblick auf die
 \fIUpstream\-Version\fP wird unten beschrieben. Der \fIUpstream\-Version\fP\-Anteil
 der Versionnummer muss angegeben werden.
 .IP
-\fIUpstream\-Version\fP darf nur alphanumerische Zeichen (»A\-Za\-z0\-9«) und \fB.\fP
-\fB+\fP \fB\-\fP \fB:\fP \fB~\fP (Satzpunkt, Plus, Bindestrich, Doppelpunkt, Tilde)
+\fIUpstream\-Version\fP darf nur alphanumerische Zeichen (\(lqA\-Za\-z0\-9\(rq) und
+\&\fB.\fP \fB+\fP \fB\-\fP \fB:\fP \fB~\fP (Satzpunkt, Plus, Bindestrich, Doppelpunkt, Tilde)
 enthalten und sollte mit einer Zahl beginnen. Falls es keine
 \fIDebian\-Revision\fP gibt, sind Bindestriche nicht erlaubt; falls es keine
 \fIEpoche\fP gibt, sind Doppelpunkte nicht erlaubt.
@@ -68,11 +69,11 @@ genauso wie die \fIUpstream\-Version\fP verglichen.
 Dieser Teil ist optional; falls er nicht vorhanden ist, darf
 \fIUpstream\-Version\fP keinen Bindestrich enthalten. Dieses Format ist für den
 Fall, dass ein Stück Software speziell dafür geschrieben wurde, ein
-Debian\-Paket zu werden und es daher nur eine »Debianisierung« gibt und somit
-keine Revisionsanzeige notwendig ist.
+Debian\-Paket zu werden und es daher nur eine \(lqDebianisierung\(rq gibt und
+somit keine Revisionsanzeige notwendig ist.
 .IP
-Es ist üblich, die \fIDebian\-Revision\fP jedesmal bei »1« neu zu starten, wenn
-die \fIUpstream\-Version\fP erhöht wird.
+Es ist üblich, die \fIDebian\-Revision\fP jedesmal bei \(oq1\(cq neu zu starten,
+wenn die \fIUpstream\-Version\fP erhöht wird.
 .IP
 Dpkg wird die Versionsnummer beim letzten Bindestrich in der Zeichenkette
 auftrennen (falls dieser existiert) um die \fIUpstream\-Version\fP und die
@@ -93,7 +94,7 @@ dieser zurückgeliefert. Der lexikalische Vergleich ist ein veränderter
 Vergleich von ASCII\-Werten, bei denen Buchstaben vor allen nicht\-Buchstaben
 sortiert werden und die Tilde vor allem sortiert wird, sogar vor dem Ende
 eines Teiles. So sind zum Beispiel die folgenden Teile in sortierter
-Reihenfolge: »~~«, »~~a«, »~«, der leere Teil, »a«.
+Reihenfolge: \(oq~~\(cq, \(oq~~a\(cq, \(oq~\(cq, der leere Teil, \(oqa\(cq.
 .PP
 Dann wird der Anfangsteil des Restes jeder Zeichenkette bestimmt, der
 komplett aus Ziffern besteht. Der numerische Wert dieser zwei Teile wird
@@ -111,8 +112,8 @@ Beachten Sie, dass Epochen uns erlauben, Fehler in der Versionsnummerierung
 zurückzulassen, und mit Situationen umzugehen, in denen sich das Schema der
 Versionsnummerierung ändert. Sie sind \fBnicht\fP dazu gedacht, mit
 Versionsnummern umzugehen, die Zeichenketten aus Buchstaben enthalten, die
-das Paketverwaltungssystem nicht interpretieren kann (wie »ALPHA« oder
-»pre«) oder mit unklugen Reihenfolgen.
+das Paketverwaltungssystem nicht interpretieren kann (wie \(oqALPHA\(cq oder
+\(oqpre\-\(cq)) oder mit unklugen Reihenfolgen.
 .SH BEMERKUNGEN
 Das Tilde\-Zeichen uns seine speziellen Sortiereigenschaften wurden in Dpkg
 1.10 eingeführt und einige Teile der Bauskripte von Dpkg haben erst später

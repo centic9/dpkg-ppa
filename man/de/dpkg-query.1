@@ -2,7 +2,7 @@
 .\"
 .\" Copyright Â© 2001 Wichert Akkerman <wakkerma@debian.org>
 .\" Copyright Â© 2006-2007 Frank Lichtenheld <djpig@debian.org>
-.\" Copyright Â© 2006-2012 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2006-2015 Guillem Jover <guillem@debian.org>
 .\" Copyright Â© 2008-2011 RaphaÃ«l Hertzog <hertzog@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
@@ -23,7 +23,7 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH dpkg\-query 1 2012\-04\-03 Debian\-Projekt dpkg\-Programmsammlung
+.TH dpkg\-query 1 2015\-01\-17 Debian\-Projekt dpkg\-Programmsammlung
 .SH BEZEICHNUNG
 dpkg\-query \- ein Werkzeug, um die dpkg\-Datenbank abzufragen
 .
@@ -116,17 +116,17 @@ werden.
 .TP 
 \fB\-\-control\-list\fP \fIPaketname\fP
 Aufführen von Steuerdateien, die auf Ihrem System von \fIPaketname\fP
-installiert wurden. Diese können als Eingabeargumente für \fB\-\-control\-show\fP
-verwandt werden.
+installiert wurden (seit Dpkg 1.16.5). Diese können als Eingabeargumente für
+\fB\-\-control\-show\fP verwandt werden.
 .TP 
 \fB\-\-control\-show\fP \fIPaketname\fP \fISteuerdatei\fP
 Die \fISteuerdatei\fP, die auf Ihrem System von \fIPaketname\fP installiert wurde,
-auf der Standardausgabe ausgeben.
+auf der Standardausgabe ausgeben (seit Dpkg 1.16.5).
 .TP 
 \fB\-c\fP, \fB\-\-control\-path\fP \fIPaketname\fP [\fISteuerdatei\fP]
 Listet die Pfade für Steuerdateien auf, die von \fIPaketname\fP auf Ihrem
-System installiert wurden. Falls \fISteuerdatei\fP angegeben wurde, liste nur
-den Pfad für diese Steuerdatei auf, falls sie existiert.
+System installiert wurden (seit Dpkg 1.15.4). Falls \fISteuerdatei\fP angegeben
+wurde, liste nur den Pfad für diese Steuerdatei auf, falls sie existiert.
 
 \fBWarnung\fP: Dieser Befehl ist veraltet, da er direkten Zugriff auf die
 interne Dpkg\-Datenbank gibt. Bitte wechseln Sie stattdessen zu
@@ -139,8 +139,20 @@ Lösung dafür gibt wird dieser Befehl nicht entfernt.
 \fB\-S\fP, \fB\-\-search\fP \fIDateiname\-Suchmuster\fP ?
 Suche nach Paketen, denen Paketen, die auf ein bestimmtes Muster passen,
 gehören. Die normalen Jokerzeichen (»wildcards«) der Shell können in diesem
-Muster verwandt werden. Dieser Befehl wird weder die zusätzlichen Dateien,
-die durch Betreuer\-Skripte angelegt wurden, noch Alternativen aufführen.
+Muster verwandt werden, wobei der Stern (*) und das Fragezeichen (?) auf
+einen Schrägstrich passen und der inverse Schrägstrich (\e) als
+Maskierzeichen verwandt wird.
+
+Falls das erste Zeichen im \fIDateiname\-Suchmuster\fP keines aus
+\(oq\fB*[?/\fP\(cq ist, dann wird es als Teilzeichenkette\-Suche betrachtet und
+implizit durch \(oq\fB*\fP\(cq eingeschlossen (wie in
+\fB*\fP\fIfilename\-search\-pattern\fP\fB*\fP). Falls die nachfolgende Zeichenkette
+etwas aus \(oq\fB*[?\e\fP\(cq enthält, dann wird dies wie ein Glob\-Muster
+behandelt, andernfalls werden alle abschließenden \(oq\fB/\fP\(cq oder
+\(oq\fB/.\fP\(cq entfernt und ein »literal path lookup« durchgeführt.
+
+Dieser Befehl wird weder die zusätzlichen Dateien, die durch
+Betreuer\-Skripte angelegt wurden, noch Alternativen aufführen.
 .TP 
 \fB\-p\fP, \fB\-\-print\-avail\fP \fIPaketname\fP ?
 Zeige Details über \fIPaketname\fP an, wie diese in \fI/var/lib/dpkg/available\fP
@@ -166,7 +178,8 @@ Gebe die Version aus und beende sich.
 .TP 
 \fB\-\-load\-avail\fP
 Auch die »available«\-Datei laden, wenn die Befehle \fB\-\-show\fP und \fB\-\-list\fP
-verwandt werden, die jetzt standardmnäßig nur die Statusdatei laden.
+verwandt werden, die jetzt standardmnäßig nur die Statusdatei laden (seit
+Dpkg 1.16.2).
 .TP 
 \fB\-f\fP, \fB\-\-showformat=\fP\fIFormat\fP
 Diese Option wird dazu verwendet, das Format der Ausgabe anzugeben, das
@@ -238,9 +251,9 @@ für Felder in Steuerdateien benutzen):
 .TP 
 \fBbinary:Package\fP
 Es enthält den Binärpaketnamen mit einem möglichen Architektur\-Kennzeichner
-wie »libc6:amd64« (seit Dpkg 1.16.2). Der Architektur\-Kennzeichner wird nur
-vorhanden sein, falls das Paket ein Feld \fBMulti\-Arch\fP mit dem Wert \fBsame\fP
-trägt. Damit wird der Name eindeutig.
+wie \(lqlibc6:amd64\(rq (seit Dpkg 1.16.2). Der Architektur\-Kennzeichner
+wird nur vorhanden sein, falls das Paket ein Feld \fBMulti\-Arch\fP mit dem Wert
+\fBsame\fP trägt. Damit wird der Name eindeutig.
 .TP 
 \fBbinary:Summary\fP
 Es enthält die Kurzbeschreibung des Pakets (seit Dpkg 1.16.2).
@@ -284,7 +297,7 @@ Version zu erhalten, könnten Sie folgendes ausführen:
 Die angeforderte Abfrage wurde erfolgreich ausgeführt.
 .TP 
 \fB1\fP
-Beim Lesen der Befehlszeile oder beim Ausführen der Abfrage traten Probleme
+Beim Lesen der Kommandozeile oder beim Ausführen der Abfrage traten Probleme
 auf. Dazu gehören auch keine Datei oder Paket gefunden (außer für
 \fB\-\-control\-path\fP).
 .

@@ -3,7 +3,7 @@
  * help.c - various helper routines
  *
  * Copyright © 1995 Ian Jackson <ian@chiark.greenend.org.uk>
- * Copyright © 2007-2014 Guillem Jover <guillem@debian.org>
+ * Copyright © 2007-2015 Guillem Jover <guillem@debian.org>
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#include <assert.h>
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>
@@ -35,7 +34,6 @@
 #include <dpkg/dpkg.h>
 #include <dpkg/dpkg-db.h>
 #include <dpkg/path.h>
-#include <dpkg/subproc.h>
 
 #include "filesdb.h"
 #include "main.h"
@@ -320,81 +318,25 @@ conffile_mark_obsolete(struct pkginfo *pkg, struct filenamenode *namenode)
   }
 }
 
-void oldconffsetflags(const struct conffile *searchconff) {
+/**
+ * Mark all package conffiles as old.
+ *
+ * @param pkg		The package owning the conffiles.
+ */
+void
+pkg_conffiles_mark_old(struct pkginfo *pkg)
+{
+  const struct conffile *conff;
   struct filenamenode *namenode;
 
-  while (searchconff) {
-    namenode= findnamenode(searchconff->name, 0); /* XXX */
+  for (conff = pkg->installed.conffiles; conff; conff = conff->next) {
+    namenode = findnamenode(conff->name, 0); /* XXX */
     namenode->flags |= fnnf_old_conff;
     if (!namenode->oldhash)
-      namenode->oldhash= searchconff->hash;
-    debug(dbg_conffdetail, "oldconffsetflags '%s' namenode '%s' flags %o",
-          searchconff->name, namenode->name, namenode->flags);
-    searchconff= searchconff->next;
+      namenode->oldhash = conff->hash;
+    debug(dbg_conffdetail, "%s '%s' namenode '%s' flags %o", __func__,
+          conff->name, namenode->name, namenode->flags);
   }
-}
-
-/*
- * If the pathname to remove is:
- *
- * 1. a sticky or set-id file, or
- * 2. an unknown object (i.e., not a file, link, directory, fifo or socket)
- *
- * we change its mode so that a malicious user cannot use it, even if it's
- * linked to another file.
- */
-int
-secure_unlink(const char *pathname)
-{
-  struct stat stab;
-
-  if (lstat(pathname,&stab)) return -1;
-
-  return secure_unlink_statted(pathname, &stab);
-}
-
-int
-secure_unlink_statted(const char *pathname, const struct stat *stab)
-{
-  if (S_ISREG(stab->st_mode) ? (stab->st_mode & 07000) :
-      !(S_ISLNK(stab->st_mode) || S_ISDIR(stab->st_mode) ||
-	S_ISFIFO(stab->st_mode) || S_ISSOCK(stab->st_mode))) {
-    if (chmod(pathname, 0600))
-      return -1;
-  }
-  if (unlink(pathname)) return -1;
-  return 0;
-}
-
-void ensure_pathname_nonexisting(const char *pathname) {
-  pid_t pid;
-  const char *u;
-
-  u = path_skip_slash_dotslash(pathname);
-  assert(*u);
-
-  debug(dbg_eachfile, "ensure_pathname_nonexisting '%s'", pathname);
-  if (!rmdir(pathname))
-    return; /* Deleted it OK, it was a directory. */
-  if (errno == ENOENT || errno == ELOOP) return;
-  if (errno == ENOTDIR) {
-    /* Either it's a file, or one of the path components is. If one
-     * of the path components is this will fail again ... */
-    if (secure_unlink(pathname) == 0)
-      return; /* OK, it was. */
-    if (errno == ENOTDIR) return;
-  }
-  if (errno != ENOTEMPTY && errno != EEXIST) { /* Huh? */
-    ohshite(_("unable to securely remove '%.255s'"), pathname);
-  }
-  pid = subproc_fork();
-  if (pid == 0) {
-    execlp(RM, "rm", "-rf", "--", pathname, NULL);
-    ohshite(_("unable to execute %s (%s)"), _("rm command for cleanup"), RM);
-  }
-  debug(dbg_eachfile, "ensure_pathname_nonexisting running rm -rf '%s'",
-        pathname);
-  subproc_reap(pid, _("rm command for cleanup"), 0);
 }
 
 void

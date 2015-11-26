@@ -21,12 +21,13 @@ use warnings;
 
 our $VERSION = '0.01';
 
+use Storable ();
+
 use Dpkg::Gettext;
-use Dpkg::Deps;
 use Dpkg::ErrorHandling;
 use Dpkg::Util qw(:list);
+use Dpkg::Arch qw(debarch_is_concerned debarch_to_cpuattrs);
 use Dpkg::Version;
-use Storable ();
 use Dpkg::Shlibs::Cppfilt;
 
 # Supported alias types in the order of matching preference
@@ -105,7 +106,7 @@ sub parse_symbolspec {
 		$rest = $2;
 	    }
 	}
-	error(_g('symbol name unspecified: %s'), $symbolspec) if (!$symbol);
+	error(g_('symbol name unspecified: %s'), $symbolspec) if (!$symbol);
     } else {
 	# No tag specification. Symbol name is up to the first space
 	# foobarsymbol@Base 1.0 1
@@ -162,7 +163,7 @@ sub initialize {
 	# name@version string.
 	$type = (defined $type) ? 'generic' : 'alias-symver';
 	if ($self->get_symbolname() eq 'Base') {
-	    error(_g("you can't use symver tag to catch unversioned symbols: %s"),
+	    error(g_("you can't use symver tag to catch unversioned symbols: %s"),
 	          $self->get_symbolspec(1));
 	}
     }
@@ -294,13 +295,14 @@ sub arch_is_concerned {
     my ($self, $arch) = @_;
     my $arches = $self->{tags}{arch};
 
-    if (defined $arch && defined $arches) {
-	my $dep = Dpkg::Deps::Simple->new();
-	my @arches = split(/[\s,]+/, $arches);
-	$dep->{package} = 'dummy';
-	$dep->{arches} = \@arches;
-	return $dep->arch_is_concerned($arch);
-    }
+    return 0 if defined $arch && defined $arches &&
+                !debarch_is_concerned($arch, split /[\s,]+/, $arches);
+
+    my ($bits, $endian) = debarch_to_cpuattrs($arch);
+    return 0 if defined $bits && defined $self->{tags}{'arch-bits'} &&
+                $bits ne $self->{tags}{'arch-bits'};
+    return 0 if defined $endian && defined $self->{tags}{'arch-endian'} &&
+                $endian ne $self->{tags}{'arch-endian'};
 
     return 1;
 }
@@ -395,7 +397,7 @@ sub convert_to_alias {
 }
 
 sub get_tagspec {
-    my ($self) = @_;
+    my $self = shift;
     if ($self->has_tags()) {
 	my @tags;
 	for my $tagname (@{$self->{tagorder}}) {
@@ -451,8 +453,10 @@ sub mark_found_in_library {
     # Never remove arch tags from patterns
     if (not $self->is_pattern()) {
 	if (not $self->arch_is_concerned($arch)) {
-	    # Remove arch tag because it is incorrect.
+	    # Remove arch tags because they are incorrect.
 	    $self->delete_tag('arch');
+	    $self->delete_tag('arch-bits');
+	    $self->delete_tag('arch-endian');
 	}
     }
 }

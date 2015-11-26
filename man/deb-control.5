@@ -3,7 +3,7 @@
 .\" Copyright © 1995 Raul Miller, Ian Jackson, Ian Murdock
 .\" Copyright © 1999 Ben Collins <bcollins@debian.org>
 .\" Copyright © 2000 Wichert Akkerman <wakkerma@debian.org>
-.\" Copyright © 2007-2011, 2013 Guillem Jover <guillem@debian.org>
+.\" Copyright © 2007-2011, 2013-2015 Guillem Jover <guillem@debian.org>
 .\" Copyright © 2008-2012 Raphaël Hertzog <hertzog@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
@@ -27,9 +27,9 @@ deb\-control \- Debian packages' master control file format
 control
 .
 .SH DESCRIPTION
-Each Debian package contains the master `control' file, which contains
-a number of fields, or comments when the line starts with \fB'#'\fP. Each
-field begins with a tag, such as
+Each Debian package contains the master \fIcontrol\fP file, which contains
+a number of fields, or comments when the line starts with \(oq\fB#\fP\(cq.
+Each field begins with a tag, such as
 .B Package
 or
 .B Version
@@ -55,29 +55,32 @@ are described in
 .BR deb\-version (5).
 .TP
 .BI Maintainer: " fullname-email"
-Should be in the format `Joe Bloggs <jbloggs@foo.com>', and is typically
+Should be in the format \(lqJoe Bloggs <jbloggs@foo.com>\(rq, and is typically
 the person who created the package, as opposed to the author of the
 software that was packaged.
 .TP
 .BI Description: " short-description"
+.TQ
 .BI " " "long-description"
 .br
 The format for the package description is a short brief summary on the
-first line (after the "Description" field). The following lines should be
+first line (after the \fBDescription\fP field). The following lines should be
 used as a longer, more detailed description. Each line of the long description
 must be preceded by a space, and blank lines in the long description must
-contain a single '.' following the preceding space.
+contain a single \(oq\fB.\fP\(cq following the preceding space.
 .
 .SH OPTIONAL FIELDS
 .TP
 .BI Section: " section"
 This is a general field that gives the package a category based on the
-software that it installs. Some common sections are `utils', `net',
-`mail', `text', `x11' etc.
+software that it installs.
+Some common sections are \fButils\fP, \fBnet\fP, \fBmail\fP, \fBtext\fP,
+\fBx11\fP, etc.
 .TP
 .BI Priority: " priority"
 Sets the importance of this package in relation to the system as a whole.
-Common priorities are `required', `standard', `optional', `extra' etc.
+Common priorities are \fBrequired\fP, \fBstandard\fP, \fBoptional\fP,
+\fBextra\fP, etc.
 .LP
 In Debian, the
 .B Section
@@ -97,8 +100,10 @@ package to be removed (at least not without using one of the force options).
 .TP
 .BR Architecture: " \fIarch\fP|\fBall\fP"
 The architecture specifies which type of hardware this package was compiled
-for. Common architectures are `i386', `m68k', `sparc', `alpha', `powerpc'
-etc. Note that the
+for.
+Common architectures are \fBamd64\fP, \fBarmel\fP, \fBi386\fP, \fBpowerpc\fP,
+etc.
+Note that the
 .B all
 option is meant for packages that are architecture independent. Some examples
 of this are shell and Perl scripts, and documentation.
@@ -109,25 +114,27 @@ The name of the distribution this package is originating from.
 .BI Bugs: " url"
 The \fIurl\fP of the bug tracking system for this package. The current
 used format is \fIbts-type\fP\fB://\fP\fIbts-address\fP, like
-\fBdebbugs://bugs.debian.org\fP.
+\fB\%debbugs://bugs.debian.org\fP.
 .TP
 .BI Homepage: " url"
 The upstream project home page \fIurl\fP.
 .TP
 .BI Tag: " tag-list"
 List of tags describing the qualities of the package. The description and
-list of supported tags can be found in the \fBdebtags\fP package.
+list of supported tags can be found in the \fB\%debtags\fP package.
 .TP
 .BR Multi\-Arch: " \fBsame\fP|\fBforeign\fP|\fBallowed\fP|\fBno\fP"
 This field is used to indicate how this package should behave on a multi-arch
 installations. The value \fBsame\fP means that the package is co-installable
 with itself, but it must not be used to satisfy the dependency of any package
-of a different architecture from itself. The value \fBforeign\fP means that
-the package is not co-installable with itself, but should be allowed to
-satisfy the dependency of a package of a different arch from itself. The
-value \fBallowed\fP allows reverse-dependencies to indicate in their
-Depends field that they accept a package from a foreign architecture, but
-has no effect otherwise.
+of a different architecture from itself.
+The value \fBforeign\fP means that the package is not co-installable with
+itself, but should be allowed to satisfy a non-arch-qualified dependency of
+a package of a different arch from itself (if a dependency has an explicit
+arch-qualifier then the value \fBforeign\fP is ignored).
+The value \fBallowed\fP allows reverse-dependencies to indicate in their
+\fBDepends\fP field that they accept a package from a foreign architecture by
+qualifying the package name with \fB:any\fP, but has no effect otherwise.
 The value \fBno\fP is the default when the field is omitted, in which case
 adding the field with an explicit \fBno\fP value is generally not needed.
 .TP
@@ -153,10 +160,10 @@ non-trivial amount of functionality. The package maintenance software
 will not allow a package to be installed if the packages listed in its
 .B Depends
 field aren't installed (at least not without using the force options).
-In an installation, the postinst scripts of packages listed in Depends:
+In an installation, the postinst scripts of packages listed in \fBDepends\fP
 fields are run before those of the packages which depend on them. On the
 opposite, in a removal, the prerm script of a package is run before
-those of the packages listed in its Depends: field.
+those of the packages listed in its \fBDepends\fP field.
 .TP
 .BI Pre\-Depends: " package-list"
 List of packages that must be installed
@@ -184,16 +191,29 @@ The syntax of
 and
 .B Suggests
 fields is a list of groups of alternative packages. Each group is a list
-of packages separated by vertical bar (or `pipe') symbols, `|'. The
-groups are separated by commas. Commas are to be read as `AND', and pipes
-as `OR', with pipes binding more tightly. Each package name is
-optionally followed by a version number specification in parentheses.
+of packages separated by vertical bar (or \(lqpipe\(rq) symbols,
+\(oq\fB|\fP\(cq.
+The groups are separated by commas.
+Commas are to be read as \(lqAND\(rq, and pipes as \(lqOR\(rq, with pipes
+binding more tightly.
+Each package name is optionally followed by an architecture qualifier
+appended after a colon \(oq\fB:\fP\(cq, optionally followed by a version
+number specification in parentheses.
 .LP
-A version number may start with a `>>', in which case any later version
-will match, and may specify or omit the Debian packaging revision (separated
-by a hyphen). Accepted version relationships are ">>" for greater than,
-"<<" for less than, ">=" for greater than or equal to, "<=" for less than
-or equal to, and "=" for equal to.
+An architecture qualifier name can be a real Debian architecture name
+(since dpkg 1.16.5) or \fBany\fP (since dpkg 1.16.2).
+If omitted, the default is the current binary package architecture.
+A real Debian architecture name will match exactly that architecture for
+that package name, \fBany\fP will match any architecture for that package
+name if the package has been marked as \fBMulti\-Arch: allowed\fP.
+.LP
+A version number may start with a \(oq\fB>>\fP\(cq, in which case any later
+version will match, and may specify or omit the Debian packaging revision
+(separated by a hyphen).
+Accepted version relationships are \(oq\fB>>\fP\(cq for greater than,
+\(oq\fB<<\fP\(cq for less than, \(oq\fB>=\fP\(cq for greater than or
+equal to, \(oq\fB<=\fP\(cq for less than or equal to, and \(oq\fB=\fP\(cq
+for equal to.
 .TP
 .BI Breaks: " package-list"
 Lists packages that this one breaks, for example by exposing bugs
@@ -208,7 +228,7 @@ Lists packages that conflict with this one, for example by containing
 files with the same names. The package maintenance software will not
 allow conflicting packages to be installed at the same time. Two
 conflicting packages should each include a
-.B Conflicts
+.B \%Conflicts
 line mentioning the other.
 .TP
 .BI Replaces: " package-list"
@@ -218,30 +238,22 @@ is usually used with the
 .B Conflicts
 field to force removal of the other package, if this one also has the
 same files as the conflicted package.
-.TP
-.BI Provides: " package-list"
-This is a list of virtual packages that this one provides. Usually this is
-used in the case of several packages all providing the same service.
-For example, sendmail and exim can serve as a mail server, so they
-provide a common package (`mail\-transport\-agent') on which other packages
-can depend. This will allow sendmail or exim to serve as a valid option
-to satisfy the dependency. This prevents the packages that depend on a mail
-server from having to know the package names for all of them, and using
-`|' to separate the list.
 .LP
 The syntax of
 .BR Breaks ,
-.BR Conflicts ,
-.B Replaces
+.B Conflicts
 and
-.B Provides
+.B Replaces
 is a list of package names, separated by commas (and optional whitespace).
 In the
 .B Breaks
 and
 .B Conflicts
-fields, the comma should be read as `OR'. An optional version can also be
-given with the same syntax as above for the
+fields, the comma should be read as \(lqOR\(rq.
+An optional architecture qualifier can also be appended to the package name
+with the same syntax as above, but the default is \fBany\fP instead of the
+binary package architecture.
+An optional version can also be given with the same syntax as above for the
 .BR Breaks ,
 .B Conflicts
 and
@@ -249,11 +261,35 @@ and
 fields.
 .
 .TP
+.BI Provides: " package-list"
+This is a list of virtual packages that this one provides.
+Usually this is used in the case of several packages all providing the
+same service.
+For example, sendmail and exim can serve as a mail server, so they
+provide a common package (\(lqmail\-transport\-agent\(rq) on which
+other packages can depend.
+This will allow sendmail or exim to serve as a valid option to satisfy
+the dependency.
+This prevents the packages that depend on a mail server from having to
+know the package names for all of them, and using \(oq\fB|\fP\(cq to
+separate the list.
+.LP
+The syntax of
+.B Provides
+is a list of package names, separated by commas (and optional whitespace).
+An optional architecture qualifier can also be appended to the package
+name with the same syntax as above.
+If omitted, the default is the current binary package architecture.
+An optional exact (equal to) version can also be given with the same
+syntax as above (honored since dpkg 1.17.11).
+.
+.TP
 .BI Built\-Using: " package-list"
 This field lists extra source packages that were used during the build of this
 binary package.  This is an indication to the archive maintenance software that
 these extra source packages must be kept whilst this binary package is
-maintained.  This field must be a list of source package names with strict (=)
+maintained.
+This field must be a list of source package names with strict \(oq\fB=\fP\(cq
 version relationships.  Note that the archive maintenance software is likely to
 refuse to accept an upload which declares a
 .B Built\-Using

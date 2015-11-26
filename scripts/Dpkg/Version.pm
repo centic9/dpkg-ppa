@@ -22,16 +22,26 @@ use strict;
 use warnings;
 
 our $VERSION = '1.01';
+our @EXPORT = qw(
+    version_compare
+    version_compare_relation
+    version_normalize_relation
+    version_compare_string
+    version_compare_part
+    version_split_digits
+    version_check
+    REL_LT
+    REL_LE
+    REL_EQ
+    REL_GE
+    REL_GT
+);
 
-use Dpkg::ErrorHandling;
-use Dpkg::Gettext;
-
-use Carp;
 use Exporter qw(import);
-our @EXPORT = qw(version_compare version_compare_relation
-                 version_normalize_relation version_compare_string
-                 version_compare_part version_split_digits version_check
-                 REL_LT REL_LE REL_EQ REL_GE REL_GT);
+use Carp;
+
+use Dpkg::Gettext;
+use Dpkg::ErrorHandling;
 
 use constant {
     REL_LT => '<<',
@@ -62,11 +72,11 @@ an object oriented interface overriding perl operators
 to do the right thing when you compare Dpkg::Version object between
 them.
 
-=head1 OBJECT INTERFACE
+=head1 METHODS
 
 =over 4
 
-=item my $v = Dpkg::Version->new($version, %opts)
+=item $v = Dpkg::Version->new($version, %opts)
 
 Create a new Dpkg::Version object corresponding to the version indicated in
 the string (scalar) $version. By default it will accepts any string
@@ -121,7 +131,7 @@ Returns true if the version is valid, false otherwise.
 =cut
 
 sub is_valid {
-    my ($self) = @_;
+    my $self = shift;
     return scalar version_check($self);
 }
 
@@ -232,9 +242,9 @@ If $a or $b are not valid version numbers, it dies with an error.
 sub version_compare($$) {
     my ($a, $b) = @_;
     my $va = Dpkg::Version->new($a, check => 1);
-    defined($va) || error(_g('%s is not a valid version'), "$a");
+    defined($va) || error(g_('%s is not a valid version'), "$a");
     my $vb = Dpkg::Version->new($b, check => 1);
-    defined($vb) || error(_g('%s is not a valid version'), "$b");
+    defined($vb) || error(g_('%s is not a valid version'), "$b");
     return $va <=> $vb;
 }
 
@@ -268,7 +278,7 @@ sub version_compare_relation($$$) {
     }
 }
 
-=item my $rel = version_normalize_relation($rel_string)
+=item $rel = version_normalize_relation($rel_string)
 
 Returns the normalized constant of the relation $rel (a value
 among REL_GT, REL_GE, REL_EQ, REL_LE and REL_LT). Supported
@@ -313,7 +323,7 @@ of the character is used to sort between characters.
 =cut
 
 sub _version_order {
-    my ($x) = @_;
+    my $x = shift;
 
     if ($x eq '~') {
         return -1;
@@ -370,7 +380,7 @@ sub version_compare_part($$) {
     }
 }
 
-=item my @items = version_split_digits($version)
+=item @items = version_split_digits($version)
 
 Splits a string in items that are each entirely composed either
 of digits or of non-digits. For instance for "1.024~beta1+svn234" it would
@@ -384,9 +394,9 @@ sub version_split_digits($) {
     return split /(?<=\d)(?=\D)|(?<=\D)(?=\d)/, $version;
 }
 
-=item my ($ok, $msg) = version_check($version)
+=item ($ok, $msg) = version_check($version)
 
-=item my $ok = version_check($version)
+=item $ok = version_check($version)
 
 Checks the validity of $version as a version number. Returns 1 in $ok
 if the version is valid, 0 otherwise. In the latter case, $msg
@@ -402,22 +412,22 @@ sub version_check($) {
         $version = Dpkg::Version->new($str) unless ref($version);
     }
     if (not defined($str) or not length($str)) {
-        my $msg = _g('version number cannot be empty');
+        my $msg = g_('version number cannot be empty');
         return (0, $msg) if wantarray;
         return 0;
     }
     if ($version->version() =~ m/^[^\d]/) {
-        my $msg = _g('version number does not start with digit');
+        my $msg = g_('version number does not start with digit');
         return (0, $msg) if wantarray;
         return 0;
     }
     if ($str =~ m/([^-+:.0-9a-zA-Z~])/o) {
-        my $msg = sprintf(_g("version number contains illegal character `%s'"), $1);
+        my $msg = sprintf g_("version number contains illegal character '%s'"), $1;
         return (0, $msg) if wantarray;
         return 0;
     }
     if ($version->epoch() !~ /^\d*$/) {
-        my $msg = sprintf(_g('epoch part of the version number ' .
+        my $msg = sprintf(g_('epoch part of the version number ' .
                              "is not a number: '%s'"), $version->epoch());
         return (0, $msg) if wantarray;
         return 0;
@@ -430,13 +440,13 @@ sub version_check($) {
 
 =head1 CHANGES
 
-=head2 Version 1.01
+=head2 Version 1.01 (dpkg 1.17.0)
 
 New argument: Accept an options argument in $v->as_string().
 
 New method: $v->is_native().
 
-=head2 Version 1.00
+=head2 Version 1.00 (dpkg 1.15.6)
 
 Mark the module as public.
 

@@ -2,7 +2,7 @@
 .\"
 .\" Copyright Â© 2005 Marcus Brinkmann <brinkmd@debian.org>
 .\" Copyright Â© 2005 Scott James Remnant <scott@netsplit.com>
-.\" Copyright Â© 2006-2014 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2006-2015 Guillem Jover <guillem@debian.org>
 .\" Copyright Â© 2009-2012 RaphaÃ«l Hertzog <hertzog@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
@@ -39,14 +39,14 @@ construction et l'architecture hôte pour la création d'un paquet.
 L'architecture de construction est toujours déterminée par un appel externe
 à \fBdpkg\fP(1). Elle ne peut pas être spécifiée en ligne de commande.
 .PP
-Vous pouvez spécifier une architecture hôte en utilisant une des options
-\fB\-\-host\-arch\fP et \fB\-\-host\-type\fP (ou les deux). Par défaut, la valeur est
-déterminée par un appel à \fBgcc\fP(1), ou en utilisant l'architecture de
-construction si \fBCC\fP ou gcc ne sont pas disponibles. Utiliser une seule des
-options \fB\-\-host\-arch\fP et \fB\-\-host\-type\fP est suffisant, la valeur de l'une
-est utilisée comme valeur par défaut de l'autre. Bien sûr, il est préférable
-de n'en préciser qu'une seule, puisque \fBdpkg\-architecture\fP affichera un
-avertissement si le choix ne correspond pas à la valeur par défaut.
+You can specify the host architecture by providing one or both of the
+options \fB\-\-host\-arch\fP and \fB\-\-host\-type\fP. The default is determined by an
+external call to \fBgcc\fP(1), or the same as the build architecture if \fBCC\fP
+or gcc are both not available. One out of \fB\-\-host\-arch\fP and \fB\-\-host\-type\fP
+is sufficient, the value of the other will be set to a usable
+default. Indeed, it is often better to only specify one, because
+\fB\%dpkg\-architecture\fP will warn you if your choice does not match the
+default.
 .
 .SH COMMANDES
 .TP 
@@ -104,13 +104,13 @@ Définit l'architecture Debian en cours.
 Définit le type de système GNU en cours.
 .TP 
 \fB\-A\fP, \fB\-\-target\-arch\fP \fIarchitecture\fP
-Définit l'architecture Debian cible. Cela est nécessaire uniquement lors de
-la construction d'une chaîne d'outils de compilation croisée qui sera
-construite sur l'architecture de construction, pour être exécutée sur
-l'architecture hôte, afin de construire du code pour l'architecture cible.
+Set the target Debian architecture (since dpkg 1.17.14).  This is only
+needed when building a cross\-toolchain, one that will be built on the build
+architecture, to be run on the host architecture, and to build code for the
+target architecture.
 .TP 
 \fB\-T\fP, \fB\-\-target\-type\fP \fItype\-de\-système\-gnu\fP
-Définit le type de système GNU de la cible.
+Set the target GNU system type (since dpkg 1.17.14).
 .TP 
 \fB\-W\fP, \fB\-\-match\-wildcard\fP \fIarchitecture\-joker\fP
 Restreindre les architectures listées par \fB\-\-list\-known\fP à celles
@@ -127,12 +127,11 @@ correspondant au boutisme spécifié (depuis dpkg 1.17.14). Soit \fBlittle\fP,
 soit \fBbig\fP.
 .TP 
 \fB\-f\fP, \fB\-\-force\fP
-Les valeurs positionnées par les variables d'environnement ayant le même nom
-que celles utilisées par les scripts sont prises en compte (c'est\-à\-dire
-utilisée par \fBdpkg\-architecture\fP), sauf si cette option est présente. Cela
-permet à un utilisateur de surcharger une valeur même lorsque l'appel à
-\fBdpkg\-architecture\fP est inclus dans un autre script (par exemple
-\fBdpkg\-buildpackage\fP(1)).
+Values set by existing environment variables with the same name as used by
+the scripts are honored (i.e. used by \fB\%dpkg\-architecture\fP), except if
+this force flag is present. This allows the user to override a value even
+when the call to \fB\%dpkg\-architecture\fP is buried in some other script (for
+example \fB\%dpkg\-buildpackage\fP(1)).
 .
 .SH TERMINOLOGIE
 .IP "Machine de construction" 4
@@ -144,15 +143,21 @@ Machine pour laquelle le compilateur est construit.
 .IP "Architecture Debian" 4
 Chaîne de caractères de l'architecture Debian qui spécifie l'emplacement
 dans l'archive FTP. Par exemple\ : i386, sparc, hurd\-i386.
-.IP "Architecture joker" 4
-Une architecture joker est une architecture spéciale qui correspond à toutes
-les architectures réelles qui en font partie. Il est en général de la forme
-<noyau>\-<processeur>. Par exemple\ : linux\-any, any\-i386,
-hurd\-any.
+.IP "Debian architecture wildcard" 4
+A Debian architecture wildcard is a special architecture string that will
+match any real architecture being part of it. The general form is
+<kernel>\-<cpu>.  Examples: linux\-any, any\-i386, hurd\-any.
 .IP "Type de système GNU" 4
-Chaîne de caractères définissant l'architecture et constituée de deux
-parties séparées par un tiret\ : processeur et système. Par exemple\ :
-i386\-linux\-gnu, sparc\-linux\-gnu, i386\-gnu, x86_64\-netbsd.
+An architecture specification string consisting of two parts separated by a
+hyphen: cpu and system.  Examples: i586\-linux\-gnu, sparc\-linux\-gnu,
+i686\-gnu, x86_64\-netbsd.
+.IP "multiarch triplet" 4
+The clarified GNU system type, used for filesystem paths.  This triplet does
+not change even when the baseline ISA gets bumped, so that the resulting
+paths are stable over time.  The only current difference with the GNU system
+type is that the CPU part for i386 based systems is always i386.  Examples:
+i386\-linux\-gnu, x86_64\-linux\-gnu.  Example paths:
+/lib/powerpc64le\-linux\-gnu/, /usr/lib/i386\-kfreebsd\-gnu/.
 .
 .SH "VARIABLES D'ENVIRONNEMENT"
 Les variables suivantes sont positionnées par \fBdpkg\-architecture\fP\ :
@@ -231,6 +236,9 @@ GNU.
 \fI/usr/share/dpkg/triplettable\fP
 Correspondances entre les triplets de l'architecture Debian et les noms des
 architectures Debian.
+.TP 
+\fI/usr/share/dpkg/abitable\fP
+Table of Debian architecture ABI attribute overrides.
 .SS "Gestion de l'empaquetage"
 .TP 
 \fI/usr/share/dpkg/architecture.mk\fP
@@ -238,8 +246,8 @@ Un fragment de fichier Makefile qui définit correctement et exporte toutes
 les variables que \fBdpkg\-architecture\fP peut fournir (depuis dpkg 1.16.1).
 .
 .SH EXEMPLES
-\fBdpkg\-buildpackage\fP accepte l'option \fB\-a\fP, et la passe à
-\fBdpkg\-architecture\fP. Voici d'autres exemples\ :
+\fBdpkg\-buildpackage\fP accepts the \fB\-a\fP option and passes it to
+\fB\%dpkg\-architecture\fP. Other examples:
 .IP
 CC=i386\-gnu\-gcc dpkg\-architecture \-c debian/rules build
 .IP
@@ -260,13 +268,12 @@ dpkg\-architecture \-ilinux\-any
 dpkg\-architecture \-ai386 \-ilinux\-any
 .
 .SS "Utilisation dans debian/rules"
-Les variables d'environnement définies par \fBdpkg\-architecture\fP sont
-fournies à \fIdebian/rules\fP comme variables pour make (consultez la
-documentation de make). Cependant, vous ne devez pas compter là\-dessus
-puisque cela empêche les appels manuels à ce script. À la place, vous devez
-toujours les initialiser en utilisant \fBdpkg\-architecture\fP avec l'option
-\fB\-q\fP. Voici quelques exemples, qui indiquent aussi comment améliorer la
-gestion des compilations croisées de votre paquet\ :
+The environment variables set by \fBdpkg\-architecture\fP are passed to
+\fIdebian/rules\fP as make variables (see make documentation). However, you
+should not rely on them, as this breaks manual invocation of the
+script. Instead, you should always initialize them using
+\fB\%dpkg\-architecture\fP with the \fB\-q\fP option. Here are some examples, which
+also show how you can improve the cross compilation support in your package:
 .PP
 Récupération du type de système GNU et passage à ./configure\ :
 .PP

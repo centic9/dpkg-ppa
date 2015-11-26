@@ -4,6 +4,7 @@ lib/dpkg/ar.c
 lib/dpkg/arch.c
 lib/dpkg/atomic-file.c
 lib/dpkg/buffer.c
+lib/dpkg/c-ctype.c
 lib/dpkg/cleanup.c
 lib/dpkg/command.c
 lib/dpkg/compress.c
@@ -24,6 +25,7 @@ lib/dpkg/options-parsers.c
 lib/dpkg/parse.c
 lib/dpkg/parsehelp.c
 lib/dpkg/path.c
+lib/dpkg/path-remove.c
 lib/dpkg/pkg.c
 lib/dpkg/pkg-array.c
 lib/dpkg/pkg-db.c
@@ -65,6 +67,7 @@ src/querycmd.c
 src/remove.c
 src/script.c
 src/select.c
+src/selinux.c
 src/statcmd.c
 src/statdb.c
 src/trigcmd.c

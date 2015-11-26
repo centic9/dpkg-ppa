@@ -2,7 +2,7 @@
 .\"
 .\" Copyright Â© 1995-1996 Ian Jackson <ian@chiark.chu.cam.ac.uk>
 .\" Copyright Â© 2000 Wichert Akkerman <wakkerma@debian.org>
-.\" Copyright Â© 2006-2014 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2006-2015 Guillem Jover <guillem@debian.org>
 .\" Copyright Â© 2008-2010 RaphaÃ«l Hertzog <hertzog@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
@@ -39,20 +39,24 @@ styrfil för insändning till Debian (\fB.changes\fP\-fil).
 .SH FLAGGOR
 .TP 
 \fB\-g\fP
-Anger att endast källkoden och arkitekturoberoende paket skall sändas in
-(inga arkitekturspecifika paket tas med).
+Specifies that only source and architecture independent packages should be
+uploaded, thus no architecture specific packages will be included (since
+dpkg 1.17.11).
 .TP 
 \fB\-G\fP
-Anger att endast källkoden och arkitekturspecifika paket skall sändas in
-(inga arkitekturoberoende paket tas med).
+Specifies that only source and architecture specific packages should be
+uploaded, thus no architecture independent packages will be included (since
+dpkg 1.17.11).
 .TP 
 \fB\-b\fP, \fB\-B\fP, \fB\-A\fP
-Detta är ett rent binärbygge (inga källkodsfiler skall inkluderas). Det är
-ingen skillnad mellan \fB\-b\fP, \fB\-B\fP och \fB\-A\fP, den \fB.changes\fP\-fil som skapas
-innehåller alla filer som skapats av \fBbinary\-*\fP\-målen i det byggda paketet.
+Specifies that a binary\-only build is taking place, thus no source files are
+to be included.  There's no distinction between \fB\-b\fP, \fB\-B\fP and \fB\-A\fP, the
+produced \fB.changes\fP file will include whatever files were created by the
+\fBbinary\-*\fP target(s) of the package being built.
 .TP 
 \fB\-S\fP
-Anger att endast källkoden skall sändas in (inga binärpaket tas med).
+Specifies that only the source should be uploaded, thus no binary packages
+will be included.
 .PP
 Flaggorna \fB\-s\fP\fIx\fP styr huruvida det ursprungliga källkodsarkivet skall
 inkluderas i insändningen om källkod genereras (dvs. \fB\-b\fP eller \fB\-B\fP inte
@@ -94,11 +98,11 @@ Ställer in en utdatasubstitueringsvariabel. Se \fBdeb\-substvars\fP(5) för en
 beskrivning av utdatasubstituering.
 .TP 
 \fB\-T\fP\fIsubstvars\-fil\fP
-Läs substitutionsvariabler från \fIsubstvars\-fil\fP; standard är
-\fBdebian/substvars\fP. Ingen variabelsubstitution utförs på något av fälten i
-utdata, men om den speciella variabeln \fIFormat\fP anges kommer den överstyra
-fältet med samma namn. Flaggan kan användas flera gånger för att läsa
-substitutionsvariabler från flera filer.
+Read substitution variables in \fIsubstvars\-file\fP; the default is
+\fBdebian/substvars\fP.  No variable substitution is done on any of the fields
+that are output, however the special variable \fIFormat\fP will override the
+field of the same name. This option can be used multiple times to read
+substitution variables from multiple files (since dpkg 1.15.6).
 
 .TP 
 \fB\-D\fP\fIfält\fP\fB=\fP\fIvärde\fP

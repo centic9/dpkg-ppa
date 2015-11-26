@@ -2,7 +2,7 @@
 .\"
 .\" Copyright Â© 2010 Oxan van Leeuwen <oxan@oxanvanleeuwen.nl>
 .\" Copyright Â© 2011 RaphaÃ«l Hertzog <hertzog@debian.org>
-.\" Copyright Â© 2011-2013 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2011-2015 Guillem Jover <guillem@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -30,18 +30,19 @@ deb\-src\-control \- Debians filformat för källkodspakets huvudstyrfil
 control
 .
 .SH BESKRIVNING
-Varje Debiankällkodspaket innehåller huvud\-"control"\-filen, vilken
-innehååller åtminstone två stycken, avdelade med en tomrad. Det första
-stycket innehåller all generell information om källkodspaketet, medan de
-följande styckena beskriver exakt ett binärpaket. Varje stycke består av
-åtminstone ett fält. Ett fält inleds med ett fältnamn, till exempel
-\fBPackage\fP eller \fBSection\fP (skiftlägesokänsligt), följt av ett kolon,
-fältinnehållet och ett nyradstecken. Flerradiga fält är också tillåtna, men
-varje ytterligare rad som inte innehåller ett fältnamn, bör starta med minst
-ett blanksteg. Innehållet i flerradsfält slås normalt samman till en enda
-rad av verktygen (förutom i fallet fältet \fBDescription\fP, se nedan). För att
-sätta in tomma rader i ett flerradsfält, skriver du en punkt efter
-blanksteget. Rader som börjar med ett \fB"#"\fP tolkas som kommentarer.
+Each Debian source package contains the master \(Focontrol\(Fc file, which
+contains at least 2 paragraphs, separated by a blank line.  The first
+paragraph lists all information about the source package in general, while
+each following paragraph describes exactly one binary package. Each
+paragraph consists of at least one field. A field starts with a fieldname,
+such as \fBPackage\fP or \fBSection\fP (case insensitive), followed by a colon,
+the body of the field and a newline.  Multi\-line fields are also allowed,
+but each supplementary line, without a fieldname, should start with at least
+one space. The content of the multi\-line fields is generally joined to a
+single line by the tools (except in the case of the \fBDescription\fP field,
+see below). To insert empty lines into a multi\-line field, insert a dot
+after the space.  Lines starting with a \(oq\fB#\fP\(cq are treated as
+comments.
 .
 .SH KÄLLKODSFÄLT
 .TP 
@@ -54,9 +55,9 @@ med ett alfanumeriskt tecken.
 
 .TP 
 \fBMaintainer:\fP \fIfullt\-namn\-epost\fP (krävs)
-Skall vara på formatet "Joe Bloggs <jbloggs@foo.com>" och refererar
-till den person som för närvarande underhåller paketet, till skillnad från
-författaren av den programvara som paketerats.
+Should be in the format \(FoJoe Bloggs <jbloggs@foo.com>\(Fc, and
+references the person who currently maintains the package, as opposed to the
+author of the software or the original packager.
 
 .TP 
 \fBUploaders:\fP\fI fullt\-namn\-epost\fP
@@ -76,10 +77,9 @@ URL till uppströmsprojektets hemsida.
 
 .TP 
 \fBBugs:\fP\fI url\fP
-\fIUrl\fP:en till felrapporteringssystemet för detta paket. Det nuvarande
-formatet är \fIsystemtyp\fP://\fIaddress\fP, till exempel
-\fBdebbugs://bugs.debian.org\fP. Det här fältet är normalt sett inte
-nödvändigt.
+The \fIurl\fP of the bug tracking system for this package. The current used
+format is \fIbts\-type\fP\fB://\fP\fIbts\-address\fP, like
+\fB\%debbugs://bugs.debian.org\fP. This field is usually not needed.
 
 .TP 
 \fBVcs\-Arch:\fP\fI url\fP
@@ -115,15 +115,14 @@ normalt sett inte nödvändigt.
 
 .TP 
 \fBSection:\fP\fI sektion\fP
-Detta är ett generellt fält som ger paketet en kategori baserat på
-programvara som det installerar. Några vanliga sektioner är "utils", "net",
-"mail", "text", "x11" osv.
+This is a general field that gives the package a category based on the
+software that it installs.  Some common sections are \fButils\fP, \fBnet\fP,
+\fBmail\fP, \fBtext\fP, \fBx11\fP, etc.
 
 .TP 
 \fBPriority:\fP\fI prioritet\fP
-Ställer in hur viktigt paketet är jämfört med systemet som enhet.  Vanliga
-prioriteter är "required" (nödvändig), "standard" (normal), "optional"
-(valfritt), "extra" (extra) osv.
+Sets the importance of this package in relation to the system as a whole.
+Common priorities are \fBrequired\fP, \fBstandard\fP, \fBoptional\fP, \fBextra\fP, etc.
 
 I Debian har fälten \fBSection\fP och \fBPriority\fP en definierad uppsättning
 accepterade värden baserade på policymanualen. En förteckning över dessa
@@ -170,40 +169,51 @@ Motsvarar \fBBuild\-Conflicts\fP, men endast när de arkitekturoberoende paketen
 byggs.
 
 .PP
-Syntaxen för fälten \fBBuild\-Depends\fP, \fBBuild\-Depends\-Arch\fP och
-\fBBuild\-Depends\-Indep\fP\-fälten är en lista med grupper av alternativa
-paket. Varje grupp innehåller en lista med paket avdelade med ett
-vertikalstreck (rör) ("|"). Grupperna avdelas med kommatecken. Komma utläses
-som "OCH", och vertikalstrecken som "ELLER", där vertikalstrecken binder
-hårdare. Varje paketnamn kan eventuellt följas av en versionsnummerangivelse
-inom parenteser, en arkitekturangivelse inom hakparenteser och en
-begränsningsformel som består av en eller flera listor med profilnamn inom
-vinkelparenteser.
+The syntax of the \fBBuild\-Depends\fP, \fBBuild\-Depends\-Arch\fP and
+\fBBuild\-Depends\-Indep\fP fields is a list of groups of alternative packages.
+Each group is a list of packages separated by vertical bar (or \(lqpipe\(rq)
+symbols, \(oq\fB|\fP\(cq.  The groups are separated by commas.  Commas are to
+be read as \(lqAND\(rq, and pipes as \(lqOR\(rq, with pipes binding more
+tightly.  Each package name is optionally followed by an architecture
+qualifier appended after a colon \(oq\fB:\fP\(cq, optionally followed by a
+version number specification in parentheses, an architecture specification
+in square brackets, and a restriction formula consisting of one or more
+lists of profile names in angle brackets.
 
-Syntaxen för fälten \fBBuild\-Conflicts\fP, \fBBuild\-Conflicts\-Arch\fP och
-\fBBuild\-Conflicts\-Indep\fP\-fälten är en kommaseparerad lista med paketnamn,
-där komma utläses som "OCH". Det är inte möjligt att ange alternativa paket
-med "rör". Varje paketnamn kan eventuellt följas av en
-versionsnummerangivelse inom parenteseren arkitekturangivelse inom
-hakparenteser och en begränsningsformel bestående av en eller flera listor
-med profilnamn inom vinkelparenteser.
+The syntax of the \fBBuild\-Conflicts\fP, \fBBuild\-Conflicts\-Arch\fP and
+\fBBuild\-Conflicts\-Indep\fP fields is a list of comma\-separated package names,
+where the comma is read as an \(lqAND\(rq.  Specifying alternative packages
+using a \(lqpipe\(rq is not supported.  Each package name is optionally
+followed by a version number specification in parentheses, an architecture
+specification in square brackets, and a restriction formula consisting of
+one or more lists of profile names in angle brackets.
 
-Ett versionsnummer kan börja med ">>", vilket betyder att vilken som
-helst senare version matchar, där det är valfritt att ange
-Debianuppdateringen (avdelad med bindestreck).  Tillåtna versionrelationer
-är ">>" för större än, "<<" för mindre än, ">=" för
-större än eller lika med", "<=" för mindre än eller lika med, och "="
-för lika med.
+An architecture qualifier name can be a real Debian architecture name (since
+dpkg 1.16.5), \fBany\fP (since dpkg 1.16.2) or \fBnative\fP (since dpkg 1.16.5).
+If omitted, the default for \fBBuild\-Depends\fP fields is the current host
+architecture, the default for \fBBuild\-Conflicts\fP fields is \fBany\fP.  A real
+Debian architecture name will match exactly that architecture for that
+package name, \fBany\fP will match any architecture for that package name if
+the package is marked with \fBMulti\-Arch: allowed\fP, and \fBnative\fP will match
+the current build architecture if the package is not marked with
+\fBMulti\-Arch: foreign\fP.
 
-En arkitekturangivelse består av ett eller flera arkitekturnamn, avdelade
-med blanktecken. Varje namn kan föregås av ett utropstecken, vilket betyder
-"ICKE".
+A version number may start with a \(oq\fB>>\fP\(cq, in which case any
+later version will match, and may specify or omit the Debian packaging
+revision (separated by a hyphen).  Accepted version relationships are
+\(oq\fB>>\fP\(cq for greater than, \(oq\fB<<\fP\(cq for less than,
+\(oq\fB>=\fP\(cq for greater than or equal to, \(oq\fB<=\fP\(cq for less
+than or equal to, and \(oq\fB=\fP\(cq for equal to.
 
-En begränsningsformel består av en eller flera begränsningslistor, avdelade
-med blanksteg. Varje begränsningslista skrivs inom vinkelparenteser. Poster
-i begränsningslistan är namn på byggprofiler, avdelade av blanksteg och kan
-föregås av ett utropstecken, vilket betyder "INTE". En begränsningsformel
-representerar ett uttryck i disjunktiv normalform.
+An architecture specification consists of one or more architecture names,
+separated by whitespace. Exclamation marks may be prepended to each of the
+names, meaning \(lqNOT\(rq.
+
+A restriction formula consists of one or more restriction lists, separated
+by whitespace. Each restriction list is enclosed in angle brackets. Items in
+the restriction list are build profile names, separated by whitespace and
+can be prefixed with an exclamation mark, meaning \(lqNOT\(rq.  A
+restriction formula represents a disjunctive normal form expression.
 
 Observera att beroenden på paket i \fBbuild\-essential\fP\-uppsättningen kan
 utelämnas och att det är omöjligt att deklarera byggkonflikter mot dem. En
@@ -234,9 +244,9 @@ arkitekturer, anger du namnen på arkitekturerna avdelade med blanksteg. Det
 
 .TP 
 \fBPackage\-Type:\fP \fBdeb\fP|\fBudeb\fP
-Detta fält anger paketets typ. "udeb" används för storleksbegränsade paket i
-debian\-installer. "deb" är standardvärdet, och antas om fältet saknas. Fler
-typer kan komma att läggas till i framtiden.
+This field defines the type of the package.  \fBudeb\fP is for size\-constrained
+packages used by the debian installer.  \fBdeb\fP is the default value, it is
+assumed if the field is absent.  More types might be added in the future.
 
 .TP 
 \fBSubarchitecture:\fP\fI värde\fP

@@ -64,14 +64,13 @@ programme doit alors s'arrêter. Si ce n'est pas le cas, le programme doit
 ne rencontre un membre non reconnu dans l'archive (excepté à la fin de cette
 dernière), comme décrit ci\-dessous.
 .PP
-Le second membre requis est nommé \fBcontrol.tar\fP. Il s'agit d'une archive
-tar, soit non compressée (gérée depuis dpkg 1.17.6) ou compressée grâce à
-gzip (avec extension \fB.gz\fP) ou xz (avec extension \fB.xz\fP, gérée depuis dpkg
-1.17.6), contenant les informations de contrôle du paquet, sous la forme
-d'une série de fichiers, parmi lesquels le fichier \fBcontrol\fP est
-strictement requis et contient les principales informations de
-contrôle. L'archive de contrôle peut éventuellement contenir une entrée pour
-«\ .\ », le répertoire courant.
+The second required member is named \fBcontrol.tar\fP.  It is a tar archive
+containing the package control information, either not compressed (supported
+since dpkg 1.17.6), or compressed with gzip (with \fB.gz\fP extension) or xz
+(with \fB.xz\fP extension, supported since 1.17.6), as a series of plain files,
+of which the file \fBcontrol\fP is mandatory and contains the core control
+information. The control tarball may optionally contain an entry for
+\(oq\fB.\fP\(cq, the current directory.
 .PP
 Le troisième et dernier membre obligatoire est appelé \fBdata.tar\fP. Il
 contient le système de fichiers sous forme d'une archive tar, soit non
@@ -80,13 +79,13 @@ extension \fB.gz\fP), xz (avec extensions \fB.xz\fP, gérée depuis dpkg 1.15.6),
 bzip2 (avec extensions \fB.bz2\fP, gérée depuis dpkg 1.10.24) ou lzma (avec
 extension \fB.lzma\fP, gérée depuis dpkg 1.13.25).
 .PP
-Ces trois membres doivent apparaître dans cet ordre exact. Les
-implémentations actuelles devraient ignorer tout membre additionnel suivant
-\fBdata.tar\fP. D'autres membres seront éventuellement proposés, et (si
-possible) seront placés après ces trois derniers. Tout autre membre qui
-nécessitera d'être inséré après \fBdebian\-binary\fP et avant \fBcontrol.tar\fP ou
-\fBdata.tar\fP et qui pourra être ignoré sans problème par des programmes plus
-anciens, aura un nom commençant par un caractère de soulignement, «\ \fB_\fP\ ».
+These members must occur in this exact order. Current implementations should
+ignore any additional members after \fBdata.tar\fP.  Further members may be
+defined in the future, and (if possible) will be placed after these
+three. Any additional members that may need to be inserted after
+\fBdebian\-binary\fP and before \fBcontrol.tar\fP or \fBdata.tar\fP and which should
+be safely ignored by older programs, will have names starting with an
+underscore, \(oq\fB_\fP\(cq.
 .PP
 Les nouveaux membres qui ne pourront pas être ignorés sans conséquence
 seront insérés avant \fBdata.tar\fP avec des noms préfixés par quelque chose

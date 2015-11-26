@@ -2,7 +2,7 @@
 .\"
 .\" Copyright Â© 2007-2011 RaphaÃ«l Hertzog <hertzog@debian.org>
 .\" Copyright Â© 2009-2010 Modestas Vainius <modestas@vainius.eu>
-.\" Copyright Â© 2012-2013 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2012-2015 Guillem Jover <guillem@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH dpkg\-gensymbols 1 2013\-09\-06 "Projekt Debian" "programy pomocnicze dpkg"
+.TH dpkg\-gensymbols 1 2014\-12\-29 "Projekt Debian" "programy pomocnicze dpkg"
 .SH NAZWA
 dpkg\-gensymbols \- generuje pliki symboli (informacje o zale¿no¶ciach
 bibliotek wspó³dzielonych)
@@ -75,17 +75,16 @@ needed: it's recommended for example to drop the Debian revision from the
 minimal version so that backports with a lower version number but the same
 upstream version still satisfy the generated dependencies.  If the Debian
 revision can't be dropped because the symbol really got added by the Debian
-specific change, then one should suffix the version with "~".
+specific change, then one should suffix the version with \(oq\fB~\fP\(cq.
 .P
 Przed dodaniem jakiejkolwiek ³atki do pliku symboli, opiekun powinien dwa
 razy sprawdziæ, czy jest ona poprawna. Publiczne symbole nie mog± znikaæ,
 wiêc najlepiej je¶li jedynie dodaje ona nowe wiersze.
 .P
-Proszê zauwa¿yæ, ¿e mo¿na umieszczaæ komentarze w plikach symboli: ka¿dy
-wiersz zaczynaj±cy siê od "#", z wyj±tkiem "#include" (patrz rozdzia³
-\fBU¿ywanie include (do³±czeñ)\fP), jest komentarzem. Wiersze zaczynaj±ce siê
-od "#MISSING:" s± specjalnymi komentarzami dokumentuj±cymi symbole które
-zniknê³y.
+Note that you can put comments in symbols files: any line with \(oq#\(cq as
+the first character is a comment except if it starts with \(oq#include\(cq
+(see section \fBUsing includes\fP).  Lines starting with \(oq#MISSING:\(cq are
+special comments documenting symbols that have disappeared.
 .P
 Do not forget to check if old symbol versions need to be increased.  There
 is no way \fBdpkg\-gensymbols\fP can warn about this. Blindly applying the diff
@@ -143,14 +142,14 @@ original form as they were loaded.
 .SS "Standardowe znaczniki symboli"
 .TP 
 \fBoptional\fP
-Symbol oznaczony jako opcjonalny mo¿e znikn±æ z biblioteki w dowolnym
-momencie i nigdy nie spowoduje b³êdu \fBdpkg\-gensymbols\fP. Usuniête symbole
-bêd± siê jednak w dalszym ci±gu pojawiaæ jako MISSING w ka¿dym diffie w
-ka¿dej nowej wersji pakietu. To zachowanie jest przypomnieniem dla opiekuna,
-¿e dany symbol musi byæ usuniêty z pliku symboli lub ponownie dodany do
-biblioteki. Gdy opcjonalny symbol, zadeklarowany wcze¶niej jako MISSING,
-nagle pojawi siê w nastêpnej wersji, zostanie uaktualniony z powrotem do
-statusu "istniej±cego", gdy jego minimalna wersja nie zmieni³a siê.
+A symbol marked as optional can disappear from the library at any time and
+that will never cause \fBdpkg\-gensymbols\fP to fail. However, disappeared
+optional symbols will continuously appear as MISSING in the diff in each new
+package revision.  This behaviour serves as a reminder for the maintainer
+that such a symbol needs to be removed from the symbol file or readded to
+the library. When the optional symbol, which was previously declared as
+MISSING, suddenly reappears in the next revision, it will be upgraded back
+to the \(lqexisting\(rq status with its minimum version unchanged.
 
 Znacznik ten jest przydatny do symboli prywatnych, gdy ich znikniêcie nie
 spowoduje z³amania ABI. Przyk³adowo, wiêkszo¶æ szablonów C++ nale¿y do tej
@@ -158,20 +157,24 @@ kategorii. Podobnie jak ka¿dy inny znacznik, mo¿e mieæ on równie¿ dowoln±
 warto¶æ: mo¿na jej u¿yæ do okre¶lenia powodu, dla którego symbol jest
 opcjonalny.
 .TP 
-\fBarch=\fP\fIlista\-architektur\fP
-Znacznik ten pozwala na ograniczenie zestawu architektur, na którym ma
-istnieæ. Gdy lista symboli jest aktualizowana za pomoc± symboli odkrytych w
-bibliotece, wszystkie symbole specyficzne dla architektury, które nie
-dotycz± architektury bie¿±cego komputera s± traktowane tak, jakby nie
-istnia³y. Je¶li symbol specyficzny dla architektury, pasuj±cy do
-architektury bie¿±cego komputera nie istnieje w bibliotece, stosowana jest
-zwyk³a procedura dla brakuj±cych symboli i mo¿e to spowodowaæ b³±d
-\fBdpkg\-gensymbols\fP. Z drugiej strony, je¶li symbol specyficzny dla
-architektury zostanie znaleziony, podczas gdy nie powinien on istnieæ
-(poniewa¿ architektura bie¿±cego komputera nie jest wypisana w znaczniku),
-czyni siê go neutralnym architekturowo (znacznik architektury jest pomijany,
-a symbol pojawia siê w ró¿nicy z powodu tej zmiany), ale nie jest traktowany
-jako nowy.
+\fBarch=\fP\fIarchitecture\-list\fP
+.TQ
+\fBarch\-bits=\fP\fIarchitecture\-bits\fP
+.TQ
+\fBarch\-endian=\fP\fIarchitecture\-endianness\fP
+These tags allow one to restrict the set of architectures where the symbol
+is supposed to exist. The \fBarch\-bits\fP and \fBarch\-endian\fP tags are supported
+since dpkg 1.18.0. When the symbols list is updated with the symbols
+discovered in the library, all arch\-specific symbols which do not concern
+the current host architecture are treated as if they did not exist. If an
+arch\-specific symbol matching the current host architecture does not exist
+in the library, normal procedures for missing symbols apply and it may cause
+\fBdpkg\-gensymbols\fP to fail. On the other hand, if the arch\-specific symbol
+is found when it was not supposed to exist (because the current host
+architecture is not listed in the tag or does not match the endianness and
+bits), it is made arch neutral (i.e. the arch, arch\-bits and arch\-endian
+tags are dropped and the symbol will appear in the diff due to this change),
+but it is not considered as new.
 
 Podczas dzia³ania w domy¶lnym trybie nieszablonowym, spo¶ród symboli
 specyficznych dla architektury tylko te, które pasuj± do architektury
@@ -179,7 +182,7 @@ bie¿±cego komputera s± zapisywane do pliku symboli. Odwrotnie jest w trybie
 szablonu: wszystkie symbole specyficzne dla architektury (³±cznie z tymi,
 nale¿±cymi do obcych architektur) s± zawsze zapisywane do pliku symboli.
 
-The format of \fIarchitecture list\fP is the same as the one used in the
+The format of \fIarchitecture\-list\fP is the same as the one used in the
 \fBBuild\-Depends\fP field of \fIdebian/control\fP (except the enclosing square
 brackets []). For example, the first symbol from the list below will be
 considered only on alpha, any\-amd64 and ia64 architectures, the second only
@@ -188,6 +191,20 @@ on linux architectures, while the third one anywhere except on armel.
  (arch=alpha any\-amd64 ia64)a_64bit_specific_symbol@Base 1.0
  (arch=linux\-any)linux_specific_symbol@Base 1.0
  (arch=!armel)symbol_armel_does_not_have@Base 1.0
+
+The \fIarchitecture\-bits\fP is either \fB32\fP or \fB64\fP.
+
+ (arch\-bits=32)a_32bit_specific_symbol@Base 1.0
+ (arch\-bits=64)a_64bit_specific_symbol@Base 1.0
+
+The \fIarchitecture\-endianness\fP is either \fBlittle\fP or \fBbig\fP.
+
+ (arch\-endian=little)a_little_endian_specific_symbol@Base 1.0
+ (arch\-endian=big)a_big_endian_specific_symbol@Base 1.0
+
+Multiple restrictions can be chained.
+
+ (arch\-bits=32|arch\-endian=little)a_32bit_le_symbol@Base 1.0
 .TP 
 \fBignore\-blacklist\fP
 dpkg\-gensymbols posiada wewnêtrzn±, czarn± listê symboli, które nie powinny

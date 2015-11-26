@@ -3,7 +3,7 @@
  *
  * Copyright © 1995 Ian Jackson <ian@davenant.greenend.org.uk>
  * Copyright © 2000-2002 Wichert Akkerman <wakkerma@debian.org>
- * Copyright © 2006-2014 Guillem Jover <guillem@debian.org>
+ * Copyright © 2006-2015 Guillem Jover <guillem@debian.org>
  * Copyright © 2008 Pierre Habouzit <madcoder@debian.org>
  * Copyright © 2009-2010 Raphaël Hertzog <hertzog@debian.org>
  *
@@ -316,7 +316,7 @@ xreadlink(const char *linkname)
 
 	buf = areadlink(linkname);
 	if (buf == NULL)
-		syserr(_("unable to read link `%.255s'"), linkname);
+		syserr(_("unable to read link '%.255s'"), linkname);
 
 	return buf;
 }
@@ -478,14 +478,14 @@ static void
 checked_symlink(const char *filename, const char *linkname)
 {
 	if (symlink(filename, linkname))
-		syserr(_("error creating symbolic link `%.255s'"), linkname);
+		syserr(_("error creating symbolic link '%.255s'"), linkname);
 }
 
 static void
 checked_mv(const char *src, const char *dst)
 {
 	if (!rename_mv(src, dst))
-		syserr(_("unable to install `%.250s' as `%.250s'"), src, dst);
+		syserr(_("unable to install '%.250s' as '%.250s'"), src, dst);
 }
 
 static void
@@ -1087,7 +1087,7 @@ altdb_get_namelist(struct dirent ***table)
 
 	count = scandir(admdir, table, altdb_filter_namelist, alphasort);
 	if (count < 0)
-		syserr(_("cannot scan directory `%.255s'"), admdir);
+		syserr(_("cannot scan directory '%.255s'"), admdir);
 
 	return count;
 }
@@ -1614,7 +1614,7 @@ alternative_select_choice(struct alternative *a)
 		for (fs = a->choices; fs; fs = fs->next, idx++)
 			alternative_print_choice(a, ALT_ST_MANUAL, fs, idx, len);
 		printf("\n");
-		printf(_("Press enter to keep the current choice[*], "
+		printf(_("Press <enter> to keep the current choice[*], "
 		         "or type selection number: "));
 		ret = fgets(selection, sizeof(selection), stdin);
 		if (ret == NULL || strlen(selection) == 0) {
@@ -2516,7 +2516,8 @@ main(int argc, char **argv)
 	const char *new_choice = NULL;
 	int i = 0;
 
-	setlocale(LC_ALL, "");
+	if (getenv("DPKG_UNTRANSLATED_MESSAGES") == NULL)
+		setlocale(LC_ALL, "");
 	bindtextdomain(PACKAGE, LOCALEDIR);
 	textdomain(PACKAGE);
 
@@ -2529,7 +2530,7 @@ main(int argc, char **argv)
 
 	for (i = 1; i < argc; i++) {
 		if (strstr(argv[i], "--") != argv[i]) {
-			error(_("unknown argument `%s'"), argv[i]);
+			error(_("unknown argument '%s'"), argv[i]);
 		} else if (strcmp("--help", argv[i]) == 0) {
 			usage();
 			exit(0);
@@ -2666,7 +2667,7 @@ main(int argc, char **argv)
 			opt_force = 1;
 			PUSH_OPT(argv[i]);
 		} else {
-			badusage(_("unknown option `%s'"), argv[i]);
+			badusage(_("unknown option '%s'"), argv[i]);
 		}
 	}
 

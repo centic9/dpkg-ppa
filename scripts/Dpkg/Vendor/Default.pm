@@ -44,7 +44,7 @@ extended period. If you run an important distribution that makes use
 of vendor hooks, you'd better submit them for integration so that
 we avoid breaking your code.
 
-=head1 FUNCTIONS
+=head1 METHODS
 
 =over 4
 
@@ -56,7 +56,7 @@ if they don't need any specific initialization at object creation time.
 =cut
 
 sub new {
-    my ($this) = @_;
+    my $this = shift;
     my $class = ref($this) || $this;
     my $self = {};
     bless $self, $class;
@@ -80,6 +80,18 @@ just before the execution of $srcpkg->build().
 The hook is called when dpkg-source is checking a signature on a source
 package. It takes no parameters, but returns a (possibly empty) list of
 vendor-specific keyrings.
+
+=item builtin-build-depends ()
+
+The hook is called when dpkg-checkbuilddeps is initializing the source
+package build dependencies (since dpkg 1.18.2). It takes no parameters,
+but returns a (possibly empty) list of vendor-specific Build-Depends.
+
+=item builtin-build-conflicts ()
+
+The hook is called when dpkg-checkbuilddeps is initializing the source
+package build conflicts (since dpkg 1.18.2). It takes no parameters,
+but returns a (possibly empty) list of vendor-specific Build-Conflicts.
 
 =item register-custom-fields ()
 
@@ -116,6 +128,10 @@ sub run_hook {
     } elsif ($hook eq 'keyrings') {
         return ();
     } elsif ($hook eq 'register-custom-fields') {
+        return ();
+    } elsif ($hook eq 'builtin-build-depends') {
+        return ();
+    } elsif ($hook eq 'builtin-build-conflicts') {
         return ();
     } elsif ($hook eq 'post-process-changelog-entry') {
         my $fields = shift @params;

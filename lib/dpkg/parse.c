@@ -3,7 +3,7 @@
  * parse.c - database file parsing, main package/field loop
  *
  * Copyright © 1995 Ian Jackson <ian@chiark.greenend.org.uk>
- * Copyright © 2006,2008-2014 Guillem Jover <guillem@debian.org>
+ * Copyright © 2006, 2008-2015 Guillem Jover <guillem@debian.org>
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,7 +30,6 @@
 
 #include <assert.h>
 #include <fcntl.h>
-#include <ctype.h>
 #include <string.h>
 #include <unistd.h>
 #include <stdarg.h>
@@ -39,6 +38,7 @@
 
 #include <dpkg/macros.h>
 #include <dpkg/i18n.h>
+#include <dpkg/c-ctype.h>
 #include <dpkg/dpkg.h>
 #include <dpkg/dpkg-db.h>
 #include <dpkg/string.h>
@@ -137,7 +137,7 @@ pkg_parse_field(struct parsedb_state *ps, struct field_state *fs,
   if (fip->name) {
     if ((*ip)++)
       parse_error(ps,
-                  _("duplicate value for `%s' field"), fip->name);
+                  _("duplicate value for '%s' field"), fip->name);
 
     varbuf_reset(&fs->value);
     varbuf_add_buf(&fs->value, fs->valuestart, fs->valuelen);
@@ -149,14 +149,14 @@ pkg_parse_field(struct parsedb_state *ps, struct field_state *fs,
 
     if (fs->fieldlen < 2)
       parse_error(ps,
-                  _("user-defined field name `%.*s' too short"),
+                  _("user-defined field name '%.*s' too short"),
                   fs->fieldlen, fs->fieldstart);
     larpp = &pkg_obj->pkgbin->arbs;
     while ((arp = *larpp) != NULL) {
       if (strncasecmp(arp->name, fs->fieldstart, fs->fieldlen) == 0 &&
           strlen(arp->name) == (size_t)fs->fieldlen)
         parse_error(ps,
-                   _("duplicate value for user-defined field `%.*s'"),
+                   _("duplicate value for user-defined field '%.*s'"),
                    fs->fieldlen, fs->fieldstart);
       larpp = &arp->next;
     }
@@ -313,7 +313,8 @@ parse_count_pkg_instance(struct pkgcount *count,
   if (pkg->status == PKG_STAT_NOTINSTALLED)
      return;
 
-  if (pkgbin->multiarch == PKG_MULTIARCH_SAME)
+  // mvo: consider stat_configfiles multiarch to prevent LP: #1015567
+  if (pkgbin->multiarch == PKG_MULTIARCH_SAME || pkg->status == PKG_STAT_CONFIGFILES)
     count->multi++;
   else
     count->single++;
@@ -542,7 +543,7 @@ parsedb_open(const char *filename, enum parsedbflags flags)
 
   fd = open(filename, O_RDONLY);
   if (fd == -1)
-    ohshite(_("failed to open package info file `%.255s' for reading"),
+    ohshite(_("failed to open package info file '%.255s' for reading"),
             filename);
 
   ps = parsedb_new(filename, fd, flags | pdb_close_fd);
@@ -561,7 +562,7 @@ parsedb_load(struct parsedb_state *ps)
   struct stat st;
 
   if (fstat(ps->fd, &st) == -1)
-    ohshite(_("can't stat package info file `%.255s'"), ps->filename);
+    ohshite(_("can't stat package info file '%.255s'"), ps->filename);
 
   if (S_ISFIFO(st.st_mode)) {
     struct varbuf buf = VARBUF_INIT;
@@ -580,7 +581,7 @@ parsedb_load(struct parsedb_state *ps)
 #ifdef USE_MMAP
     ps->dataptr = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, ps->fd, 0);
     if (ps->dataptr == MAP_FAILED)
-      ohshite(_("can't mmap package info file `%.255s'"), ps->filename);
+      ohshite(_("can't mmap package info file '%.255s'"), ps->filename);
 #else
     ps->dataptr = m_malloc(st.st_size);
 
@@ -604,7 +605,7 @@ parse_stanza(struct parsedb_state *ps, struct field_state *fs,
   int c;
 
   /* Skip adjacent new lines. */
-  while (!parse_EOF(ps)) {
+  while (!parse_at_eof(ps)) {
     c = parse_getc(ps);
     if (c != '\n' && c != MSDOS_EOF_CHAR)
       break;
@@ -612,7 +613,7 @@ parse_stanza(struct parsedb_state *ps, struct field_state *fs,
   }
 
   /* Nothing relevant parsed, bail out. */
-  if (parse_EOF(ps))
+  if (parse_at_eof(ps))
     return false;
 
   /* Loop per field. */
@@ -621,7 +622,7 @@ parse_stanza(struct parsedb_state *ps, struct field_state *fs,
 
     /* Scan field name. */
     fs->fieldstart = ps->dataptr - 1;
-    while (!parse_EOF(ps) && !isspace(c) && c != ':' && c != MSDOS_EOF_CHAR)
+    while (!parse_at_eof(ps) && !c_isspace(c) && c != ':' && c != MSDOS_EOF_CHAR)
       c = parse_getc(ps);
     fs->fieldlen = ps->dataptr - fs->fieldstart - 1;
     if (fs->fieldlen == 0)
@@ -631,38 +632,35 @@ parse_stanza(struct parsedb_state *ps, struct field_state *fs,
                   fs->fieldlen, fs->fieldstart);
 
     /* Skip spaces before ‘:’. */
-    while (!parse_EOF(ps) && c != '\n' && isspace(c))
+    while (!parse_at_eof(ps) && c != '\n' && c_isspace(c))
       c = parse_getc(ps);
 
     /* Validate ‘:’. */
-    if (parse_EOF(ps))
-      parse_error(ps,
-                  _("EOF after field name `%.*s'"), fs->fieldlen, fs->fieldstart);
+    if (parse_at_eof(ps))
+      parse_error(ps, _("end of file after field name '%.*s'"),
+                  fs->fieldlen, fs->fieldstart);
     if (c == '\n')
       parse_error(ps,
-                  _("newline in field name `%.*s'"), fs->fieldlen, fs->fieldstart);
+                  _("newline in field name '%.*s'"), fs->fieldlen, fs->fieldstart);
     if (c == MSDOS_EOF_CHAR)
-      parse_error(ps,
-                  _("MSDOS EOF (^Z) in field name `%.*s'"),
+      parse_error(ps, _("MSDOS end of file (^Z) in field name '%.*s'"),
                   fs->fieldlen, fs->fieldstart);
     if (c != ':')
       parse_error(ps,
-                  _("field name `%.*s' must be followed by colon"),
+                  _("field name '%.*s' must be followed by colon"),
                   fs->fieldlen, fs->fieldstart);
 
     /* Skip space after ‘:’ but before value and EOL. */
-    while (!parse_EOF(ps)) {
+    while (!parse_at_eof(ps)) {
       c = parse_getc(ps);
-      if (c == '\n' || !isspace(c))
+      if (c == '\n' || !c_isspace(c))
         break;
     }
-    if (parse_EOF(ps))
-      parse_error(ps,
-                  _("EOF before value of field `%.*s' (missing final newline)"),
+    if (parse_at_eof(ps))
+      parse_error(ps, _("end of file before value of field '%.*s' (missing final newline)"),
                   fs->fieldlen, fs->fieldstart);
     if (c == MSDOS_EOF_CHAR)
-      parse_error(ps,
-                  _("MSDOS EOF char in value of field `%.*s' (missing newline?)"),
+      parse_error(ps, _("MSDOS end of file (^Z) in value of field '%.*s' (missing newline?)"),
                   fs->fieldlen, fs->fieldstart);
 
     blank_line = false;
@@ -677,23 +675,22 @@ parse_stanza(struct parsedb_state *ps, struct field_state *fs,
                       fs->fieldlen, fs->fieldstart);
         ps->lno++;
 
-        if (parse_EOF(ps))
+        if (parse_at_eof(ps))
           break;
         c = parse_getc(ps);
 
         /* Found double EOL, or start of new field. */
-        if (parse_EOF(ps) || c == '\n' || !isspace(c))
+        if (parse_at_eof(ps) || c == '\n' || !c_isspace(c))
           break;
 
         parse_ungetc(c, ps);
         blank_line = true;
-      } else if (blank_line && !isspace(c)) {
+      } else if (blank_line && !c_isspace(c)) {
         blank_line = false;
       }
 
-      if (parse_EOF(ps))
-        parse_error(ps,
-                    _("EOF during value of field `%.*s' (missing final newline)"),
+      if (parse_at_eof(ps))
+        parse_error(ps, _("end of file during value of field '%.*s' (missing final newline)"),
                     fs->fieldlen, fs->fieldstart);
 
       c = parse_getc(ps);
@@ -701,12 +698,12 @@ parse_stanza(struct parsedb_state *ps, struct field_state *fs,
     fs->valuelen = ps->dataptr - fs->valuestart - 1;
 
     /* Trim ending space on value. */
-    while (fs->valuelen && isspace(*(fs->valuestart + fs->valuelen - 1)))
+    while (fs->valuelen && c_isspace(*(fs->valuestart + fs->valuelen - 1)))
       fs->valuelen--;
 
     parse_field(ps, fs, parse_obj);
 
-    if (parse_EOF(ps) || c == '\n' || c == MSDOS_EOF_CHAR)
+    if (parse_at_eof(ps) || c == '\n' || c == MSDOS_EOF_CHAR)
       break;
   } /* Loop per field. */
 
@@ -726,7 +723,7 @@ parsedb_close(struct parsedb_state *ps)
     pop_cleanup(ehflag_normaltidy);
 
     if (close(ps->fd))
-      ohshite(_("failed to close after read: `%.255s'"), ps->filename);
+      ohshite(_("failed to close after read: '%.255s'"), ps->filename);
   }
 
   if (ps->data != NULL) {
@@ -803,13 +800,13 @@ parsedb_parse(struct parsedb_state *ps, struct pkginfo **donep)
     if (donep)
       *donep = db_pkg;
     pdone++;
-    if (parse_EOF(ps))
+    if (parse_at_eof(ps))
       break;
   }
 
   varbuf_destroy(&fs.value);
   if (donep && !pdone)
-    ohshit(_("no package information in `%.255s'"), ps->filename);
+    ohshit(_("no package information in '%.255s'"), ps->filename);
 
   return pdone;
 }

@@ -3,7 +3,7 @@
 .\" Copyright Â© 1995-1996 Ian Jackson <ian@chiark.chu.cam.ac.uk>
 .\" Copyright Â© 1999 Wichert Akkerman <wakkerma@debian.org>
 .\" Copyright Â© 2006 Frank Lichtenheld <djpig@debian.org>
-.\" Copyright Â© 2007-2014 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2007-2015 Guillem Jover <guillem@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -38,6 +38,11 @@ renseignements sur les archives Debian
 .PP
 Il est possible d'exécuter \fBdpkg\-deb\fP en appelant \fBdpkg\fP avec les options
 de \fBdpkg\-deb\fP. \fBdpkg\fP comprend que \fBdpkg\-deb\fP est appelé et le lance.
+.PP
+For most commands taking an input archive argument, the archive can be read
+from standard input if the archive name is given as a single minus character
+(\fB\-\fP); otherwise lack of support will be documented in their respective
+command description.
 .
 .SH COMMANDES
 .TP 
@@ -90,13 +95,13 @@ tabulation.
 Extrait les renseignements du fichier «\ control\ » de l'archive du paquet
 binaire.
 
-Quand aucun argument \fBcontrol\-fichier\-champ\fP n'est précisé, le fichier
-«\ control\ » est affiché en entier.
+If no \fIcontrol\-field\-name\fPs are specified then it will print the whole
+control file.
 
-Quand il y en a un, \fBdpkg\-deb\fP affiche ses éléments en suivant leur ordre
-d'apparition dans le fichier «\ control\ ». Quand il y a plus d'un argument
-\fBcontrol\-fichier\-field,\fP \fBdpkg\-deb\fP fait précéder chacun par le nom de son
-champ (puis par un «\ deux\-points\ » et une espace).
+If any are specified then \fBdpkg\-deb\fP will print their contents, in the
+order in which they appear in the control file. If more than one
+\fIcontrol\-field\-name\fP is specified then \fBdpkg\-deb\fP will precede each with
+its field name (and a colon and space).
 
 L'absence des champs demandés ne provoque pas de message d'erreur.
 .TP 
@@ -121,12 +126,15 @@ Comme \fB\-\-extract\fP (\fB\-x\fP) avec \fB\-\-verbose\fP (\fB\-v\fP), ce qui a
 liste des fichiers au fur et à mesure qu'ils sont extraits.
 .TP 
 \fB\-R\fP, \fB\-\-raw\-extract\fP \fIarchive répertoire\fP
-Extrait l'arborescence des fichiers d'un paquet archive dans le répertoire
-spécifié et les fichiers d'information de contrôle dans un sous\-répertoire
-nommé DEBIAN de ce répertoire.
+Extracts the filesystem tree from a package archive into a specified
+directory, and the control information files into a \fBDEBIAN\fP subdirectory
+of the specified directory (since dpkg 1.16.1).
 
 Le répertoire cible est créé si nécessaire (mais pas ses répertoires
 parents).
+
+The input archive is not (currently) processed sequentially, so reading it
+from standard input (\fB\-\fP) is \fBnot\fP supported.
 .TP 
 \fB\-\-ctrl\-tarfile\fP \fIarchive\fP
 Extrait les données de contrôle d'un paquet binaire et les envoie sur la
@@ -164,14 +172,13 @@ Affiche le numéro de version puis quitte.
 Cette option sert à spécifier le format de sortie de l'option \fB\-\-show\fP. Ce
 format sera utilisé pour chaque paquet listé.
 
-Cet argument est une chaîne qui peut référencer tout champ avec la forme
-${\fIfield\-name\fP}\ ; une liste des champs valables peut être facilement
-produite avec l'option \fB\-I\fP sur le même paquet. Une explication complète
-des options de formatage (avec les séquences d'échappement et les espaces
-entre les champs) se trouve dans la page \fBdpkg\-query\fP(1), option
-\fB\-\-showformat\fP.
+The string may reference any status field using the \(lq${\fIfield\-name\fP}\(rq
+form, a list of the valid fields can be easily produced using \fB\-I\fP on the
+same package. A complete explanation of the formatting options (including
+escape sequences and field tabbing) can be found in the explanation of the
+\fB\-\-showformat\fP option in \fBdpkg\-query\fP(1).
 
-Par défaut, la valeur de ce champ est ${Package}\et${Version}\en.
+The default for this field is \(lq${Package}\et${Version}\en\(rq.
 .TP 
 \fB\-z\fP\fIniveau_compression\fP
 Indique le niveau de compression à fournir au logiciel de compression appelé
@@ -182,28 +189,27 @@ niveau 1 pour bzip2. Avant la version 1.16.2, la valeur 0 correspondait à
 «\ aucune compression\ » pour tous les logiciels de compression.
 .TP 
 \fB\-S\fP\fIstratégie\-compression\fP
-Indique la stratégie de compression à fournir au logiciel de compression
-appelé en sous\-main lors de la construction du paquet (depuis dpkg
-1.16.2). Les valeurs autorisées sont \fInone\fP (depuis dpkg 1.16.4),
-\fIfiltered\fP, \fIhuffman\fP, \fIrle\fP et \fIfixed\fP pour gzip (since dpkg 1.17.0) et
-\fIextreme\fP pour xz.
+Specify which compression strategy to use on the compressor backend, when
+building a package (since dpkg 1.16.2). Allowed values are \fBnone\fP (since
+dpkg 1.16.4), \fBfiltered\fP, \fBhuffman\fP, \fBrle\fP and \fBfixed\fP for gzip (since
+dpkg 1.17.0) and \fBextreme\fP for xz.
 .TP 
 \fB\-Z\fP\fItype_compression\fP
-Indique le type de compression à utiliser lors de la construction d'un
-paquet. Les valeurs autorisées sont \fIgzip\fP, \fIxz\fP, \fIbzip2\fP (déconseillée),
-\fIlzma\fP (déconseillée) et \fInone\fP (\fIxz\fP est la valeur par défaut).
+Specify which compression type to use when building a package.  Allowed
+values are \fBgzip\fP, \fBxz\fP (since dpkg 1.15.6), \fBbzip2\fP (deprecated),
+\fBlzma\fP (since dpkg 1.14.0; deprecated), and \fBnone\fP (default is \fBxz\fP).
 .TP 
 \fB\-\-uniform\-compression\fP
-Indique que les mêmes paramètres de compression doivent être utilisés pour
-tous les membres de l'archive (c'est\-à\-dire \fBcontrol.tar\fP et
-\fBdata.tar\fP). Sinon, seul le membre \fBdata.tar\fP utilisera ces
-paramètres. \fInone\fP, \fIgzip\fP et \fIxz\fP sont les seuls types de compression
-pris en charge pour cette option d'uniformité.
+Specify that the same compression parameters should be used for all archive
+members (i.e. \fBcontrol.tar\fP and \fBdata.tar\fP; since dpkg 1.17.6).  Otherwise
+only the \fBdata.tar\fP member will use those parameters. The only supported
+compression types allowed to be uniformly used are \fBnone\fP, \fBgzip\fP and
+\fBxz\fP.
 .TP 
 \fB\-\-deb\-format=\fP\fIformat\fP
-Indique la version du format d'archive utilisé lors de la construction. Les
-valeurs autorisées sont \fI2.0\fP pour le nouveau format et \fI0.939000\fP pour
-l'ancien (la valeur par défaut est \fI2.0\fP).
+Set the archive format version used when building (since dpkg 1.17.0).
+Allowed values are \fB2.0\fP for the new format, and \fB0.939000\fP for the old
+one (default is \fB2.0\fP).
 
 L'ancien format d'archive, moins facilement compris par les outils
 non\-Debian, est maintenant dépassé. On l'utilise seulement quand on
@@ -223,8 +229,8 @@ proposé d'une archive. De cette façon, on peut construire n'importe quelle
 archive, aussi défectueuse soit\-elle.
 .TP 
 \fB\-v\fP, \fB\-\-verbose\fP
-Active l'affichage bavard. Cela n'affecte actuellement que \fB\-\-extract\fP et
-le rend analogue à \fB\-\-vextract\fP.
+Enables verbose output (since dpkg 1.16.1).  This currently only affects
+\fB\-\-extract\fP making it behave like \fB\-\-vextract\fP.
 .TP 
 \fB\-D\fP, \fB\-\-debug\fP
 Permet les messages de débogage. Ce n'est pas très intéressant.

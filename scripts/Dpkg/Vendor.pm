@@ -17,18 +17,25 @@ package Dpkg::Vendor;
 
 use strict;
 use warnings;
+use feature qw(state);
 
 our $VERSION = '1.01';
+our @EXPORT_OK = qw(
+    get_current_vendor
+    get_vendor_info
+    get_vendor_file
+    get_vendor_dir
+    get_vendor_object
+    run_vendor_hook
+);
+
+use Exporter qw(import);
 
 use Dpkg ();
 use Dpkg::ErrorHandling;
 use Dpkg::Gettext;
 use Dpkg::BuildEnv;
 use Dpkg::Control::HashCore;
-
-use Exporter qw(import);
-our @EXPORT_OK = qw(get_vendor_info get_current_vendor get_vendor_file
-                    get_vendor_dir get_vendor_object run_vendor_hook);
 
 my $origins = "$Dpkg::CONFDIR/origins";
 $origins = $ENV{DPKG_ORIGINS_DIR} if $ENV{DPKG_ORIGINS_DIR};
@@ -81,15 +88,15 @@ if there's no file for the given vendor.
 
 =cut
 
-my %VENDOR_CACHE;
 sub get_vendor_info(;$) {
     my $vendor = shift || 'default';
+    state %VENDOR_CACHE;
     return $VENDOR_CACHE{$vendor} if exists $VENDOR_CACHE{$vendor};
 
     my $file = get_vendor_file($vendor);
     return unless $file;
     my $fields = Dpkg::Control::HashCore->new();
-    $fields->load($file) or error(_g('%s is empty'), $file);
+    $fields->load($file) or error(g_('%s is empty'), $file);
     $VENDOR_CACHE{$vendor} = $fields;
     return $fields;
 }
@@ -142,9 +149,9 @@ object.
 
 =cut
 
-my %OBJECT_CACHE;
 sub get_vendor_object {
     my $vendor = shift || get_current_vendor() || 'Default';
+    state %OBJECT_CACHE;
     return $OBJECT_CACHE{$vendor} if exists $OBJECT_CACHE{$vendor};
 
     my ($obj, @names);
@@ -184,11 +191,11 @@ sub run_vendor_hook {
 
 =head1 CHANGES
 
-=head2 Version 1.01
+=head2 Version 1.01 (dpkg 1.17.0)
 
 New function: get_vendor_dir().
 
-=head2 Version 1.00
+=head2 Version 1.00 (dpkg 1.16.1)
 
 Mark the module as public.
 

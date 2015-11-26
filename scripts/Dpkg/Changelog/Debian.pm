@@ -1,7 +1,7 @@
 # Copyright © 1996 Ian Jackson
 # Copyright © 2005 Frank Lichtenheld <frank@lichtenheld.de>
 # Copyright © 2009 Raphaël Hertzog <hertzog@debian.org>
-# Copyright © 2012-2013 Guillem Jover <guillem@debian.org>
+# Copyright © 2012-2015 Guillem Jover <guillem@debian.org>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -35,8 +35,6 @@ NOTE: most of these are ignored silently currently, there is no
 parser error issued for them. This should become configurable in the
 future.
 
-=head2 METHODS
-
 =cut
 
 package Dpkg::Changelog::Debian;
@@ -49,15 +47,18 @@ our $VERSION = '1.00';
 use Dpkg::Gettext;
 use Dpkg::File;
 use Dpkg::Changelog qw(:util);
-use parent qw(Dpkg::Changelog);
 use Dpkg::Changelog::Entry::Debian qw(match_header match_trailer);
 
+use parent qw(Dpkg::Changelog);
+
 use constant {
-    FIRST_HEADING => _g('first heading'),
-    NEXT_OR_EOF => _g('next heading or eof'),
-    START_CHANGES => _g('start of change data'),
-    CHANGES_OR_TRAILER => _g('more change data or trailer'),
+    FIRST_HEADING => g_('first heading'),
+    NEXT_OR_EOF => g_('next heading or end of file'),
+    START_CHANGES => g_('start of change data'),
+    CHANGES_OR_TRAILER => g_('more change data or trailer'),
 };
+
+=head1 METHODS
 
 =over 4
 
@@ -88,7 +89,7 @@ sub parse {
 	if (match_header($_)) {
 	    unless ($expect eq FIRST_HEADING || $expect eq NEXT_OR_EOF) {
 		$self->parse_error($file, $.,
-		    sprintf(_g('found start of entry where expected %s'),
+		    sprintf(g_('found start of entry where expected %s'),
 		    $expect), "$_");
 	    }
 	    unless ($entry->is_empty) {
@@ -125,11 +126,11 @@ sub parse {
 	    # hit it for the first time
 	    $self->set_unparsed_tail("$_\n" . file_slurp($fh));
 	} elsif (m/^\S/) {
-	    $self->parse_error($file, $., _g('badly formatted heading line'), "$_");
+	    $self->parse_error($file, $., g_('badly formatted heading line'), "$_");
 	} elsif (match_trailer($_)) {
 	    unless ($expect eq CHANGES_OR_TRAILER) {
 		$self->parse_error($file, $.,
-		    sprintf(_g('found trailer where expected %s'), $expect), "$_");
+		    sprintf(g_('found trailer where expected %s'), $expect), "$_");
 	    }
 	    $entry->set_part('trailer', $_);
 	    $entry->extend_part('blank_after_changes', [ @blanklines ]);
@@ -139,10 +140,10 @@ sub parse {
 	    }
 	    $expect = NEXT_OR_EOF;
 	} elsif (m/^ \-\-/) {
-	    $self->parse_error($file, $., _g('badly formatted trailer line'), "$_");
+	    $self->parse_error($file, $., g_('badly formatted trailer line'), "$_");
 	} elsif (m/^\s{2,}(?:\S)/) {
 	    unless ($expect eq START_CHANGES or $expect eq CHANGES_OR_TRAILER) {
-		$self->parse_error($file, $., sprintf(_g('found change data' .
+		$self->parse_error($file, $., sprintf(g_('found change data' .
 		    ' where expected %s'), $expect), "$_");
 		if ($expect eq NEXT_OR_EOF and not $entry->is_empty) {
 		    # lets assume we have missed the actual header line
@@ -164,11 +165,11 @@ sub parse {
 		next;
 	    } elsif ($expect ne CHANGES_OR_TRAILER) {
 		$self->parse_error($file, $.,
-		    sprintf(_g('found blank line where expected %s'), $expect));
+		    sprintf(g_('found blank line where expected %s'), $expect));
 	    }
 	    push @blanklines, $_;
 	} else {
-	    $self->parse_error($file, $., _g('unrecognized line'), "$_");
+	    $self->parse_error($file, $., g_('unrecognized line'), "$_");
 	    unless ($expect eq START_CHANGES or $expect eq CHANGES_OR_TRAILER) {
 		# lets assume change data if we expected it
 		$entry->extend_part('changes', [ @blanklines, $_]);
@@ -179,8 +180,9 @@ sub parse {
     }
 
     unless ($expect eq NEXT_OR_EOF) {
-	$self->parse_error($file, $., sprintf(_g('found eof where expected %s'),
-					      $expect));
+        $self->parse_error($file, $.,
+                           sprintf(g_('found end of file where expected %s'),
+                                   $expect));
     }
     unless ($entry->is_empty) {
 	push @{$self->{data}}, $entry;
@@ -203,7 +205,7 @@ L<https://www.debian.org/doc/debian-policy/ch-source.html#s-dpkgchangelog>.
 
 =head1 CHANGES
 
-=head2 Version 1.00
+=head2 Version 1.00 (dpkg 1.15.6)
 
 Mark the module as public.
 

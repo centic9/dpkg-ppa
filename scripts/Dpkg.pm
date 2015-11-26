@@ -30,10 +30,23 @@ use strict;
 use warnings;
 
 our $VERSION = '1.01';
+our @EXPORT_OK = qw(
+    $PROGNAME
+    $PROGVERSION
+    $CONFDIR
+    $ADMINDIR
+    $LIBDIR
+    $DATADIR
+);
+our @EXPORT = qw(
+    $version
+    $progname
+    $admindir
+    $dpkglibdir
+    $pkgdatadir
+);
 
 use Exporter qw(import);
-our @EXPORT_OK = qw($PROGNAME $PROGVERSION $CONFDIR $ADMINDIR $LIBDIR $DATADIR);
-our @EXPORT = qw($version $progname $admindir $dpkglibdir $pkgdatadir);
 
 =head1 VARIABLES
 
@@ -70,7 +83,7 @@ Contains the path to the dpkg architecture tables directory.
 our ($PROGNAME) = $0 =~ m{(?:.*/)?([^/]*)};
 
 # The following lines are automatically fixed at install time
-our $PROGVERSION = '1.17.x';
+our $PROGVERSION = '1.18.x';
 our $CONFDIR = '/etc/dpkg';
 our $ADMINDIR = '/var/lib/dpkg';
 our $LIBDIR = '.';
@@ -87,14 +100,14 @@ our $pkgdatadir = $DATADIR;
 
 =head1 CHANGES
 
-=head2 Version 1.01
+=head2 Version 1.01 (dpkg 1.17.0)
 
 New variables: $PROGNAME, $PROGVERSION, $CONFDIR, $ADMINDIR, $LIBDIR and
 $DATADIR.
 
 Deprecated variables: $version, $admindir, $dpkglibdir and $pkgdatadir.
 
-=head2 Version 1.00
+=head2 Version 1.00 (dpkg 1.15.6)
 
 Mark the module as public.
 

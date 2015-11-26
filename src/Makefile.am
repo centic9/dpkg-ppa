@@ -51,6 +51,7 @@ dpkg_SOURCES = \
 	remove.c \
 	script.c \
 	select.c \
+	selinux.c \
 	trigproc.c \
 	unpack.c \
 	update.c \
@@ -77,8 +78,13 @@ dpkg_query_SOURCES = \
 dpkg_statoverride_SOURCES = \
 	filesdb.c \
 	infodb-format.c \
+	selinux.c \
 	statdb.c \
 	statcmd.c
+
+dpkg_statoverride_LDADD = \
+	$(LDADD) \
+	$(SELINUX_LIBS)
 
 dpkg_trigger_SOURCES = \
 	trigcmd.c

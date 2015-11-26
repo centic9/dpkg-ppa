@@ -19,21 +19,32 @@ use strict;
 use warnings;
 
 our $VERSION = '1.00';
+our @EXPORT = qw(
+    field_capitalize
+    field_is_official
+    field_is_allowed_in
+    field_transfer_single
+    field_transfer_all
+    field_list_src_dep
+    field_list_pkg_dep
+    field_get_dep_type
+    field_get_sep_type
+    field_ordered_list
+    field_register
+    field_insert_after
+    field_insert_before
+    FIELD_SEP_UNKNOWN
+    FIELD_SEP_SPACE
+    FIELD_SEP_COMMA
+    FIELD_SEP_LINE
+);
 
 use Exporter qw(import);
+
 use Dpkg::Gettext;
 use Dpkg::ErrorHandling;
 use Dpkg::Control::Types;
 use Dpkg::Checksums;
-
-our @EXPORT = qw(field_capitalize field_is_official field_is_allowed_in
-                 field_transfer_single field_transfer_all
-                 field_list_src_dep field_list_pkg_dep field_get_dep_type
-                 field_get_sep_type
-                 field_ordered_list field_register
-                 field_insert_after field_insert_before
-                 FIELD_SEP_UNKNOWN FIELD_SEP_SPACE FIELD_SEP_COMMA
-                 FIELD_SEP_LINE);
 
 use constant {
     ALL_PKG => CTRL_INFO_PKG | CTRL_INDEX_PKG | CTRL_PKG_DEB | CTRL_FILE_STATUS,
@@ -202,7 +213,7 @@ our %FIELDS = (
         allowed => (ALL_PKG | ALL_SRC) & (~CTRL_INFO_PKG),
     },
     'Maintainer' => {
-        allowed => CTRL_PKG_DEB | ALL_SRC | ALL_CHANGES,
+        allowed => CTRL_PKG_DEB| CTRL_FILE_STATUS | ALL_SRC  | ALL_CHANGES,
     },
     'Multi-Arch' => {
         allowed => ALL_PKG,
@@ -405,7 +416,7 @@ CTRL_* constants exported by Dpkg::Control.
 
 =over 4
 
-=item my $f = field_capitalize($field_name)
+=item $f = field_capitalize($field_name)
 
 Returns the field name properly capitalized. All characters are lowercase,
 except the first of each word (words are separated by a hyphen in field names).
@@ -506,8 +517,8 @@ sub field_transfer_single($$;$) {
 	    return $field;
 	}
     } elsif (not field_is_allowed_in($field, $from_type)) {
-        warning(_g("unknown information field '%s' in input data in %s"),
-                $field, $from->get_option('name') || _g('control information'));
+        warning(g_("unknown information field '%s' in input data in %s"),
+                $field, $from->get_option('name') || g_('control information'));
     }
     return;
 }
@@ -540,7 +551,7 @@ The list might be empty for types where the order does not matter much.
 =cut
 
 sub field_ordered_list($) {
-    my ($type) = @_;
+    my $type = shift;
     return @{$FIELD_ORDER{$type}} if exists $FIELD_ORDER{$type};
     return ();
 }
@@ -664,7 +675,7 @@ sub field_insert_before($$@) {
 
 =head1 CHANGES
 
-=head2 Version 1.00
+=head2 Version 1.00 (dpkg 1.17.0)
 
 Mark the module as public.
 

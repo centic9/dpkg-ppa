@@ -27,13 +27,13 @@ deb\-origin \- Återförsäljarspecifika informationsfiler
 .SH SYNOPS
 \fB/etc/dpkg/origins/\fP\fIfilnamn\fP
 .SH BESKRIVNING
-Filerna i \fB/etc/dpkg/origins\fP kan tillhandahålla information om olika
-återförsäljare som tillhandahåller Debianpaket. De innehåller ett antal
-fält, eller kommentarer när raden börjar med \fB"#"\fP. Varje fält inleds med
-ett märke, till exempel \fBVendor\fP eller \fBParent\fP, följt av ett kolon och
-fältets innehåll. Fälten avdelas endast av fältmärken. Med andra ord kan
-fälten innehålla flera rader text, men verktygen slår ihop rader när fältets
-text behandlas.
+The files in \fB/etc/dpkg/origins\fP can provide information about various
+vendors who are providing Debian packages. They contain a number of fields,
+or comments when the line starts with \(oq\fB#\fP\(cq.  Each field begins with
+a tag, such as \fBVendor\fP or \fBParent\fP, followed by a colon and the body of
+the field. Fields are delimited only by field tags. In other words, field
+text may be multiple lines in length, but the tools will join lines when
+processing the body of the field.
 .SH "NÖDVÄNDIGA FÄLT"
 .TP 
 \fBVendor:\fP \fIåteförsäljarnamn\fP

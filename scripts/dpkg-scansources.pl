@@ -2,7 +2,7 @@
 #
 # Copyright © 1999 Roderick Schertler
 # Copyright © 2002 Wichert Akkerman <wakkerma@debian.org>
-# Copyright © 2006-2009,2011-2012 Guillem Jover <guillem@debian.org>
+# Copyright © 2006-2009, 2011-2015 Guillem Jover <guillem@debian.org>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -33,18 +33,15 @@ use Dpkg::Compression;
 
 textdomain('dpkg-dev');
 
-# Errors with a single package are warned about but don't affect the
-# exit code. Only errors which affect everything cause a non-zero exit.
-my $exit = 0;
-
-# %override is a hash of lists.  The subs following describe what's in
-# the lists.
-
+# Hash of lists. The constants below describe what is in the lists.
 my %override;
-sub O_PRIORITY          () { 0 }
-sub O_SECTION           () { 1 }
-sub O_MAINT_FROM        () { 2 } # undef for non-specific, else listref
-sub O_MAINT_TO          () { 3 } # undef if there's no maint override
+use constant {
+    O_PRIORITY      => 0,
+    O_SECTION       => 1,
+    O_MAINT_FROM    => 2,   # undef for non-specific, else listref
+    O_MAINT_TO      => 3,   # undef if there's no maint override
+};
+
 my %extra_override;
 
 my %priority = (
@@ -61,14 +58,15 @@ my $debug = 0;
 my $no_sort = 0;
 my $src_override = undef;
 my $extra_override_file = undef;
+my @sources;
 
 my @option_spec = (
     'debug!' => \$debug,
     'help|?' => sub { usage(); exit 0; },
+    'version' => sub { version(); exit 0; },
     'no-sort|n' => \$no_sort,
     'source-override|s=s' => \$src_override,
     'extra-override|e=s' => \$extra_override_file,
-    'version' => \&version,
 );
 
 sub debug {
@@ -76,12 +74,11 @@ sub debug {
 }
 
 sub version {
-    printf _g("Debian %s version %s.\n"), $Dpkg::PROGNAME, $Dpkg::PROGVERSION;
-    exit;
+    printf g_("Debian %s version %s.\n"), $Dpkg::PROGNAME, $Dpkg::PROGVERSION;
 }
 
 sub usage {
-    printf _g(
+    printf g_(
 "Usage: %s [<option>...] <binary-path> [<override-file> [<path-prefix>]] > Sources
 
 Options:
@@ -99,12 +96,6 @@ See the man page for the full documentation.
 "), $Dpkg::PROGNAME;
 }
 
-sub close_msg {
-    my $name = shift;
-    return sprintf(_g("error closing %s (\$? %d, \$! `%s')"),
-                   $name, $?, $!)."\n";
-}
-
 sub load_override {
     my $file = shift;
     local $_;
@@ -117,18 +108,18 @@ sub load_override {
 
 	my @data = split ' ', $_, 4;
 	unless (@data == 3 || @data == 4) {
-	    warning(_g('invalid override entry at line %d (%d fields)'),
+	    warning(g_('invalid override entry at line %d (%d fields)'),
 	            $., 0 + @data);
 	    next;
 	}
 	my ($package, $priority, $section, $maintainer) = @data;
 	if (exists $override{$package}) {
-	    warning(_g('ignoring duplicate override entry for %s at line %d'),
+	    warning(g_('ignoring duplicate override entry for %s at line %d'),
 	            $package, $.);
 	    next;
 	}
 	if (!$priority{$priority}) {
-	    warning(_g('ignoring override entry for %s, invalid priority %s'),
+	    warning(g_('ignoring override entry for %s, invalid priority %s'),
 	            $package, $priority);
 	    next;
 	}
@@ -182,7 +173,7 @@ sub load_src_override {
 
 	my @data = split ' ';
 	unless (@data == 2) {
-	    warning(_g('invalid source override entry at line %d (%d fields)'),
+	    warning(g_('invalid source override entry at line %d (%d fields)'),
 	            $., 0 + @data);
 	    next;
 	}
@@ -190,7 +181,7 @@ sub load_src_override {
 	my ($package, $section) = @data;
 	my $key = "source/$package";
 	if (exists $override{$key}) {
-	    warning(_g('ignoring duplicate source override entry for %s at line %d'),
+	    warning(g_('ignoring duplicate source override entry for %s at line %d'),
 	            $package, $.);
 	    next;
 	}
@@ -238,9 +229,9 @@ sub process_dsc {
     $checksums->add_from_control($fields, use_files_for_md5 => 1);
 
     my $source = $fields->{Source};
-    my @binary = split /\s*,\s*/, $fields->{Binary};
+    my @binary = split /\s*,\s*/, $fields->{Binary} // '';
 
-    error(_g('no binary packages specified in %s'), $file) unless (@binary);
+    error(g_('no binary packages specified in %s'), $file) unless (@binary);
 
     # Rename the source field to package.
     $fields->{Package} = $fields->{Source};
@@ -291,64 +282,50 @@ sub process_dsc {
 
     $checksums->export_to_control($fields, use_files_for_md5 => 1);
 
-    return $fields;
+    push @sources, $fields;
 }
 
-sub main {
-    my (@out);
+### Main
 
-    {
-        local $SIG{__WARN__} = sub { usageerr($_[0]) };
-        GetOptions(@option_spec);
-    }
-    usageerr(_g('one to three arguments expected'))
-        if @ARGV < 1 or @ARGV > 3;
-
-    push @ARGV, undef if @ARGV < 2;
-    push @ARGV, '' if @ARGV < 3;
-    my ($dir, $override, $prefix) = @ARGV;
-
-    load_override $override if defined $override;
-    load_src_override $src_override, $override;
-    load_override_extra $extra_override_file if defined $extra_override_file;
-
-    open my $find_fh, '-|', "find -L \Q$dir\E -name '*.dsc' -print"
-        or syserr(_g('cannot fork for %s'), 'find');
-    while (<$find_fh>) {
-    	chomp;
-	s{^\./+}{};
-
-        my $fields;
-
-        # FIXME: Fix it instead to not die on syntax and general errors?
-        eval {
-            $fields = process_dsc($prefix, $_);
-        };
-        if ($@) {
-            warn $@;
-            next;
-        }
-
-	if ($no_sort) {
-            $fields->output(\*STDOUT);
-            print "\n";
-	}
-	else {
-            push @out, $fields;
-	}
-    }
-    close $find_fh or error(close_msg, 'find');
-
-    if (@out) {
-        foreach my $dsc (sort { $a->{Package} cmp $b->{Package} } @out) {
-            $dsc->output(\*STDOUT);
-            print "\n";
-        }
-    }
-
-    return 0;
+{
+    local $SIG{__WARN__} = sub { usageerr($_[0]) };
+    GetOptions(@option_spec);
 }
 
-$exit = main || $exit;
-$exit = 1 if $exit and not $exit % 256;
-exit $exit;
+usageerr(g_('one to three arguments expected'))
+    if @ARGV < 1 or @ARGV > 3;
+
+push @ARGV, undef if @ARGV < 2;
+push @ARGV, '' if @ARGV < 3;
+my ($dir, $override, $prefix) = @ARGV;
+
+load_override $override if defined $override;
+load_src_override $src_override, $override;
+load_override_extra $extra_override_file if defined $extra_override_file;
+
+open my $find_fh, '-|', 'find', '-L', $dir, '-name', '*.dsc', '-print'
+    or syserr(g_('cannot fork for %s'), 'find');
+while (<$find_fh>) {
+    chomp;
+    s{^\./+}{};
+
+    # FIXME: Fix it instead to not die on syntax and general errors?
+    eval {
+        process_dsc($prefix, $_);
+    };
+    if ($@) {
+        warn $@;
+        next;
+    }
+}
+close $find_fh or syserr(g_('error closing %s (%s)'), 'find', $!);
+
+if (not $no_sort) {
+    @sources = sort {
+        $a->{Package} . $a->{Version} cmp $b->{Package} . $b->{Version}
+    } @sources;
+}
+foreach my $dsc (@sources) {
+    $dsc->output(\*STDOUT);
+    print "\n";
+}

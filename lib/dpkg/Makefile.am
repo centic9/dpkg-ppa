@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-SUBDIRS = . test
+SUBDIRS = . t
 
 localedir = $(datadir)/locale
 pkgconfdir = $(sysconfdir)/@PACKAGE@
@@ -18,15 +18,17 @@ EXTRA_DIST = \
 	libdpkg.map \
 	libdpkg.pc.in
 
-pkgconfigdir = $(libdir)/pkgconfig
+pkgconfigdir = $(devlibdir)/pkgconfig
 pkgconfig_DATA = libdpkg.pc
 
-lib_LTLIBRARIES = libdpkg.la
+devlib_LTLIBRARIES = libdpkg.la
 
+libdpkg_la_LDFLAGS =
 if HAVE_LINKER_VERSION_SCRIPT
-libdpkg_la_LDFLAGS = \
+libdpkg_la_LDFLAGS += \
 	-Wl,--version-script=$(srcdir)/libdpkg.map
 endif
+libdpkg_la_LDFLAGS += $(MD_LIBS)
 libdpkg_la_LIBADD = \
 	../compat/libcompat.la
 if BUILD_SHARED
@@ -44,6 +46,7 @@ libdpkg_la_SOURCES = \
 	arch.c \
 	atomic-file.c \
 	buffer.c \
+	c-ctype.c \
 	cleanup.c \
 	command.c \
 	compress.c \
@@ -70,6 +73,7 @@ libdpkg_la_SOURCES = \
 	parse.c \
 	parsehelp.c \
 	path.c \
+	path-remove.c \
 	pkg.c \
 	pkg-db.c \
 	pkg-array.c \
@@ -102,6 +106,7 @@ pkginclude_HEADERS = \
 	arch.h \
 	atomic-file.h \
 	buffer.h \
+	c-ctype.h \
 	command.h \
 	compress.h \
 	deb-version.h \

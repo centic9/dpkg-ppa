@@ -18,7 +18,9 @@ use warnings;
 
 use Test::More tests => 6;
 
-use Dpkg;
+# Delete variables that can affect the tests.
+delete $ENV{DEB_VENDOR};
+
 use_ok('Dpkg::Vendor', qw(get_vendor_dir get_current_vendor get_vendor_object));
 
 is(get_vendor_dir(), $ENV{DPKG_ORIGINS_DIR}, 'Check vendor dir');

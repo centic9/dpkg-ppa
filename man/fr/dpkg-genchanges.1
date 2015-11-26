@@ -2,7 +2,7 @@
 .\"
 .\" Copyright Â© 1995-1996 Ian Jackson <ian@chiark.chu.cam.ac.uk>
 .\" Copyright Â© 2000 Wichert Akkerman <wakkerma@debian.org>
-.\" Copyright Â© 2006-2014 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2006-2015 Guillem Jover <guillem@debian.org>
 .\" Copyright Â© 2008-2010 RaphaÃ«l Hertzog <hertzog@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
@@ -40,23 +40,24 @@ Debian (c'est le fichier \fB.changes\fP).
 .SH OPTIONS
 .TP 
 \fB\-g\fP
-Spécifie que seuls les paquets source ou indépendants d'une architecture
-doivent être téléversés (aucun paquet propre à une architecture ne sera
-inclus).
+Specifies that only source and architecture independent packages should be
+uploaded, thus no architecture specific packages will be included (since
+dpkg 1.17.11).
 .TP 
 \fB\-G\fP
-Spécifie que seuls les paquets source ou propres à une architecture doivent
-être téléversés (aucun paquet indépendant d'une architecture ne sera
-inclus).
+Specifies that only source and architecture specific packages should be
+uploaded, thus no architecture independent packages will be included (since
+dpkg 1.17.11).
 .TP 
 \fB\-b\fP, \fB\-B\fP, \fB\-A\fP
-Précise que l'on veut uniquement une construction du binaire (les fichiers
-sources ne seront pas inclus). Il n'y a pas de distinction entre \fB\-b\fP,
-\fB\-B\fP et \fB\-A\fP\ ; le fichier produit \fB.changes\fP reprendra tous les fichiers
-créés par les cibles \fBbinary\-*\fP du paquet en cours de construction.
+Specifies that a binary\-only build is taking place, thus no source files are
+to be included.  There's no distinction between \fB\-b\fP, \fB\-B\fP and \fB\-A\fP, the
+produced \fB.changes\fP file will include whatever files were created by the
+\fBbinary\-*\fP target(s) of the package being built.
 .TP 
 \fB\-S\fP
-Ne construit que le paquet source (aucun paquet binaire ne sera construit).
+Specifies that only the source should be uploaded, thus no binary packages
+will be included.
 .PP
 Les options \fB\-s\fP\fIx\fP contrôlent si l'archive source d'origine est incluse
 dans l'installation produite si un paquet source est créé (c'est\-à\-dire que
@@ -101,12 +102,11 @@ Fixe la valeur d'une variable de substitution. Consultez \fBdeb\-substvars\fP(5)
 pour une discussion sur la valeur de substitution.
 .TP 
 \fB\-T\fP\fIfichier/substvars\fP
-Lecture des variables de substitution depuis \fIsubstvarsfile\fP\ ; la valeur
-par défaut est \fBdebian/substvars\fP. Aucune substitution de variable n'est
-faite sur les champs de sortie, cependant la variable spéciale \fIFormat\fP
-remplacera le champ qui porte le même nom. Cette option peut être utilisée
-plusieurs fois pour lire les variables de substitution depuis plusieurs
-fichiers.
+Read substitution variables in \fIsubstvars\-file\fP; the default is
+\fBdebian/substvars\fP.  No variable substitution is done on any of the fields
+that are output, however the special variable \fIFormat\fP will override the
+field of the same name. This option can be used multiple times to read
+substitution variables from multiple files (since dpkg 1.15.6).
 
 .TP 
 \fB\-D\fP\fIchamp\fP\fB=\fP\fIvaleur\fP

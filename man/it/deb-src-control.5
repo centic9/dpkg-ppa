@@ -2,7 +2,7 @@
 .\"
 .\" Copyright Â© 2010 Oxan van Leeuwen <oxan@oxanvanleeuwen.nl>
 .\" Copyright Â© 2011 RaphaÃ«l Hertzog <hertzog@debian.org>
-.\" Copyright Â© 2011-2013 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2011-2015 Guillem Jover <guillem@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -31,20 +31,19 @@ sorgente Debian
 control
 .
 .SH DESCRIZIONE
-Ogni pacchetto sorgente Debian contiene il file «control» principale che
-contiene almeno 2 paragrafi, separati da una riga vuota. Il primo paragrafo
-elenca tutte le informazioni sul pacchetto sorgente in generale, mentre
-ciascun paragrafo seguente descrive esattamente un pacchetto binario. Ogni
-paragrafo consiste di almeno un campo. Un campo inizia con un nome di campo,
-come \fBPackage\fP o \fBSection\fP (le maiuscole e minuscole non hanno
-importanza), seguito da due punti («:»), il corpo del campo e un ritorno a
-capo. Sono permessi anche campi con più righe, ma ogni riga aggiuntiva senza
-un nome di campo deve iniziare con almeno uno spazio. Il contenuto dei campi
-multi riga viene generalmente riunito in un'unica riga dagli strumenti
-(tranne nel caso del campo \fBDescription\fP, come descritto in seguito). Per
-inserire righe vuote in un campo composto da più righe, inserire un punto
-dopo lo spazio. Le righe che iniziano con un \fB«#»\fP sono considerate
-commenti.
+Each Debian source package contains the master \(Focontrol\(Fc file, which
+contains at least 2 paragraphs, separated by a blank line.  The first
+paragraph lists all information about the source package in general, while
+each following paragraph describes exactly one binary package. Each
+paragraph consists of at least one field. A field starts with a fieldname,
+such as \fBPackage\fP or \fBSection\fP (case insensitive), followed by a colon,
+the body of the field and a newline.  Multi\-line fields are also allowed,
+but each supplementary line, without a fieldname, should start with at least
+one space. The content of the multi\-line fields is generally joined to a
+single line by the tools (except in the case of the \fBDescription\fP field,
+see below). To insert empty lines into a multi\-line field, insert a dot
+after the space.  Lines starting with a \(oq\fB#\fP\(cq are treated as
+comments.
 .
 .SH "CAMPI DEL SORGENTE"
 .TP 
@@ -58,9 +57,9 @@ alfanumerico.
 
 .TP 
 \fBMaintainer:\fP \fInomecompleto\-email\fP (richiesto)
-Dovrebbe essere nel formato «Tizio Caio <tcaio@foo.com>» e si
-riferisce alla persona che attualmente mantiene il pacchetto, piuttosto che
-all'autore del software o al creatore originale del pacchetto.
+Should be in the format \(FoJoe Bloggs <jbloggs@foo.com>\(Fc, and
+references the person who currently maintains the package, as opposed to the
+author of the software or the original packager.
 
 .TP 
 \fBUploaders:\fP\fI nomecompleto\-email\fP
@@ -80,9 +79,9 @@ L'URL della home page del progetto originale.
 
 .TP 
 \fBBugs:\fP\fI url\fP
-L'\fIurl\fP per questo pacchetto nel sistema di tracciamento dei bug. Il
-formato attualmente utilizzato è \fItipo\-bts\fP\fB://\fP\fIindirizzo\-bts\fP, come in
-\fBdebbugs://bugs.debian.org\fP. Questo campo solitamente non è necessario.
+The \fIurl\fP of the bug tracking system for this package. The current used
+format is \fIbts\-type\fP\fB://\fP\fIbts\-address\fP, like
+\fB\%debbugs://bugs.debian.org\fP. This field is usually not needed.
 
 .TP 
 \fBVcs\-Arch:\fP\fI url\fP
@@ -118,15 +117,14 @@ solitamente non è necessario.
 
 .TP 
 \fBSection:\fP\fI sezione\fP
-Questo è un campo generico che assegna al pacchetto una categoria in base al
-software che esso installa. Alcune sezioni comuni sono: «utils», «net»,
-«mail», «text», «x11», ecc.
+This is a general field that gives the package a category based on the
+software that it installs.  Some common sections are \fButils\fP, \fBnet\fP,
+\fBmail\fP, \fBtext\fP, \fBx11\fP, etc.
 
 .TP 
 \fBPriority:\fP\fI priorità\fP
-Imposta l'importanza di questo pacchetto in relazione all'intero
-sistema. Priorità comuni sono: «required», «standard», «optional», «extra»,
-ecc.
+Sets the importance of this package in relation to the system as a whole.
+Common priorities are \fBrequired\fP, \fBstandard\fP, \fBoptional\fP, \fBextra\fP, etc.
 
 In Debian, i campi \fBSection\fP e \fBPriority\fP hanno un insieme definito di
 valori accettati in base al manuale Debian Policy. È possibile ottenere un
@@ -176,42 +174,51 @@ Come \fBBuild\-Conflicts\fP, ma solo quando si compilano i pacchetti
 indipendenti dall'architettura.
 
 .PP
-La sintassi dei campi \fBBuild\-Depends\fP, \fBBuild\-Depends\-Arch\fP e
-\fBBuild\-Depends\-Indep\fP è un elenco di gruppi di pacchetti alternativi. Ogni
-gruppo è un elenco di pacchetti separati da una barra verticale (o «pipe»):
-«|». I gruppi sono separati da virgole. Le virgole devono essere lette come
-«AND» e le pipe come «OR», con le pipe che hanno la precedenza. Ogni nome di
-pacchetto è seguito opzionalmente da un numero di versione specificato tra
-parentesi, un'architettura specificata tra parentesi quadre e una formula di
-restrizione che consiste di uno o più elenchi di nomi di profilo specificati
-tra parentesi angolari.
+The syntax of the \fBBuild\-Depends\fP, \fBBuild\-Depends\-Arch\fP and
+\fBBuild\-Depends\-Indep\fP fields is a list of groups of alternative packages.
+Each group is a list of packages separated by vertical bar (or \(lqpipe\(rq)
+symbols, \(oq\fB|\fP\(cq.  The groups are separated by commas.  Commas are to
+be read as \(lqAND\(rq, and pipes as \(lqOR\(rq, with pipes binding more
+tightly.  Each package name is optionally followed by an architecture
+qualifier appended after a colon \(oq\fB:\fP\(cq, optionally followed by a
+version number specification in parentheses, an architecture specification
+in square brackets, and a restriction formula consisting of one or more
+lists of profile names in angle brackets.
 
-La sintassi dei campi \fBBuild\-Conflicts\fP, \fBBuild\-Conflicts\-Arch\fP e
-\fBBuild\-Conflicts\-Indep\fP è un elenco di gruppi di pacchetti separati da
-virgole, dove la virgola viene letta come un «AND». Non è supportato
-specificare pacchetti alternativi usando una «pipe». Ogni nome di pacchetto
-è seguito opzionalmente da un numero di versione specificato tra parentesi,
-da un'architettura specificata tra parentesi quadre e da una formula di
-restrizione che consiste di uno o più elenchi di nomi di profilo specificati
-tra parentesi angolari.
+The syntax of the \fBBuild\-Conflicts\fP, \fBBuild\-Conflicts\-Arch\fP and
+\fBBuild\-Conflicts\-Indep\fP fields is a list of comma\-separated package names,
+where the comma is read as an \(lqAND\(rq.  Specifying alternative packages
+using a \(lqpipe\(rq is not supported.  Each package name is optionally
+followed by a version number specification in parentheses, an architecture
+specification in square brackets, and a restriction formula consisting of
+one or more lists of profile names in angle brackets.
 
-Un numero di versione può iniziare con «>>», nel qual caso
-corrisponde ad ogni versione successiva e può specificare o meno la
-revisione Debian del pacchetto (separata da un trattino). Le relazioni
-accettate per le versioni sono «>>» per maggiore di, «<<»
-per minore di, «>=» per maggiore o uguale a, «<=» per minore o
-uguale a e «=» per uguale a.
+An architecture qualifier name can be a real Debian architecture name (since
+dpkg 1.16.5), \fBany\fP (since dpkg 1.16.2) or \fBnative\fP (since dpkg 1.16.5).
+If omitted, the default for \fBBuild\-Depends\fP fields is the current host
+architecture, the default for \fBBuild\-Conflicts\fP fields is \fBany\fP.  A real
+Debian architecture name will match exactly that architecture for that
+package name, \fBany\fP will match any architecture for that package name if
+the package is marked with \fBMulti\-Arch: allowed\fP, and \fBnative\fP will match
+the current build architecture if the package is not marked with
+\fBMulti\-Arch: foreign\fP.
 
-L'indicazione di un'architettura è formata da uno o più nomi di
-architettura, separati da spazi bianchi. Ciascun nome può essere fatto
-precedere da un punto esclamativo col significato di «NON».
+A version number may start with a \(oq\fB>>\fP\(cq, in which case any
+later version will match, and may specify or omit the Debian packaging
+revision (separated by a hyphen).  Accepted version relationships are
+\(oq\fB>>\fP\(cq for greater than, \(oq\fB<<\fP\(cq for less than,
+\(oq\fB>=\fP\(cq for greater than or equal to, \(oq\fB<=\fP\(cq for less
+than or equal to, and \(oq\fB=\fP\(cq for equal to.
 
-Una formula di restrizione è costituita da uno o più elenchi di restrizione,
-separati da uno spazio bianco. Ogni elenco di restrizione e racchiuso tra
-parentesi angolari. Gli elementi nell'elenco di restrizione sono nomi di
-profilo, separati da spazi bianchi e possono essere preceduti da un punto
-esclamativo col significato di «NON». Una formula di restrizione rappresenta
-una espressione in forma normale disgiuntiva.
+An architecture specification consists of one or more architecture names,
+separated by whitespace. Exclamation marks may be prepended to each of the
+names, meaning \(lqNOT\(rq.
+
+A restriction formula consists of one or more restriction lists, separated
+by whitespace. Each restriction list is enclosed in angle brackets. Items in
+the restriction list are build profile names, separated by whitespace and
+can be prefixed with an exclamation mark, meaning \(lqNOT\(rq.  A
+restriction formula represents a disjunctive normal form expression.
 
 Notare che le dipendenze dai pacchetti nell'insieme \fBbuild\-essential\fP
 possono essere omesse e che dichiarare conflitti di compilazione con essi è
@@ -243,10 +250,9 @@ informazioni vedere \fBdpkg\-architecture\fP(1)).
 
 .TP 
 \fBPackage\-Type:\fP \fBdeb\fP|\fBudeb\fP
-Questo campo definisce il tipo di pacchetto. «udeb» è per pacchetti di
-dimensioni limitate usati dall'installatore debian. «deb» è il valore
-predefinito che viene usato se il campo non è presente. Ulteriori tipi
-potrebbero essere aggiunti in futuro.
+This field defines the type of the package.  \fBudeb\fP is for size\-constrained
+packages used by the debian installer.  \fBdeb\fP is the default value, it is
+assumed if the field is absent.  More types might be added in the future.
 
 .TP 
 \fBSubarchitecture:\fP\fI valore\fP

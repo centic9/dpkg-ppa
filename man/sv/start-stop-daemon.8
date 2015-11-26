@@ -5,7 +5,7 @@
 .\" Copyright Â© 2000-2001 Wichert Akkerman <wakkerma@debian.org>
 .\" Copyright Â© 2002-2003 Adam Heath <doogie@debian.org>
 .\" Copyright Â© 2004 Scott James Remnant <keybuk@debian.org>
-.\" Copyright Â© 2008-2014 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2008-2015 Guillem Jover <guillem@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -65,8 +65,8 @@ med status 1 (0 om \fB\-\-oknodo\fP anges). Om \fB\-\-retry\fP anges kommer
 \fBstart\-stop\-daemon\fP kontrollera att processen har avslutats.
 .TP 
 \fB\-T\fP, \fB\-\-status\fP
-Se om den angivna processen existerar, och returnerar en statuskod i
-enlighet med LBS Init Script Actions.
+Check for the existence of a specified process, and returns an exit status
+code, according to the LSB Init Script Actions (since version 1.16.1).
 .TP 
 \fB\-H\fP, \fB\-\-help\fP
 Visa hjälpskärm och avsluta.
@@ -78,12 +78,12 @@ Visa programversion och avsluta.
 .SS Matchingsflaggor
 .TP 
 \fB\-\-pid\fP \fIpid\fP
-Se efter en process med angiven \fIpid\fP. \fIpid\fP måste vara ett tal större än
-0.
+Check for a process with the specified \fIpid\fP (since version 1.17.6).  The
+\fIpid\fP must be a number greater than 0.
 .TP 
 \fB\-\-ppid\fP \fIppid\fP
-Se efter en process med angiven \fIppid\fP (föräldra\-pid). \fIppid\fP måste vara
-ett tal större än 0.
+Check for a process with the specified parent pid \fIppid\fP (since version
+1.17.7).  The \fIppid\fP must be a number greater than 0.
 .TP 
 \fB\-p\fP, \fB\-\-pidfile\fP \fIpidfil\fP
 Kontrollera om en process har skapat filen \fIpidfil\fP. Observera: om flaggan
@@ -155,16 +155,15 @@ utförts.
 Skriv inte informationsmeddelanden; visa endast felmeddelanden.
 .TP 
 \fB\-c\fP, \fB\-\-chuid\fP \fIanvändarnamn\fP|\fIanvändar\-id\fP[\fB:\fP\fIgrupp\fP|\fIgrupp\-id\fP]
-Byt till användarnamnet/användar\-id:t innan processen startas. Du kan även
-ange en grupp genom att lägga till ett kolontecken, \fB:\fP, följt av
-gruppnamnet eller grupp\-id på samma sätt som du skull gjort till
-"chown"\-kommandot (\fIanvändare\fP\fB:\fP\fIgrupp\fP). Om du anger en användare utan
-att ange en grupp kommer användarens primära grupp\-id att användas. När du
-använder alternativet måste du ha i åtanke att även både primär\- och
-tilläggsgrupp sätts, även om \fB\-\-group\fP\-flaggan inte
-anges. \fB\-\-group\fP\-flaggan är bara till för grupper som användaren normalt
-inte är en medlem i (t.ex för att lägga till gruppmedlemskap för enskilda
-processer för standardanvändare såsom \fBnobody\fP).
+Change to this username/uid before starting the process. You can also
+specify a group by appending a \fB:\fP, then the group or gid in the same way
+as you would for the \fBchown\fP(1) command (\fIuser\fP\fB:\fP\fIgroup\fP).  If a user
+is specified without a group, the primary GID for that user is used.  When
+using this option you must realize that the primary and supplemental groups
+are set as well, even if the \fB\-\-group\fP option is not specified. The
+\fB\-\-group\fP option is only for groups that the user isn't normally a member
+of (like adding per process group membership for generic users like
+\fBnobody\fP).
 .TP 
 \fB\-r\fP, \fB\-\-chroot\fP \fIrot\fP
 Byt katalog och rot till \fBrot\fP innan processen startas. Observera att även
@@ -176,54 +175,55 @@ rot om \fB\-r\fP|\fB\-\-chroot\fP\-flaggan anges. Om flaggan inte anges kommer
 \fBstart\-stop\-daemon\fP byta till rotkatalogen innan processen startas.
 .TP 
 \fB\-b\fP, \fB\-\-background\fP
-Används typiskt med program som inte kopplar loss sig av sig själva. Flagga
-tvingar \fBstart\-stop\-daemon\fP att förgrena sig (fork) innan processen
-startar, och tvinga den grenen att köra i bakgrunden. \fBVARNING:
-start\-stop\-daemon\fP kan inte kontrollera felstatus för processer som av
-\fBnågon som helst\fP anledning misslyckas med att exekvera. Detta är en sista
-utväg, och är endast avsett för program som det antingen inte är någon
-mening att förgrena på egen hand, eller där det inte är möjligt att lägga
-till kod för det på egen hand.
+Typically used with programs that don't detach on their own. This option
+will force \fBstart\-stop\-daemon\fP to fork before starting the process, and
+force it into the background.  \fBWarning: start\-stop\-daemon\fP cannot check
+the exit status if the process fails to execute for \fBany\fP reason. This is a
+last resort, and is only meant for programs that either make no sense
+forking on their own, or where it's not feasible to add the code for them to
+do this themselves.
 .TP 
 \fB\-C\fP, \fB\-\-no\-close\fP
-Stäng inte filbeskrivare när serverprocessen tvingas till bakgrunden. Använd
-för felsöknignssyften för att se processutdata, eller för att omdirigera
-filbeskrivare för att logga processutdata. Endast relevant när
-\fB\-\-background\fP används.
+Do not close any file descriptor when forcing the daemon into the background
+(since version 1.16.5).  Used for debugging purposes to see the process
+output, or to redirect file descriptors to log the process output.  Only
+relevant when using \fB\-\-background\fP.
 .TP 
 \fB\-N\fP, \fB\-\-nicelevel\fP \fIheltal\fP
 Ändrar prioriteten på processen innan den startas.
 .TP 
 \fB\-P\fP, \fB\-\-procsched\fP \fIpolicy\fP\fB:\fP\fIprioritet\fP
-Ändrar processschemaläggarens policy och prioritet för processen innan den
-startas. Prioriteten är valfri och anges genom att lägga till ett \fB:\fP följt
-av värdet. Standardvärdet för \fIprioritet\fP är 0. För närvarande stöds
-värdena \fBother\fP, \fBfifo\fP och \fBrr\fP för \fIpolicy\fP.
+This alters the process scheduler policy and priority of the process before
+starting it (since version 1.15.0).  The priority can be optionally
+specified by appending a \fB:\fP followed by the value. The default \fIpriority\fP
+is 0. The currently supported policy values are \fBother\fP, \fBfifo\fP and \fBrr\fP.
 .TP 
 \fB\-I\fP, \fB\-\-iosched\fP \fIklass\fP\fB:\fP\fIprioritet\fP
-Ändrar I/O\-schemaläggarens klass och \-prioritet för processen innan den
-startas. Prioriteten är valfri och anges genom att lägga till ett \fB:\fP följt
-av värdet. Standardvärdet för \fIprioritet\fP är 4, såvida inte \fIklass\fP är
-\fBidle\fP, då är \fIprioritet\fP alltid 7. För närvarande stöds värdena \fBidle\fP,
-\fBbest\-effort\fP och \fBreal\-time\fP för \fIklass\fP.
+This alters the IO scheduler class and priority of the process before
+starting it (since version 1.15.0).  The priority can be optionally
+specified by appending a \fB:\fP followed by the value. The default \fIpriority\fP
+is 4, unless \fIclass\fP is \fBidle\fP, then \fIpriority\fP will always be 7. The
+currently supported values for \fIclass\fP are \fBidle\fP, \fBbest\-effort\fP and
+\fBreal\-time\fP.
 .TP 
 \fB\-k\fP, \fB\-\-umask\fP \fImaskvärde\fP
-Ställer in umaskvärdet på processen innan den startas.
+This sets the umask of the process before starting it (since version
+1.13.22).
 .TP 
 \fB\-m\fP, \fB\-\-make\-pidfile\fP
-Används när ett program som inte skapar sin egen pidfil startas. Flaggan
-kommer att få \fBstart\-stop\-daemon\fP att skapa filen som anges med
-\fB\-\-pidfile\fP och lägga process\-id i den precis innan processen
-startas. Observera att den endast kommer att tas bort när programmet stoppas
-om \fB\-\-remove\-pidfile\fP används. \fBOBSERVERA:\fP Funktionen kanske inte alltid
-fungerar. Framförallt inte när programmet som startas förgrenar sig (fork)
-från sin huvudprocess. Därför är flaggan oftast bara användbar i samband med
-flaggan \fB\-\-background\fP.
+Used when starting a program that does not create its own pid file. This
+option will make \fBstart\-stop\-daemon\fP create the file referenced with
+\fB\-\-pidfile\fP and place the pid into it just before executing the
+process. Note, the file will only be removed when stopping the program if
+\fB\-\-remove\-pidfile\fP is used.  \fBNote:\fP This feature may not work in all
+cases. Most notably when the program being executed forks from its main
+process. Because of this, it is usually only useful when combined with the
+\fB\-\-background\fP option.
 .TP 
 \fB\-\-remove\-pidfile\fP
-Används när ett program som inte tar bort sin egen pid\-fil stoppas. Flaggan
-gör att \fBstart\-stop\-daemon\fP tar bort filen som anges med \fB\-\-pidfile\fP efter
-att processen stoppats.
+Used when stopping a program that does not remove its own pid file (since
+version 1.17.19).  This option will make \fBstart\-stop\-daemon\fP remove the
+file referenced with \fB\-\-pidfile\fP after terminating the process.
 .TP 
 \fB\-v\fP, \fB\-\-verbose\fP
 Skriv ut pratsamma informationsmeddelanden.

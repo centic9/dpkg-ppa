@@ -5,7 +5,7 @@
 .\" Copyright Â© 2000-2001 Wichert Akkerman <wakkerma@debian.org>
 .\" Copyright Â© 2002-2003 Adam Heath <doogie@debian.org>
 .\" Copyright Â© 2004 Scott James Remnant <keybuk@debian.org>
-.\" Copyright Â© 2008-2014 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2008-2015 Guillem Jover <guillem@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -60,7 +60,8 @@ need to live through a \fB\-\-stop\fP, you must specify a pidfile.
 ¤òÊÖ¤¹)¡£\fB\-\-retry\fP ¤ò»ØÄê¤·¤¿¾ì¹ç¡¢\fBstart\-stop\-daemon\fP ¤Ï¤½¤Î¥×¥í¥»¥¹¤¬½ªÎ»¤·¤¿¤³¤È¤ò³ÎÇ§¤¹¤ë¡£
 .TP 
 \fB\-T\fP, \fB\-\-status\fP
-»ØÄê¤µ¤ì¤¿¥×¥í¥»¥¹¤ÎÂ¸ºß¤ò³ÎÇ§¤·¡¢LSB ¤Î Init Script Action ¤Ë´ð¤Å¤¤¤¿½ªÎ»¥¹¥Æ¡¼¥¿¥¹¤òÊÖµÑ¤¹¤ë¡£
+Check for the existence of a specified process, and returns an exit status
+code, according to the LSB Init Script Actions (since version 1.16.1).
 .TP 
 \fB\-H\fP, \fB\-\-help\fP
 »ÈÍÑÊýË¡¤Ë´Ø¤¹¤ë¾ðÊó¤òÉ½¼¨¤·¡¢½ªÎ»¤¹¤ë¡£
@@ -72,12 +73,12 @@ need to live through a \fB\-\-stop\fP, you must specify a pidfile.
 .SS "Matching options"
 .TP 
 \fB\-\-pid\fP \fIpid\fP
-Check for a process with the specified \fIpid\fP. The \fIpid\fP must be a number
-greater than 0.
+Check for a process with the specified \fIpid\fP (since version 1.17.6).  The
+\fIpid\fP must be a number greater than 0.
 .TP 
 \fB\-\-ppid\fP \fIppid\fP
-Check for a process with the specified \fIppid\fP (parent pid).  The \fIppid\fP
-must be a number greater than 0.
+Check for a process with the specified parent pid \fIppid\fP (since version
+1.17.7).  The \fIppid\fP must be a number greater than 0.
 .TP 
 \fB\-p\fP, \fB\-\-pidfile\fP \fIpid\-file\fP
 ¥×¥í¥»¥¹¤¬ \fIpid\-file\fP ¤òºîÀ®¤·¤¿¤«¤É¤¦¤«¤ò¥Á¥§¥Ã¥¯¤¹¤ë¡£¤³¤Î¥ª¥×¥·¥ç¥ó¤òÃ±ÂÎ¤Ç»ÈÍÑ¤·¤¿¾ì¹ç¡¢°ÊÁ°¤Î¥×¥í¥»¥¹¤¬ \fIpid\-file\fP
@@ -136,13 +137,15 @@ comm name ¤«¤é¼èÆÀ¤µ¤ì¤ë¤¿¤á¡¢Èæ³ÓÅªÃ»¤¤Ì¾¾Î¤Ç¤¢¤ëÉ¬Í×¤¬¤¢¤ë (15 Ê¸»ú¤òÄ¶¤¨¤ëÌ¾¾
 ¾ðÊó¥á¥Ã¥»¡¼¥¸¤ò½ÐÎÏ¤·¤Ê¤¤¡£¥¨¥é¡¼¥á¥Ã¥»¡¼¥¸¤Î¤ß½ÐÎÏ¤¹¤ë¡£
 .TP 
 \fB\-c\fP, \fB\-\-chuid\fP \fIusername\fP|\fIuid\fP[\fB:\fP\fIgroup\fP|\fIgid\fP]
-¥×¥í¥»¥¹¤òµ¯Æ°¤¹¤ëÁ°¤Ë»ØÄê¤µ¤ì¤¿¥æ¡¼¥¶Ì¾¤ä¥æ¡¼¥¶ ID ¤ËÊÑ¹¹¤¹¤ë¡£ \fB:\fP ¤ËÂ³¤¤¤Æ¥°¥ë¡¼¥×Ì¾¤Þ¤¿¤Ï¥°¥ë¡¼¥× ID
-¤òÍ¿¤¨¤ë¤³¤È¤Ë¤è¤ê¥°¥ë¡¼¥×¤â»ØÄê¤Ç¤­¤ë¡£¤³¤ì¤Ï `chown' ¥³¥Þ¥ó¥É¤ÈÆ±¤¸½ñ¼° (\fIuser\fP\fB:\fP\fIgroup\fP)
-¤Ç¤¢¤ë¡£¥æ¡¼¥¶Ì¾¤Î¤ß¤ò»ØÄê¤·¤¿¾ì¹ç¡¢¤½¤Î¥æ¡¼¥¶¤Î¥×¥é¥¤¥Þ¥ê¥°¥ë¡¼¥×¤Î GID ¤¬ÍÑ¤¤¤é¤ì¤ë¡£¤³¤Î¥ª¥×¥·¥ç¥ó ( \fB:\fP ½ñ¼°) ¤ò»ÈÍÑ¤·¤¿»þ¤Ë¤Ï¡¢
-\fB\-\-group\fP
-¥ª¥×¥·¥ç¥ó¤¬»ØÄê¤µ¤ì¤Æ¤¤¤Ê¤¤¾ì¹ç¤Ç¤¢¤Ã¤Æ¤â¡¢»ØÄê¤µ¤ì¤¿¾ì¹ç¤ÈÆ±ÍÍ¤Ë¥×¥é¥¤¥Þ¥ê¥°¥ë¡¼¥×¤ÈÊä½õ¥°¥ë¡¼¥×¤¬ÀßÄê¤µ¤ì¤ë¤³¤È¤òÇ§¼±¤·¤Æ¤ª¤¯É¬Í×¤¬¤¢¤ë¡£\fB\-\-group\fP
-¥ª¥×¥·¥ç¥ó¤Ï¡¢(¤¢¤ë¥×¥í¥»¥¹¤Ë¤Ä¤¤¤Æ \fBnobody\fP ¤Î¤è¤¦¤ÊÈÆÍÑ¤Î¥æ¡¼¥¶¤ò¥°¥ë¡¼¥×¤ËÄÉ²Ã¤¹¤ë¤È¤¤¤Ã¤¿)
-¥æ¡¼¥¶¤¬ÄÌ¾ï¥á¥ó¥Ð¤È¤Ê¤Ã¤Æ¤¤¤Ê¤¤¥°¥ë¡¼¥×¤ò»ØÄê¤¹¤ë¾ì¹ç¤Ë¤Î¤ß»ÈÍÑ¤¹¤ë¡£
+Change to this username/uid before starting the process. You can also
+specify a group by appending a \fB:\fP, then the group or gid in the same way
+as you would for the \fBchown\fP(1) command (\fIuser\fP\fB:\fP\fIgroup\fP).  If a user
+is specified without a group, the primary GID for that user is used.  When
+using this option you must realize that the primary and supplemental groups
+are set as well, even if the \fB\-\-group\fP option is not specified. The
+\fB\-\-group\fP option is only for groups that the user isn't normally a member
+of (like adding per process group membership for generic users like
+\fBnobody\fP).
 .TP 
 \fB\-r\fP, \fB\-\-chroot\fP \fIroot\fP
 ¥×¥í¥»¥¹¤òµ¯Æ°¤¹¤ëÁ°¤Ë¡¢\fIroot\fP ¤ËÂÐ¤·¤Æ chdir ¤È chroot ¤ò¼Â¹Ô¤¹¤ë¡£pidfile ¤Ï chroot
@@ -155,46 +158,55 @@ if the \fB\-r\fP|\fB\-\-chroot\fP option is set. When not specified,
 process.
 .TP 
 \fB\-b\fP, \fB\-\-background\fP
-ÄÌ¾ï¡¢¼«¿È¤ò¥Ç¥¿¥Ã¥Á¤Ç¤­¤Ê¤¤¥×¥í¥°¥é¥à¤Ç»ÈÍÑ¤µ¤ì¤ë¡£¤³¤Î¥ª¥×¥·¥ç¥ó¤ò»ØÄê¤·¤¿¾ì¹ç¡¢ \fBstart\-stop\-daemon\fP
-¤Ï¼«¿È¤òÂÐ¾Ý¥×¥í¥»¥¹¤Îµ¯Æ°Á°¤Ë fork ¤·¡¢°Ê¸å¥Ð¥Ã¥¯¥°¥é¥¦¥ó¥É¤Ç¼Â¹Ô¤µ¤»¤ë¡£ \fB·Ù¹ð: start\-stop\-daemon\fP ¤Ï
-\fB¤¤¤«¤Ê¤ë\fPÍýÍ³¤Ë¤è¤Ã¤Æ¥×¥í¥»¥¹¤Îµ¯Æ°¤Ë¼ºÇÔ¤·¤¿¾ì¹ç¤Ç¤¢¤Ã¤Æ¤â¡¢¤½¤Î½ªÎ»¥¹¥Æ¡¼¥¿¥¹¤ò¥Á¥§¥Ã¥¯¤Ç¤­¤Ê¤¯¤Ê¤ë¡£¤³¤Î¥ª¥×¥·¥ç¥ó¤ÏºÇ½ª¼êÃÊ¤Ç¤¢¤ê¡¢¼«¿È¤Î
-fork ¤Ë°ÕÌ£¤Î¤Ê¤¤¥×¥í¥°¥é¥à¤ä¡¢fork ¤ò¼«¿È¤Ç¹Ô¤¦¤¿¤á¤Î¥³¡¼¥ÉÄÉ²Ã¤¬¸½¼ÂÅª¤Ç¤Ê¤¤¥×¥í¥°¥é¥à°Ê³°¤Ç¤Î»ÈÍÑ¤ò°Õ¿Þ¤·¤Æ¤¤¤Ê¤¤¡£
+Typically used with programs that don't detach on their own. This option
+will force \fBstart\-stop\-daemon\fP to fork before starting the process, and
+force it into the background.  \fBWarning: start\-stop\-daemon\fP cannot check
+the exit status if the process fails to execute for \fBany\fP reason. This is a
+last resort, and is only meant for programs that either make no sense
+forking on their own, or where it's not feasible to add the code for them to
+do this themselves.
 .TP 
 \fB\-C\fP, \fB\-\-no\-close\fP
-¥Ç¡¼¥â¥ó¤Ë¥Ð¥Ã¥¯¥°¥é¥¦¥ó¥É¤Ç¤ÎÆ°ºî¤ò¶¯À©¤¹¤ëºÝ¤Ë¡¢¥Õ¥¡¥¤¥ë¥Ç¥£¥¹¥¯¥ê¥×¥¿¤Î¥¯¥í¡¼¥º¤ò°ìÀÚ¹Ô¤ï¤Ê¤¤¡£¥×¥í¥»¥¹¤Î½ÐÎÏ¤ò»²¾È¤¹¤ë¡¢¥Õ¥¡¥¤¥ë¥Ç¥£¥¹¥¯¥ê¥×¥¿¤Î½ÐÎÏ¤ò¥×¥í¥»¥¹¤Î½ÐÎÏ¤ò¥í¥®¥ó¥°¤¹¤ë¤¿¤á¤Ë¥ê¥À¥¤¥ì¥¯¥È¤¹¤ë¤È¤¤¤Ã¤¿¥Ç¥Ð¥Ã¥°ÌÜÅª¤Ç»ÈÍÑ¤µ¤ì¤ë¡£\fB\-\-background\fP
-¤ò»ØÄê¤·¤¿ºÝ¤Ë¤Î¤ßÍ­¸ú¤Ç¤¢¤ë¡£
+Do not close any file descriptor when forcing the daemon into the background
+(since version 1.16.5).  Used for debugging purposes to see the process
+output, or to redirect file descriptors to log the process output.  Only
+relevant when using \fB\-\-background\fP.
 .TP 
 \fB\-N\fP, \fB\-\-nicelevel\fP \fIint\fP
 ¥×¥í¥»¥¹¤òµ¯Æ°¤¹¤ëÁ°¤Ë¥×¥í¥»¥¹¤Î¥×¥é¥¤¥ª¥ê¥Æ¥£¤òÊÑ¹¹¤¹¤ë¡£
 .TP 
 \fB\-P\fP, \fB\-\-procsched\fP \fIpolicy\fP\fB:\fP\fIpriority\fP
-¥×¥í¥»¥¹¤òµ¯Æ°¤¹¤ëÁ°¤Ë¡¢¥¹¥±¥¸¥å¡¼¥é¤Î¥Ý¥ê¥·¡¼¤ÈÍ¥Àè½ç°Ì¤òÊÑ¹¹¤¹¤ë¡£Í¥Àè½ç°Ì¤Î»ØÄê¤ÏÇ¤°Õ¤Ç¤¢¤ê¡¢\fB:\fP
-¤ËÂ³¤¤¤ÆÃÍ¤òÀßÄê¤¹¤ë¤³¤È¤Ç»ØÄê¤¹¤ë¡£¥Ç¥Õ¥©¥ë¥È¤Î \fIpriority\fP ¤Ï 0 ¤Ç¤¢¤ë¡£¸½ºß¥µ¥Ý¡¼¥È¤µ¤ì¤Æ¤¤¤ë¥Ý¥ê¥·¡¼¤ÎÃÍ¤Ï \fBother\fP,
-\fBfifo\fP, \fBrr\fP ¤Ç¤¢¤ë¡£
+This alters the process scheduler policy and priority of the process before
+starting it (since version 1.15.0).  The priority can be optionally
+specified by appending a \fB:\fP followed by the value. The default \fIpriority\fP
+is 0. The currently supported policy values are \fBother\fP, \fBfifo\fP and \fBrr\fP.
 .TP 
 \fB\-I\fP, \fB\-\-iosched\fP \fIclass\fP\fB:\fP\fIpriority\fP
-¥×¥í¥»¥¹¤òµ¯Æ°¤¹¤ëÁ°¤Ë¡¢IO ¥¹¥±¥¸¥å¡¼¥é¤Î¥¯¥é¥¹¤ÈÍ¥Àè½ç°Ì¤òÊÑ¹¹¤¹¤ë¡£Í¥Àè½ç°Ì¤Î»ØÄê¤ÏÇ¤°Õ¤Ç¤¢¤ê¡¢\fB:\fP
-¤ËÂ³¤¤¤ÆÃÍ¤òÀßÄê¤¹¤ë¤³¤È¤Ç»ØÄê¤¹¤ë¡£¥Ç¥Õ¥©¥ë¥È¤Î \fIpriority\fP ¤Ï 4 ¤Ç¤¢¤ë¤¬¡¢\fIclass\fP ¤¬ \fBidle\fP ¤Î¾ì¹ç¤Î
-\fIpriority\fP ¤Ï¾ï¤Ë 7 ¤È¤Ê¤ë¡£¸½ºß¥µ¥Ý¡¼¥È¤µ¤ì¤Æ¤¤¤ë \fIclass\fP ¤ÎÃÍ¤Ï \fBidle\fP, \fBbest\-effort\fP,
-\fBreal\-time\fP ¤Ç¤¢¤ë¡£
+This alters the IO scheduler class and priority of the process before
+starting it (since version 1.15.0).  The priority can be optionally
+specified by appending a \fB:\fP followed by the value. The default \fIpriority\fP
+is 4, unless \fIclass\fP is \fBidle\fP, then \fIpriority\fP will always be 7. The
+currently supported values for \fIclass\fP are \fBidle\fP, \fBbest\-effort\fP and
+\fBreal\-time\fP.
 .TP 
 \fB\-k\fP, \fB\-\-umask\fP \fImask\fP
-¥×¥í¥»¥¹¤òµ¯Æ°¤¹¤ëÁ°¤Ë¥×¥í¥»¥¹¤Î umask ¤òÀßÄê¤¹¤ë¡£
+This sets the umask of the process before starting it (since version
+1.13.22).
 .TP 
 \fB\-m\fP, \fB\-\-make\-pidfile\fP
 Used when starting a program that does not create its own pid file. This
 option will make \fBstart\-stop\-daemon\fP create the file referenced with
 \fB\-\-pidfile\fP and place the pid into it just before executing the
 process. Note, the file will only be removed when stopping the program if
-\fB\-\-remove\-pidfile\fP is used.  \fBNOTE:\fP This feature may not work in all
+\fB\-\-remove\-pidfile\fP is used.  \fBNote:\fP This feature may not work in all
 cases. Most notably when the program being executed forks from its main
 process. Because of this, it is usually only useful when combined with the
 \fB\-\-background\fP option.
 .TP 
 \fB\-\-remove\-pidfile\fP
-Used when stopping a program that does not remove its own pid file. This
-option will make \fBstart\-stop\-daemon\fP remove the file referenced with
-\fB\-\-pidfile\fP after terminating the process.
+Used when stopping a program that does not remove its own pid file (since
+version 1.17.19).  This option will make \fBstart\-stop\-daemon\fP remove the
+file referenced with \fB\-\-pidfile\fP after terminating the process.
 .TP 
 \fB\-v\fP, \fB\-\-verbose\fP
 ¾ÜºÙ¤Ê¾ðÊó¤ò½ÐÎÏ¤¹¤ë¡£

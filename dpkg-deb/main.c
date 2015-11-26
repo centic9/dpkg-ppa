@@ -25,13 +25,11 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-#include <assert.h>
 #include <limits.h>
 #if HAVE_LOCALE_H
 #include <locale.h>
 #endif
 #include <errno.h>
-#include <ctype.h>
 #include <string.h>
 #include <dirent.h>
 #include <unistd.h>
@@ -52,8 +50,8 @@ const char *showformat = "${Package}\t${Version}\n";
 static void DPKG_ATTR_NORET
 printversion(const struct cmdinfo *cip, const char *value)
 {
-  printf(_("Debian `%s' package archive backend version %s.\n"),
-         BACKEND, DPKG_VERSION_ARCH);
+  printf(_("Debian '%s' package archive backend version %s.\n"),
+         BACKEND, PACKAGE_RELEASE);
   printf(_(
 "This is free software; see the GNU General Public License version 2 or\n"
 "later for copying conditions. There is NO warranty.\n"));
@@ -94,7 +92,7 @@ usage(const struct cmdinfo *cip, const char *value)
   printf(_(
 "<deb> is the filename of a Debian format archive.\n"
 "<cfile> is the name of an administrative file component.\n"
-"<cfield> is the name of a field in the main `control' file.\n"
+"<cfield> is the name of a field in the main 'control' file.\n"
 "\n"));
 
   printf(_(
@@ -205,7 +203,7 @@ set_compress_strategy(const struct cmdinfo *cip, const char *value)
 {
   compress_params.strategy = compressor_get_strategy(value);
   if (compress_params.strategy == COMPRESSOR_STRATEGY_UNKNOWN)
-    ohshit(_("unknown compression strategy '%s'!"), value);
+    badusage(_("unknown compression strategy '%s'!"), value);
 }
 
 static void
@@ -213,7 +211,7 @@ set_compress_type(const struct cmdinfo *cip, const char *value)
 {
   compress_params.type = compressor_find_by_name(value);
   if (compress_params.type == COMPRESSOR_TYPE_UNKNOWN)
-    ohshit(_("unknown compression type `%s'!"), value);
+    badusage(_("unknown compression type '%s'!"), value);
   if (compress_params.type == COMPRESSOR_TYPE_LZMA)
     warning(_("deprecated compression type '%s'; use xz instead"), value);
   if (compress_params.type == COMPRESSOR_TYPE_BZIP2)

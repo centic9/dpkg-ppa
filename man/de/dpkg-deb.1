@@ -3,7 +3,7 @@
 .\" Copyright Â© 1995-1996 Ian Jackson <ian@chiark.chu.cam.ac.uk>
 .\" Copyright Â© 1999 Wichert Akkerman <wakkerma@debian.org>
 .\" Copyright Â© 2006 Frank Lichtenheld <djpig@debian.org>
-.\" Copyright Â© 2007-2014 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2007-2015 Guillem Jover <guillem@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -40,6 +40,11 @@ entfernen
 Sie können \fBdpkg\-deb\fP durch Aufruf von \fBdpkg\fP mit beliebigen Optionen, die
 Sie an \fBdpkg\-deb\fP übergeben wollen, aufrufen. \fBdpkg\fP erkennt, dass Sie
 \fBdpkg\-deb\fP wollten und wird es für Sie ausführen.
+.PP
+Bei den meisten Befehlen, die ein Archiv als Eingabeargument erwarten, kann
+der Archivname von der Standardeingabe gelesen werden, wenn er als einzelnes
+Minuszeichen (\fB\-\fP) angegeben ist. Falls dies nicht unterstützt wird, ist
+dies in der jeweiligen Beschreibung des Befehls dokumentiert.
 .
 .SH BEFEHLE
 .TP 
@@ -90,12 +95,12 @@ Tabulator.
 \fB\-f\fP, \fB\-\-field\fP \fIArchiv\fP [\fISteuer\-Feldname\fP ?]
 Extrahiert die Informationen der control\-Datei aus einem Binärpaketarchiv.
 
-Falls keine \fBSteuerdatei\-Feld\fPer angegeben sind, gibt es die gesamte
+Falls keine \fISteuer\-Feldname\fPn angegeben sind, gibt es die gesamte
 control\-Datei aus.
 
 Falls welche angegeben sind, gibt \fBdpkg\-deb\fP ihren Inhalt in der
 Reihenfolge aus, in der sie in der control\-Datei angegeben sind. Falls mehr
-als ein \fBSteuerdatei\-Feld\fP angegeben ist, stellt \fBdpkg\-deb\fP jedem Inhalt
+als ein \fISteuer\-Feldname\fP angegeben ist, stellt \fBdpkg\-deb\fP jedem Inhalt
 seinen Feldnamen (und einen Doppelpunkt mit Leerzeichen) voran.
 
 Falls angeforderte Felder nicht gefunden werden wird kein Fehler gemeldet.
@@ -124,10 +129,14 @@ eine Liste von extrahierten Dateien ausgibt.
 \fB\-R\fP, \fB\-\-raw\-extract\fP \fIArchiv\-Verzeichnis\fP
 Extrahiert den Dateisystembaum aus einem Paketarchiv in ein angegebenes
 Verzeichnis und die Steuerinformationensdateien in das
-DEBIAN\-Unterverzeichnis des angegebenen Verzeichnisses.
+\fBDEBIAN\fP\-Unterverzeichnis des angegebenen Verzeichnisses (seit Dpkg
+1.16.1).
 
 Das Zielverzeichnis (aber nicht übergeordnete) wird, falls notwendig,
 angelegt.
+
+Das Eingebearchiv wird (derzeit) nicht sequenziell verarbeitet, daher wird
+das Einlesen von der Standardeingabe (\fB\-\fP) \fBnicht\fP unterstützt.
 .TP 
 \fB\-\-ctrl\-tarfile\fP \fIArchiv\fP
 Extrahiert die Steuerdaten aus einem Binärpaket und schickt sie zur
@@ -165,14 +174,14 @@ Diese Option wird dazu verwendet, das Format der Ausgabe anzugeben, das
 \fB\-\-show\fP verwenden wird. Das Format ist eine Zeichenkette, die für jedes
 aufgeführte Paket ausgegeben wird.
 
-Die Zeichenkette darf jedes Statusfeld in der Form »${\fIFeldname\fP}«
+Die Zeichenkette darf jedes Statusfeld in der Form \(lq${\fIFeldname\fP}\(rq
 referenzieren, eine Liste der möglichen Felder kann leicht mittels \fB\-I\fP für
 das gleiche Paket ermittelt werden. Eine komplette Erläuterung der
 Formatieroptionen (darunter die Escape\-Sequenzen und Feld\-Tabulatoren) kann
 in der Erklärung der Option \fB\-\-showformat\fP von \fBdpkg\-query\fP(1) gefunden
 werden.
 
-Die Voreinstellung für dieses Feld ist "${Package}\et${Version}\en".
+Die Voreinstellung für dieses Feld ist \(lq${Package}\et${Version}\en\(rq.
 .TP 
 \fB\-z\fP\fIKomprimierstufe\fP
 Gibt die Komprimierstufe an, die im Komprimier\-Backendprogramm beim Bau
@@ -185,26 +194,26 @@ Komprimierer »none« für alle Komprimierer.
 \fB\-S\fP\fIKomprimierstrategie\fP
 Gibt die zu verwendende Komprimierstrategie an, die für den
 Komprimierer\-Backend beim Bau eines Pakets verwandt werden soll (seit Dpkg
-1.16.2). Erlaubte Werte sind \fInone\fP (seit Dpkg 1.16.4), \fIfiltered\fP,
-\fIhuffman\fP, \fIrle\fP und \fIfixed\fP für Gzip (seit Dpkg 1.17.0) und \fIextreme\fP
+1.16.2). Erlaubte Werte sind \fBnone\fP (seit Dpkg 1.16.4), \fBfiltered\fP,
+\fBhuffman\fP, \fBrle\fP und \fBfixed\fP für Gzip (seit Dpkg 1.17.0) und \fBextreme\fP
 für Xz.
 .TP 
 \fB\-Z\fP\fIKomprimierart\fP
 Gibt die Art der Komprimierung beim Bau eines Pakets an. Erlaubte Werte sind
-\fIgzip\fP, \fIxz\fP, \fIbzip2\fP (veraltet), \fIlzma\fP (veraltet) und \fInone\fP
-(voreingestellt ist \fIxz\fP).
+\fBgzip\fP, \fBxz\fP (seit Dpkg 1.15.6), \fIbzip2\fP (veraltet), \fIlzma\fP (seit Dpkg
+1.14.0; veraltet) und \fBnone\fP (voreingestellt ist \fBxz\fP).
 .TP 
 \fB\-\-uniform\-compression\fP
 Gibt an, dass die gleichen Komprimierungsparameter für alle Archivteile
-(d.h. \fBcontrol.tar\fP und \fBdata.tar\fP) verwandt werden sollen. Andernfalls
-wird nur der Teil \fBdata.tar\fP diese Parameter verwenden. Die einzigen
-unterstützten Kompressionstypen, die übergreifend benutzt werden dürfen,
-sind \fInone\fP, \fIgzip\fP und \fIxz\fP.
+(d.h. \fBcontrol.tar\fP und \fBdata.tar\fP; seit Dpkg 1.17.6) verwandt werden
+sollen. Andernfalls wird nur der Teil \fBdata.tar\fP diese Parameter
+verwenden. Die einzigen unterstützten Kompressionstypen, die übergreifend
+benutzt werden dürfen, sind \fBnone\fP, \fBgzip\fP und \fBxz\fP.
 .TP 
 \fB\-\-deb\-format=\fP\fIFormat\fP
 Setzt das beim Bau verwandte Archivformat (seit Dpkg 1.17.0). Erlaubte Werte
-sind \fI2.0\fP für das neue Format und \fI0.939000\fP für das alte Format (Vorgabe
-ist \fI2.0\fP).
+sind \fB2.0\fP für das neue Format und \fB0.939000\fP für das alte Format (Vorgabe
+ist \fB2.0\fP).
 
 Das alte Format wird nicht so leicht von nicht\-Debian\-Werkzeugen eingelesen
 und ist jetzt veraltet; der einzige Zweck ist zum Bau von Paketen, die von
@@ -223,8 +232,8 @@ vorgeschlagenen Inhalte eines Archivs. Damit können Sie jedes Archiv bauen,
 das Sie möchten, egal wie defekt es ist.
 .TP 
 \fB\-v\fP, \fB\-\-verbose\fP
-Aktiviert ausführliche Ausgabe. Dies betrifft derzeit nur \fB\-\-extract\fP,
-wodurch dieses sich wie \fB\-\-vextract\fP verhält.
+Aktiviert ausführliche Ausgabe (seit Dpkg 1.16.1). Dies betrifft derzeit nur
+\fB\-\-extract\fP, wodurch dieses sich wie \fB\-\-vextract\fP verhält.
 .TP 
 \fB\-D\fP, \fB\-\-debug\fP
 Aktiviert Fehlersuch\-Ausgaben (»debugging«). Dies ist nicht sehr

@@ -21,13 +21,13 @@ use warnings;
 
 our $VERSION = '1.01';
 
+use POSIX qw(:signal_h :sys_wait_h);
+use Carp;
+
 use Dpkg::Compression;
 use Dpkg::Compression::Process;
 use Dpkg::Gettext;
 use Dpkg::ErrorHandling;
-
-use Carp;
-use POSIX qw(:signal_h :sys_wait_h);
 
 use parent qw(FileHandle Tie::Handle);
 
@@ -109,7 +109,7 @@ may be exceptions though.
 
 =over 4
 
-=item my $fh = Dpkg::Compression::FileHandle->new(%opts)
+=item $fh = Dpkg::Compression::FileHandle->new(%opts)
 
 Creates a new filehandle supporting on-the-fly compression/decompression.
 Supported options are "filename", "compression", "compression_level" (see
@@ -325,7 +325,7 @@ sub set_filename {
     }
 }
 
-=item my $file = $fh->get_filename()
+=item $file = $fh->get_filename()
 
 Returns the filename that would be used when the filehandle must
 be opened (both in read and write mode). This function errors out
@@ -363,7 +363,7 @@ method.
 =cut
 
 sub use_compression {
-    my ($self) = @_;
+    my $self = shift;
     my $comp = *$self->{compression};
     if ($comp eq 'none') {
 	return 0;
@@ -374,7 +374,7 @@ sub use_compression {
     return $comp;
 }
 
-=item my $real_fh = $fh->get_filehandle()
+=item $real_fh = $fh->get_filehandle()
 
 Returns the real underlying filehandle. Useful if you want to pass it
 along in a derived object.
@@ -382,7 +382,7 @@ along in a derived object.
 =cut
 
 sub get_filehandle {
-    my ($self) = @_;
+    my $self = shift;
     return *$self->{file} if exists *$self->{file};
 }
 
@@ -400,7 +400,7 @@ sub open_for_write {
 		to_file => $self->get_filename(), %opts);
     } else {
 	CORE::open($filehandle, '>', $self->get_filename)
-	    or syserr(_g('cannot write %s'), $self->get_filename());
+	    or syserr(g_('cannot write %s'), $self->get_filename());
     }
     *$self->{mode} = 'w';
     *$self->{file} = $filehandle;
@@ -419,14 +419,14 @@ sub open_for_read {
         *$self->{allow_sigpipe} = 1;
     } else {
 	CORE::open($filehandle, '<', $self->get_filename)
-	    or syserr(_g('cannot read %s'), $self->get_filename());
+	    or syserr(g_('cannot read %s'), $self->get_filename());
     }
     *$self->{mode} = 'r';
     *$self->{file} = $filehandle;
 }
 
 sub cleanup {
-    my ($self) = @_;
+    my $self = shift;
     my $cmdline = *$self->{compressor}{cmdline} // '';
     *$self->{compressor}->wait_end_process(nocheck => *$self->{allow_sigpipe});
     if (*$self->{allow_sigpipe}) {
@@ -458,11 +458,11 @@ C<*$self->{...}> to access the associated hash like in the example below:
 
 =head1 CHANGES
 
-=head2 Version 1.01
+=head2 Version 1.01 (dpkg 1.17.11)
 
 New argument: $fh->ensure_open() accepts an %opts argument.
 
-=head2 Version 1.00
+=head2 Version 1.00 (dpkg 1.15.6)
 
 Mark the module as public.
 

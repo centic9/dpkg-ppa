@@ -34,7 +34,7 @@ EXTRA_DIST = \
 	doc/README.feature-removal-schedule \
 	doc/coding-style.txt \
 	doc/frontend.txt \
-	doc/lcov-inject \
+	doc/lcov-inject.pl \
 	doc/triggers.txt \
 	debian/changelog \
 	debian/compat \
@@ -98,7 +98,7 @@ LCOV_CAPTURE_OPTS = $(LCOV_OPTS) --no-recursion \
 	-d $(top_builddir)/lib/dpkg \
 	-d $(top_builddir)/src \
 	-d $(top_builddir)/utils
-LCOV_INJECT = $(PERL) -i $(top_srcdir)/doc/lcov-inject
+LCOV_INJECT = $(PERL) -i $(top_srcdir)/doc/lcov-inject.pl
 
 coverage: all
 	: # Remove coverage data from any previous run
@@ -143,12 +143,20 @@ coverage-clean:
 endif
 
 test_scripts = \
-	test/pod.t \
-	test/critic.t \
+	t/pod.t \
+	t/strict.t \
+	t/critic.t \
 	$(nil)
 
 test_data = \
-	test/critic/perlcriticrc \
+	t/critic/perlcriticrc \
+	$(nil)
+
+# We need to use absolute paths here due to strict.t invoking a sub-perl,
+# while changing dir to source dir on out-of-tree builds.
+TEST_ENV_VARS = \
+	DPKG_DATADIR=$(abs_top_srcdir) \
+	PERL5LIB=$(abs_top_srcdir)/scripts:$(abs_top_srcdir)/dselect/methods \
 	$(nil)
 
 include $(top_srcdir)/check.am

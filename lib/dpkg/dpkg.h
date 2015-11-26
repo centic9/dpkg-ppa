@@ -4,7 +4,7 @@
  *
  * Copyright © 1994,1995 Ian Jackson <ian@chiark.greenend.org.uk>
  * Copyright © 2000,2001 Wichert Akkerman <wichert@debian.org>
- * Copyright © 2006-2012 Guillem Jover <guillem@debian.org>
+ * Copyright © 2006-2015 Guillem Jover <guillem@debian.org>
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -55,8 +55,6 @@ DPKG_BEGIN_DECLS
 #define DEBEXT             ".deb"
 #define REMOVECONFFEXTS    "~", ".bak", "%", \
                            DPKGTEMPEXT, DPKGNEWEXT, DPKGOLDEXT, DPKGDISTEXT
-
-#define DPKG_VERSION_ARCH  PACKAGE_VERSION " (" ARCHITECTURE ")"
 
 #define NEWCONFFILEFLAG    "newconffile"
 #define NONEXISTENTFLAG    "nonexistent"
@@ -140,20 +138,18 @@ void cu_filename(int argc, void **argv);
 
 void setcloexec(int fd, const char *fn);
 void *m_malloc(size_t);
-void *m_calloc(size_t);
+void *m_calloc(size_t nmemb, size_t size);
 void *m_realloc(void *, size_t);
 char *m_strdup(const char *str);
 char *m_strndup(const char *str, size_t n);
 int m_asprintf(char **strp, const char *fmt, ...) DPKG_ATTR_PRINTF(2);
+int m_vasprintf(char **strp, const char *fmt, va_list args)
+	DPKG_ATTR_VPRINTF(2);
 void m_dup2(int oldfd, int newfd);
 void m_pipe(int fds[2]);
 void m_output(FILE *f, const char *name);
 
 /*** from utils.c ***/
-
-int cisdigit(int c);
-int cisalpha(int c);
-int cisspace(int c);
 
 int fgets_checked(char *buf, size_t bufsz, FILE *f, const char *fn);
 int fgets_must(char *buf, size_t bufsz, FILE *f, const char *fn);

@@ -60,14 +60,15 @@ sub check_uncompressed {
 
 sub check_compressed {
     my ($filename, $method) = @_;
-    open(my $read_fh, '-|', "zcat $tmpdir/myfile.gz") or die 'cannot fork zcat';
+    open my $read_fh, '-|', 'zcat', "$tmpdir/myfile.gz"
+        or die 'cannot fork zcat';
     my @read = <$read_fh>;
     close $read_fh or die 'cannot close';
     is_deeply(\@lines, \@read, "$filename correctly written ($method)");
 }
 
 sub test_read {
-    my ($filename) = @_;
+    my $filename = shift;
 
     $fh = Dpkg::Compression::FileHandle->new();
     open($fh, '<', $filename) or die 'open failed';

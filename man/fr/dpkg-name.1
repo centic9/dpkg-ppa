@@ -1,7 +1,7 @@
 .\" dpkg manual page - dpkg-name(1)
 .\"
 .\" Copyright Â© 1995-1996 Erick Branderhorst
-.\" Copyright Â© 2007-2012 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2007-2013, 2015 Guillem Jover <guillem@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -53,17 +53,16 @@ Remplace des fichiers existants s'ils ont le même nom que le fichier de
 destination.
 .TP 
 \fB\-s\fP, \fB\-\-subdir\fP [\fIrep\fP]
-Met les fichiers dans un sous\-répertoire. Si le répertoire donné en
-paramètre existe, les fichiers sont déplacés dans ce répertoire\ ; sinon le
-répertoire cible, extrait du champ «\ section\ » que contient la partie de
-contrôle du paquet, sera
-«\ unstable/binary\-\fIarchitecture\fP/\fIsection\fP\ ». Quand aucune information sur
-la section n'est trouvée dans le fichier «\ control\ », la section est
-supposée être «\ no\-section\ ». Dans ce cas, ainsi que si la section est
-«\ non\-free\ » ou «\ contrib\ », le répertoire cible est
-«\ \fIsection\fP/binary\-\fIarchitecture\fP\ ». Le champ «\ section\ » est facultatif\ ;
-aussi beaucoup de paquets sont dans la zone «\ no\-section\ ». Utilisez cette
-option avec soin\ : elle est compliquée.
+Files will be moved into a subdirectory. If the directory given as argument
+exists the files will be moved into that directory otherwise the name of the
+target directory is extracted from the section field in the control part of
+the package. The target directory will be
+\(Founstable/binary\-\fIarchitecture\fP/\fIsection\fP\(Fc.  If the section is not
+found in the control, then \fBno\-section\fP is assumed, and in this case, as
+well as for sections \fBnon\-free\fP and \fBcontrib\fP the target directory is
+\(Fo\fIsection\fP/binary\-\fIarchitecture\fP\(Fc.  The section field is not
+required so a lot of packages will find their way to the \fBno\-section\fP
+area.  Use this option with care, it's messy.
 .TP 
 \fB\-c\fP, \fB\-\-create\-dir\fP
 On peut utiliser cette option avec l'option \fB\-s\fP. Quand un répertoire cible
@@ -86,15 +85,14 @@ d'autres systèmes d'installation aient besoin de cette organisation.
 .SH EXEMPLES
 .TP 
 \fBdpkg\-name bar\-foo.deb\fP
-Le nom du fichier «\ bar\-foo.deb\ » devient «\ bar\-foo_1.0\-2_i386.deb\ » ou
-quelque chose de similaire suivant les renseignements que contient la partie
-de contrôle de «\ bar\-foo.deb\ ».
+The file \fBbar\-foo.deb\fP will be renamed to bar\-foo_1.0\-2_i386.deb or
+something similar (depending on whatever information is in the control part
+of \fBbar\-foo.deb\fP).
 .TP 
 \fBfind /root/debian/ \-name \(aq*.deb\(aq | xargs \-n 1 dpkg\-name \-a\fP
-Cette commande \fBdpkg\-name\fP redonne leur nom complet à tous les fichiers qui
-se trouvent dans le répertoire /root/debian et ses sous\-répertoires et qui
-possèdent une extension «\ deb\ », mais supprime l'information sur
-l'architecture.
+All files with the extension \fBdeb\fP in the directory /root/debian and its
+subdirectory's will be renamed by \fBdpkg\-name\fP if required into names with
+no architecture information.
 .TP 
 \fBfind \-name \(aq*.deb\(aq | xargs \-n 1 dpkg\-name \-a \-o \-s \-c\fP
 \fBNe faites pas ça\ !\fP L'archive sera complètement gâchée par des paquets qui

@@ -17,6 +17,7 @@ use strict;
 use warnings;
 
 use Test::More tests => 45;
+
 use Dpkg::Arch qw(get_host_arch);
 use Dpkg::Version;
 
@@ -39,9 +40,9 @@ my $dep_multiline = deps_parse($field_multiline);
 $dep_multiline->sort();
 is($dep_multiline->output(), $field_multiline_sorted, 'Parse, sort and output');
 
-my $dep_sorted = deps_parse('pkgz, pkgz | pkga, pkga (>= 1.0), pkgz (<= 2.0)');
+my $dep_sorted = deps_parse('pkgz, pkgz | pkgb, pkgz | pkga, pkga (>= 1.0), pkgz (<= 2.0)');
 $dep_sorted->sort();
-is($dep_sorted->output(), 'pkga (>= 1.0), pkgz, pkgz | pkga, pkgz (<= 2.0)', 'Check sort() algorithm');
+is($dep_sorted->output(), 'pkga (>= 1.0), pkgz, pkgz | pkga, pkgz | pkgb, pkgz (<= 2.0)', 'Check sort() algorithm');
 
 my $dep_subset = deps_parse('libatk1.0-0 (>> 1.10), libc6, libcairo2');
 is($dep_multiline->implies($dep_subset), 1, 'Dep implies subset of itself');
@@ -196,7 +197,7 @@ my $dep_iter = deps_parse('a, b:armel, c | d:armhf, d:mips (>> 1.2)');
 my %dep_arches;
 my %dep_pkgs;
 deps_iterate($dep_iter, sub {
-    my ($dep) = @_;
+    my $dep = shift;
 
     $dep_pkgs{$dep->{package}} = 1;
     if ($dep->{archqual}) {

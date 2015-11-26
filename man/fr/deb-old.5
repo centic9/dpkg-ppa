@@ -51,11 +51,11 @@ La première archive tar contient les informations de contrôle, sous forme
 d'une série de fichiers ordinaires. Le fichier \fBcontrol\fP doit être présent,
 puisqu'il contient les informations principales de contrôle.
 .PP
-Dans certaines archives vraiment anciennes, les fichiers de l'archive de
-contrôle peuvent se trouver dans un sous\-répertoire \fBDEBIAN\fP. Dans ce cas,
-le sous\-répertoire \fBDEBIAN\fP se trouve également dans l'archive de contrôle,
-qui ne contiendra que des fichiers de ce répertoire. En option, l'archive de
-contrôle peut contenir une entrée pour \fB.\fP, le répertoire courant.
+In some very old archives, the files in the control tarfile may optionally
+be in a \fBDEBIAN\fP subdirectory. In that case, the \fBDEBIAN\fP subdirectory
+will be in the control tarfile too, and the control tarfile will have only
+files in that directory. Optionally the control tarfile may contain an entry
+for \(oq\fB.\fP\(cq, that is, the current directory.
 .PP
 La seconde archive compressée avec gzip correspond à l'archive à placer dans
 le système de fichiers. Elle contient des chemins relatifs à la racine du

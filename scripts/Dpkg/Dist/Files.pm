@@ -1,4 +1,4 @@
-# Copyright © 2014 Guillem Jover <guillem@debian.org>
+# Copyright © 2014-2015 Guillem Jover <guillem@debian.org>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,10 +20,10 @@ use warnings;
 
 our $VERSION = '0.01';
 
-use parent qw(Dpkg::Interface::Storable);
-
 use Dpkg::Gettext;
 use Dpkg::ErrorHandling;
+
+use parent qw(Dpkg::Interface::Storable);
 
 sub new {
     my ($this, %opts) = @_;
@@ -32,7 +32,6 @@ sub new {
     my $self = {
         options => [],
         files => {},
-        order => [],
     };
     foreach my $opt (keys %opts) {
         $self->{$opt} = $opts{$opt};
@@ -40,6 +39,32 @@ sub new {
     bless $self, $class;
 
     return $self;
+}
+
+sub reset {
+    my $self = shift;
+
+    $self->{files} = {};
+}
+
+sub parse_filename {
+    my ($self, $fn) = @_;
+
+    my $file;
+
+    if ($fn =~ m/^(([-+:.0-9a-z]+)_([^_]+)_([-\w]+)\.([a-z0-9.]+))$/) {
+        $file->{filename} = $1;
+        $file->{package} = $2;
+        $file->{version} = $3;
+        $file->{arch} = $4;
+        $file->{package_type} = $5;
+    } elsif ($fn =~ m/^([-+:.,_0-9a-zA-Z~]+)$/) {
+        $file->{filename} = $1;
+    } else {
+        $file = undef;
+    }
+
+    return $file;
 }
 
 sub parse {
@@ -52,31 +77,24 @@ sub parse {
     while (<$fh>) {
         chomp;
 
-        my %file;
+        my $file;
 
-        if (m/^(([-+.0-9a-z]+)_([^_]+)_([-\w]+)\.([a-z0-9.]+)) (\S+) (\S+)$/) {
-            $file{filename} = $1;
-            $file{package} = $2;
-            $file{version} = $3;
-            $file{arch} = $4;
-            $file{package_type} = $5;
-            $file{section} = $6;
-            $file{priority} = $7;
-        } elsif (m/^([-+.,_0-9a-zA-Z]+) (\S+) (\S+)$/) {
-            $file{filename} = $1;
-            $file{section} = $2;
-            $file{priority} = $3;
+        if (m/^(\S+) (\S+) (\S+)$/) {
+            $file = $self->parse_filename($1);
+            error(g_('badly formed package name in files list file, line %d'), $.)
+                unless defined $file;
+            $file->{section} = $2;
+            $file->{priority} = $3;
         } else {
-            error(_g('badly formed line in files list file, line %d'), $.);
+            error(g_('badly formed line in files list file, line %d'), $.);
         }
 
-        if (defined $self->{files}->{$file{filename}}) {
-            warning(_g('duplicate files list entry for file %s (line %d)'),
-                    $file{filename}, $.);
+        if (defined $self->{files}->{$file->{filename}}) {
+            warning(g_('duplicate files list entry for file %s (line %d)'),
+                    $file->{filename}, $.);
         } else {
             $count++;
-            $self->{files}->{$file{filename}} = \%file;
-            push @{$self->{order}}, $file{filename};
+            $self->{files}->{$file->{filename}} = $file;
         }
     }
 
@@ -84,9 +102,9 @@ sub parse {
 }
 
 sub get_files {
-    my ($self) = @_;
+    my $self = shift;
 
-    return map { $self->{files}->{$_} } @{$self->{order}};
+    return map { $self->{files}->{$_} } sort keys %{$self->{files}};
 }
 
 sub get_file {
@@ -98,27 +116,32 @@ sub get_file {
 sub add_file {
     my ($self, $filename, $section, $priority) = @_;
 
-    # XXX: Ideally we'd need to parse the filename, to match the behaviour
-    # on parse(), and initialize the other attributes, although no code is
-    # in need of this for now, at least in dpkg-dev.
+    my $file = $self->parse_filename($filename);
+    error(g_('invalid filename %s'), $filename) unless defined $file;
+    $file->{section} = $section;
+    $file->{priority} = $priority;
 
-    if (not defined $self->{files}->{$filename}) {
-        push @{$self->{order}}, $filename;
-    }
-
-    $self->{files}->{$filename} = {
-        filename => $filename,
-        section => $section,
-        priority => $priority,
-    };
+    $self->{files}->{$filename} = $file;
 }
 
 sub del_file {
     my ($self, $filename) = @_;
 
     delete $self->{files}->{$filename};
+}
 
-    @{$self->{order}} = grep { $_ ne $filename } @{$self->{order}};
+sub filter {
+    my ($self, %opts) = @_;
+    my $remove = $opts{remove} // sub { 0 };
+    my $keep = $opts{keep} // sub { 1 };
+
+    foreach my $filename (keys %{$self->{files}}) {
+        my $file = $self->{files}->{$filename};
+
+        if (not &$keep($file) or &$remove($file)) {
+            delete $self->{files}->{$filename};
+        }
+    }
 }
 
 sub output {
@@ -127,7 +150,7 @@ sub output {
 
     binmode $fh if defined $fh;
 
-    foreach my $filename (@{$self->{order}}) {
+    foreach my $filename (sort keys %{$self->{files}}) {
         my $file = $self->{files}->{$filename};
         my $entry = "$filename $file->{section} $file->{priority}\n";
 

@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright © 2007,2011-2013 Guillem Jover <guillem@debian.org>
+# Copyright © 2007, 2011-2015 Guillem Jover <guillem@debian.org>
 # Copyright © 2010 Raphaël Hertzog <hertzog@debian.org>
 # Copyright © 2008 Joey Hess <joeyh@debian.org>
 # Copyright © 2005 Scott James Remnant (original implementation on www.dpkg.org)
@@ -210,7 +210,9 @@ finish_mv_conffile() {
 	ensure_package_owns_file "$PACKAGE" "$OLDCONFFILE" || return 0
 
 	echo "Preserving user changes to $NEWCONFFILE (renamed from $OLDCONFFILE)..."
-	mv -f "$NEWCONFFILE" "$NEWCONFFILE.dpkg-new"
+	if [ -e "$NEWCONFFILE" ]; then
+		mv -f "$NEWCONFFILE" "$NEWCONFFILE.dpkg-new"
+	fi
 	mv -f "$OLDCONFFILE" "$NEWCONFFILE"
 }
 
@@ -254,6 +256,8 @@ symlink_to_dir() {
 	[ -n "$SYMLINK" ] || error "symlink parameter is missing"
 	[ "${SYMLINK#/}" = "$SYMLINK" ] && \
 		error "symlink pathname is not an absolute path"
+	[ "${SYMLINK%/}" = "$SYMLINK" ] || \
+		error "symlink pathname ends with a slash"
 	[ -n "$SYMLINK_TARGET" ] || error "original symlink target is missing"
 	[ -n "$1" ] || error "maintainer script parameters are missing"
 
@@ -305,7 +309,7 @@ symlink_to_dir() {
 ## Functions to replace a directory with a symlink
 ##
 dir_to_symlink() {
-	local PATHNAME="$1"
+	local PATHNAME="${1%/}"
 	local SYMLINK_TARGET="$2"
 	local LASTVERSION="$3"
 	local PACKAGE="$4"

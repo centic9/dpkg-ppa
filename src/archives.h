@@ -3,6 +3,7 @@
  * archives.h - functions common to archives.c and unpack.c
  *
  * Copyright © 1995 Ian Jackson <ian@chiark.greenend.org.uk>
+ * Copyright © 2008-2013, 2015 Guillem Jover <guillem@debian.org>
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -67,8 +68,6 @@ void cu_prermdeconfigure(int argc, void **argv);
 void ok_prermdeconfigure(int argc, void **argv);
 
 void setupfnamevbs(const char *filename);
-
-int secure_remove(const char *filename);
 
 int tarobject(void *ctx, struct tar_entry *ti);
 int tarfileread(void *ud, char *buf, int len);

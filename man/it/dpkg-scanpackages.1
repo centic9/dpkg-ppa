@@ -39,20 +39,20 @@ sono gli stessi che si trovano nei siti e i CD\-ROM con archivi
 Debian. L'utente stesso può usare \fBdpkg\-scanpackages\fP se crea una directory
 di pacchetti locali da installare su cluster di macchine.
 .PP
-\fBNota:\fP Se si vuole accedere al file Packages generato con \fBapt\fP, sarà
-probabilmente necessario comprimere il file con \fBbzip2\fP(1) (generando un
-file Packages.bz2) o \fBgzip\fP(1) (generando un file Packages.gz). apt ignora
-i file Packages non compressi, tranne per l'accesso locale (cioè fonti
-\fBfile://\fP).
+\fBNote:\fP If you want to access the generated Packages file with \fBapt\fP you
+will probably need to compress the file with \fBxz\fP(1)  (generating a
+Packages.xz file), \fBbzip2\fP(1)  (generating a Packages.bz2 file) or
+\fBgzip\fP(1)  (generating a Packages.gz file). apt ignores uncompressed
+Packages files except on local access (i.e.  \fBfile://\fP sources).
 .PP
 \fIdir\-binari\fP è il nome dell'albero dei pacchetti binari da elaborare (per
 esempio \fBcontrib/binary\-i386\fP). È meglio indicarlo in modo relativo alla
 radice dell'archivio Debian, perché ogni campo Filename nel nuovo file
 Packages inizierà con questa stringa.
 .PP
-\fIfile\-override\fP è il nome di un file da leggere e che contiene informazioni
-su come i pacchetti sono inseriti nella distribuzione (può essere un file
-compresso); vedere \fBdeb\-override\fP(5).
+\fIoverride\-file\fP is the name of a file to read which contains information
+about how the package fits into the distribution (the file can be compressed
+since dpkg 1.15.5); see \fBdeb\-override\fP(5).
 .PP
 \fIprefisso\-percorso\fP è una stringa facoltativa da anteporre ai campi
 Filename.
@@ -67,26 +67,26 @@ per l'architettura, viene usata solo la prima voce trovata.
 Cerca pacchetti *.\fItipo\fP invece di *.deb.
 .TP 
 \fB\-e\fP, \fB\-\-extra\-override\fP \fIfile\fP
-Cerca in \fIfile\fP per trovare override aggiuntivi (il file può essere
-compresso). Vedere \fBdeb\-extra\-override\fP(5) per maggiori informazioni sul
-suo formato.
+Scan \fIfile\fP to find supplementary overrides (the file can be compressed
+since dpkg 1.15.5).  See \fBdeb\-extra\-override\fP(5)  for more information on
+its format.
 .TP 
 \fB\-a\fP, \fB\-\-arch\fP \fIarch\fP
 Usa un modello che corrisponde a \fI*_all.deb\fP e \fI*_arch.deb\fP invece di
 cercare tutti i file deb.
 .TP 
 \fB\-h\fP, \fB\-\-hash\fP \fIhash\-list\fP
-Genera solamente gli hash dei file per l'elenco separato da virgole
-specificato. Il valore predefinito è di generare tutti gli hash attualmente
-supportati. Valori supportati: \fBmd5\fP, \fBsha1\fP, \fBsha256\fP.
+Only generate file hashes for the comma\-specified list specified (since dpkg
+1.17.14).  The default is to generate all currently supported hashes.
+Supported values: \fBmd5\fP, \fBsha1\fP, \fBsha256\fP.
 .TP 
 \fB\-m\fP, \fB\-\-multiversion\fP
 Include nell'output tutti i pacchetti trovati.
 .TP 
 \fB\-M\fP, \fB\-\-medium\fP \fIstringa\-ID\fP
-Aggiunge un campo X\-Medium contenente il valore \fIstringa\-ID\fP. Questo campo
-è necessario se si desidera generare file \fBPackages.cd\fP per l'uso con il
-metodo di accesso multicd di dselect.
+Add an \fBX\-Medium\fP field containing the value \fIid\-string\fP (since dpkg
+1.15.5).  This field is required if you want to generate \fBPackages.cd\fP
+files for use by the multicd access method of dselect.
 .TP 
 \fB\-?\fP, \fB\-\-help\fP
 Mostra il messaggio sull'uso ed esce.

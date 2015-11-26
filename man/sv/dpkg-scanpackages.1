@@ -39,20 +39,20 @@ som de som finns på Debianarkivspeglar och cd\-rom:ar. Du kan använda
 \fBdpkg\-scanpackages\fP själv för att skapa en katalog med lokala paket att
 installera på en klase maskiner.
 .PP
-\fBObservera:\fP Om du vill läsa den skapade Packages\-filen med \fBapt\fP måste du
-antagligen komprimera filen med \fBbzip2\fP(1) (vilket skapar filen
-Packages.bz2) eller \fBgzip\fP(1) (vilket skapar filen Packages.gz). apt
-ignorerar okomprimerade Packages\-filer, förutom vid lokal åtkomst
-(dvs. \fBfile://\fP\-källor).
+\fBNote:\fP If you want to access the generated Packages file with \fBapt\fP you
+will probably need to compress the file with \fBxz\fP(1)  (generating a
+Packages.xz file), \fBbzip2\fP(1)  (generating a Packages.bz2 file) or
+\fBgzip\fP(1)  (generating a Packages.gz file). apt ignores uncompressed
+Packages files except on local access (i.e.  \fBfile://\fP sources).
 .PP
 \fIbinärkatalog\fP är namnet på trädet med binärpaketen som skall hanteras
 (till exempel \fBcontrib/binary\-i386\fP). Det är bäst att skapa den relativt
 till roten på Debianarkivet eftersom all filnamnsfält i den skapade
 Packages\-filen kommer inledas med strängen.
 .PP
-\fIöverstyrningsfil\fP är namnet på en fil som skall läsas in och som
-innehåller information om hur paketet passar in i distributionen (kan vara
-en komprimerad fil); se \fBdeb\-override\fP(5).
+\fIoverride\-file\fP is the name of a file to read which contains information
+about how the package fits into the distribution (the file can be compressed
+since dpkg 1.15.5); see \fBdeb\-override\fP(5).
 .PP
 \fIsökvägsprefix\fP är en frivillig sträng som läggs till i början i
 filnamnsfältet.
@@ -67,26 +67,26 @@ bara den första som hittas att användas.
 Sök efter *.\fItyp\fP\-paket, i stället för *.deb.
 .TP 
 \fB\-e\fP, \fB\-\-extra\-override\fP \fIfil\fP
-Läs \fIfil\fP för att hitta ytterligare överstyrningar (filen kan vara
-komprimerad). Se \fBdeb\-extra\-override\fP(5) för mer information om dess
-format.
+Scan \fIfile\fP to find supplementary overrides (the file can be compressed
+since dpkg 1.15.5).  See \fBdeb\-extra\-override\fP(5)  for more information on
+its format.
 .TP 
 \fB\-a\fP, \fB\-\-arch\fP \fIarkitektur\fP
 Använd ett mönster som består av \fI*_all.deb\fP och \fI*_arkitektur.deb\fP
 istället för att söka efter alla deb\-arkiv.
 .TP 
 \fB\-h\fP, \fB\-\-hash\fP \fIhashlista\fP
-Skapar bara filhashar för den angivna kommaseparerade listan. Standard är
-att generera alla hashar som stöds. Värden som stöds är: \fBmd5\fP, \fBsha1\fP,
-\fBsha256\fP.
+Only generate file hashes for the comma\-specified list specified (since dpkg
+1.17.14).  The default is to generate all currently supported hashes.
+Supported values: \fBmd5\fP, \fBsha1\fP, \fBsha256\fP.
 .TP 
 \fB\-m\fP, \fB\-\-multiversion\fP
 Ta med alla paket som hittas i utdata.
 .TP 
 \fB\-M\fP, \fB\-\-medium\fP \fIidsträng\fP
-Lägg till ett X\-Medium\-fält som innehåller värdet \fIidsträng\fP. Fältet är
-nödvändigt om du vill generera \fBPackages.cd\fP\-filer som kan användas med
-dselect:s multicd\-åtkomstmetod.
+Add an \fBX\-Medium\fP field containing the value \fIid\-string\fP (since dpkg
+1.15.5).  This field is required if you want to generate \fBPackages.cd\fP
+files for use by the multicd access method of dselect.
 .TP 
 \fB\-?\fP, \fB\-\-help\fP
 Visar hjälpskärm och avslutar.

@@ -5,7 +5,7 @@
 .\" Copyright Â© 2000-2001 Wichert Akkerman <wakkerma@debian.org>
 .\" Copyright Â© 2002-2003 Adam Heath <doogie@debian.org>
 .\" Copyright Â© 2004 Scott James Remnant <keybuk@debian.org>
-.\" Copyright Â© 2008-2014 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2008-2015 Guillem Jover <guillem@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -68,8 +68,8 @@ ed esce con lo stato di errore 0. Se tale processo non esiste,
 \fBstart\-stop\-daemon\fP controllerà che i processi siano stati terminati.
 .TP 
 \fB\-T\fP, \fB\-\-status\fP
-Controlla l'esistenza di un processo specificato e restituisce un codice di
-stato di uscita in base alle LSB Init Script Actions.
+Check for the existence of a specified process, and returns an exit status
+code, according to the LSB Init Script Actions (since version 1.16.1).
 .TP 
 \fB\-H\fP, \fB\-\-help\fP
 Visualizza informazioni sull'uso ed esce.
@@ -81,12 +81,12 @@ Visualizza la versione del programma ed esce.
 .SS "Opzioni per corrispondenze"
 .TP 
 \fB\-\-pid\fP \fIpid\fP
-Cerca un processo con il \fIpid\fP specificato. Il \fIpid\fP deve essere un numero
-maggiore di 0.
+Check for a process with the specified \fIpid\fP (since version 1.17.6).  The
+\fIpid\fP must be a number greater than 0.
 .TP 
 \fB\-\-ppid\fP \fIppid\fP
-Cerca un processo con il \fIppid\fP specificato (PID genitore). Il \fIppid\fP deve
-essere un numero maggiore di 0.
+Check for a process with the specified parent pid \fIppid\fP (since version
+1.17.7).  The \fIppid\fP must be a number greater than 0.
 .TP 
 \fB\-p\fP, \fB\-\-pidfile\fP \fIfile\-pid\fP
 Controlla se un processo ha creato il file \fIfile\-pid\fP. Nota: usare questa
@@ -163,16 +163,15 @@ fatta alcuna azione.
 Non visualizza messaggi informativi; mostra solo i messaggi di errore.
 .TP 
 \fB\-c\fP, \fB\-\-chuid\fP \fInomeutente\fP|\fIuid\fP[\fB:\fP\fIgruppo\fP|\fIgid\fP]
-Cambia a questo nome utente/UID prima di avviare il processo. Si può anche
-specificare un gruppo aggiungendo in fondo un carattere \fB:\fP, seguito dal
-gruppo o GID nello stesso modo usato per il comando «chown»
-(\fIutente\fP\fB:\fP\fIgruppo\fP). Se un utente viene specificato senza un gruppo,
-viene usato il GID primario di tale utente. Quando si usa questa opzione si
-deve avere ben chiaro che, anche se non viene specificata l'opzione
-\fB\-\-group\fP, vengono impostati anche il gruppo primario e quelli
-supplementari. L'opzione \fB\-\-group\fP è solo per i gruppi di cui l'utente non
-fa normalmente parte (ad esempio aggiungere l'appartenenza ad un gruppo per
-singoli processi, per gli utenti generici come \fBnobody\fP).
+Change to this username/uid before starting the process. You can also
+specify a group by appending a \fB:\fP, then the group or gid in the same way
+as you would for the \fBchown\fP(1) command (\fIuser\fP\fB:\fP\fIgroup\fP).  If a user
+is specified without a group, the primary GID for that user is used.  When
+using this option you must realize that the primary and supplemental groups
+are set as well, even if the \fB\-\-group\fP option is not specified. The
+\fB\-\-group\fP option is only for groups that the user isn't normally a member
+of (like adding per process group membership for generic users like
+\fBnobody\fP).
 .TP 
 \fB\-r\fP, \fB\-\-chroot\fP \fIroot\fP
 Cambia la directory e la chroot a \fIroot\fP prima di avviare il
@@ -185,55 +184,55 @@ specificato, \fBstart\-stop\-daemon\fP cambia la directory in quella root prima
 di avviare il processo.
 .TP 
 \fB\-b\fP, \fB\-\-background\fP
-Usata tipicamente con i programmi che non si scollegano da soli. Questa
-opzione forza \fBstart\-stop\-daemon\fP a fare il fork prima di avviare il
-processo e a forzarlo sullo sfondo. \fBATTENZIONE: start\-stop\-daemon\fP non può
-controllare lo stato di uscita se il processo fallisce l'esecuzione per
-\fBqualsiasi\fP ragione. Questa è un rimedio estremo, ed è pensato solamente
-per i programmi che non ha senso facciano il fork da soli o quando non è
-possibile aggiungere il codice per far sì che lo facciano da soli.
+Typically used with programs that don't detach on their own. This option
+will force \fBstart\-stop\-daemon\fP to fork before starting the process, and
+force it into the background.  \fBWarning: start\-stop\-daemon\fP cannot check
+the exit status if the process fails to execute for \fBany\fP reason. This is a
+last resort, and is only meant for programs that either make no sense
+forking on their own, or where it's not feasible to add the code for them to
+do this themselves.
 .TP 
 \fB\-C\fP, \fB\-\-no\-close\fP
-Non chiude alcun descrittore di file quando forza il demone sullo
-sfondo. Usato a scopo di debug per vedere l'output del processo, o per
-ridirigere i descrittori di file per registrare l'output del processo. Ha
-importanza solo quando viene usato \fB\-\-background\fP.
+Do not close any file descriptor when forcing the daemon into the background
+(since version 1.16.5).  Used for debugging purposes to see the process
+output, or to redirect file descriptors to log the process output.  Only
+relevant when using \fB\-\-background\fP.
 .TP 
 \fB\-N\fP, \fB\-\-nicelevel\fP \fIint\fP
 Modifica la priorità del processo prima di avviarlo.
 .TP 
 \fB\-P\fP, \fB\-\-procsched\fP \fIpolitica\fP\fB:\fP\fIpriorità\fP
-Modifica la politica e la priorità per la pianificazione del processo prima
-di avviarlo. La priorità può essere facoltativamente specificata aggiungendo
-in fondo un carattere \fB:\fP seguito dal valore. Il valore predefinito di
-\fIpriorità\fP è 0. I valori per la politica attualmente supportati sono
-\fBother\fP, \fBfifo\fP e \fBrr\fP.
+This alters the process scheduler policy and priority of the process before
+starting it (since version 1.15.0).  The priority can be optionally
+specified by appending a \fB:\fP followed by the value. The default \fIpriority\fP
+is 0. The currently supported policy values are \fBother\fP, \fBfifo\fP and \fBrr\fP.
 .TP 
 \fB\-I\fP, \fB\-\-iosched\fP \fIclasse\fP\fB:\fP\fIpriorità\fP
-Modifica la classe e la priorità del pianificatore di I/O del processo prima
-di avviarlo. La priorità può essere facoltativamente specificata aggiungendo
-in fondo un carattere \fB:\fP seguito dal valore. Il valore predefinito di
-\fIpriorità\fP è 4, a meno che \fIclasse\fP non sia \fBidle\fP nel qual caso
-\fIpriorità\fP è sempre 7. I valori attualmente supportati per \fIclasse\fP sono
-\fBidle\fP, \fBbest\-effort\fP e \fBreal\-time\fP.
+This alters the IO scheduler class and priority of the process before
+starting it (since version 1.15.0).  The priority can be optionally
+specified by appending a \fB:\fP followed by the value. The default \fIpriority\fP
+is 4, unless \fIclass\fP is \fBidle\fP, then \fIpriority\fP will always be 7. The
+currently supported values for \fIclass\fP are \fBidle\fP, \fBbest\-effort\fP and
+\fBreal\-time\fP.
 .TP 
 \fB\-k\fP, \fB\-\-umask\fP \fImaschera\fP
-Imposta l'umask del processo prima di avviarlo.
+This sets the umask of the process before starting it (since version
+1.13.22).
 .TP 
 \fB\-m\fP, \fB\-\-make\-pidfile\fP
-Usata quando si avvia un processo che non crea il proprio file PID. Questa
-opzione fa sì che \fBstart\-stop\-daemon\fP crei il file specificato con
-\fB\-\-pidfile\fP e che vi metta il PID immediatamente prima di eseguire il
-processo. Notare che il file verrà rimosso quando viene fermato il programma
-solamente se viene usato \fB\-\-remove\-pidfile\fP. \fBNOTA:\fP questa funzionalità
-può non funzionare in tutti i casi. In particolar modo quando il programma
-eseguito fa il fork dal suo processo principale. Per questo è di solito
-utile solo quando usato in combinazione con l'opzione \fB\-\-background\fP.
+Used when starting a program that does not create its own pid file. This
+option will make \fBstart\-stop\-daemon\fP create the file referenced with
+\fB\-\-pidfile\fP and place the pid into it just before executing the
+process. Note, the file will only be removed when stopping the program if
+\fB\-\-remove\-pidfile\fP is used.  \fBNote:\fP This feature may not work in all
+cases. Most notably when the program being executed forks from its main
+process. Because of this, it is usually only useful when combined with the
+\fB\-\-background\fP option.
 .TP 
 \fB\-\-remove\-pidfile\fP
-Usato quando si ferma un programma che non rimuove il proprio file
-PID. Questa opzione farà sì che \fBstart\-stop\-daemon\fP rimuova il file a cui
-fa riferimento \fB\-\-pidfile\fP dopo aver fermato il processo.
+Used when stopping a program that does not remove its own pid file (since
+version 1.17.19).  This option will make \fBstart\-stop\-daemon\fP remove the
+file referenced with \fB\-\-pidfile\fP after terminating the process.
 .TP 
 \fB\-v\fP, \fB\-\-verbose\fP
 Visualizza messaggi informativi dettagliati.

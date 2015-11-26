@@ -42,7 +42,7 @@ compression/decompression processes.
 
 =over 4
 
-=item my $proc = Dpkg::Compression::Process->new(%opts)
+=item $proc = Dpkg::Compression::Process->new(%opts)
 
 Create a new instance of the object. Supported options are "compression"
 and "compression_level" (see corresponding set_* functions).
@@ -70,7 +70,7 @@ B<Dpkg::Compression>).
 
 sub set_compression {
     my ($self, $method) = @_;
-    error(_g('%s is not a supported compression method'), $method)
+    error(g_('%s is not a supported compression method'), $method)
 	    unless compression_is_supported($method);
     $self->{compression} = $method;
 }
@@ -85,14 +85,14 @@ B<Dpkg::Compression>).
 
 sub set_compression_level {
     my ($self, $level) = @_;
-    error(_g('%s is not a compression level'), $level)
+    error(g_('%s is not a compression level'), $level)
 	    unless compression_is_valid_level($level);
     $self->{compression_level} = $level;
 }
 
-=item my @exec = $proc->get_compress_cmdline()
+=item @exec = $proc->get_compress_cmdline()
 
-=item my @exec = $proc->get_uncompress_cmdline()
+=item @exec = $proc->get_uncompress_cmdline()
 
 Returns a list ready to be passed to C<exec>, its first element is the
 program name (either for compression or decompression) and the following
@@ -104,7 +104,7 @@ and its standard output.
 =cut
 
 sub get_compress_cmdline {
-    my ($self) = @_;
+    my $self = shift;
     my @prog = (@{compression_get_property($self->{compression}, 'comp_prog')});
     my $level = '-' . $self->{compression_level};
     $level = '--' . $self->{compression_level}
@@ -114,14 +114,14 @@ sub get_compress_cmdline {
 }
 
 sub get_uncompress_cmdline {
-    my ($self) = @_;
+    my $self = shift;
     return (@{compression_get_property($self->{compression}, 'decomp_prog')});
 }
 
 sub _sanity_check {
     my ($self, %opts) = @_;
     # Check for proper cleaning before new start
-    error(_g('Dpkg::Compression::Process can only start one subprocess at a time'))
+    error(g_('Dpkg::Compression::Process can only start one subprocess at a time'))
 	    if $self->{pid};
     # Check options
     my $to = my $from = 0;
@@ -202,7 +202,7 @@ sub wait_end_process {
 
 =head1 CHANGES
 
-=head2 Version 1.00
+=head2 Version 1.00 (dpkg 1.15.6)
 
 Mark the module as public.
 

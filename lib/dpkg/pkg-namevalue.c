@@ -3,7 +3,7 @@
  * pkg-namevalue.c - name/value package tables
  *
  * Copyright © 1995 Ian Jackson <ian@chiark.greenend.org.uk>
- * Copyright © 2006-2014 Guillem Jover <guillem@debian.org>
+ * Copyright © 2006-2015 Guillem Jover <guillem@debian.org>
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -45,7 +45,6 @@ const struct namevalue priorityinfos[] = {
 	NAMEVALUE_DEF("standard",		PKG_PRIO_STANDARD),
 	NAMEVALUE_DEF("optional",		PKG_PRIO_OPTIONAL),
 	NAMEVALUE_DEF("extra",			PKG_PRIO_EXTRA),
-	NAMEVALUE_FALLBACK_DEF("this is a bug - please report", PKG_PRIO_OTHER),
 	NAMEVALUE_DEF("unknown",		PKG_PRIO_UNKNOWN),
 	{ .name = NULL }
 };

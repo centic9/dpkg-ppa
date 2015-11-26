@@ -83,14 +83,14 @@ sub load {
     my ($desc, $fh) = ($file, undef);
     if ($file eq '-') {
 	$fh = \*STDIN;
-	$desc = _g('<standard input>');
+	$desc = g_('<standard input>');
     } else {
 	$fh = Dpkg::Compression::FileHandle->new();
-	open($fh, '<', $file) or syserr(_g('cannot read %s'), $file);
+	open($fh, '<', $file) or syserr(g_('cannot read %s'), $file);
     }
     my $res = $self->parse($fh, $desc, @options);
     if ($file ne '-') {
-	close($fh) or syserr(_g('cannot close %s'), $file);
+	close($fh) or syserr(g_('cannot close %s'), $file);
     }
     return $res;
 }
@@ -114,11 +114,11 @@ sub save {
 	$fh = \*STDOUT;
     } else {
 	$fh = Dpkg::Compression::FileHandle->new();
-	open($fh, '>', $file) or syserr(_g('cannot write %s'), $file);
+	open($fh, '>', $file) or syserr(g_('cannot write %s'), $file);
     }
     $self->output($fh, @options);
     if ($file ne '-') {
-	close($fh) or syserr(_g('cannot close %s'), $file);
+	close($fh) or syserr(g_('cannot close %s'), $file);
     }
 }
 
@@ -129,7 +129,7 @@ Return a string representation of the object.
 =cut
 
 sub _stringify {
-    my ($self) = @_;
+    my $self = shift;
     unless ($self->can('output')) {
 	croak ref($self) . ' cannot be stringified, it lacks the output method';
     }
@@ -140,7 +140,7 @@ sub _stringify {
 
 =head1 CHANGES
 
-=head2 Version 1.00
+=head2 Version 1.00 (dpkg 1.15.6)
 
 Mark the module as public.
 

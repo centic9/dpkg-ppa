@@ -30,7 +30,6 @@
 #include <assert.h>
 #include <errno.h>
 #include <limits.h>
-#include <ctype.h>
 #include <string.h>
 #include <time.h>
 #include <fcntl.h>
@@ -41,6 +40,7 @@
 #include <stdio.h>
 
 #include <dpkg/i18n.h>
+#include <dpkg/c-ctype.h>
 #include <dpkg/dpkg.h>
 #include <dpkg/dpkg-db.h>
 #include <dpkg/file.h>
@@ -64,9 +64,10 @@ static int ulist_select(const struct dirent *de) {
   const char *p;
   int l;
   for (p= de->d_name, l=0; *p; p++, l++)
-    if (!cisdigit(*p)) return 0;
+    if (!c_isdigit(*p))
+      return 0;
   if (l > IMPORTANTMAXLEN)
-    ohshit(_("updates directory contains file `%.250s' whose name is too long "
+    ohshit(_("updates directory contains file '%.250s' whose name is too long "
            "(length=%d, max=%d)"), de->d_name, l, IMPORTANTMAXLEN);
   if (updateslength == -1) updateslength= l;
   else if (l != updateslength)
@@ -84,7 +85,8 @@ static void cleanupdates(void) {
   *updatefnrest = '\0';
   updateslength= -1;
   cdn= scandir(updatefnbuf, &cdlist, &ulist_select, alphasort);
-  if (cdn == -1) ohshite(_("cannot scan updates directory `%.255s'"),updatefnbuf);
+  if (cdn == -1)
+    ohshite(_("cannot scan updates directory '%.255s'"), updatefnbuf);
 
   if (cdn) {
     for (i=0; i<cdn; i++) {
@@ -119,7 +121,7 @@ static void createimptmp(void) {
 
   importanttmp= fopen(importanttmpfile,"w");
   if (!importanttmp)
-    ohshite(_("unable to create `%.255s'"), importanttmpfile);
+    ohshite(_("unable to create '%.255s'"), importanttmpfile);
   setcloexec(fileno(importanttmp),importanttmpfile);
   for (i=0; i<512; i++) fputs("#padding\n",importanttmp);
   if (ferror(importanttmp))
@@ -351,23 +353,23 @@ modstatdb_note_core(struct pkginfo *pkg)
   varbufrecord(&uvb, pkg, &pkg->installed);
 
   if (fwrite(uvb.buf, 1, uvb.used, importanttmp) != uvb.used)
-    ohshite(_("unable to write updated status of `%.250s'"),
+    ohshite(_("unable to write updated status of '%.250s'"),
             pkg_name(pkg, pnaw_nonambig));
   if (fflush(importanttmp))
-    ohshite(_("unable to flush updated status of `%.250s'"),
+    ohshite(_("unable to flush updated status of '%.250s'"),
             pkg_name(pkg, pnaw_nonambig));
   if (ftruncate(fileno(importanttmp), uvb.used))
-    ohshite(_("unable to truncate for updated status of `%.250s'"),
+    ohshite(_("unable to truncate for updated status of '%.250s'"),
             pkg_name(pkg, pnaw_nonambig));
   if (fsync(fileno(importanttmp)))
-    ohshite(_("unable to fsync updated status of `%.250s'"),
+    ohshite(_("unable to fsync updated status of '%.250s'"),
             pkg_name(pkg, pnaw_nonambig));
   if (fclose(importanttmp))
-    ohshite(_("unable to close updated status of `%.250s'"),
+    ohshite(_("unable to close updated status of '%.250s'"),
             pkg_name(pkg, pnaw_nonambig));
   sprintf(updatefnrest, IMPORTANTFMT, nextupdate);
   if (rename(importanttmpfile, updatefnbuf))
-    ohshite(_("unable to install updated status of `%.250s'"),
+    ohshite(_("unable to install updated status of '%.250s'"),
             pkg_name(pkg, pnaw_nonambig));
 
   dir_sync_path(updatesdir);

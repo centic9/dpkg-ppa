@@ -60,13 +60,13 @@ programmet skall avbrytas. Om så inte har gjorts, skall programmet kunna
 fortsätta utan problem, såvida det inte stöter på en oväntad post i arkivet
 (förutom i slutet), enligt vad beskrivs nedan.
 .PP
-Den andra nödvändiga posten heter \fBcontrol.tar\fP. Det är ett tar\-arkiv som
-innehåller paketets kontrollinformation, antingen okomprimerat (stöds sedan
-dpkg 1.17.6), eller komprimerat med gzip (med filtillägget \fB.gz\fP) eller xz
-(med filtillägget \fB.xz\fP, stöds sedan 1.17\-6), lagrade som ett antal vanliga
-filer, av vilka filen \fBcontrol\fP krävs och innehåller grundläggande
-kontrollinformation. Tarbollen control kan eventuellt innehålla en post för
-"\fB.\fP", den aktuella katalogen.
+The second required member is named \fBcontrol.tar\fP.  It is a tar archive
+containing the package control information, either not compressed (supported
+since dpkg 1.17.6), or compressed with gzip (with \fB.gz\fP extension) or xz
+(with \fB.xz\fP extension, supported since 1.17.6), as a series of plain files,
+of which the file \fBcontrol\fP is mandatory and contains the core control
+information. The control tarball may optionally contain an entry for
+\(oq\fB.\fP\(cq, the current directory.
 .PP
 Den tredje och sista nödvändiga posten heter \fBdata.tar\fP. Den innehåller
 filsystemet som ett tar\-arkiv, antingen okomprimerat (stöds sedan dpkg
@@ -75,13 +75,13 @@ filslutet \fB.xz\fP, stöds sedan dpkg 1.15.6), bzip2 (med filslutet \fB.bz2\fP,
 stöds sedan dpkg 1.10.24) eller lzma (med filslutet \fB.lzma\fP, stöds sedan
 dpkg 1.13.25).
 .PP
-Dessa poster måste ligga i exakt denna ordning. Nuvarande implementationer
-bör ignorera eventuella ytterligare poster efter \fBdata.tar\fP. Ytterligare
-poster kan komma att definieras i framtiden, och kommer (om möjligt)
-placeras efter dessa tre. Eventuella ytterligare poster som kan komma att
-behöva läggas till efter \fBdebian\-binary\fP och före \fBcontrol.tar\fP eller
-\fBdata.tar\fP och som kan ignoreras av äldre program utan problem kommer att
-ha namn som börjar med understreck, "\fB_\fP".
+These members must occur in this exact order. Current implementations should
+ignore any additional members after \fBdata.tar\fP.  Further members may be
+defined in the future, and (if possible) will be placed after these
+three. Any additional members that may need to be inserted after
+\fBdebian\-binary\fP and before \fBcontrol.tar\fP or \fBdata.tar\fP and which should
+be safely ignored by older programs, will have names starting with an
+underscore, \(oq\fB_\fP\(cq.
 .PP
 Nya poster som inte kommer att kunna ignoreras utan problem kommer att
 läggas in före \fBdata.tar\fP med namn som börjar med något annat än

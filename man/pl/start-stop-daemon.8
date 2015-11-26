@@ -5,7 +5,7 @@
 .\" Copyright Â© 2000-2001 Wichert Akkerman <wakkerma@debian.org>
 .\" Copyright Â© 2002-2003 Adam Heath <doogie@debian.org>
 .\" Copyright Â© 2004 Scott James Remnant <keybuk@debian.org>
-.\" Copyright Â© 2008-2014 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2008-2015 Guillem Jover <guillem@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -66,8 +66,8 @@ podano opcjê \fB\-\-retry\fP, to \fBstart\-stop\-daemon\fP sprawdzi, czy proces(
 zakoñczy³(y).
 .TP 
 \fB\-T\fP, \fB\-\-status\fP
-Sprawdza istnienie podanego procesu i zwraca kod zakoñczenia, zgodnie z LSB
-Init Script Actions.
+Check for the existence of a specified process, and returns an exit status
+code, according to the LSB Init Script Actions (since version 1.16.1).
 .TP 
 \fB\-H\fP, \fB\-\-help\fP
 Wy¶wietla informacjê o u¿ytkowaniu programu i koñczy dzia³anie.
@@ -79,12 +79,12 @@ Wy¶wietla informacjê o wersji programu i koñczy dzia³anie.
 .SS "Matching options"
 .TP 
 \fB\-\-pid\fP \fIpid\fP
-Check for a process with the specified \fIpid\fP. The \fIpid\fP must be a number
-greater than 0.
+Check for a process with the specified \fIpid\fP (since version 1.17.6).  The
+\fIpid\fP must be a number greater than 0.
 .TP 
 \fB\-\-ppid\fP \fIppid\fP
-Check for a process with the specified \fIppid\fP (parent pid).  The \fIppid\fP
-must be a number greater than 0.
+Check for a process with the specified parent pid \fIppid\fP (since version
+1.17.7).  The \fIppid\fP must be a number greater than 0.
 .TP 
 \fB\-p\fP, \fB\-\-pidfile\fP \fIplik\-pid\fP
 Sprawdza, czy proces utworzy³ plik \fIplik\-pid\fP. Uwaga: u¿ywaj±c wy³±cznie
@@ -161,15 +161,15 @@ powodzeniem (zwróci³aby 1).
 Nie s± wy¶wietlane ¿adne informacje oprócz komunikatów o b³êdach.
 .TP 
 \fB\-c\fP, \fB\-\-chuid\fP \fIu¿ytkownik\fP|\fIuid\fP[\fB:\fP\fIgrupa\fP|\fIgid\fP]
-Zmiana u¿ytkownika/uid przed uruchomieniem procesu. Mo¿na tak¿e zmieniæ
-grupê przez do³±czenie \fB:\fP wraz z nazw± grupy b±d¼ numerem gid, podobnie
-jak w poleceniu "chown" (\fIu¿ytkownik\fP\fB:\fP\fIgrupa\fP). Je¿eli nie podano
-grupy, to zostanie u¿yta podstawowa grupa tego u¿ytkownika. Podczas
-korzystania z tej opcji nale¿y pamiêtaæ, ¿e grupa g³ówna i poboczne zostan±
-ustawione, nawet gdy nie podano opcji \fB\-\-group\fP. Opcja \fB\-\-group\fP jest
-przydatna tylko dla grup, których podany u¿ytkownik nie jest cz³onkiem (na
-przyk³ad przy dodawaniu procesowi cz³onkostwa grupy dla takich u¿ytkowników
-jak \fBnobody\fP).
+Change to this username/uid before starting the process. You can also
+specify a group by appending a \fB:\fP, then the group or gid in the same way
+as you would for the \fBchown\fP(1) command (\fIuser\fP\fB:\fP\fIgroup\fP).  If a user
+is specified without a group, the primary GID for that user is used.  When
+using this option you must realize that the primary and supplemental groups
+are set as well, even if the \fB\-\-group\fP option is not specified. The
+\fB\-\-group\fP option is only for groups that the user isn't normally a member
+of (like adding per process group membership for generic users like
+\fBnobody\fP).
 .TP 
 \fB\-r\fP, \fB\-\-chroot\fP \fIroot\fP
 Zmienia katalog bie¿±cy na \fIroot\fP i czyni go g³ównym katalogiem (rootem)
@@ -183,55 +183,55 @@ if the \fB\-r\fP|\fB\-\-chroot\fP option is set. When not specified,
 process.
 .TP 
 \fB\-b\fP, \fB\-\-background\fP
-Zwykle u¿ywa siê tej opcji dla programów, które nie od³±czaj± siê od
-terminala (detach) samoistnie. Ta opcja spowoduje, ¿e \fBstart\-stop\-daemon\fP
-utworzy proces potomny przed uruchomieniem programu i bêdzie kontynuowaæ go
-w tle. \fBOSTRZE¯ENIE: start\-stop\-daemon\fP nie mo¿e sprawdziæ kodu b³êdu,
-je¿eli proces siê nie wykona z \fBjakiegokolwiek\fP powodu. Ta opcja powinna
-byæ u¿ywana w ostateczno¶ci i jest przewidziana tylko dla programów, które
-same nie tworz± procesów potomnych i nie jest mo¿liwe dodanie do samego
-programu kodu uruchamiaj±cego proces potomny.
+Typically used with programs that don't detach on their own. This option
+will force \fBstart\-stop\-daemon\fP to fork before starting the process, and
+force it into the background.  \fBWarning: start\-stop\-daemon\fP cannot check
+the exit status if the process fails to execute for \fBany\fP reason. This is a
+last resort, and is only meant for programs that either make no sense
+forking on their own, or where it's not feasible to add the code for them to
+do this themselves.
 .TP 
 \fB\-C\fP, \fB\-\-no\-close\fP
-Nie zamyka ¿adnego deskryptora pliku podczas wymuszania przej¶cia demona w
-t³o. U¿ywane w celach debugowania do zobaczenia wyniku procesu lub do
-przekierowania deskryptorów pliku do logu wyniku procesu. Ma znaczenie tylko
-podczas u¿ywania \fB\-\-background\fP.
+Do not close any file descriptor when forcing the daemon into the background
+(since version 1.16.5).  Used for debugging purposes to see the process
+output, or to redirect file descriptors to log the process output.  Only
+relevant when using \fB\-\-background\fP.
 .TP 
 \fB\-N\fP, \fB\-\-nicelevel\fP \fIliczba\fP
 Zmienia priorytet uruchamianego procesu.
 .TP 
 \fB\-P\fP, \fB\-\-procsched\fP \fIpolityka\fP\fB:\fP\fIpriorytet\fP
-Zmienia politykê i priorytet planisty procesów dla procesu przed jego
-uruchomieniem. Priorytet mo¿e byæ opcjonalnie okre¶lony przez dodanie \fB:\fP
-po którym jest podana warto¶æ. Domy¶lnym \fIpriorytetem\fP jest 0. Aktualnie
-wspierane warto¶ci dla \fIpolityki\fP to \fBother\fP, \fBfifo\fP oraz \fBrr\fP.
+This alters the process scheduler policy and priority of the process before
+starting it (since version 1.15.0).  The priority can be optionally
+specified by appending a \fB:\fP followed by the value. The default \fIpriority\fP
+is 0. The currently supported policy values are \fBother\fP, \fBfifo\fP and \fBrr\fP.
 .TP 
 \fB\-I\fP, \fB\-\-iosched\fP \fIklasa\fP\fB:\fP\fIpriorytet\fP
-Zmienia klasê i priorytet planisty wej¶cia/wyj¶cia dla procesu przed jego
-uruchomieniem. Priorytet mo¿e byæ opcjonalnie okre¶lony przez dodanie \fB:\fP
-po którym jest podana warto¶æ. Domy¶lnym \fIpriorytetem\fP jest 4, chyba ¿e
-warto¶ci± \fIklasy\fP jest \fBidle\fP, w którym to przypadku \fIpriorytet\fP bêdzie
-zawsze równy 7. Aktualnie wspierane warto¶ci dla \fIklasy\fP to \fBidle\fP,
-\fBbest\-effort\fP oraz \fBreal\-time\fP.
+This alters the IO scheduler class and priority of the process before
+starting it (since version 1.15.0).  The priority can be optionally
+specified by appending a \fB:\fP followed by the value. The default \fIpriority\fP
+is 4, unless \fIclass\fP is \fBidle\fP, then \fIpriority\fP will always be 7. The
+currently supported values for \fIclass\fP are \fBidle\fP, \fBbest\-effort\fP and
+\fBreal\-time\fP.
 .TP 
 \fB\-k\fP, \fB\-\-umask\fP \fImaska\fP
-Ustawia maskê praw dostêpu (umask) procesu przed jego uruchomieniem.
+This sets the umask of the process before starting it (since version
+1.13.22).
 .TP 
 \fB\-m\fP, \fB\-\-make\-pidfile\fP
 Used when starting a program that does not create its own pid file. This
 option will make \fBstart\-stop\-daemon\fP create the file referenced with
 \fB\-\-pidfile\fP and place the pid into it just before executing the
 process. Note, the file will only be removed when stopping the program if
-\fB\-\-remove\-pidfile\fP is used.  \fBNOTE:\fP This feature may not work in all
+\fB\-\-remove\-pidfile\fP is used.  \fBNote:\fP This feature may not work in all
 cases. Most notably when the program being executed forks from its main
 process. Because of this, it is usually only useful when combined with the
 \fB\-\-background\fP option.
 .TP 
 \fB\-\-remove\-pidfile\fP
-Used when stopping a program that does not remove its own pid file. This
-option will make \fBstart\-stop\-daemon\fP remove the file referenced with
-\fB\-\-pidfile\fP after terminating the process.
+Used when stopping a program that does not remove its own pid file (since
+version 1.17.19).  This option will make \fBstart\-stop\-daemon\fP remove the
+file referenced with \fB\-\-pidfile\fP after terminating the process.
 .TP 
 \fB\-v\fP, \fB\-\-verbose\fP
 Wy¶wietlane s± dodatkowe komunikaty.

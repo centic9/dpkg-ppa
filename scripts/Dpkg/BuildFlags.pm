@@ -38,11 +38,11 @@ Dpkg::BuildFlags - query build flags
 The Dpkg::BuildFlags object is used by dpkg-buildflags and can be used
 to query the same information.
 
-=head1 FUNCTIONS
+=head1 METHODS
 
 =over 4
 
-=item my $bf = Dpkg::BuildFlags->new()
+=item $bf = Dpkg::BuildFlags->new()
 
 Create a new Dpkg::BuildFlags object. It will be initialized based
 on the value of several configuration files and environment variables.
@@ -67,7 +67,8 @@ Reset the flags stored to the default set provided by the vendor.
 =cut
 
 sub load_vendor_defaults {
-    my ($self) = @_;
+    my $self = shift;
+
     $self->{options} = {};
     $self->{source} = {};
     $self->{features} = {};
@@ -118,7 +119,8 @@ Update flags from the system configuration.
 =cut
 
 sub load_system_config {
-    my ($self) = @_;
+    my $self = shift;
+
     $self->update_from_conffile("$Dpkg::CONFDIR/buildflags.conf", 'system');
 }
 
@@ -129,7 +131,8 @@ Update flags from the user configuration.
 =cut
 
 sub load_user_config {
-    my ($self) = @_;
+    my $self = shift;
+
     my $confdir = $ENV{XDG_CONFIG_HOME};
     $confdir ||= $ENV{HOME} . '/.config' if length $ENV{HOME};
     if (length $confdir) {
@@ -145,7 +148,8 @@ dpkg-buildflags(1) for details.
 =cut
 
 sub load_environment_config {
-    my ($self) = @_;
+    my $self = shift;
+
     foreach my $flag (keys %{$self->{flags}}) {
 	my $envvar = 'DEB_' . $flag . '_SET';
 	if (Dpkg::BuildEnv::has($envvar)) {
@@ -174,7 +178,8 @@ dpkg-buildflags(1) for details.
 =cut
 
 sub load_maintainer_config {
-    my ($self) = @_;
+    my $self = shift;
+
     foreach my $flag (keys %{$self->{flags}}) {
 	my $envvar = 'DEB_' . $flag . '_MAINT_SET';
 	if (Dpkg::BuildEnv::has($envvar)) {
@@ -205,7 +210,8 @@ default build flags defined by the vendor.
 =cut
 
 sub load_config {
-    my ($self) = @_;
+    my $self = shift;
+
     $self->load_system_config();
     $self->load_user_config();
     $self->load_environment_config();
@@ -313,7 +319,7 @@ sub update_from_conffile {
     local $_;
 
     return unless -e $file;
-    open(my $conf_fh, '<', $file) or syserr(_g('cannot read %s'), $file);
+    open(my $conf_fh, '<', $file) or syserr(g_('cannot read %s'), $file);
     while (<$conf_fh>) {
         chomp;
         next if /^\s*#/; # Skip comments
@@ -321,7 +327,7 @@ sub update_from_conffile {
         if (/^(append|prepend|set|strip)\s+(\S+)\s+(\S.*\S)\s*$/i) {
             my ($op, $flag, $value) = ($1, $2, $3);
             unless (exists $self->{flags}->{$flag}) {
-                warning(_g('line %d of %s mentions unknown flag %s'), $., $file, $flag);
+                warning(g_('line %d of %s mentions unknown flag %s'), $., $file, $flag);
                 $self->{flags}->{$flag} = '';
             }
             if (lc($op) eq 'set') {
@@ -334,7 +340,7 @@ sub update_from_conffile {
                 $self->prepend($flag, $value, $src);
             }
         } else {
-            warning(_g('line %d of %s is invalid, it has been ignored'), $., $file);
+            warning(g_('line %d of %s is invalid, it has been ignored'), $., $file);
         }
     }
     close($conf_fh);
@@ -360,7 +366,8 @@ true for).
 =cut
 
 sub get_feature_areas {
-    my ($self) = @_;
+    my $self = shift;
+
     return keys %{$self->{features}};
 }
 
@@ -422,14 +429,14 @@ sub has {
     return exists $self->{flags}{$key};
 }
 
-=item my @flags = $bf->list()
+=item @flags = $bf->list()
 
 Returns the list of flags stored in the object.
 
 =cut
 
 sub list {
-    my ($self) = @_;
+    my $self = shift;
     my @list = sort keys %{$self->{flags}};
     return @list;
 }
@@ -438,7 +445,7 @@ sub list {
 
 =head1 CHANGES
 
-=head2 Version 1.03
+=head2 Version 1.03 (dpkg 1.16.5)
 
 New method: $bf->get_feature_areas() to list possible values for
 $bf->get_features.
@@ -446,11 +453,11 @@ $bf->get_features.
 New method $bf->is_maintainer_modified() and new optional parameter to
 $bf->set(), $bf->append(), $bf->prepend(), $bf->strip().
 
-=head2 Version 1.02
+=head2 Version 1.02 (dpkg 1.16.2)
 
 New methods: $bf->get_features(), $bf->has_features(), $bf->set_feature().
 
-=head2 Version 1.01
+=head2 Version 1.01 (dpkg 1.16.1)
 
 New method: $bf->prepend() very similar to append(). Implement support of
 the prepend operation everywhere.
@@ -458,7 +465,7 @@ the prepend operation everywhere.
 New method: $bf->load_maintainer_config() that update the build flags
 based on the package maintainer directives.
 
-=head2 Version 1.00
+=head2 Version 1.00 (dpkg 1.15.7)
 
 Mark the module as public.
 

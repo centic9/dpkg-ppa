@@ -3,7 +3,7 @@
  * select.c - by-hand (rather than dselect-based) package selection
  *
  * Copyright © 1995,1996 Ian Jackson <ian@chiark.greenend.org.uk>
- * Copyright © 2006,2008-2014 Guillem Jover <guillem@debian.org>
+ * Copyright © 2006, 2008-2015 Guillem Jover <guillem@debian.org>
  * Copyright © 2011 Linaro Limited
  * Copyright © 2011 Raphaël Hertzog <hertzog@debian.org>
  *
@@ -25,12 +25,12 @@
 #include <compat.h>
 
 #include <fnmatch.h>
-#include <ctype.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 
 #include <dpkg/i18n.h>
+#include <dpkg/c-ctype.h>
 #include <dpkg/dpkg.h>
 #include <dpkg/dpkg-db.h>
 #include <dpkg/pkg-array.h>
@@ -133,7 +133,11 @@ setselections(const char *const *argv)
   for (;;) {
     struct dpkg_error err;
 
-    do { c= getchar(); if (c == '\n') lno++; } while (c != EOF && isspace(c));
+    do {
+      c = getchar();
+      if (c == '\n')
+        lno++;
+    } while (c != EOF && c_isspace(c));
     if (c == EOF) break;
     if (c == '#') {
       do { c= getchar(); if (c == '\n') lno++; } while (c != EOF && c != '\n');
@@ -141,22 +145,24 @@ setselections(const char *const *argv)
     }
 
     varbuf_reset(&namevb);
-    while (!isspace(c)) {
+    while (!c_isspace(c)) {
       varbuf_add_char(&namevb, c);
       c= getchar();
-      if (c == EOF) ohshit(_("unexpected eof in package name at line %d"),lno);
+      if (c == EOF)
+        ohshit(_("unexpected end of file in package name at line %d"), lno);
       if (c == '\n') ohshit(_("unexpected end of line in package name at line %d"),lno);
     }
     varbuf_end_str(&namevb);
 
-    while (c != EOF && isspace(c)) {
+    while (c != EOF && c_isspace(c)) {
       c= getchar();
-      if (c == EOF) ohshit(_("unexpected eof after package name at line %d"),lno);
+      if (c == EOF)
+        ohshit(_("unexpected end of file after package name at line %d"), lno);
       if (c == '\n') ohshit(_("unexpected end of line after package name at line %d"),lno);
     }
 
     varbuf_reset(&selvb);
-    while (c != EOF && !isspace(c)) {
+    while (c != EOF && !c_isspace(c)) {
       varbuf_add_char(&selvb, c);
       c= getchar();
     }
@@ -164,7 +170,7 @@ setselections(const char *const *argv)
 
     while (c != EOF && c != '\n') {
       c= getchar();
-      if (!isspace(c))
+      if (!c_isspace(c))
         ohshit(_("unexpected data after package and selection at line %d"),lno);
     }
     pkg = pkg_spec_parse_pkg(namevb.buf, &err);

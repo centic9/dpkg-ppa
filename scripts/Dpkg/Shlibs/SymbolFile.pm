@@ -101,26 +101,26 @@ sub new {
 }
 
 sub get_arch {
-    my ($self) = @_;
+    my $self = shift;
     return $self->{arch};
 }
 
 sub clear {
-    my ($self) = @_;
+    my $self = shift;
     $self->{objects} = {};
 }
 
 sub clear_except {
     my ($self, @ids) = @_;
-    my %has;
-    $has{$_} = 1 foreach (@ids);
+
+    my %has = map { $_ => 1 } @ids;
     foreach my $objid (keys %{$self->{objects}}) {
 	delete $self->{objects}{$objid} unless exists $has{$objid};
     }
 }
 
 sub get_sonames {
-    my ($self) = @_;
+    my $self = shift;
     return keys %{$self->{objects}};
 }
 
@@ -220,7 +220,7 @@ sub parse {
 
 	if (/^(?:\s+|#(?:DEPRECATED|MISSING): ([^#]+)#\s*)(.*)/) {
 	    if (not defined ($$obj_ref)) {
-		error(_g('symbol information must be preceded by a header (file %s, line %s)'), $file, $.);
+		error(g_('symbol information must be preceded by a header (file %s, line %s)'), $file, $.);
 	    }
 	    # Symbol specification
 	    my $deprecated = ($1) ? $1 : 0;
@@ -228,7 +228,7 @@ sub parse {
 	    if ($self->create_symbol($2, base => $sym)) {
 		$self->add_symbol($sym, $$obj_ref);
 	    } else {
-		warning(_g('failed to parse line in %s: %s'), $file, $_);
+		warning(g_('failed to parse line in %s: %s'), $file, $_);
 	    }
 	} elsif (/^(\(.*\))?#include\s+"([^"]+)"/) {
 	    my $tagspec = $1;
@@ -260,7 +260,7 @@ sub parse {
 		$self->create_object($$obj_ref, "$2");
 	    }
 	} else {
-	    warning(_g('failed to parse a line in %s: %s'), $file, $_);
+	    warning(g_('failed to parse a line in %s: %s'), $file, $_);
 	}
     }
     delete $seen->{$file};
@@ -273,7 +273,7 @@ sub merge_object_from_symfile {
     if (not $self->has_object($objid)) {
         $self->{objects}{$objid} = $src->get_object($objid);
     } else {
-        warning(_g('tried to merge the same object (%s) twice in a symfile'), $objid);
+        warning(g_('tried to merge the same object (%s) twice in a symfile'), $objid);
     }
 }
 
@@ -286,19 +286,25 @@ sub output {
     foreach my $soname (sort $self->get_sonames()) {
 	my @deps = $self->get_dependencies($soname);
 	my $dep_first = shift @deps;
-	$dep_first =~ s/#PACKAGE#/$opts{package}/g if exists $opts{package};
+	if (exists $opts{package} and not $opts{template_mode}) {
+	    $dep_first =~ s/#PACKAGE#/$opts{package}/g;
+	}
 	print { $fh } "$soname $dep_first\n" if defined $fh;
 	$res .= "$soname $dep_first\n" if defined wantarray;
 
 	foreach my $dep_next (@deps) {
-	    $dep_next =~ s/#PACKAGE#/$opts{package}/g if exists $opts{package};
+	    if (exists $opts{package} and not $opts{template_mode}) {
+	        $dep_next =~ s/#PACKAGE#/$opts{package}/g;
+	    }
 	    print { $fh } "| $dep_next\n" if defined $fh;
 	    $res .= "| $dep_next\n" if defined wantarray;
 	}
 	my $f = $self->{objects}{$soname}{fields};
 	foreach my $field (sort keys %{$f}) {
 	    my $value = $f->{$field};
-	    $value =~ s/#PACKAGE#/$opts{package}/g if exists $opts{package};
+	    if (exists $opts{package} and not $opts{template_mode}) {
+	        $value =~ s/#PACKAGE#/$opts{package}/g;
+	    }
 	    print { $fh } "* $field: $value\n" if defined $fh;
 	    $res .= "* $field: $value\n" if defined wantarray;
 	}
@@ -392,7 +398,7 @@ sub merge_symbols {
     my ($self, $object, $minver) = @_;
 
     my $soname = $object->{SONAME};
-    error(_g('cannot merge symbols from objects without SONAME'))
+    error(g_('cannot merge symbols from objects without SONAME'))
         unless $soname;
 
     my %include_groups = ();
@@ -457,7 +463,7 @@ sub merge_symbols {
 }
 
 sub is_empty {
-    my ($self) = @_;
+    my $self = shift;
     return scalar(keys %{$self->{objects}}) ? 0 : 1;
 }
 

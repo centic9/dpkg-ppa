@@ -27,14 +27,13 @@ deb\-origin \- Ficheros de información específicos del proveedor
 .SH SINOPSIS
 \fB/etc/dpkg/origins/\fP\fInombre\-de\-fichero\fP
 .SH DESCRIPCIÓN
-Los ficheros en \fB/etc/dpkg/origins\fP pueden ofrecer información de varios
-proveedores que proporcionan paquetes de Debian. Estos ficheros contienen
-varios campos, o comentarios en aquellas líneas que empiezan con
-«\fB#\fP». Cada campo empieza con una etiqueta, como \fBVendor\fP o \fBParent\fP,
-seguido de dos puntos y el cuerpo del campo. Sólo las etiquetas limitan los
-campos. En otras palabras, el texto de los campos puede tener una longitud
-de varias  líneas,pero las herramientas de instalación las juntarán todas en
-una sola al procesar el cuerpo del campo.
+The files in \fB/etc/dpkg/origins\fP can provide information about various
+vendors who are providing Debian packages. They contain a number of fields,
+or comments when the line starts with \(oq\fB#\fP\(cq.  Each field begins with
+a tag, such as \fBVendor\fP or \fBParent\fP, followed by a colon and the body of
+the field. Fields are delimited only by field tags. In other words, field
+text may be multiple lines in length, but the tools will join lines when
+processing the body of the field.
 .SH "CAMPOS OBLIGATORIOS"
 .TP 
 \fBVendor:\fP\fI proveedor\fP

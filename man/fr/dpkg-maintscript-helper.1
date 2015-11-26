@@ -1,7 +1,7 @@
 .\" dpkg manual page - dpkg-maintscript-helper(1)
 .\"
 .\" Copyright Â© 2010-2012 RaphaÃ«l Hertzog <hertzog@debian.org>
-.\" Copyright Â© 2011-2014 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2011-2015 Guillem Jover <guillem@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -88,10 +88,14 @@ réellement la substitution que dans les scripts du responsable dans la
 version \fB3.0\-1\fP, \fIdernière\-version\fP doit être \fB3.0\-1~\fP.
 .TP 
 \fIpaquet\fP
-\fIpaquet\fP est le nom du paquet. Quand le paquet est «\ Multi\-Arch: same\ », ce
-paramètre doit inclure le qualificatif d'architecture. S'il est vide ou
-omis, la variable d'environnement \fBDPKG_MAINTSCRIPT_PACKAGE\fP (telle que
-définie par \fBdpkg\fP) sera utilisée.
+The package name. When the package is \(lqMulti\-Arch: same\(rq this
+parameter must include the architecture qualifier, otherwise it should
+\fBnot\fP usually include the architecture qualifier (as it would disallow
+cross\-grades, or switching from being architecture specific to architecture
+\fBall\fP or vice versa).  If the parameter is empty or omitted, the
+\fBDPKG_MAINTSCRIPT_PACKAGE\fP and \fBDPKG_MAINTSCRIPT_ARCH\fP environment
+variables (as set by \fBdpkg\fP)  will be used to generate an arch\-qualified
+package name.
 .TP 
 \fB\-\-\fP
 Tous les paramètres des scripts du responsable doivent être passés au

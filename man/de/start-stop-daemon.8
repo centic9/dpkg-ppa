@@ -5,7 +5,7 @@
 .\" Copyright Â© 2000-2001 Wichert Akkerman <wakkerma@debian.org>
 .\" Copyright Â© 2002-2003 Adam Heath <doogie@debian.org>
 .\" Copyright Â© 2004 Scott James Remnant <keybuk@debian.org>
-.\" Copyright Â© 2008-2014 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2008-2015 Guillem Jover <guillem@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -57,7 +57,7 @@ Fehlerstatus 1 (0, falls \fB\-\-oknodo\fP angegeben wurde). Falls ein solcher
 Prozess nicht existiert, dann startet es eine Instanz, entweder unter
 Verwendung des ausführbaren Programms, das mittels \fB\-\-exec\fP (oder, falls
 angegeben, mittels \fB\-\-startas\fP) spezifiziert wurde. Jedes weitere auf der
-Befehlszeile nach \fB\-\-\fP angegebene Argument wird unverändert an das zu
+Kommandozeile nach \fB\-\-\fP angegebene Argument wird unverändert an das zu
 startende Programm weitergegeben.
 .TP 
 \fB\-K\fP, \fB\-\-stop\fP
@@ -70,7 +70,8 @@ Prozess existiert, dann beendet sich \fBstart\-stop\-daemon\fP mit Fehlerstatus 
 .TP 
 \fB\-T\fP, \fB\-\-status\fP
 Überprüft auf die Existenz eines bestimmten Prozesses und liefert den
-Exit\-Status\-Code entsprechend der »LSB Init Script Actions« zurück.
+Exit\-Status\-Code entsprechend der »LSB Init Script Actions« zurück (seit
+Version 1.16.1).
 .TP 
 \fB\-H\fP, \fB\-\-help\fP
 Zeige Bedienungsinformationen und beendet sich.
@@ -82,12 +83,12 @@ Zeige die Programmversion und beendet sich.
 .SS Abgleichoptionen
 .TP 
 \fB\-\-pid\fP \fIPID\fP
-Prüfe auf einen Prozess mit der angegebenen \fIPID\fP. Die \fIPID\fP muss eine
-Zahl größer Null sein.
+Prüfe auf einen Prozess mit der angegebenen \fIPID\fP (seit Version
+1.17.6). Die \fIPID\fP muss eine Zahl größer Null sein.
 .TP 
 \fB\-\-ppid\fP \fIPPID\fP
-Prüfe auf einen Prozess mit der angegebenen \fIPPID\fP (Eltern\-PID). Die
-\fIPPID\fP muss eine Zahl größer Null sein.
+Prüfe auf einen Prozess mit der angegebenen Eltern\-PID \fIPPID\fP (seit Version
+1.17.7). Die \fIPPID\fP muss eine Zahl größer Null sein.
 .TP 
 \fB\-p\fP, \fB\-\-pidfile\fP \fIpid\-Datei\fP
 Prüfe, ob ein Prozess \fIpid\-Datei\fP erstellt hat. Hinweis: Wird diese
@@ -169,14 +170,14 @@ Gebe keine informativen Meldungen aus, zeige nur Fehlermeldungen an.
 \fB\-c \fP, \fB \-\-chuid \fP\fIBenutzername\fP|\fIuid\fP[\fB:\fP\fIGruppe\fP|\fIgid\fP]
 Wechsele vor dem Start des Prozesses zu diesem Benutzername/uid. Sie können
 durch Anhängen von \fB:\fP auch die Gruppe spezifizieren, in diesem Fall wird
-die Gruppe oder gid wie bei dem »chown«\-Befehl (\fIBenutzer\fP\fB:\fP\fIGruppe\fP)
-angegeben. Falls ein Benutzer ohne Gruppe angegeben ist, wird die primäre
-GID für diesen Benutzer verwandt. Wenn Sie diese Option verwenden, müssen
-Sie daran denken, dass die primäre und zusätzliche Gruppen auch gesetzt
-werden, selbst wenn die Option \fB\-\-group\fP nicht angegeben wird. Die Option
-\fB\-\-group\fP ist nur für Gruppen, in denen der Benutzer normalerweise kein
-Mitglied ist (wie das Hinzufügen von pro\-Prozess Gruppenmitgliedschaften für
-generische Benutzer wie \fBnobody\fP).
+die Gruppe oder gid wie bei dem Befehl \fBchown\fP(1)
+(\fIBenutzer\fP\fB:\fP\fIGruppe\fP) angegeben. Falls ein Benutzer ohne Gruppe
+angegeben ist, wird die primäre GID für diesen Benutzer verwandt. Wenn Sie
+diese Option verwenden, müssen Sie daran denken, dass die primäre und
+zusätzliche Gruppen auch gesetzt werden, selbst wenn die Option \fB\-\-group\fP
+nicht angegeben wird. Die Option \fB\-\-group\fP ist nur für Gruppen, in denen
+der Benutzer normalerweise kein Mitglied ist (wie das Hinzufügen von
+pro\-Prozess Gruppenmitgliedschaften für generische Benutzer wie \fBnobody\fP).
 .TP 
 \fB\-r\fP, \fB\-\-chroot\fP \fIWurzel\fP
 Chdir und chroot vor dem Start des Prozesse zu \fIWurzel\fP. Bitte beachten
@@ -192,7 +193,7 @@ Wurzelverzeichnis wechseln.
 Typischerweise verwendet für Programme, die sich nicht selbständig
 ablösen. Diese Option zwingt \fBstart\-stop\-daemon\fP vor dem Start des
 Prozesses einen Fork durchzuführen, und zwingt diesen dann in den
-Hintergrund. \fBWARNUNG: start\-stop\-daemon\fP kann nicht den Rückgabewert
+Hintergrund. \fBWarnung: start\-stop\-daemon\fP kann nicht den Rückgabewert
 überprüfen, falls der Prozess aus \fBirgendeinem\fP Grund nicht startet. Dies
 ist ein letztes Mittel und ist nur für Programme gedacht, bei denen das
 selbstständige Forken keinen Sinn ergibt oder wo es nicht sinnvoll ist, den
@@ -200,30 +201,32 @@ Code hierfür hinzuzufügen.
 .TP 
 \fB\-C\fP, \fB\-\-no\-close\fP
 Keinen Dateideskriptor schließen, wenn ein Daemon in den Hintergrund
-gezwungen wird. Dies wird zu Fehlersuchzwecken angewandt oder um
-Dateideskriptoren zur Protokollierung der Prozessausgabe umzuleiten. Nur
-relevant bei der Verwendung von \fB\-\-background\fP.
+gezwungen wird (seit Version 1.16.5). Dies wird zu Fehlersuchzwecken
+angewandt oder um Dateideskriptoren zur Protokollierung der Prozessausgabe
+umzuleiten. Nur relevant bei der Verwendung von \fB\-\-background\fP.
 .TP 
 \fB\-N\fP, \fB\-\-nicelevel\fP \fIGanzzahl\fP
 Dies ändert die Priorität des Prozesses bevor er gestartet wird.
 .TP 
 \fB\-P\fP, \fB\-\-procsched\fP \fIStrategie\fP\fB:\fP\fIPriorität\fP
 Dies ändert die Prozesssteuerstrategie (»process scheduler policy«) und die
-Priorität des Prozesses, bevor dieser gestartet wird. Die Priorität kann
-optional festgelegt werden, indem ein \fB:\fP gefolgt von einem Wert angegeben
-wird. Die Standard\-\fIPriorität\fP beträgt 0. Die derzeit unterstützten Werte
-für die Strategie lauten \fBother\fP, \fBfifo\fP und \fBrr\fP.
+Priorität des Prozesses, bevor dieser gestartet wird (seit Version
+1.15.0). Die Priorität kann optional festgelegt werden, indem ein \fB:\fP
+gefolgt von einem Wert angegeben wird. Die Standard\-\fIPriorität\fP beträgt
+0. Die derzeit unterstützten Werte für die Strategie lauten \fBother\fP,
+\fBfifo\fP und \fBrr\fP.
 .TP 
 \fB\-I\fP, \fB\-\-iosched\fP \fIKlasse\fP\fB:\fP\fIPriorität\fP
 Dies ändert die IO\-Steuerklasse (»IO scheduler class«) und die Priorität des
-Prozesses, bevor dieser gestartet wird. Die Priorität kann optional
-festgelegt werden, indem ein \fB:\fP gefolgt von einem Wert angegeben wird. Die
-Standard\-\fIPriorität\fP beträgt 4, außer \fIKlasse\fP lautet \fBidle\fP, dann
-beträgt sie immer 7. Die derzeit unterstützten Werte für die \fIKlasse\fP
-lauten \fBidle\fP, \fBbest\-effort\fP und \fBreal\-time\fP.
+Prozesses, bevor dieser gestartet wird (seit Version 1.15.0). Die Priorität
+kann optional festgelegt werden, indem ein \fB:\fP gefolgt von einem Wert
+angegeben wird. Die Standard\-\fIPriorität\fP beträgt 4, außer \fIKlasse\fP lautet
+\fBidle\fP, dann beträgt sie immer 7. Die derzeit unterstützten Werte für die
+\fIKlasse\fP lauten \fBidle\fP, \fBbest\-effort\fP und \fBreal\-time\fP.
 .TP 
 \fB\-k\fP, \fB\-\-umask\fP \fIMaske\fP
-Dies setzt die umask des Prozesses, bevor er gestartet wird.
+Dies setzt die umask des Prozesses, bevor er gestartet wird (seit Version
+1.13.22).
 .TP 
 \fB\-m\fP, \fB\-\-make\-pidfile\fP
 Verwendet, wenn ein Programm gestartet wird, das keine eigene PID\-Datei
@@ -231,15 +234,16 @@ anlegt. Diese Option sorgt dafür, dass \fBstart\-stop\-daemon\fP die mit
 \fB\-\-pidfile\fP referenzierte Datei anlegt und die PID kurz vor der Ausführung
 des Prozesse hineinlegt. Beachten Sie, dass die Datei beim Anhalten des
 Programms nur entfernt wird, falls \fB\-\-remove\-pidfile\fP verwandt
-wird. \fBHINWEIS:\fP Diese Funktion könnte in nicht allen Fällen
+wird. \fBHinweis:\fP Diese Funktion könnte in nicht allen Fällen
 funktionieren. Insbesondere wenn das auszuführende Programm sich vom
 Hauptprozess forkt. Deshalb ist diese Option normalerweise nur in
 Kombination mit der Option \fB\-\-background\fP sinnvoll.
 .TP 
 \fB\-\-remove\-pidfile\fP
 Wird verwandt, wenn ein Programm gestoppt wird, das seine PID\-Datei nicht
-entfernt. Diese Option führt dazu, dass \fBstart\-stop\-daemon\fP die durch
-\fB\-\-pidfile\fP referenzierte Datei nach der Beendigung des Prozesses entfernt.
+entfernt (seit Version 1.17.19). Diese Option führt dazu, dass
+\fBstart\-stop\-daemon\fP die durch \fB\-\-pidfile\fP referenzierte Datei nach der
+Beendigung des Prozesses entfernt.
 .TP 
 \fB\-v\fP, \fB\-\-verbose\fP
 Gibt ausführliche informative Meldungen aus.

@@ -17,6 +17,7 @@ use strict;
 use warnings;
 
 use Test::More tests => 8;
+
 use File::Temp qw(tempfile);
 
 use_ok('Dpkg::IPC');
@@ -61,10 +62,9 @@ is($string2, $string1, '{from,to}_handle');
 $pid = spawn(exec => 'cat',
 	     from_file => $tmp1_name,
 	     to_file => $tmp2_name,
-	     wait_child => 1,
-	     timeout => 5);
+	     wait_child => 1);
 
-ok($pid, 'execute cat program, I/O to filenames, wait and timeout');
+ok($pid, 'execute cat program, I/O to filenames and wait');
 
 open $tmp_fh, '<', $tmp2_name
     or die "cannot open $tmp2_name: $!";
@@ -76,6 +76,6 @@ is($string2, $string1, '{from,to}_file');
 eval {
     $pid = spawn(exec => ['sleep', '10'],
 	         wait_child => 1,
-	         timeout => 5);
+	         timeout => 1);
 };
 ok($@, 'fails on timeout');

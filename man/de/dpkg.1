@@ -6,7 +6,7 @@
 .\" Copyright Â© 2000-2003 Adam Heath <doogie@debian.org>
 .\" Copyright Â© 2002 Josip Rodin
 .\" Copyright Â© 2004-2005 Scott James Remnant <keybuk@debian.org>
-.\" Copyright Â© 2006-2014 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2006-2015 Guillem Jover <guillem@debian.org>
 .\" Copyright Â© 2007-2008 Ian Jackson <ian@davenant.greenend.org.uk>
 .\" Copyright Â© 2008-2011 RaphaÃ«l Hertzog <hertzog@debian.org>
 .\"
@@ -36,7 +36,7 @@ dpkg \- Paketverwalter für Debian
 \fBdpkg\fP [\fIOption\fP ?] \fIAktionen\fP
 .
 .SH WARNUNG
-Dieses Handbuch ist für Benutzer gedacht, die die Befehlszeilenoptionen und
+Dieses Handbuch ist für Benutzer gedacht, die die Kommandozeilenoptionen und
 Paketzustände von \fBdpkg\fP detaillierter verstehen wollen, als durch \fBdpkg
 \-\-help\fP beschrieben ist.
 
@@ -48,7 +48,7 @@ besonders unzulänglich.
 .SH BESCHREIBUNG
 \fBdpkg\fP ist ein Werkzeug, um Debian\-Pakete zu installieren, zu bauen und zu
 verwalten. Die primäre und benutzerfreundlichere Oberfläche für \fBdpkg\fP ist
-\fBaptitude\fP(1). \fBdpkg\fP selbst wird komplett über Befehlszeilenoptionen
+\fBaptitude\fP(1). \fBdpkg\fP selbst wird komplett über Kommandozeilenoptionen
 gesteuert, die aus genau einer Aktion und Null oder mehreren Optionen
 bestehen. Der Aktionsparameter teilt \fBdpkg\fP mit, was zu tun ist, und die
 Optionen steuern die Aktionen in irgendeiner Weise.
@@ -176,10 +176,10 @@ so dass diese, falls etwas schief geht, wiederhergestellt werden können.
 wird.
 .TP 
 \fB\-\-triggers\-only\fP \fIPaket\fP ?|\fB\-a\fP|\fB\-\-pending\fP
-Verarbeite nur Trigger. Alle ausstehenden Trigger werden verarbeitet. Falls
-Paketnamen übergeben werden, werden nur die Trigger dieser Pakete
-verarbeitet, jedes genau einmal wo notwendig. Die Verwendung dieser Option
-kann Pakete in die unzulässigen Stati \fBtriggers\-awaited\fP und
+Verarbeite nur Trigger (seit Dpkg 1.14.17). Alle ausstehenden Trigger werden
+verarbeitet. Falls Paketnamen übergeben werden, werden nur die Trigger
+dieser Pakete verarbeitet, jedes genau einmal wo notwendig. Die Verwendung
+dieser Option kann Pakete in die unzulässigen Stati \fBtriggers\-awaited\fP und
 \fBtriggers\-pending\fP bringen. Durch die Ausführung von »\fBdpkg \-\-configure
 \-\-pending\fP« kann dies später behoben werden.
 .TP 
@@ -235,9 +235,10 @@ Entgültiges Löschen eines Paketes besteht aus den folgenden Schritten:
 Überprüft die Integrität von \fIPaketname\fP oder allen Paketen, falls nicht
 angegeben, indem Informationen aus den durch ein Paket installierten Dateien
 mit den in der \fBdpkg\fP\-Datenbank gespeicherten Dateimetadateninformationen
-verglichen werden. Die Quelle der Dateimetadateninformationen in der
-Datenbank ist das Binärpaket selbst. Diese Metadaten werden zum Zeitpunkt
-des Entpackens während des Installationsprozesses gesammelt.
+verglichen werden (seit Dpkg 1.17.2). Die Quelle der
+Dateimetadateninformationen in der Datenbank ist das Binärpaket
+selbst. Diese Metadaten werden zum Zeitpunkt des Entpackens während des
+Installationsprozesses gesammelt.
 
 Derzeit ist die einzige funktionale Prüfung eine Md5sum\-Überprüfung gegen
 den gespeicherten Wert in der Datei\-Datenbank. Er wird nur geprüft, falls
@@ -249,7 +250,9 @@ werden. Standardmäßig wird das Format \fBrpm\fP verwandt. Das kann sich in der
 Zukunft aber ändern und daher sollten Programme, die die Ausgabe dieses
 Befehls auswerten, explizit das Format angeben, das sie erwarten.
 .TP 
-\fB\-\-update\-avail\fP, \fB\-\-merge\-avail\fP [\fIPackages\-Datei\fP]
+\fB\-\-update\-avail\fP [\fIPackages\-Datei\fP]
+.TQ
+\fB\-\-merge\-avail\fP [\fIPackages\-Datei\fP]
 Aktualisiere \fBdpkg\fPs und \fBdselect\fPs Verständnis darüber, welche Pakete
 verfügbar sind. Mit der Aktion \fB\-\-merge\-avail\fP wird alte Information mit
 der Information aus der \fIPackages\-Datei\fP zusammengeführt. Mit der Aktion
@@ -274,7 +277,7 @@ stattdessen auf ein Verzeichnis beziehen.
 .TP 
 \fB\-\-forget\-old\-unavail\fP
 Jetzt \fBveraltet\fP und ohne Funktion, da \fBdpkg\fP automatisch nicht
-installierte nicht verfügbare Pakete vergisst.
+installierte nicht verfügbare Pakete vergisst (seit Dpkg 1.15.4).
 .TP 
 \fB\-\-clear\-avail\fP
 Lösche die existierenden Informationen darüber, welche Pakete verfügbar
@@ -282,10 +285,11 @@ sind.
 .TP 
 \fB\-C\fP, \fB\-\-audit\fP [\fIPaketname\fP ?]
 Führt Plausibilitäts\- und Konsistenzprüfungen der Datenbank für \fIPaketname\fP
-oder alle Pakete, falls das Argument fehlt, durch. Sucht beispielsweise nach
-Paketen die auf Ihrem System nur teilweise installiert wurden oder fehlende,
-falsch oder veraltete Steuerdaten oder \-Dateien haben. \fBdpkg\fP wird einen
-Vorschlag machen, was mit Ihnen zur Korrektur gemacht werden sollte.
+oder alle Pakete, falls das Argument fehlt, durch (pro\-Paket\-Prüfungen seit
+Dpkg 1.17.10). Sucht beispielsweise nach Paketen die auf Ihrem System nur
+teilweise installiert wurden oder fehlende, falsch oder veraltete
+Steuerdaten oder \-Dateien haben. \fBdpkg\fP wird einen Vorschlag machen, was
+mit Ihnen zur Korrektur gemacht werden sollte.
 .TP 
 \fB\-\-get\-selections\fP [\fIPaket\-Name\-Muster\fP ?]
 Hole Liste von Paketauswahlen und schreibe sie auf die Standardausgabe. Ohne
@@ -294,9 +298,10 @@ Muster werden nicht\-installierte Pakete (d.h. solche, die vorher
 .TP 
 \fB\-\-set\-selections\fP
 Setze die Paketauswahl durch Einlesen einer Datei von der
-Standardeingabe. Diese Datei sollte im Format »\fIPaket\fP \fIZustand\fP« sein,
-wobei Zustand einer aus \fBinstall\fP, \fBhold\fP, \fBdeinstall\fP oder \fBpurge\fP
-ist. Leerzeilen und Kommentarzeilen (beginnend mit »#«) sind auch erlaubt.
+Standardeingabe. Diese Datei sollte im Format \(lq\fIPaket\fP \fIZustand\fP\(rq
+sein, wobei Zustand einer aus \fBinstall\fP, \fBhold\fP, \fBdeinstall\fP oder
+\fBpurge\fP ist. Leerzeilen und Kommentarzeilen (beginnend mit \(oq#\(cq) sind
+auch erlaubt.
 
 Die Datei \fIavailable\fP muss für diesen Befehl aktuell sein, damit dies
 Nutzen hat, andernfalls werden unbekannte Pakete mit einer Warnung
@@ -305,36 +310,74 @@ weitere Informationen.
 .TP 
 \fB\-\-clear\-selections\fP
 Setze den erbetenen Zustand von jedem nicht\-essenziellen Paket auf
-»Deinstallation«. Dies ist dazu gedacht, direkt vor \fB\-\-set\-selections\fP
-verwendet zu werden, um jedes Paket, das nicht in der Liste von
-\fB\-\-set\-selections\fP vorkommt, zu deinstallieren.
+»Deinstallation« (seit Dpkg 1.13.18). Dies ist dazu gedacht, direkt vor
+\fB\-\-set\-selections\fP verwendet zu werden, um jedes Paket, das nicht in der
+Liste von \fB\-\-set\-selections\fP vorkommt, zu deinstallieren.
 .TP 
 \fB\-\-yet\-to\-unpack\fP
 Sucht nach Paketen, die zur Installation ausgewählt wurden, die aber aus
 irgendeinem Grund noch nicht installiert wurden.
 .TP 
+\fB\-\-predep\-packages\fP
+Gibt ein einzelnes Paket aus, das das Ziel einer oder mehrere relevanter
+Vorabhängigkeiten ist und selbst keine unerfüllten Vorabhängigkeiten hat.
+.IP
+Falls ein solches Paket vorhanden ist, wird es als Dateieintrag für
+»Packages« ausgegeben, der passend weiterverarbeitet werden kann.
+.IP
+Liefert 0 zurück, wenn ein Paket ausgegeben wird und 1, wenn kein passendes
+Paket verfügbar ist und 2 im Fehlerfall.
+.TP 
 \fB\-\-add\-architecture \fP\fIArchitektur\fP
 Fügt \fIArchitektur\fP zu der Liste von Architekturen hinzu, für die Pakete
-ohne die Verwendung von \fB\-\-force\-architecture\fP installiert werden
-können. Die Architektur, für die \fBdpkg\fP gebaut wurde (d.h. der Ausgabe von
-\fB\-\-print\-architecture\fP), ist immer Teil der Liste.
+ohne die Verwendung von \fB\-\-force\-architecture\fP installiert werden können
+(seit Dpkg 1.16.2). Die Architektur, für die \fBdpkg\fP gebaut wurde (d.h. der
+Ausgabe von \fB\-\-print\-architecture\fP), ist immer Teil der Liste.
 .TP 
 \fB\-\-remove\-architecture \fP\fIArchitektur\fP
 Entfernt \fIArchitektur\fP von der Liste von Architekturen, für die Pakete ohne
-die Verwendung von \fB\-\-force\-architecture\fP installiert werden können. Falls
-die Architektur derzeit in der Datenbank benutzt wird, dann wird die
-Durchführung verweigert, falls nicht \fB\-\-force\-architecture\fP verwandt
-wird. Die Architektur, für die \fBdpkg\fP gebaut wurde (d.h. der Ausgabe von
-\fB\-\-print\-architecture\fP), kann niemals von der Liste entfernt werden.
+die Verwendung von \fB\-\-force\-architecture\fP installiert werden können (seit
+Dpkg 1.16.2). Falls die Architektur derzeit in der Datenbank benutzt wird,
+dann wird die Durchführung verweigert, falls nicht \fB\-\-force\-architecture\fP
+verwandt wird. Die Architektur, für die \fBdpkg\fP gebaut wurde (d.h. der
+Ausgabe von \fB\-\-print\-architecture\fP), kann niemals von der Liste entfernt
+werden.
 .TP 
 \fB\-\-print\-architecture\fP
 Gebe die Architektur der Pakete aus, die \fBdpkg\fP installiert (beispielsweise
-»i386«).
+\(lqi386\(rq).
 .TP 
 \fB\-\-print\-foreign\-architectures\fP
 Gibt eine durch Zeilenumbrüche getrennte Liste von zusätzlichen
 Architekturen aus, für die \fBdpkg\fP konfiguriert ist, Paketinstallationen für
-zu erlauben.
+zu erlauben (seit Dpkg 1.16.2).
+.TP 
+\fB\-\-assert\-\fP\fIFunktionalität\fP
+Bestätigt, dass \fBdpkg\fP die erbetene Funktionalität unterstützt. Liefert 0,
+falls die Funktionalität voll unterstützt wird, 1, falls die Funktionalität
+bekannt ist aber noch keine Unterstützung dafür geliefert werden kann und 2,
+falls die Funktionalität unbekannt ist. Die aktuelle Liste von bestätigbaren
+Funktionalitäten ist wie folgt:
+.RS
+.TP 
+\fBsupport\-predepends\fP
+Unterstützt das Feld \fBPre\-Depends\fP (seit Dpkg 1.1.0).
+.TP 
+\fBworking\-epoch\fP
+Unterstützt Epochen in Versionszeichenketten (seit Dpkg 1.4.0.7).
+.TP 
+\fBlong\-filenames\fP
+Unterstützt in \fBdeb\fP(5)\-Archiven lange Dateinamen (seit Dpkg 1.4.1.17).
+.TP 
+\fBmulti\-conrep\fP
+Unterstützt mehrere \fBConflicts\fP und \fBReplaces\fP (seit Dpkg 1.4.1.19).
+.TP 
+\fBmulti\-arch\fP
+Unterstützt Multi\-Arch\-Felder und deren Semantik (seit Dpkg 1.16.2).
+.TP 
+\fBversioned\-provides\fP
+Unterstützt versionierte \fBProvides\fP (seit Dpkg 1.17.11).
+.RE
 .TP 
 \fB\-\-compare\-versions \fP\fIVer1 Op Ver2\fP
 .\" .TP
@@ -350,7 +393,10 @@ unterscheiden. Die folgenden behandeln leere Versionen als jünger als jede
 andere Version: \fBlt le eq ne ge gt\fP. Die folgenden behandeln eine leere
 Version als älter als jede Version: \fBlt\-nl le\-nl ge\-nl gt\-nl\fP. Die
 folgenden sind nur aus Kompatibilität mit der Steuerdateisyntax
-bereitgestellt: \fB< << <= = >= >> >\fP.
+bereitgestellt: \fB< << <= = >= >> >\fP. Die
+Operatoren \fB<\fP und \fB>\fP sind obsolet und sollten \fBnicht\fP verwandt
+werden, da ihre Semantik verwirrend ist. Beispielsweise ergibt \fB0.1 <
+0.1\fP wahr.
 .TP 
 \fB\-?\fP, \fB\-\-help\fP
 Zeige eine kurze Hilfenachricht an.
@@ -373,14 +419,16 @@ Aktionen.
     Baue ein deb\-Paket.
 \fB\-c\fP, \fB\-\-contents\fP \fIArchiv\fP
     Liste den Inhalt eines deb\-Paketes auf.
-\fB\-e\fP, \fB\-\-control\fP \fIDateiname\fP [\fIVerzeichnis\fP]
+\fB\-e\fP, \fB\-\-control\fP \fIArchiv\fP [\fIVerzeichnis\fP]
     Extrahiere Steuerinformationen von einem Paket.
 \fB\-x\fP, \fB\-\-extract\fP \fIArchiv Verzeichnis\fP
     Extrahiere die vom Paket enthaltenen Dateien.
 \fB\-f\fP, \fB\-\-field\fP \fIArchiv\fP [\fISteuerfeld\fP] ?
     Zeige das/die Steuerfeld(er) eines Paketes an.
+\fB\-\-ctrl\-tarfile\fP \fIArchive\fP
+    Gebe die von einem Debian\-Paket enthaltene Steuer\-Tardatei aus.
 \fB\-\-fsys\-tarfile\fP \fIArchiv\fP
-    Zeige die von einem Debian\-Paket enthaltene Dateisystem\-Tardatei an.
+    Gebe die von einem Debian\-Paket enthaltene Dateisystem\-Tardatei aus.
 \fB\-I\fP, \fB\-\-info\fP \fIArchiv\fP [\fISteuerdatei\fP ?]
     Zeige Informationen über ein Paket.
 .fi
@@ -407,7 +455,7 @@ Aktionen.
 .fi
 .
 .SH OPTIONEN
-Alle Optionen können auf der Befehlszeile, in der
+Alle Optionen können auf der Kommandozeile, in der
 \fBdpkg\fP\-Konfigurationsdatei \fI/etc/dpkg/dpkg.cfg\fP oder Fragementdateien (mit
 Namen, die auf das Shell\-Muster \(aq[0\-9a\-zA\-Z_\-]*\(aq passen) in den
 Dateien im Konfigurationsverzeichnis \fI/etc/dpkg/dpkg.cfg.d/\fP angegeben
@@ -447,8 +495,9 @@ oder \fB\-\-debug=help\fP zeigen diese Debugging\-Werte an.
    1000   Umfangreiches Gelaber beispielsweise über das dpkg/info\-Verzeichnis
    2000   Verrückte Mengen an Gelaber
 .TP 
-\fB\-\-force\-\fP\fISachen\fP, \fB\-\-no\-force\-\fP\fISachen\fP, \fB\-\-refuse\-\fP\fISachen\fP
-
+\fB\-\-force\-\fP\fISachen\fP
+.TQ
+\fB\-\-no\-force\-\fP\fISachen\fP, \fB\-\-refuse\-\fP\fISachen\fP
 Erzwinge oder verweigere (\fBno\-force\fP und \fBrefuse\fP bedeuten das gleiche)
 bestimmte Sachen. \fISachen\fP ist eine Komma\-separierte Liste von Dingen, die
 im folgenden beschrieben sind. \fB\-\-force\-help\fP zeigt eine Nachricht an, die
@@ -474,7 +523,7 @@ diese Option mit Vorsicht.\fP
 \fBconfigure\-any\fP: Konfiguriere auch jedes entpackte, aber unkonfigurierte
 Paket von dem das aktuelle Paket abhängt.
 
-\fBhold\fP: Verarbeite auch Pakete, die mit »halten« markiert sind.
+\fBhold\fP: Verarbeite auch Pakete, die mit \(lqhalten\(rq markiert sind.
 
 \fBremove\-reinstreq\fP: Entferne ein Paket, selbst falls es defekt ist und zur
 Neuinstallation markiert ist. Dies kann beispielsweise dazu führen, dass
@@ -490,7 +539,8 @@ Vorsicht.
 
 \fBdepends\-version\fP: Ignoriere Versionen bei der Prüfung von Abhängigkeiten.
 
-\fBbreaks\fP: Installiere, selbst falls dies ein anderes Paket beschädigt.
+\fBbreaks\fP: Installiere, selbst falls dies ein anderes Paket beschädigt (seit
+Dpkg 1.14.6).
 
 \fBconflicts\fP: Installiere, selbst wenn es mit einem anderen Paket in
 Konflikt steht. Dies ist gefährlich, da dies gewöhnlich dazu führt, dass
@@ -519,25 +569,27 @@ welchem Falle dies verwendet wird, um die letztendliche Aktion zu bestimmen.
 
 \fBconfask\fP: Falls eine Conffile verändert wurde, biete immer an, sie durch
 die Version aus dem Paket zu ersetzen, selbst falls sich die Version in dem
-Paket nicht geändert hat. Falls auch einer von \fB\-\-force\-confmiss\fP,
-\fB\-\-force\-confnew\fP, \fB\-\-force\-confold\fP oder \fB\-\-force\-confdef\fP angegeben
-wird, wird sie dazu verwandt, die letztendliche Aktion zu ermitteln.
+Paket nicht geändert hat (seit Dpkg 1.15.8). Falls auch einer von
+\fB\-\-force\-confmiss\fP, \fB\-\-force\-confnew\fP, \fB\-\-force\-confold\fP oder
+\fB\-\-force\-confdef\fP angegeben wird, wird sie dazu verwandt, die letztendliche
+Aktion zu ermitteln.
 
 \fBoverwrite\fP: Überschreibe die Datei aus einem Paket mit einer Datei aus
 einem anderen Paket.
 
-\fBoverwrite\-dir\fP Überschreibe das Verzeichnis aus einem Paket mit einer
+\fBoverwrite\-dir\fP: Überschreibe das Verzeichnis aus einem Paket mit einer
 Datei aus einem anderen Paket.
 
 \fBoverwrite\-diverted\fP: Überschreibe eine umgeleitete (»diverted«) Datei mit
 einer nicht umgeleiteten.
 
-\fBunsafe\-io\fP: Beim Entpacken keine sicheren E/A\-Operationen
-durchführen. Derzeit impliziert dies, dass vor Dateiumbenennungen kein
-Systemsync durchgeführt wird. Dieser Sync führt bei einigen Dateisystemen zu
-erheblichen Leistungseinbußen, unglücklicherweise bei solchen, die überhaupt
-sichere E/A aufgrund ihres unzuverlässigen Verhaltens benötigen, auf denen
-bei abrupten Systemabstürzen Dateien der Länge Null entstehen können.
+\fBunsafe\-io\fP: Beim Entpacken keine sicheren E/A\-Operationen durchführen
+(seit Dpkg 1.15.8.6). Derzeit impliziert dies, dass vor Dateiumbenennungen
+kein Systemsync durchgeführt wird. Dieser Sync führt bei einigen
+Dateisystemen zu erheblichen Leistungseinbußen, unglücklicherweise bei
+solchen, die überhaupt sichere E/A aufgrund ihres unzuverlässigen Verhaltens
+benötigen, auf denen bei abrupten Systemabstürzen Dateien der Länge Null
+entstehen können.
 
 \fIHinweis:\fP Für den Hauptmisstäter Ext4 sollten Sie stattdessen die
 Einhängeoption \fBnodelalloc\fP verwenden, die sowohl die Leistungseinbuße
@@ -553,7 +605,8 @@ vorsichtig.\fP
 \fBarchitecture\fP: Verarbeite sogar Pakete mit der falschen oder keiner
 Architektur.
 
-\fBbad\-version\fP: Verarbeite sogar Pakete mit falschen Versionen.
+\fBbad\-version\fP: Verarbeite sogar Pakete mit falschen Versionen (seit Dpkg
+1.16.1).
 
 \fBbad\-path\fP: Im \fBPATH\fP fehlen wichtige Programme, daher sind Probleme
 wahrscheinlich.
@@ -622,35 +675,37 @@ installiert ist.
 Setzt einen Aufruf\-Hook \fIBefehl\fP, der via »sh \-c« vor oder nach dem
 \fBdpkg\fP\-Aufruf der \fBdpkg\fP\-Aktionen \fIunpack\fP, \fIconfigure\fP, \fIinstall\fP,
 \fItriggers\-only\fP, \fIremove\fP, \fIpurge\fP, \fIadd\-architecture\fP und
-\fIremove\-architecture\fP ausgeführt wird. Diese Option kann mehrfach angegeben
-werden. Die Reihenfolge der Optionen wird erhalten, wobei Einträge aus den
-Konfigurationsdateien Vorrang einnehmen. Die Umgebungsvariable
-\fBDPKG_HOOK_ACTION\fP wird für die Hooks auf die aktuelle \fBdpkg\fP\-Aktion
-gesetzt. Hinweis: Oberflächen könnten \fBdpkg\fP mehrere Male pro Ausführung
-aufrufen, wodurch die Hooks öfter als erwartet ausgeführt werden könnten.
+\fIremove\-architecture\fP ausgeführt wird (seit Dpkg 1.15.4; Aktionen
+\fIadd\-architecture\fP und \fIremove\-architecture\fP seit Dpkg 1.17.19). Diese
+Option kann mehrfach angegeben werden. Die Reihenfolge der Optionen wird
+erhalten, wobei Einträge aus den Konfigurationsdateien Vorrang
+einnehmen. Die Umgebungsvariable \fBDPKG_HOOK_ACTION\fP wird für die Hooks auf
+die aktuelle \fBdpkg\fP\-Aktion gesetzt. Hinweis: Oberflächen könnten \fBdpkg\fP
+mehrere Male pro Ausführung aufrufen, wodurch die Hooks öfter als erwartet
+ausgeführt werden könnten.
 .TP 
 \fB\-\-path\-exclude=\fP\fIGlob\-Muster\fP
 .TQ
 \fB\-\-path\-include=\fP\fIGlob\-Muster\fP
 Setzt \fIGlob\-Muster\fP als Pfadfilter, entweder durch Ausschluss oder durch
 Wiedereinschluss vorher ausgeschlossener Pfade, die während der Installation
-auf bestimmte Muster passen.
+auf bestimmte Muster passen (seit Dpkg 1.15.8).
 
 \fIWarnung: Beachten Sie, dass abhängig von den ausgeschlossenen Pfaden Sie
 Ihr System komplett beschädigen könnten. Verwenden Sie dies daher
 vorsichtig.\fP
 
 Das Glob\-Muster kann die gleichen Platzhalter wie in der Shell verwenden,
-wobei »*« auf eine beliebige Folge von Zeichen, auch dem Leerzeichen und
-»/«, passt. Beispielsweise passt \fI»/usr/*/READ*«\fP auf
-\fI»/usr/share/doc/package/README«\fP. Wie gewöhnlich passt »?« auf ein
-einzelnes Zeichen (wieder auch auf »/«). Und »[« beginnt eine Zeichenklasse,
-die eine Liste von Zeichen, Bereiche und Komplemente enthalten kann. Lesen
-Sie \fBglob\fP(7) für detaillierte Informationen über das Globben. Hinweis:
-Aktuelle Implementierungen könnten mehr Verzeichnisse und symbolische Links
-als benötigt wieder einschließen. Um auf der sicheren Seite zu sein und in
-der Zukunft mögliche Entpackfehler zu vermeiden, könnte dies durch
-zukünftige Arbeiten behoben werden.
+wobei \(oq*\(cq auf eine beliebige Folge von Zeichen, auch dem Leerzeichen
+und \(oq/\(cq, passt. Beispielsweise passt \(Fo\fI/usr/*/READ*\fP\(Fc auf
+\(Fo\fI/usr/share/doc/package/README\fP\(Fc. Wie gewöhnlich passt \(oq?\(cq auf
+ein einzelnes Zeichen (wieder auch auf \(oq/\(cq). Und \(oq[\(cq beginnt
+eine Zeichenklasse, die eine Liste von Zeichen, Bereiche und Komplemente
+enthalten kann. Lesen Sie \fBglob\fP(7) für detaillierte Informationen über das
+Globben. Hinweis: Aktuelle Implementierungen könnten mehr Verzeichnisse und
+symbolische Links als benötigt wieder einschließen. Um auf der sicheren
+Seite zu sein und in der Zukunft mögliche Entpackfehler zu vermeiden, könnte
+dies durch zukünftige Arbeiten behoben werden.
 
 Dies kann dazu verwandt werden, alle Pfade außer bestimmten zu entferen, ein
 typischer Fall lautet:
@@ -668,18 +723,18 @@ werden. Beide werden in der angegebenen Reihenfolge ausgewertet, wobei die
 letzte Regel, die auf eine Datei passt, die Entscheidung fällt.
 .TP 
 \fB\-\-verify\-format=\fP\fIFormatname\fP
-Setzt das Ausgabeformat für den Befehl \fB\-\-verify\fP.
+Setzt das Ausgabeformat für den Befehl \fB\-\-verify\fP (seit Dpkg 1.17.2).
 
 Derzeit wird nur das Ausgabeformat \fBrpm\fP unterstützt. Es besteht aus einer
 Zeile für jeden Pfad, der bei der Prüfung fehlschlug. Die Zeilen starten mit
 9 Zeichen, um die Ergebnisse jeder angegebenen Prüfung zu berichten. Ein
-»\fB?\fP« impliziert, dass die Prüfung nicht durchgeführt werden konnte (keine
-Unterstützung dafür, Dateirechte usw.). »\fB.\fP« impliziert, dass die Prüfung
-erfolgreich durchgeführt wurde und ein alphanumerisches Zeichen impliziert,
-dass eine angegebene Prüfung fehlschlug. Die Md5sum\-Überprüfung wird durch
-ein »\fB5\fP« als drittes Zeichen angezeigt. Der Zeile folgt ein Leerzeichen
-und ein Attributszeichen (derzeit »\fBc\fP« für Conffiles), ein weiteres
-Leerzeichen und der Pfadnmae.
+\(oq\fB?\fP\(cq impliziert, dass die Prüfung nicht durchgeführt werden konnte
+(keine Unterstützung dafür, Dateirechte usw.). \(oq\fB.\fP\(cq impliziert, dass
+die Prüfung erfolgreich durchgeführt wurde und ein alphanumerisches Zeichen
+impliziert, dass eine angegebene Prüfung fehlschlug. Die Md5sum\-Überprüfung
+wird durch ein \(oq\fB5\fP\(cq als drittes Zeichen angezeigt. Der Zeile folgt
+ein Leerzeichen und ein Attributszeichen (derzeit \(oq\fBc\fP\(cq für
+Conffiles), ein weiteres Leerzeichen und der Pfadnmae.
 .TP 
 \fB\-\-status\-fd \fP\fIn\fP
 Schicke maschinenlesbare Paketstatus\- und Fortschrittsinformationen an den
@@ -707,40 +762,51 @@ folgenden: \fBupgrade\fP, \fBinstall\fP (beide werden vor dem Entpacken versandt
 .TP 
 \fB\-\-status\-logger\fP=\fIBefehl\fP
 Schicke maschinenlesbare Paketstatus\- und Fortschrittsinformationen an die
-Standardeingabe des \fIBefehl\fPs der Shell. Diese Option kann mehrfach
-angegeben werden. Das verwandte Ausgabeformat ist identisch zu dem in
-\fB\-\-status\-fd.\fP
+Standardeingabe des \fIBefehl\fPs der Shell, was dann mittels »sh \-c«
+ausgeführt wird (seit Dpkg 1.16.0). Diese Option kann mehrfach angegeben
+werden. Das verwandte Ausgabeformat ist identisch zu dem in \fB\-\-status\-fd\fP.
 .RE
 .TP 
 \fB\-\-log=\fP\fIDateiname\fP
 Protokolliere Statusänderungsaktualisierungen und \-Aktionen in \fIDateiname\fP
 anstatt in die Standard\-Datei \fI/var/log/dpkg.log\fP. Falls diese Option
 mehrfach übergeben wird, wird der letzte Dateiname
-verwendet. Protokollnachrichten sind von der Form »JJJJ\-MM\-TT HH:MM:SS
-status \fIZustand\fP \fIPkt\fP \fIinstallierte\-Version\fP« für
-Statusänderungsaktualisierungen; »JJJJ\-MM\-TT HH:MM:SS \fIAktion\fP \fIPkt\fP
-\fIinstallierte\-Version\fP \fIverfügbare\-Version\fP« für Aktionen, wobei \fIAktion\fP
-entweder \fBinstall\fP, \fBupgrade\fP, \fBremove\fP oder \fBpurge\fP ist; und
-»YYYY\-MM\-DD HH:MM:SS conffile \fIDateiname\fP \fIEntscheidung\fP« für
-Conffile\-Änderungen ist, wobei \fIEntscheidung\fP entweder \fBinstall\fP oder
+verwendet. Protokollnachrichten sind von der Form \(oqJJJJ\-MM\-TT HH:MM:SS
+startup \fITyp\fP \fIBefehl\fP\(cq für jeden Dpkg\-Aufruf, wobei \fITyp\fP entweder
+\fBarchives\fP lautet (mit einem \fIBefehl\fP \fBunpack\fP oder \fBinstall\fP) oder
+\fBpackages\fP (mit einem Befehl \fBconfigure\fP, \fBtriggers\-only\fP, \fBremove\fP oder
+\fBpurge\fP); \(oqJJJJ\-MM\-TT HH:MM:SS status \fIZustand\fP \fIPkt\fP
+\fIinstallierte\-Version\fP\(cq für Statusänderungsaktualisierungen;
+\(oqJJJJ\-MM\-TT HH:MM:SS \fIAktion\fP \fIPkt\fP \fIinstallierte\-Version\fP
+\fIverfügbare\-Version\fP\(cq für Aktionen, wobei \fIAktion\fP entweder \fBinstall\fP,
+\fBupgrade\fP, \fBconfigure\fP, \fBtrigproc\fP, \fBdisappear\fP, \fBremove\fP oder \fBpurge\fP
+ist; und \(oqYYYY\-MM\-DD HH:MM:SS conffile \fIDateiname\fP \fIEntscheidung\fP\(cq
+für Conffile\-Änderungen ist, wobei \fIEntscheidung\fP entweder \fBinstall\fP oder
 \fBkeep\fP ist.
 .TP 
 \fB\-\-no\-debsig\fP
 Versuche nicht, Paketsignaturen zu überprüfen.
 .TP 
 \fB\-\-no\-triggers\fP
-Führe keine Trigger in diesem Durchlauf aus (Aktivierungen werden dennoch
-aufgezeichnet). Falls dies mit \fB\-\-configure\fP \fIPaket\fP oder
-\fB\-\-triggers\-only\fP \fIPaket\fP verwandt wird, wird das Postinst des benannten
-Pakets dennoch ausgeführt, selbst falls nur ein Trigger\-Lauf notwendig
-ist. Die Verwendung dieser Option kann Pakete in die unzulässigen Stati
-\fBtriggers\-awaited\fP und \fBtriggers\-pending\fP bringen. Durch die Ausführung
-von »\fBdpkg \-\-configure \-\-pending\fP« kann dies später behoben werden.
+Führe keine Trigger in diesem Durchlauf aus (seit Dpkg
+1.14.17). Aktivierungen werden aber dennoch aufgezeichnet. Falls dies mit
+\fB\-\-configure\fP \fIPaket\fP oder \fB\-\-triggers\-only\fP \fIPaket\fP verwandt wird, wird
+das Postinst des benannten Pakets dennoch ausgeführt, selbst falls nur ein
+Trigger\-Lauf notwendig ist. Die Verwendung dieser Option kann Pakete in die
+unzulässigen Stati \fBtriggers\-awaited\fP und \fBtriggers\-pending\fP
+bringen. Durch die Ausführung von »\fBdpkg \-\-configure \-\-pending\fP« kann dies
+später behoben werden.
 .TP 
 \fB\-\-triggers\fP
-Annulliert ein vorheriges \fB\-\-no\-triggers\fP.
+Annulliert ein vorheriges \fB\-\-no\-triggers\fP (seit Dpkg 1.14.17).
 .
 .SH UMGEBUNG
+.TP 
+\fBPATH\fP
+Es wird erwartet, dass diese Variable in der Umgebung gesetzt ist und auf
+die Systempfade zeigt, in denen eine Reihe von benötigten Programmen
+gefunden werden können. Falls sie nicht gesetzt ist oder die Programme nicht
+gefunden werden können, wird \fBdpkg\fP die Bearbeitung abbrechen.
 .TP 
 \fBHOME\fP
 Falls gesetzt wird \fBdpkg\fP es als das Verzeichnis verwenden, aus dem die
@@ -754,7 +820,8 @@ temporäre Dateien und Verzeichnisse erstellt werden.
 Das Programm, das \fBdpkg\fP ausführen wird, wenn es die Conffiles anzeigt.
 .TP 
 \fBSHELL\fP
-Das Programm, das \fBdpkg\fP ausführen wird, wenn es eine neue Shell startet.
+Das Programm, das \fBdpkg\fP ausführen wird, wenn es eine neue interaktive
+Shell startet.
 .TP 
 \fBCOLUMNS\fP
 Setzt die Anzahl von Spalten die \fBdpkg\fP verwenden soll, wenn es
@@ -762,44 +829,51 @@ formatierten Text anzeigt. Derzeit nur von \-l verwendet.
 .TP 
 \fBDPKG_SHELL_REASON\fP
 Wird von \fBdpkg\fP auf der Shell, die von der Conffile\-Eingabeaufforderung
-gestartet wird, um die Situation zu analysieren, gesetzt. Derzeit gültiger
-Wert: \fBconffile\-prompt\fP.
+gestartet wird, um die Situation zu analysieren, gesetzt (seit Dpkg
+1.15.6). Derzeit gültiger Wert: \fBconffile\-prompt\fP.
 .TP 
 \fBDPKG_CONFFILE_OLD\fP
 Wird von \fBdpkg\fP auf der Shell, die von der Conffile\-Eingabeaufforderung
-gestartet wird, um die Situation zu analysieren, gesetzt. Enthält den Pfad
-zu der alten Conffile.
+gestartet wird, um die Situation zu analysieren, gesetzt (seit Dpkg
+1.15.6). Enthält den Pfad zu der alten Conffile.
 .TP 
 \fBDPKG_CONFFILE_NEW\fP
 Wird von \fBdpkg\fP auf der Shell, die von der Conffile\-Eingabeaufforderung
-gestartet wird, um die Situation zu analysieren, gesetzt. Enthält den Pfad
-zu der neuen Conffile.
+gestartet wird, um die Situation zu analysieren, gesetzt (seit Dpkg
+1.15.6). Enthält den Pfad zu der neuen Conffile.
+.TP 
+\fBDPKG_HOOK_ACTION\fP
+Wird von \fBdpkg\fP auf der Shell, die beim Ausführen von Hook\-Aktionen
+gestartet wird, gesetzt (seit Dpkg 1.15.4). Enthält die aktuelle
+\fBdpkg\fP\-Aktion.
 .TP 
 \fBDPKG_RUNNING_VERSION\fP
 Wird von \fBdpkg\fP für die Betreuer\-Skript\-Umgebung auf die Version der
-aktuell laufenden Instanz von \fBdpkg\fP gesetzt.
+aktuell laufenden Instanz von \fBdpkg\fP gesetzt (seit Dpkg 1.14.17).
 .TP 
 \fBDPKG_MAINTSCRIPT_PACKAGE\fP
 Wird von \fBdpkg\fP für die Betreuer\-Skript\-Umgebung auf den in Arbeit
-befindlichen (nicht architekturqualifizierten) Paketnamen gesetzt.
+befindlichen (nicht architekturqualifizierten) Paketnamen gesetzt (seit Dpkg
+1.14.17).
 .TP 
 \fBDPKG_MAINTSCRIPT_PACKAGE_REFCOUNT\fP
 Wird von \fBdpkg\fP für die Betreuer\-Skript\-Umgebung auf die Paketreferenzzahl
 gesetzt, d.h. die Anzahl der Paketinstanzen mit einem Status größer als
-\fBnot\-installed\fP. Seit Dpkg 1.17.2.
+\fBnot\-installed\fP (seit Dpkg 1.17.2).
 .TP 
 \fBDPKG_MAINTSCRIPT_ARCH\fP
 Wird von \fBdpkg\fP für die Betreuer\-Skript\-Umgebung auf die Architektur
-gesetzt, für die das Paket gebaut wurde.
+gesetzt, für die das Paket gebaut wurde (seit Dpkg 1.15.4).
 .TP 
 \fBDPKG_MAINTSCRIPT_NAME\fP
 Wird von \fBdpkg\fP für die Betreuer\-Skript\-Umgebung auf den Namen des
-laufenden Skripts (preinst, postinst, prerm, postrm) gesetzt.
+laufenden Skripts, eines von \fBpreinst\fP, \fBpostinst\fP, \fBprerm\fP oder
+\fBpostrm\fP (seit Dpkg 1.15.7).
 .
 .SH DATEIEN
 .TP 
 \fI/etc/dpkg/dpkg.cfg.d/[0\-9a\-zA\-Z_\-]*\fP
-Konfigurationsfragmentdateien.
+Konfigurationsfragmentdateien (seit Dpkg 1.15.4).
 .TP 
 \fI/etc/dpkg/dpkg.cfg\fP
 Konfigurationsdatei mit Standardeinstellungen der Optionen.
@@ -869,7 +943,7 @@ Um ein installiertes Elvis\-Paket zu entfernen:
 
 Um ein Paket zu installieren, müssen Sie es erst in einem Archiv oder auf
 einer CD\-ROM finden. Die Datei \fIavailable\fP zeigt, dass das vim\-Paket im
-Bereich »editors« ist:
+Bereich \fBeditors\fP ist:
 .br
      \fBcd /media/cdrom/pool/main/v/vim\fP
      \fBdpkg \-i vim_4.5\-3.deb\fP

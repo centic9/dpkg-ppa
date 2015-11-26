@@ -2,7 +2,7 @@
 .\"
 .\" Copyright Â© 2010-2011 RaphaÃ«l Hertzog <hertzog@debian.org>
 .\" Copyright Â© 2011 Kees Cook <kees@debian.org>
-.\" Copyright Â© 2011-2014 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2011-2015 Guillem Jover <guillem@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -74,8 +74,8 @@ einer Raute (#) beginnen. Leere Zeilen werden auch ignoriert.
 \fB\-\-dump\fP
 Auf der Standardausgabe alle Kompilierschalter und ihre Werte ausgeben. Es
 wird ein Schalter pro Zeile ausgegeben, wobei der Werte durch ein
-Gleichheitszeichen (»\fISchalter\fP=\fIWert\fP«) abgetrennt wird. Dies ist die
-Standardaktion.
+Gleichheitszeichen (\(lq\fISchalter\fP=\fIWert\fP\(rq) abgetrennt wird. Dies ist
+die Standardaktion.
 .TP 
 \fB\-\-list\fP
 Gibt die Liste der vom aktuellen Lieferanten unterstützen Schalter (eine pro
@@ -84,9 +84,9 @@ Informationen über sie.
 .TP 
 \fB\-\-status\fP
 Alle Informationen anzeigen, die zum Verständnis des Verhaltens von
-\fBdpkg\-buildflags\fP nützlich sein können: relevante Umgebungsvariablen,
-aktueller Lieferant, Zustand der Funktionsschalter. Auch die entstehenden
-Compiler\-Schalter mit ihrem Ursprung werden ausgeben.
+\fBdpkg\-buildflags\fP nützlich sein können (seit Dpkg 1.16.5): relevante
+Umgebungsvariablen, aktueller Lieferant, Zustand der Funktionsschalter. Auch
+die entstehenden Compiler\-Schalter mit ihrem Ursprung werden ausgeben.
 
 Dies ist zur Ausführung in \fBdebian/rules\fP gedacht, so dass das Bauprotokoll
 einen klaren Nachweis der verwandten Bauschalter enthält. Dies kann zur
@@ -147,10 +147,11 @@ gesetzt/verändert
 .TP 
 \fB\-\-query\-features\fP\fI Bereich\fP
 Gibt die Funktionalitäten, die für den übergebenen Bereich aktiviert sind,
-aus. Die einzigen derzeit erkannten Bereiche sind \fBqa\fP, \fBreproducible\fP und
-\fBhardening\fP. Lesen Sie den Abschnitt \fBFUNKTIONALITÄTSBEREICHE\fP für weitere
-Details. Beendet sich mit 0, falls der Bereich bekannt ist, andernfalls mit
-1.
+aus (seit Dpkg 1.16.2). Die einzigen unter Debian und abgeleiteten
+Distributionen derzeit erkannten Bereiche sind \fBqa\fP, \fBreproducible\fP,
+\fBsanitize\fP und \fBhardening\fP. Lesen Sie den Abschnitt
+\fBFUNKTIONALITÄTSBEREICHE\fP für weitere Details. Beendet sich mit 0, falls
+der Bereich bekannt ist, andernfalls mit 1.
 .IP
 Das Ausgabeformat ist im RFC822\-Format, mit einem Abschnitt pro
 Funktionalität. Beispiel:
@@ -210,21 +211,22 @@ aufkommt (beispielsweise, um weitere Sprachen zu unterstützen).
 .P
 Jede Bereichsfunktionalität kann durch den entsprechenden Bereichswert in
 den Umgebungsvariablen \fBDEB_BUILD_OPTIONS\fP und \fBDEB_BUILD_MAINT_OPTIONS\fP
-mit den »+«\- und »\-«\-Schaltern aktiviert und deaktiviert werden. Soll
-beispielsweise für \fBhardening\fP die »pie«\-Funktionalität aktiviert und die
-»fortify«\-Funktionalität deaktiviert werden, können Sie Folgendes in
-\fBdebian/rules\fP verwenden:
+mit den \(oq\fB+\fP\(cq\- und \(oq\fB\-\fP\(cq\-Schaltern aktiviert und deaktiviert
+werden. Soll beispielsweise für \fBhardening\fP die \(lqpie\(rq\-Funktionalität
+aktiviert und die \(lqfortify\(rq\-Funktionalität deaktiviert werden, können
+Sie Folgendes in \fBdebian/rules\fP verwenden:
 .P
   export DEB_BUILD_MAINT_OPTIONS=hardening=+pie,\-fortify
 .P
 Die spezielle Funktionalität \fBall\fP (in allen Bereichen gültig) kann dazu
 verwandt werden, alle Bereichsfunktionalitäten auf einmal zu aktivieren oder
 zu deaktiveren. Um daher alles im Bereich \fBhardening\fP zu deaktiveren und
-nur »format« und »fortify« zu aktiveren, kann Folgendes eingesetzt werden:
+nur \(lqformat\(rq und \(lqfortify\(rq zu aktiveren, kann Folgendes
+eingesetzt werden:
 .P
   export DEB_BUILD_MAINT_OPTIONS=hardening=\-all,+format,+fortify
 .
-.SS "Qualitätssicherung (QS)"
+.SS QS
 Mehrere Optionen zur Kompilierung (Details weiter unten) können verwandt
 werden, um dabei zu helfen, Probleme im Quellcode oder im Bausystem zu
 erkennen.
@@ -244,6 +246,30 @@ unterstützt, wobei die Schalter auf
 \fB\-D__DEB_CANARY_\fP\fISchalter\fP_\fIZufallskennung\fP\fB__\fP gesetzt werden, und
 \fBLDFLAGS\fP, das auf \fB\-Wl,\-z,deb\-canary\-\fP\fIZufallskennung\fP gesetzt wird.
 .
+.SS Bereinigung
+Mehrere Kompilierzeit\-Optionen (weiter unten beschrieben) können dazu
+verwandt werden, ein erstelltes Programm vor Speicherverfälschungsangriffen
+Speicherlecks, Verwendung nach Freigabe, Daten\-Zugriffswettläufen (»races«)
+in Threads und Fehlern durch undefiniertes Verhalten zu bereinigen.
+.TP 
+\fBaddress\fP
+Diese Einstellung (standardmäßig deaktiviert) fügt \fB\-fsanitize=address\fP zu
+\fBLDFLAGS\fP und \fB\-fsanitize=address \-fno\-omit\-frame\-pointer\fP zu \fBCFLAGS\fP
+und \fBCXXFLAGS\fP hinzu.
+.TP 
+\fBthread\fP
+Diese Einstellung (standardmäßig deaktiviert) fügt \fB\-fsanitize=thread\fP zu
+\fBCFLAGS\fP, \fBCXXFLAGS\fP und \fBLDFLAGS\fP hinzu.
+.TP 
+\fBleak\fP
+Diese Einstellung (standardmäßig deaktiviert) fügt \fB\-fsanitize=leak\fP zu
+\fBLDFLAGS\fP hinzu. Sie wird automatisch deaktiviert, falls entweder die
+Funktionalitäten \fBaddress\fP oder \fBthread\fP aktiviert werden, da diese sie
+einschließen.
+.TP 
+\fBundefined\fP
+Diese Einstellung (standardmäßig deaktiviert) fügt \fB\-fsanitize=undefined\fP
+zu \fBCFLAGS\fP, \fBCXXFLAGS\fP und \fBLDFLAGS\fP hinzu.
 .SS Härtung
 Mehrere Kompilierzeit\-Optionen (weiter unten beschrieben) können dazu
 verwandt werden, ein erstelltes Programm gegen Speicherverfälschungsangriffe
@@ -262,7 +288,7 @@ Sicherheitsproblem werden könnte. Derzeit warnt dies über Aufrufe auf
 eine reine Zeichenkette ist und es keine Formatargumente gibt, wie in
 \fBprintf(foo);\fP statt \fBprintf("%s", foo);\fP. Dies könnte ein
 Sicherheitsproblem sein, falls die Formatzeichenkette aus einer
-unvertrauenswürdigen Eingabe stammt und »%n« enthält.
+unvertrauenswürdigen Eingabe stammt und \(oq%n\(cq enthält.
 .
 .TP 
 \fBfortify\fP
@@ -271,7 +297,7 @@ Diese Einstellung (standardmäßig aktiviert) fügt \fB\-D_FORTIFY_SOURCE=2\fP zu
 Informationen über Puffergrößen (wo möglich) und versucht, unsichere
 unbegrenzte Pufferfunktionsaufrufe durch längenbegrenzte zu ersetzen. Das
 ist besonders für alten, verkramten Code nützlich. Zusätzlich werden
-Formatzeichenketten in schreibbarem Speicher, die »%n« enthalten,
+Formatzeichenketten in schreibbarem Speicher, die \(oq%n\(cq enthalten,
 blockiert. Falls eine Anwendung von solchen Formatzeichenketten abhängt,
 müssen dafür andere Lösungsmöglichkeiten gefunden werden.
 
@@ -361,7 +387,7 @@ Ausnahmen sind unten angegeben.
 \fBtimeless\fP
 Diese (standardmäßig deaktivierte) Einstellung fügt \fB\-Wdate\-time\fP zu
 \fBCPPFLAGS\fP hinzu. Dies führt zu Warnungen, wenn die Makros \fB__TIME__\fP,
-\fB__DATE__\fP und \fB__TIMESTAMP__\fP verwandt werden.
+\fB__DATE__\fP und \fB\%__TIMESTAMP__\fP verwandt werden.
 .
 .SH UMGEBUNG
 Es gibt einen Satz von zwei Umgebungsvariablen, die den gleichen Vorgang
@@ -412,13 +438,21 @@ Details.
 \fB/etc/dpkg/buildflags.conf\fP
 Systemweite Konfigurationsdatei
 .TP 
-\fB$XDG_CONFIG_HOME/dpkg/buildflags.conf\fP oder \fB$HOME/.config/dpkg/buildflags.conf\fP
+\fB$XDG_CONFIG_HOME/dpkg/buildflags.conf\fP oder 
+.TQ
+\fB$HOME/.config/dpkg/buildflags.conf\fP
 Benutzer\-Konfigurationsdatei
 .SS Paketierungsunterstützung
 .TP 
 \fB/usr/share/dpkg/buildflags.mk\fP
 Makefile\-Schnipsel, das alle von \fBdpkg\-buildflags\fP unterstützten Schalter
 in Variablen laden (und optional exportieren) wird. (seit Dpkg 1.16.1)
+.
+.SH UMGEBUNG
+.TP 
+\fBDEB_VENDOR\fP
+Diese Einstellung definiert den aktuellen Lieferanten. Falls nicht gesetzt,
+wird er aus \fB\%/etc/dpkg/origins/default\fP ermittelt.
 .
 .SH BEISPIELE
 Um Bauschalter an eine Baubefehl in einer Makefile zu übergeben:
@@ -432,7 +466,7 @@ $(MAKE) $(shell dpkg\-buildflags \-\-export=cmdline)
 .RE
 .PP
 Um Bauschalter in einem Shell\-Skript oder Shell\-Fragement zu setzen, kann
-»eval« verwendet werden, um die Ausgabe zu interpretieren und die Schalter
+\fBeval\fP verwendet werden, um die Ausgabe zu interpretieren und die Schalter
 in die Umgebung zu exportieren:
 .PP
 .RS 4
@@ -466,7 +500,7 @@ Optionen direkt wie oben gezeigt an Configure oder \fBmake\fP(1) übergeben.
 Für andere Bausysteme oder wenn Sie feingranularere Steuerung benötigen
 (welcher Schalter wo weitergegeben wird), können Sie \fB\-\-get\fP
 verwenden. Oder Sie können stattdessen \fBbuildflags.mk\fP einbinden, das sich
-um den Aufruf von \fBdpkg\-buildflags\fP kümmert und die Bauschalter in
+um den Aufruf von \fB\%dpkg\-buildflags\fP kümmert und die Bauschalter in
 Make\-Variablen speichert.
 .PP
 Falls Sie alle Bauschalter in die Umgebung exportieren möchten (wo sie dann

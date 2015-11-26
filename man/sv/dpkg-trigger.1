@@ -1,6 +1,6 @@
 .\" dpkg manual page - dpkg-trigger(1)
 .\"
-.\" Copyright Â© 2008-2011 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2008-2015 Guillem Jover <guillem@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -74,8 +74,8 @@ status ändras inte. T kan anses vara installerat även om I kanske ännu inte
 har hanterat utlösaren.
 .TP 
 \fB\-\-await\fP
-Flaggan gör det motsatta mot \fB\-\-no\-await\fP. Det är för närvarande
-standardbetendet.
+This option does the inverse of \fB\-\-no\-await\fP (since dpkg 1.17.21).  It is
+currently the default behavior.
 .TP 
 \fB\-\-no\-act\fP
 Bara testa, ändra inte på någonting.

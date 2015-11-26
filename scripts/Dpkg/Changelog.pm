@@ -27,8 +27,6 @@ as an array of changelog entries (Dpkg::Changelog::Entry).
 By deriving this object and implementing its parse method, you
 add the ability to fill this object with changelog entries.
 
-=head2 FUNCTIONS
-
 =cut
 
 package Dpkg::Changelog;
@@ -38,7 +36,6 @@ use warnings;
 
 our $VERSION = '1.00';
 
-use Dpkg;
 use Dpkg::Gettext;
 use Dpkg::ErrorHandling qw(:DEFAULT report);
 use Dpkg::Control;
@@ -53,9 +50,11 @@ use parent qw(Dpkg::Interface::Storable);
 use overload
     '@{}' => sub { return $_[0]->{data} };
 
+=head1 METHODS
+
 =over 4
 
-=item my $c = Dpkg::Changelog->new(%options)
+=item $c = Dpkg::Changelog->new(%options)
 
 Creates a new changelog object.
 
@@ -103,7 +102,7 @@ previous L<parse> runs.
 =cut
 
 sub reset_parse_errors {
-    my ($self) = @_;
+    my $self = shift;
     $self->{parse_errors} = [];
 }
 
@@ -159,7 +158,7 @@ the original line
 =cut
 
 sub get_parse_errors {
-    my ($self) = @_;
+    my $self = shift;
 
     if (wantarray) {
 	return @{$self->{parse_errors}};
@@ -167,9 +166,9 @@ sub get_parse_errors {
 	my $res = '';
 	foreach my $e (@{$self->{parse_errors}}) {
 	    if ($e->[3]) {
-		$res .= report(_g('warning'), _g("%s(l%s): %s\nLINE: %s"), @$e);
+		$res .= report(g_('warning'), g_("%s(l%s): %s\nLINE: %s"), @$e);
 	    } else {
-		$res .= report(_g('warning'), _g('%s(l%s): %s'), @$e);
+		$res .= report(g_('warning'), g_('%s(l%s): %s'), @$e);
 	    }
 	}
 	return $res;
@@ -194,7 +193,7 @@ sub set_unparsed_tail {
 }
 
 sub get_unparsed_tail {
-    my ($self) = @_;
+    my $self = shift;
     return $self->{unparsed_tail};
 }
 
@@ -217,7 +216,7 @@ sub __sanity_check_range {
     my $data = $self->{data};
 
     if (defined($r->{offset}) and not defined($r->{count})) {
-	warning(_g("'offset' without 'count' has no effect")) if $self->{verbose};
+	warning(g_("'offset' without 'count' has no effect")) if $self->{verbose};
 	delete $r->{offset};
     }
 
@@ -226,7 +225,7 @@ sub __sanity_check_range {
         (defined($r->{from}) || defined($r->{since}) ||
 	 defined($r->{to}) || defined($r->{until})))
     {
-	warning(_g("you can't combine 'count' or 'offset' with any other " .
+	warning(g_("you can't combine 'count' or 'offset' with any other " .
 		   'range option')) if $self->{verbose};
 	delete $r->{from};
 	delete $r->{since};
@@ -234,12 +233,12 @@ sub __sanity_check_range {
 	delete $r->{until};
     }
     if (defined($r->{from}) && defined($r->{since})) {
-	warning(_g("you can only specify one of 'from' and 'since', using " .
+	warning(g_("you can only specify one of 'from' and 'since', using " .
 		   "'since'")) if $self->{verbose};
 	delete $r->{from};
     }
     if (defined($r->{to}) && defined($r->{until})) {
-	warning(_g("you can only specify one of 'to' and 'until', using " .
+	warning(g_("you can only specify one of 'to' and 'until', using " .
 		   "'until'")) if $self->{verbose};
 	delete $r->{to};
     }
@@ -251,8 +250,8 @@ sub __sanity_check_range {
         push @versions, $entry->get_version()->as_string();
     }
     if ((defined($r->{since}) and not exists $versions{$r->{since}})) {
-        warning(_g("'%s' option specifies non-existing version"), 'since');
-        warning(_g('use newest entry that is earlier than the one specified'));
+        warning(g_("'%s' option specifies non-existing version"), 'since');
+        warning(g_('use newest entry that is earlier than the one specified'));
         foreach my $v (@versions) {
             if (version_compare_relation($v, REL_LT, $r->{since})) {
                 $r->{since} = $v;
@@ -261,14 +260,14 @@ sub __sanity_check_range {
         }
         if (not exists $versions{$r->{since}}) {
             # No version was earlier, include all
-            warning(_g('none found, starting from the oldest entry'));
+            warning(g_('none found, starting from the oldest entry'));
             delete $r->{since};
             $r->{from} = $versions[-1];
         }
     }
     if ((defined($r->{from}) and not exists $versions{$r->{from}})) {
-        warning(_g("'%s' option specifies non-existing version"), 'from');
-        warning(_g('use oldest entry that is later than the one specified'));
+        warning(g_("'%s' option specifies non-existing version"), 'from');
+        warning(g_('use oldest entry that is later than the one specified'));
         my $oldest;
         foreach my $v (@versions) {
             if (version_compare_relation($v, REL_GT, $r->{from})) {
@@ -278,13 +277,13 @@ sub __sanity_check_range {
         if (defined($oldest)) {
             $r->{from} = $oldest;
         } else {
-            warning(_g("no such entry found, ignoring '%s' parameter"), 'from');
+            warning(g_("no such entry found, ignoring '%s' parameter"), 'from');
             delete $r->{from}; # No version was oldest
         }
     }
     if (defined($r->{until}) and not exists $versions{$r->{until}}) {
-        warning(_g("'%s' option specifies non-existing version"), 'until');
-        warning(_g('use oldest entry that is later than the one specified'));
+        warning(g_("'%s' option specifies non-existing version"), 'until');
+        warning(g_('use oldest entry that is later than the one specified'));
         my $oldest;
         foreach my $v (@versions) {
             if (version_compare_relation($v, REL_GT, $r->{until})) {
@@ -294,13 +293,13 @@ sub __sanity_check_range {
         if (defined($oldest)) {
             $r->{until} = $oldest;
         } else {
-            warning(_g("no such entry found, ignoring '%s' parameter"), 'until');
+            warning(g_("no such entry found, ignoring '%s' parameter"), 'until');
             delete $r->{until}; # No version was oldest
         }
     }
     if (defined($r->{to}) and not exists $versions{$r->{to}}) {
-        warning(_g("'%s' option specifies non-existing version"), 'to');
-        warning(_g('use newest entry that is earlier than the one specified'));
+        warning(g_("'%s' option specifies non-existing version"), 'to');
+        warning(g_('use newest entry that is earlier than the one specified'));
         foreach my $v (@versions) {
             if (version_compare_relation($v, REL_LT, $r->{to})) {
                 $r->{to} = $v;
@@ -309,17 +308,17 @@ sub __sanity_check_range {
         }
         if (not exists $versions{$r->{to}}) {
             # No version was earlier
-            warning(_g("no such entry found, ignoring '%s' parameter"), 'to');
+            warning(g_("no such entry found, ignoring '%s' parameter"), 'to');
             delete $r->{to};
         }
     }
 
     if (defined($r->{since}) and $data->[0]->get_version() eq $r->{since}) {
-	warning(_g("'since' option specifies most recent version, ignoring"));
+	warning(g_("'since' option specifies most recent version, ignoring"));
 	delete $r->{since};
     }
     if (defined($r->{until}) and $data->[-1]->get_version() eq $r->{until}) {
-	warning(_g("'until' option specifies oldest version, ignoring"));
+	warning(g_("'until' option specifies oldest version, ignoring"));
 	delete $r->{until};
     }
     ## use critic
@@ -411,7 +410,7 @@ entries selected by the range set at creation (or with set_options).
 =cut
 
 sub abort_early {
-    my ($self) = @_;
+    my $self = shift;
 
     my $data = $self->{data} or return;
     my $r = $self->{range} or return;
@@ -472,7 +471,7 @@ sub output {
     return $str;
 }
 
-=item my $control = $c->dpkg($range)
+=item $control = $c->dpkg($range)
 
 Returns a Dpkg::Control::Changelog object representing the entries selected
 by the optional range specifier (see L<"RANGE SELECTION"> for details).
@@ -579,7 +578,7 @@ sub dpkg {
     return $f;
 }
 
-=item my @controls = $c->rfc822($range)
+=item @controls = $c->rfc822($range)
 
 Returns a Dpkg::Index containing Dpkg::Control::Changelog objects where
 each object represents one entry in the changelog that is part of the
@@ -678,17 +677,18 @@ wasn't given as well.
 Some examples for the above options. Imagine an example changelog with
 entries for the versions 1.2, 1.3, 2.0, 2.1, 2.2, 3.0 and 3.1.
 
-            Range                           Included entries
- C<{ since =E<gt> '2.0' }>                  3.1, 3.0, 2.2
- C<{ until =E<gt> '2.0' }>                  1.3, 1.2
- C<{ from =E<gt> '2.0' }>                   3.1, 3.0, 2.2, 2.1, 2.0
- C<{ to =E<gt> '2.0' }>                     2.0, 1.3, 1.2
- C<{ count =E<gt> 2 }>                      3.1, 3.0
- C<{ count =E<gt> -2 }>	                    1.3, 1.2
- C<{ count =E<gt> 3, offset=E<gt> 2 }>      2.2, 2.1, 2.0
- C<{ count =E<gt> 2, offset=E<gt> -3 }>     2.0, 1.3
- C<{ count =E<gt> -2, offset=E<gt> 3 }>     3.0, 2.2
- C<{ count =E<gt> -2, offset=E<gt> -3 }>    2.2, 2.1
+  Range                        Included entries
+  -----                        ----------------
+  since => '2.0'               3.1, 3.0, 2.2
+  until => '2.0'               1.3, 1.2
+  from  => '2.0'               3.1, 3.0, 2.2, 2.1, 2.0
+  to    => '2.0'               2.0, 1.3, 1.2
+  count =>  2                  3.1, 3.0
+  count => -2                  1.3, 1.2
+  count =>  3, offset => 2     2.2, 2.1, 2.0
+  count =>  2, offset => -3    2.0, 1.3
+  count => -2, offset => 3     3.0, 2.2
+  count => -2, offset => -3    2.2, 2.1
 
 Any combination of one option of C<since> and C<from> and one of
 C<until> and C<to> returns the intersection of the two results
@@ -696,7 +696,7 @@ with only one of the options specified.
 
 =head1 CHANGES
 
-=head2 Version 1.00
+=head2 Version 1.00 (dpkg 1.15.6)
 
 Mark the module as public.
 

@@ -2,7 +2,7 @@
 .\"
 .\" Copyright Â© 2001 Wichert Akkerman <wakkerma@debian.org>
 .\" Copyright Â© 2006-2007 Frank Lichtenheld <djpig@debian.org>
-.\" Copyright Â© 2006-2012 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2006-2015 Guillem Jover <guillem@debian.org>
 .\" Copyright Â© 2008-2011 RaphaÃ«l Hertzog <hertzog@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
@@ -23,7 +23,7 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH dpkg\-query 1 "3 aprile 2012" "Progetto Debian" "suite dpkg"
+.TH dpkg\-query 1 2015\-01\-17 "Progetto Debian" "suite dpkg"
 .SH NOME
 dpkg\-query \- uno strumento per interrogare il database di dpkg
 .
@@ -37,15 +37,14 @@ elencati nel database di \fBdpkg\fP.
 .SH COMANDI
 .TP 
 \fB\-l\fP, \fB\-\-list\fP [\fImodello\-nome\-pacchetti\fP...]
-Elenca i pacchetti che corrispondono al modello indicato. Se non viene
-specificato alcun \fImodello\-nome\-pacchetti\fP, elenca tutti i pacchetti in
-\fI/var/lib/dpkg/status\fP, esclusi quelli contrassegnati come non\-installati
-(cioè quelli che sono stati in precedenza eliminati). In
-\fImodello\-nome\-pacchetti\fP è permesso l'uso dei normali metacaratteri della
-shell. Notare che probabilmente sarà necessario racchiudere
-\fImodello\-nome\-pacchetti\fP tra virgolette per evitare che la shell esegua
-un'espansione del nome di file. Per esempio il comando seguente elenca tutti
-i pacchetti il cui nome inizia con «libc6»:
+List packages matching given pattern. If no \fIpackage\-name\-pattern\fP is
+given, list all packages in \fI/var/lib/dpkg/status\fP, excluding the ones
+marked as not\-installed (i.e. those which have been previously
+purged). Normal shell wildcard characters are allowed in
+\fIpackage\-name\-pattern\fP. Please note you will probably have to quote
+\fIpackage\-name\-pattern\fP to prevent the shell from performing filename
+expansion. For example this will list all package names starting with
+\*(lqlibc6\*(rq:
 
 .nf
   \fBdpkg\-query \-l \(aqlibc6*\(aq\fP
@@ -115,18 +114,17 @@ degli argomenti. Tuttavia, notare che i file creati da script di
 installazione specifici dei pacchetti non vengono elencati.
 .TP 
 \fB\-\-control\-list\fP \fInome\-pacchetto\fP
-Elenca i file di controllo installati nel sistema da
-\fInome\-pacchetto\fP. Possono essere usati come argomenti in input per
-\fB\-\-control\-show\fP.
+List control files installed to your system from \fIpackage\-name\fP (since dpkg
+1.16.5).  These can be used as input arguments to \fB\-\-control\-show\fP.
 .TP 
 \fB\-\-control\-show\fP \fInome\-pacchetto\fP \fIfile\-controllo\fP
-Stampa sullo standard output il \fIfile\-controllo\fP installato nel sistema da
-\fInome\-pacchetto\fP.
+Print the \fIcontrol\-file\fP installed to your system from \fIpackage\-name\fP to
+the standard output (since dpkg 1.16.5).
 .TP 
 \fB\-c\fP, \fB\-\-control\-path\fP \fInome\-pacchetto\fP [\fIfile\-controllo\fP]
-Elenca i percorsi dei file di controllo installati nel sistema da
-\fInome\-pacchetto\fP. Se viene specificato \fIfile\-controllo\fP allora elenca solo
-il percorso di quel file di controllo, se presente.
+List paths for control files installed to your system from \fIpackage\-name\fP
+(since dpkg 1.15.4).  If \fIcontrol\-file\fP is specified then only list the
+path for that control file if it is present.
 
 \fBAvvertimento\fP: questo comando è deprecato perché dà accesso diretto al
 database interno di dpkg; passare invece all'uso di \fB\-\-control\-list\fP e
@@ -137,10 +135,21 @@ postrm del manutentore pericoloso) e fino a che non c'è una buona soluzione
 per il problema, questo comando non sarà rimosso.
 .TP 
 \fB\-S\fP, \fB\-\-search\fP \fImodello\-ricerca\-nomefile\fP...
-Cerca pacchetti a cui appartengono dei file che corrispondono al modello
-specificato. Nel modello possono essere usati i metacaratteri standard della
-shell. Questo comando non elenca i file aggiuntivi creati dagli script dei
-manutentori, né elenca le alternative.
+Search for packages that own files corresponding to the given pattern.
+Standard shell wildcard characters can be used in the pattern, where
+asterisk (*) and question mark (?) will match a slash, and blackslash (\e)
+will be used as an escape character.
+
+If the first character in the \fIfilename\-search\-pattern\fP is none of
+\(oq\fB*[?/\fP\(cq then it will be considered a substring match and will be
+implicitly surrounded by \(oq\fB*\fP\(cq (as in
+\fB*\fP\fIfilename\-search\-pattern\fP\fB*\fP).  If the subsequent string contains any
+of \(oq\fB*[?\e\fP\(cq, then it will handled like a glob pattern, otherwise any
+trailing \(oq\fB/\fP\(cq or \(oq\fB/.\fP\(cq will be removed and a literal path
+lookup will be performed.
+
+This command will not list extra files created by maintainer scripts, nor
+will it list alternatives.
 .TP 
 \fB\-p\fP, \fB\-\-print\-avail\fP \fInome\-pacchetto\fP...
 Visualizza i dettagli su \fInome\-pacchetto\fP, come trovati in
@@ -165,8 +174,9 @@ Cambia la posizione del database di \fBdpkg\fP. La posizione predefinita è
 \fI/var/lib/dpkg\fP.
 .TP 
 \fB\-\-load\-avail\fP
-Carica il file «available» anche quando si usano i comandi \fB\-\-show\fP e
-\fB\-\-list\fP, che ora in modo predefinito interrogano solo il file di stato.
+Also load the available file when using the \fB\-\-show\fP and \fB\-\-list\fP
+commands, which now default to only querying the status file (since dpkg
+1.16.2).
 .TP 
 \fB\-f\fP, \fB\-\-showformat=\fP\fIformato\fP
 Questa opzione viene usata per specificare il formato dell'output che verrà
@@ -234,10 +244,10 @@ nei file di controllo):
 .RS
 .TP 
 \fBbinary:Package\fP
-Contiene il nome del pacchetto binario con un possibile qualificatore di
-architettura come «libc6:amd64» (a partire da dpkg 1.16.2). Il qualificatore
-di architettura sarà presente solo se il pacchetto ha un campo \fBMulti\-Arch\fP
-con un valore di \fBsame\fP. Ciò rende il nome di pacchetto non ambiguo.
+It contains the binary package name with a possible architecture qualifier
+like \(lqlibc6:amd64\(rq (since dpkg 1.16.2).  The architecture qualifier
+will only be present if the package has a \fBMulti\-Arch\fP field with a value
+of \fBsame\fP.  This makes the package name unambiguous.
 .TP 
 \fBbinary:Summary\fP
 Contiene la descrizione breve del pacchetto (a partire da dpkg 1.16.2).

@@ -2,7 +2,7 @@
 .\"
 .\" Copyright Â© 2001 Wichert Akkerman <wakkerma@debian.org>
 .\" Copyright Â© 2006-2007 Frank Lichtenheld <djpig@debian.org>
-.\" Copyright Â© 2006-2012 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2006-2015 Guillem Jover <guillem@debian.org>
 .\" Copyright Â© 2008-2011 RaphaÃ«l Hertzog <hertzog@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
@@ -23,7 +23,7 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH dpkg\-query 1 2012\-04\-03 Debianprojektet Dpkg\-sviten
+.TH dpkg\-query 1 2015\-01\-17 Debianprojektet Dpkg\-sviten
 .SH NAMN
 dpkg\-query \- ett verktyg för att fråga dpkg\-databasen
 .
@@ -37,13 +37,14 @@ dpkg\-query \- ett verktyg för att fråga dpkg\-databasen
 .SH KOMMANDON
 .TP 
 \fB\-l\fP, \fB\-\-list\fP [\fIpaketnamnsmönster\fP ...]
-Lista paket som matchar det givna mönstret. Om inget \fIpaketnamnsmönster\fP
-anges listas alla paket i \fI/var/lib/dpkg/status\fP, förutom de paket som
-markerats som ej installerade (dvs. de som tidigare har helt tagits
-bort). Skalets normala jokertecken tillåts i \fIpaketnamnsmönster\fP. Observera
-att du sannolikt måste skriva \fIpaketnamnsmönster\fP inom citationstecken för
-att förhindra att skalet expanderar filnamnet. Till exempel kommer följande
-lista alla paket vars namn börjar på "libc6":
+List packages matching given pattern. If no \fIpackage\-name\-pattern\fP is
+given, list all packages in \fI/var/lib/dpkg/status\fP, excluding the ones
+marked as not\-installed (i.e. those which have been previously
+purged). Normal shell wildcard characters are allowed in
+\fIpackage\-name\-pattern\fP. Please note you will probably have to quote
+\fIpackage\-name\-pattern\fP to prevent the shell from performing filename
+expansion. For example this will list all package names starting with
+\*(lqlibc6\*(rq:
 
 .nf
   \fBdpkg\-query \-l \(aqlibc6*\(aq\fP
@@ -109,17 +110,17 @@ ordningsföljd som anges i parameterlistan. Observera att filer som skapats
 av paketspecifika installationsskript inte visas.
 .TP 
 \fB\-\-control\-list\fP \fIpaketnamn\fP
-Lista kontrollfiler installerade på ditt system från \fIpaketnamn\fP. Dessa kan
-användas som inargument till \fB\-\-control\-show\fP.
+List control files installed to your system from \fIpackage\-name\fP (since dpkg
+1.16.5).  These can be used as input arguments to \fB\-\-control\-show\fP.
 .TP 
 \fB\-\-control\-show\fP \fIpaketnamn\fP \fIkontrollfil\fP
-Visar den \fIkontrollfil\fP som installerats på ditt system från \fIpaketnamn\fP
-på standard ut.
+Print the \fIcontrol\-file\fP installed to your system from \fIpackage\-name\fP to
+the standard output (since dpkg 1.16.5).
 .TP 
 \fB\-c\fP, \fB\-\-control\-path\fP \fIpaketnamn\fP [\fIcontrol\-filnamn\fP]
-Visar sökvägarna till kontrollfilerna som installerats på ditt system för
-\fIpaketnamn\fP. Om \fIkontrollfil\fP anges visas endast sökvägen för den
-kontrollfilen, om den finns.
+List paths for control files installed to your system from \fIpackage\-name\fP
+(since dpkg 1.15.4).  If \fIcontrol\-file\fP is specified then only list the
+path for that control file if it is present.
 
 \fBVarning\fP: kommandot är föråldrat eftersom det ger direkt tillgång till den
 interna dpkg\-databasen, vi ber dig gå över till att istället använda
@@ -130,10 +131,21 @@ skadligt postrm\-utvecklarskript), och det inte finns någon bra lösning för
 det, kommer kommandot inte att tas bort.
 .TP 
 \fB\-S\fP, \fB\-\-search\fP \fIfilnamnssökmönster\fP ...
-Sök efter paket som äger filer som motsvarar det angivna mönstret. Alla
-skalets vanliga jokertecken kan användas i mönstret. Kommandot kommer inte
-att visa extrafiler som skapas av paketskript, ej heller kommer det att visa
-alternativ.
+Search for packages that own files corresponding to the given pattern.
+Standard shell wildcard characters can be used in the pattern, where
+asterisk (*) and question mark (?) will match a slash, and blackslash (\e)
+will be used as an escape character.
+
+If the first character in the \fIfilename\-search\-pattern\fP is none of
+\(oq\fB*[?/\fP\(cq then it will be considered a substring match and will be
+implicitly surrounded by \(oq\fB*\fP\(cq (as in
+\fB*\fP\fIfilename\-search\-pattern\fP\fB*\fP).  If the subsequent string contains any
+of \(oq\fB*[?\e\fP\(cq, then it will handled like a glob pattern, otherwise any
+trailing \(oq\fB/\fP\(cq or \(oq\fB/.\fP\(cq will be removed and a literal path
+lookup will be performed.
+
+This command will not list extra files created by maintainer scripts, nor
+will it list alternatives.
 .TP 
 \fB\-p\fP, \fB\-\-print\-avail\fP \fIpaketnamn\fP
 Visar information om \fIpaketnamn\fP, enligt vad som finns i
@@ -156,8 +168,9 @@ Visar version och avslutar.
 Ändra platsen för \fBdpkg\fP\-databasen. Förval är \fI/var/lib/dpkg\fP.
 .TP 
 \fB\-\-load\-avail\fP
-Läs även in available\-filen när kommandona \fB\-\-show\fP och \fB\-\-list\fP används,
-vilka numera som standard endast läser statusfilen.
+Also load the available file when using the \fB\-\-show\fP and \fB\-\-list\fP
+commands, which now default to only querying the status file (since dpkg
+1.16.2).
 .TP 
 \fB\-f\fP, \fB\-\-showformat=\fP\fIformat\fP
 Flaggan används för att ange formatet på utdata som skapas av
@@ -222,10 +235,10 @@ kontrollfiler):
 .RS
 .TP 
 \fBbinary:Package\fP
-Innehåller binärpaketnamnet med en möjlig arkitekturkvalificerare, såsom
-"libc6:amd64" (sedan dpkg 1.16.2). Arkitekturkvalificeraren kommer endast
-att vara närvarande om paketet har ett \fBMulti\-Arch\fP\-fält med värdet
-\fBsame\fP. Detta gör paketnamnen entydiga.
+It contains the binary package name with a possible architecture qualifier
+like \(lqlibc6:amd64\(rq (since dpkg 1.16.2).  The architecture qualifier
+will only be present if the package has a \fBMulti\-Arch\fP field with a value
+of \fBsame\fP.  This makes the package name unambiguous.
 .TP 
 \fBbinary:Summary\fP
 Innehåller paketets korta beskrivning (sedan dpkg 1.16.2).

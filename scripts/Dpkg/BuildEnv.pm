@@ -60,7 +60,7 @@ accessed.
 =cut
 
 sub get {
-    my ($varname) = @_;
+    my $varname = shift;
     $env_accessed{$varname} = 1;
     return $ENV{$varname};
 }
@@ -73,12 +73,12 @@ Record it as being accessed.
 =cut
 
 sub has {
-    my ($varname) = @_;
+    my $varname = shift;
     $env_accessed{$varname} = 1;
     return exists $ENV{$varname};
 }
 
-=item my @list = $bf->list_accessed()
+=item @list = $bf->list_accessed()
 
 Returns a list of all environment variables that have been accessed.
 
@@ -89,7 +89,7 @@ sub list_accessed {
     return @list;
 }
 
-=item my @list = $bf->list_modified()
+=item @list = $bf->list_modified()
 
 Returns a list of all environment variables that have been modified.
 

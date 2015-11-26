@@ -1,4 +1,5 @@
 # Copyright © 2007 Frank Lichtenheld <djpig@debian.org>
+# Copyright © 2008, 2012-2015 Guillem Jover <guillem@debian.org>
 # Copyright © 2010 Raphaël Hertzog <hertzog@debian.org>
 #
 # This program is free software; you can redistribute it and/or modify
@@ -37,11 +38,11 @@ The Dpkg::BuildOptions object can be used to manipulate options stored
 in environment variables like DEB_BUILD_OPTIONS and
 DEB_BUILD_MAINT_OPTIONS.
 
-=head1 FUNCTIONS
+=head1 METHODS
 
 =over 4
 
-=item my $bo = Dpkg::BuildOptions->new(%opts)
+=item $bo = Dpkg::BuildOptions->new(%opts)
 
 Create a new Dpkg::BuildOptions object. It will be initialized based
 on the value of the environment variable named $opts{envvar} (or
@@ -70,7 +71,7 @@ Reset the object to not have any option (it's empty).
 =cut
 
 sub reset {
-    my ($self) = @_;
+    my $self = shift;
     $self->{options} = {};
     $self->{source} = {};
 }
@@ -92,7 +93,7 @@ sub merge {
     my $count = 0;
     foreach (split(/\s+/, $content)) {
 	unless (/^([a-z][a-z0-9_-]*)(?:=(\S*))?$/) {
-            warning(_g('invalid flag in %s: %s'), $source, $_);
+            warning(g_('invalid flag in %s: %s'), $source, $_);
             next;
         }
 	$count += $self->set($1, $2, $source);
@@ -102,7 +103,7 @@ sub merge {
 
 =item $bo->set($option, $value, [$source])
 
-Store the given option in the objet with the given value. It's legitimate
+Store the given option in the object with the given value. It's legitimate
 for a value to be undefined if the option is a simple boolean (its
 presence means true, its absence means false). The $source is optional
 and indicates where the option comes from.
@@ -190,12 +191,12 @@ sub export {
 
 =head1 CHANGES
 
-=head2 Version 1.01
+=head2 Version 1.01 (dpkg 1.16.1)
 
 Enable to use another environment variable instead of DEB_BUILD_OPTIONS.
 Thus add support for the "envvar" option at creation time.
 
-=head2 Version 1.00
+=head2 Version 1.00 (dpkg 1.15.6)
 
 Mark the module as public.
 

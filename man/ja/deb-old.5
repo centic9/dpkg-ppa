@@ -44,9 +44,11 @@ deb\-old \- 旧 Debian バイナリパッケージ形式
 .PP
 1 番目の tar ファイルは、制御情報を含む幾つかの平文ファイルからなる。中核となる制御情報を含む \fBcontrol\fP ファイルは必須である。
 .PP
-非常に古いアーカイブでは、制御情報を格納した tar ファイル内のファイルが \fBDEBIAN\fP サブディレクトリに存在することもある。この場合、該当の
-tar ファイルにも \fBDEBIAN\fP サブディレクトリが存在し、そのディレクトリ内にのみファイルが存在する。制御情報を格納した tar
-ファイルは、カレントディレクトリを意味する `\fB.\fP' を含むこともある。
+In some very old archives, the files in the control tarfile may optionally
+be in a \fBDEBIAN\fP subdirectory. In that case, the \fBDEBIAN\fP subdirectory
+will be in the control tarfile too, and the control tarfile will have only
+files in that directory. Optionally the control tarfile may contain an entry
+for \(oq\fB.\fP\(cq, that is, the current directory.
 .PP
 2 番目の gzip 圧縮 tar
 ファイルはインストールされるファイルのアーカイブであり、インストールされるシステムのルートディレクトリからの相対パス名が格納されている。パス名の先頭にスラッシュ(/)はない。

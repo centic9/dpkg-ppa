@@ -4,7 +4,7 @@
  *
  * Copyright © 1994-1996 Ian Jackson <ian@chiark.greenend.org.uk>
  * Copyright © 2000,2001 Wichert Akkerman <wakkerma@debian.org>
- * Copyright © 2006-2012 Guillem Jover <guillem@debian.org>
+ * Copyright © 2006-2015 Guillem Jover <guillem@debian.org>
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -154,7 +154,7 @@ static const menuentry menuentries[]= {
 };
 
 static const char programdesc[]=
-      N_("Debian `%s' package handling frontend version %s.\n");
+      N_("Debian '%s' package handling frontend version %s.\n");
 
 static const char licensestring[]= N_(
       "This is free software; see the GNU General Public License version 2 or\n"
@@ -163,7 +163,7 @@ static const char licensestring[]= N_(
 static void DPKG_ATTR_NORET
 printversion(const struct cmdinfo *ci, const char *value)
 {
-  printf(gettext(programdesc), DSELECT, DPKG_VERSION_ARCH);
+  printf(gettext(programdesc), DSELECT, PACKAGE_RELEASE);
   printf("%s", gettext(licensestring));
 
   m_output(stdout, _("<standard output>"));
@@ -177,42 +177,44 @@ usage(const struct cmdinfo *ci, const char *value)
   int i;
 
   printf(_(
-"Usage: %s [<option> ...] [<action> ...]\n"
+"Usage: %s [<option>...] [<command>...]\n"
 "\n"), DSELECT);
+
+  printf(_("Commands:\n"));
+  for (i = 0; menuentries[i].command; i++)
+    printf("  %-10s  %s\n", menuentries[i].command, menuentries[i].menuent);
+  fputs("\n", stdout);
 
   printf(_(
 "Options:\n"
-"  --admindir <directory>     Use <directory> instead of %s.\n"
-"  --expert                   Turn on expert mode.\n"
-"  --debug <file> | -D<file>  Turn on debugging, sending output to <file>.\n"
-"  --colour | --color screenpart:[foreground],[background][:attr[+attr+...]]\n"
-"                             Configure screen colours.\n"
-"\n"), ADMINDIR);
+"      --admindir <directory>       Use <directory> instead of %s.\n"
+"      --expert                     Turn on expert mode.\n"
+"  -D, --debug <file>               Turn on debugging, send output to <file>.\n"
+"      --color <color-spec>         Configure screen colors.\n"
+"      --colour <color-spec>        Ditto.\n"
+), ADMINDIR);
 
   printf(_(
-"  --help                     Show this help message.\n"
-"  --version                  Show the version.\n"
+"  -?, --help                       Show this help message.\n"
+"      --version                    Show the version.\n"
 "\n"));
 
-  printf(_("Actions:\n"));
-  for (i = 0; menuentries[i].command; i++)
-    printf("  %s", menuentries[i].command);
-  fputs("\n\n", stdout);
+  printf(_("<color-spec> is <screen-part>:[<foreground>],[<background>][:<attr>[+<attr>]...]\n"));
 
-  printf(_("Screenparts:\n"));
+  printf(_("<screen-part> is:"));
   for (i=0; screenparttable[i].name; i++)
-    printf("  %s", screenparttable[i].name);
-  fputs("\n\n", stdout);
+    printf(" %s", screenparttable[i].name);
+  fputs("\n", stdout);
 
-  printf(_("Colours:\n"));
+  printf(_("<color> is:"));
   for (i=0; colourtable[i].name; i++)
-    printf("  %s", colourtable[i].name);
-  fputs("\n\n", stdout);
+    printf(" %s", colourtable[i].name);
+  fputs("\n", stdout);
 
-  printf(_("Attributes:\n"));
+  printf(_("<attr> is:"));
   for (i=0; attrtable[i].name; i++)
-    printf("  %s", attrtable[i].name);
-  fputs("\n\n", stdout);
+    printf(" %s", attrtable[i].name);
+  fputs("\n", stdout);
 
   m_output(stdout, _("<standard output>"));
 
@@ -229,7 +231,7 @@ extern "C" {
 
     fp = fopen(v, "a");
     if (!fp)
-      ohshite(_("couldn't open debug file `%.255s'\n"), v);
+      ohshite(_("couldn't open debug file '%.255s'\n"), v);
 
     debug_set_output(fp, v);
     debug_set_mask(dbg_general | dbg_depcon);
@@ -413,7 +415,7 @@ refreshmenu(void)
 
   clear();
   attrset(A_BOLD);
-  sprintf(buf, gettext(programdesc), DSELECT, DPKG_VERSION_ARCH);
+  sprintf(buf, gettext(programdesc), DSELECT, PACKAGE_RELEASE);
   mvaddnstr(0,0,buf,x-1);
 
   attrset(A_NORMAL);
@@ -535,7 +537,8 @@ main(int, const char *const *argv)
       const menuentry *me = menuentries;
       while (me->command && strcmp(me->command, a))
         me++;
-      if (!me->command) badusage(_("unknown action string `%.50s'"),a);
+      if (!me->command)
+        badusage(_("unknown action string '%.50s'"), a);
       me->fn();
     }
   } else {

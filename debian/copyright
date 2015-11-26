@@ -30,7 +30,7 @@ Copyright:
  Copyright © 2004-2005, 2007-2008, 2010 Canonical Ltd.
  Copyright © 2004-2005 Scott James Remnant <scott@netsplit.com>
  Copyright © 2006-2008 Frank Lichtenheld <djpig@debian.org>
- Copyright © 2006-2014 Guillem Jover <guillem@debian.org>
+ Copyright © 2006-2015 Guillem Jover <guillem@debian.org>
  Copyright © 2007-2012 Raphaël Hertzog <hertzog@debian.org>
  Copyright © 2007 Nicolas François <nicolas.francois@centraliens.net>
  Copyright © 2007 Don Armstrong <don@donarmstrong.com>
@@ -55,7 +55,6 @@ License: GPL-2+
 Files:
  lib/dpkg/utils.c
 Copyright:
- Copyright © 2001 Wichert Akkerman <wakkerma@debian.org>
  Copyright © 2008 Ian Jackson <ian@davenant.greenend.org.uk>
 License: GPL-2
 
@@ -101,7 +100,7 @@ Copyright:
  Copyright © 2009 Chris Coulson <chrisccoulson@googlemail.com>
  Copyright © 2012 Carsten Hey <carsten@debian.org>
  Copyright © 2014 Nir Soffer <nirs@hyperms.com>
-License: public-domain
+License: public-domain-s-s-d
  Written by Marek Michalkiewicz <marekm@i17linuxb.ists.pwr.wroc.pl>,
  public domain.  Based conceptually on start-stop-daemon.pl, by Ian
  Jackson <ijackson@gnu.ai.mit.edu>.  May be used and distributed
@@ -117,7 +116,7 @@ License: public-domain
 Files: lib/compat/md5.*
 Copyright:
  Copyright © 1993 Colin Plumb
-License: public-domain
+License: public-domain-md5
  This code implements the MD5 message-digest algorithm.
  The algorithm is due to Ron Rivest.  This code was
  written by Colin Plumb in 1993, no copyright is claimed.

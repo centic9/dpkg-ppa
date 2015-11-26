@@ -50,16 +50,21 @@ use strict;
 use warnings;
 
 our $VERSION = '1.05';
+our @EXPORT = qw(
+    deps_concat
+    deps_parse
+    deps_eval_implication
+    deps_iterate
+    deps_compare
+);
+
+use Exporter qw(import);
 
 use Dpkg::Version;
 use Dpkg::Arch qw(get_host_arch get_build_arch);
 use Dpkg::BuildProfiles qw(get_build_profiles);
 use Dpkg::ErrorHandling;
 use Dpkg::Gettext;
-
-use Exporter qw(import);
-our @EXPORT = qw(deps_concat deps_parse deps_eval_implication
-                deps_iterate deps_compare);
 
 =item deps_eval_implication($rel_p, $v_p, $rel_q, $v_q)
 
@@ -154,7 +159,7 @@ sub deps_eval_implication {
     return;
 }
 
-=item my $dep = deps_concat(@dep_list)
+=item $dep = deps_concat(@dep_list)
 
 This function concatenates multiple dependency lines into a single line,
 joining them with ", " if appropriate, and always returning a valid string.
@@ -167,7 +172,7 @@ sub deps_concat {
     return join ', ', grep { defined } @dep_list;
 }
 
-=item my $dep = deps_parse($line, %options)
+=item $dep = deps_parse($line, %options)
 
 This function parses the dependency line and returns an object, either a
 Dpkg::Deps::AND or a Dpkg::Deps::Union. Various options can alter the
@@ -270,7 +275,7 @@ sub deps_parse {
 	                                             build_dep =>
 	                                             $options{build_dep});
 	    if (not defined $dep_simple->{package}) {
-		warning(_g("can't parse dependency %s"), $dep_or);
+		warning(g_("can't parse dependency %s"), $dep_or);
 		return;
 	    }
 	    $dep_simple->{arches} = undef if not $options{use_arch};
@@ -302,7 +307,7 @@ sub deps_parse {
     }
     foreach my $dep (@dep_list) {
         if ($options{union} and not $dep->isa('Dpkg::Deps::Simple')) {
-            warning(_g('an union dependency can only contain simple dependencies'));
+            warning(g_('an union dependency can only contain simple dependencies'));
             return;
         }
         $dep_and->add($dep);
@@ -310,7 +315,7 @@ sub deps_parse {
     return $dep_and;
 }
 
-=item my $bool = deps_iterate($deps, $callback_func)
+=item $bool = deps_iterate($deps, $callback_func)
 
 This function visits all elements of the dependency object, calling the
 callback function for each element.
@@ -361,26 +366,31 @@ my %relation_ordering = (
 );
 
 sub deps_compare {
-    my ($a, $b) = @_;
-    return -1 if $a->is_empty();
-    return 1 if $b->is_empty();
-    while ($a->isa('Dpkg::Deps::Multiple')) {
-	return -1 if $a->is_empty();
-	my @deps = $a->get_deps();
-	$a = $deps[0];
+    my ($aref, $bref) = @_;
+
+    my (@as, @bs);
+    deps_iterate($aref, sub { push @as, @_ });
+    deps_iterate($bref, sub { push @bs, @_ });
+
+    while (1) {
+        my ($a, $b) = (shift @as, shift @bs);
+        my $aundef = not defined $a or $a->is_empty();
+        my $bundef = not defined $b or $b->is_empty();
+
+        return  0 if $aundef and $bundef;
+        return -1 if $aundef;
+        return  1 if $bundef;
+
+        my $ar = $a->{relation} // 'undef';
+        my $br = $b->{relation} // 'undef';
+        my $av = $a->{version} // '';
+        my $bv = $b->{version} // '';
+
+        my $res = (($a->{package} cmp $b->{package}) ||
+                   ($relation_ordering{$ar} <=> $relation_ordering{$br}) ||
+                   ($av cmp $bv));
+        return $res if $res != 0;
     }
-    while ($b->isa('Dpkg::Deps::Multiple')) {
-	return 1 if $b->is_empty();
-	my @deps = $b->get_deps();
-	$b = $deps[0];
-    }
-    my $ar = $a->{relation} // 'undef';
-    my $br = $b->{relation} // 'undef';
-    my $av = $a->{version} // '';
-    my $bv = $a->{version} // '';
-    return (($a->{package} cmp $b->{package}) ||
-	    ($relation_ordering{$ar} <=> $relation_ordering{$br}) ||
-	    ($av cmp $bv));
 }
 
 
@@ -405,7 +415,7 @@ dependencies and while trying to simplify them. It represents a set of
 installed packages along with the virtual packages that they might
 provide.
 
-=head2 COMMON FUNCTIONS
+=head2 COMMON METHODS
 
 =over 4
 
@@ -541,7 +551,7 @@ use warnings;
 
 use Carp;
 
-use Dpkg::Arch qw(debarch_is);
+use Dpkg::Arch qw(debarch_is_concerned);
 use Dpkg::BuildProfiles qw(parse_build_profiles evaluate_restriction_formula);
 use Dpkg::Version;
 use Dpkg::ErrorHandling;
@@ -564,7 +574,7 @@ sub new {
 }
 
 sub reset {
-    my ($self) = @_;
+    my $self = shift;
     $self->{package} = undef;
     $self->{relation} = undef;
     $self->{version} = undef;
@@ -813,28 +823,7 @@ sub arch_is_concerned {
     return 0 if not defined $self->{package}; # Empty dep
     return 1 if not defined $self->{arches};  # Dep without arch spec
 
-    my $seen_arch = 0;
-    foreach my $arch (@{$self->{arches}}) {
-	$arch=lc($arch);
-
-	if ($arch =~ /^!/) {
-	    my $not_arch = $arch;
-	    $not_arch =~ s/^!//;
-
-	    if (debarch_is($host_arch, $not_arch)) {
-		$seen_arch = 0;
-		last;
-	    } else {
-		# !arch includes by default all other arches
-		# unless they also appear in a !otherarch
-		$seen_arch = 1;
-	    }
-	} elsif (debarch_is($host_arch, $arch)) {
-	    $seen_arch = 1;
-	    last;
-	}
-    }
-    return $seen_arch;
+    return debarch_is_concerned($host_arch, @{$self->{arches}});
 }
 
 sub reduce_arch {
@@ -847,7 +836,7 @@ sub reduce_arch {
 }
 
 sub has_arch_restriction {
-    my ($self) = @_;
+    my $self = shift;
     if (defined $self->{arches}) {
 	return $self->{package};
     } else {
@@ -961,7 +950,7 @@ sub new {
 }
 
 sub reset {
-    my ($self) = @_;
+    my $self = shift;
     $self->{list} = [];
 }
 
@@ -1002,7 +991,7 @@ sub reduce_arch {
 }
 
 sub has_arch_restriction {
-    my ($self) = @_;
+    my $self = shift;
     my @res;
     foreach my $dep (@{$self->{list}}) {
 	push @res, $dep->has_arch_restriction();
@@ -1318,7 +1307,7 @@ packages provided (by the set of installed packages).
 
 =over 4
 
-=item my $facts = Dpkg::Deps::KnownFacts->new();
+=item $facts = Dpkg::Deps::KnownFacts->new();
 
 Creates a new object.
 
@@ -1381,7 +1370,7 @@ sub add_provided_package {
     push @{$self->{virtualpkg}{$pkg}}, [ $by, $rel, $ver ];
 }
 
-=item my ($check, $param) = $facts->check_package($package)
+=item ($check, $param) = $facts->check_package($package)
 
 $check is one when the package is found. For a real package, $param
 contains the version. For a virtual package, $param contains an array
@@ -1480,11 +1469,11 @@ sub _evaluate_simple_dep {
 
 =head1 CHANGES
 
-=head2 Version 1.05
+=head2 Version 1.05 (dpkg 1.17.14)
 
 New function: Dpkg::Deps::deps_iterate().
 
-=head2 Version 1.04
+=head2 Version 1.04 (dpkg 1.17.10)
 
 New options: Add use_profiles, build_profiles, reduce_profiles and
 reduce_restrictions to Dpkg::Deps::deps_parse().
@@ -1492,15 +1481,15 @@ reduce_restrictions to Dpkg::Deps::deps_parse().
 New methods: Add $dep->profile_is_concerned() and $dep->reduce_profiles()
 for all dependency objects.
 
-=head2 Version 1.03
+=head2 Version 1.03 (dpkg 1.17.0)
 
 New option: Add build_arch option to Dpkg::Deps::deps_parse().
 
-=head2 Version 1.02
+=head2 Version 1.02 (dpkg 1.17.0)
 
 New function: Dpkg::Deps::deps_concat()
 
-=head2 Version 1.01
+=head2 Version 1.01 (dpkg 1.16.1)
 
 New method: Add $dep->reset() for all dependency objects.
 
@@ -1513,7 +1502,7 @@ supplementary parameters ($arch and $multiarch).
 Deprecated method: Dpkg::Deps::KnownFacts->check_package() is obsolete,
 it should not have been part of the public API.
 
-=head2 Version 1.00
+=head2 Version 1.00 (dpkg 1.15.6)
 
 Mark the module as public.
 

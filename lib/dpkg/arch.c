@@ -25,13 +25,13 @@
 
 #include <assert.h>
 #include <limits.h>
-#include <ctype.h>
 #include <string.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
 
 #include <dpkg/i18n.h>
+#include <dpkg/c-ctype.h>
 #include <dpkg/ehandle.h>
 #include <dpkg/dpkg.h>
 #include <dpkg/dpkg-db.h>
@@ -51,7 +51,7 @@
  *
  * The function will abort if you pass it a NULL pointer.
  *
- * @param name The architectute name to verify.
+ * @param name The architecture name to verify.
  */
 const char *
 dpkg_arch_name_is_illegal(const char *name)
@@ -62,16 +62,16 @@ dpkg_arch_name_is_illegal(const char *name)
 	assert(name);
 	if (!*p)
 		return _("may not be empty string");
-	if (!isalnum(*p))
+	if (!c_isalnum(*p))
 		return _("must start with an alphanumeric");
 	while (*++p != '\0')
-		if (!isalnum(*p) && *p != '-')
+		if (!c_isalnum(*p) && *p != '-')
 			break;
 	if (*p == '\0')
 		return NULL;
 
-	snprintf(buf, sizeof(buf), _("character `%c' not allowed (only "
-	                             "letters, digits and characters `%s')"),
+	snprintf(buf, sizeof(buf), _("character '%c' not allowed (only "
+	                             "letters, digits and characters '%s')"),
 	         *p, "-");
 	return buf;
 }

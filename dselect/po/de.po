@@ -4,14 +4,14 @@
 # Erich Schubert <debian@vitavonni.de>, March 2001.
 # Michael Piefel <piefel@debian.org>, 2001, 2002, 2003, 2004, 2005.
 # Florian Ernst <florian@uni-hd.de>, 2004.
-# Sven Joachim <svenjoac@gmx.de>, 2006, 2007, 2008, 2009, 2010, 2012, 2014.
+# Sven Joachim <svenjoac@gmx.de>, 2006-2010, 2012, 2014, 2015.
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: dselect 1.17.17\n"
+"Project-Id-Version: dselect 1.18.0\n"
 "Report-Msgid-Bugs-To: debian-dpkg@lists.debian.org\n"
-"POT-Creation-Date: 2015-11-26 03:30+0000\n"
-"PO-Revision-Date: 2014-10-12 08:47+0200\n"
+"POT-Creation-Date: 2015-08-04 20:59+0200\n"
+"PO-Revision-Date: 2015-05-30 02:59+0200\n"
 "Last-Translator: Sven Joachim <svenjoac@gmx.de>\n"
 "Language-Team: German <debian-l10n-german@lists.debian.org>\n"
 "Language: de\n"
@@ -19,273 +19,273 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: dselect/basecmds.cc:125
+#: dselect/basecmds.cc
 msgid "Search for ? "
 msgstr "Suchen nach ? "
 
-#: dselect/basecmds.cc:149
+#: dselect/basecmds.cc
 msgid "Error: "
 msgstr "Fehler: "
 
-#: dselect/basecmds.cc:180
+#: dselect/basecmds.cc
 msgid "Help: "
 msgstr "Hilfe: "
 
-#: dselect/basecmds.cc:186
+#: dselect/basecmds.cc
 msgid "Press ? for help menu, . for next topic, <space> to exit help."
 msgstr ""
 "»?« für Hilfemenü, ».« für nächstes Thema, <Leer> zum Verlassen der Hilfe."
 
-#: dselect/basecmds.cc:193
+#: dselect/basecmds.cc
 msgid "Help information is available under the following topics:"
 msgstr "Hilfeinformationen sind unter den folgenden Themen verfügbar:"
 
-#: dselect/basecmds.cc:201
+#: dselect/basecmds.cc
 msgid ""
-"Press a key from the list above, <space> or `q' to exit help,\n"
-"  or `.' (full stop) to read each help page in turn. "
+"Press a key from the list above, <space> or 'q' to exit help,\n"
+"  or '.' (full stop) to read each help page in turn. "
 msgstr ""
 "Drücken Sie eine Taste aus der obigen Liste, <Leer> oder »q«, um die\n"
 "  Hilfe zu beenden, oder ».«, um alle Hilfeseiten nacheinander zu lesen. "
 
-#: dselect/basecmds.cc:207
+#: dselect/basecmds.cc
 msgid "error reading keyboard in help"
 msgstr "Fehler beim Lesen der Tastatur in der Hilfe"
 
-#: dselect/baselist.cc:60
+#: dselect/baselist.cc
 msgid "ioctl(TIOCGWINSZ) failed"
 msgstr "ioctl(TIOCGWINSZ) fehlgeschlagen"
 
-#: dselect/baselist.cc:63
+#: dselect/baselist.cc
 msgid "doupdate in SIGWINCH handler failed"
 msgstr "doupdate im SIGWINCH-Handler fehlgeschlagen"
 
-#: dselect/baselist.cc:72
+#: dselect/baselist.cc
 msgid "failed to restore old SIGWINCH sigact"
 msgstr "Alter SIGWINCH-sigact konnte nicht wiederhergestellt werden"
 
-#: dselect/baselist.cc:75
+#: dselect/baselist.cc
 msgid "failed to restore old signal mask"
 msgstr "Alte Signalmaske konnte nicht wiederhergestellt werden"
 
-#: dselect/baselist.cc:86
+#: dselect/baselist.cc
 msgid "failed to get old signal mask"
 msgstr "Erhalten der alten Signalmaske fehlgeschlagen"
 
-#: dselect/baselist.cc:88
+#: dselect/baselist.cc
 msgid "failed to get old SIGWINCH sigact"
 msgstr "Erhalten des alten SIGWINCH-sigact fehlgeschlagen"
 
-#: dselect/baselist.cc:93
+#: dselect/baselist.cc
 msgid "failed to block SIGWINCH"
 msgstr "SIGWINCH konnte nicht blockiert werden"
 
-#: dselect/baselist.cc:99
+#: dselect/baselist.cc
 msgid "failed to set new SIGWINCH sigact"
 msgstr "Neuer SIGWINCH-sigact konnte nicht gesetzt werden"
 
-#: dselect/baselist.cc:174
+#: dselect/baselist.cc
 msgid "failed to allocate colour pair"
 msgstr "Farbpaar konnte nicht zugewiesen werden"
 
-#: dselect/baselist.cc:203
+#: dselect/baselist.cc
 msgid "failed to create title window"
 msgstr "Titelfenster konnte nicht erzeugt werden"
 
-#: dselect/baselist.cc:207
+#: dselect/baselist.cc
 msgid "failed to create whatinfo window"
 msgstr "whatinfo-Fenster konnte nicht erzeugt werden"
 
-#: dselect/baselist.cc:211
+#: dselect/baselist.cc
 msgid "failed to create baselist pad"
 msgstr "»baselist pad« konnte nicht erzeugt werden"
 
-#: dselect/baselist.cc:214
+#: dselect/baselist.cc
 msgid "failed to create heading pad"
 msgstr "»heading pad« konnte nicht erzeugt werden"
 
-#: dselect/baselist.cc:218
+#: dselect/baselist.cc
 msgid "failed to create thisstate pad"
 msgstr "»thisstate pad« konnte nicht erzeugt werden"
 
-#: dselect/baselist.cc:222
+#: dselect/baselist.cc
 msgid "failed to create info pad"
 msgstr "»info pad« konnte nicht erzeugt werden"
 
-#: dselect/baselist.cc:227
+#: dselect/baselist.cc
 msgid "failed to create query window"
 msgstr "Abfrage-Fenster konnte nicht erzeugt werden"
 
-#: dselect/baselist.cc:298
+#: dselect/baselist.cc
 msgid "Keybindings"
 msgstr "Tastenzuordnungen"
 
-#: dselect/baselist.cc:347
+#: dselect/baselist.cc
 #, c-format
 msgid "  -- %d%%, press "
 msgstr "  -- %d%%, drücken Sie "
 
-#: dselect/baselist.cc:350
+#: dselect/baselist.cc
 #, c-format
 msgid "%s for more"
 msgstr "%s für mehr"
 
-#: dselect/baselist.cc:354
+#: dselect/baselist.cc
 #, c-format
 msgid "%s to go back"
 msgstr "%s, um zurückzugehen"
 
-#: dselect/bindings.cc:78
+#: dselect/bindings.cc
 msgid "[not bound]"
 msgstr "[nicht zugeordnet]"
 
-#: dselect/bindings.cc:82
+#: dselect/bindings.cc
 #, c-format
 msgid "[unk: %d]"
 msgstr "[unbek: %d]"
 
 # CHECKME: Wo kann man sich die Tastenbelegungen anzeigen lassen?
-#: dselect/bindings.cc:141
+#: dselect/bindings.cc
 msgid "Scroll onwards through help/information"
 msgstr "Vorwärts durch die Hilfe/Informationen scrollen"
 
-#: dselect/bindings.cc:142
+#: dselect/bindings.cc
 msgid "Scroll backwards through help/information"
 msgstr "Rückwärts durch die Hilfe/Informationen scrollen"
 
-#: dselect/bindings.cc:143
+#: dselect/bindings.cc
 msgid "Move up"
 msgstr "Nach oben"
 
-#: dselect/bindings.cc:144
+#: dselect/bindings.cc
 msgid "Move down"
 msgstr "Nach unten"
 
-#: dselect/bindings.cc:145
+#: dselect/bindings.cc
 msgid "Go to top of list"
 msgstr "Zum Listenanfang"
 
-#: dselect/bindings.cc:146
+#: dselect/bindings.cc
 msgid "Go to end of list"
 msgstr "Zum Listenende"
 
-#: dselect/bindings.cc:147
+#: dselect/bindings.cc
 msgid "Request help (cycle through help screens)"
 msgstr "Hilfe abrufen (zyklisch durch die Hilfeseiten blättern)"
 
-#: dselect/bindings.cc:148
+#: dselect/bindings.cc
 msgid "Cycle through information displays"
 msgstr "Zyklisch durch die Informationsanzeigen blättern"
 
-#: dselect/bindings.cc:149
+#: dselect/bindings.cc
 msgid "Redraw display"
 msgstr "Anzeige neu zeichnen"
 
-#: dselect/bindings.cc:150
+#: dselect/bindings.cc
 msgid "Scroll onwards through list by 1 line"
 msgstr "Liste um 1 Zeile vorwärts scrollen"
 
-#: dselect/bindings.cc:151
+#: dselect/bindings.cc
 msgid "Scroll backwards through list by 1 line"
 msgstr "Liste um 1 Zeile rückwärts scrollen"
 
-#: dselect/bindings.cc:152
+#: dselect/bindings.cc
 msgid "Scroll onwards through help/information by 1 line"
 msgstr "Hilfe/Informationen um 1 Zeile vorwärts scrollen"
 
-#: dselect/bindings.cc:153
+#: dselect/bindings.cc
 msgid "Scroll backwards through help/information by 1 line"
 msgstr "Hilfe/Informationen um 1 Zeile rückwärts scrollen"
 
-#: dselect/bindings.cc:154
+#: dselect/bindings.cc
 msgid "Scroll onwards through list"
 msgstr "Liste vorwärts scrollen"
 
-#: dselect/bindings.cc:155
+#: dselect/bindings.cc
 msgid "Scroll backwards through list"
 msgstr "Liste rückwärts scrollen"
 
-#: dselect/bindings.cc:158
+#: dselect/bindings.cc
 msgid "Mark package(s) for installation"
 msgstr "Paket(e) zur Installation markieren"
 
-#: dselect/bindings.cc:159
+#: dselect/bindings.cc
 msgid "Mark package(s) for deinstallation"
 msgstr "Paket(e) zum Entfernen markieren"
 
-#: dselect/bindings.cc:160
+#: dselect/bindings.cc
 msgid "Mark package(s) for deinstall and purge"
 msgstr "Paket(e) zum Entfernen und vollständigen Löschen markieren"
 
 # CHECKME: Was ist damit gemeint?
-#: dselect/bindings.cc:161
+#: dselect/bindings.cc
 msgid "Make highlight more specific"
 msgstr "Hervorhebung genauer machen"
 
 # CHECKME: Was ist damit gemeint?
-#: dselect/bindings.cc:162
+#: dselect/bindings.cc
 msgid "Make highlight less specific"
 msgstr "Hervorhebung weniger genau machen"
 
-#: dselect/bindings.cc:163
+#: dselect/bindings.cc
 msgid "Search for a package whose name contains a string"
 msgstr "Paket suchen, dessen Namen eine Zeichenfolge enthält"
 
-#: dselect/bindings.cc:164
+#: dselect/bindings.cc
 msgid "Repeat last search"
 msgstr "Letzte Suche wiederholen"
 
 # »section« im Sinne von Devel/Games/Hamradio etc. übersetze
 # ich überall mit »Bereich«, wie in aptitude
-#: dselect/bindings.cc:165
+#: dselect/bindings.cc
 msgid "Swap sort order priority/section"
 msgstr "Sortierreihenfolge Priorität/Bereich vertauschen"
 
-#: dselect/bindings.cc:166
+#: dselect/bindings.cc
 msgid "Quit, confirming, and checking dependencies"
 msgstr "Beenden, bestätigen und Abhängigkeiten prüfen"
 
-#: dselect/bindings.cc:167
+#: dselect/bindings.cc
 msgid "Quit, confirming without check"
 msgstr "Beenden, bestätigen, aber nicht prüfen"
 
-#: dselect/bindings.cc:168
+#: dselect/bindings.cc
 msgid "Quit, rejecting conflict/dependency suggestions"
 msgstr "Beenden, Konflikt-/Abhängigkeitsempfehlungen ablehnen"
 
-#: dselect/bindings.cc:169
+#: dselect/bindings.cc
 msgid "Abort - quit without making changes"
 msgstr "Abbrechen - beenden, ohne Änderungen vorzunehmen"
 
-#: dselect/bindings.cc:170
+#: dselect/bindings.cc
 msgid "Revert to old state for all packages"
 msgstr "Zum alten Status aller Pakete zurückkehren"
 
-#: dselect/bindings.cc:171
+#: dselect/bindings.cc
 msgid "Revert to suggested state for all packages"
 msgstr "Zum vorgeschlagenen Status aller Pakete zurückkehren"
 
-#: dselect/bindings.cc:172
+#: dselect/bindings.cc
 msgid "Revert to directly requested state for all packages"
 msgstr "Zum direkt verlangten Status aller Pakete zurückkehren"
 
-#: dselect/bindings.cc:173
+#: dselect/bindings.cc
 msgid "Revert to currently installed state for all packages"
 msgstr "Zum derzeit installierten Status aller Pakete zurückkehren"
 
-#: dselect/bindings.cc:176
+#: dselect/bindings.cc
 msgid "Select currently-highlighted access method"
 msgstr "Derzeit hervorgehobene Zugriffsmethode auswählen"
 
-#: dselect/bindings.cc:177
+#: dselect/bindings.cc
 msgid "Quit without changing selected access method"
 msgstr "Beenden, ohne die Zugriffsmethode zu ändern"
 
-#: dselect/helpmsgs.cc:29
+#: dselect/helpmsgs.cc
 msgid "Keystrokes"
 msgstr "Tastenkürzel"
 
-#: dselect/helpmsgs.cc:29
+#: dselect/helpmsgs.cc
 msgid ""
 "Motion keys: Next/Previous, Top/End, Up/Down, Backwards/Forwards:\n"
 "  j, Down-arrow         k, Up-arrow             move highlight\n"
@@ -347,7 +347,7 @@ msgstr ""
 "   D     alle auf direkt angef. Zust. setzen  n, \\  letzte Suche "
 "wiederholen\n"
 
-#: dselect/helpmsgs.cc:55
+#: dselect/helpmsgs.cc
 msgid "Introduction to package selections"
 msgstr "Einführung in die Paketauswahl"
 
@@ -356,17 +356,17 @@ msgstr "Einführung in die Paketauswahl"
 # passt. Auf diesen ist nämlich sonst die Hilfe abgeschnitten!
 # Sven Joachim: In UTF-8-Terminals kann die Hilfe trotzdem abgeschnitten
 # werden, da dselect annimmt, dass jedes Zeichen nur 1 Byte breit ist.
-#: dselect/helpmsgs.cc:55
+#: dselect/helpmsgs.cc
 msgid ""
 "Welcome to dselect's main package listing.\n"
 "\n"
 "You will be presented with a list of packages which are installed or "
 "available\n"
 "for installation.  You can navigate around the list using the cursor keys,\n"
-"mark packages for installation (using `+') or deinstallation (using `-').\n"
+"mark packages for installation (using '+') or deinstallation (using '-').\n"
 "Packages can be marked either singly or in groups; initially you will see "
 "that\n"
-"the line `All packages' is selected.  `+', `-' and so on will affect all "
+"the line 'All packages' is selected.  '+', '-' and so on will affect all "
 "the\n"
 "packages described by the highlighted line.\n"
 "\n"
@@ -376,12 +376,12 @@ msgid ""
 "problems.\n"
 "\n"
 "You should read the list of keys and the explanations of the display.\n"
-"Much on-line help is available, please make use of it - press `?' at\n"
+"Much on-line help is available, please make use of it - press '?' at\n"
 "any time for help.\n"
 "\n"
 "When you have finished selecting packages, press <enter> to confirm "
 "changes,\n"
-"or `X' to quit without saving changes. A final check on conflicts and\n"
+"or 'X' to quit without saving changes. A final check on conflicts and\n"
 "dependencies will be done - here too you may see a sublist.\n"
 "\n"
 "Press <space> to leave help and enter the list now.\n"
@@ -414,11 +414,11 @@ msgstr ""
 "Drücken Sie <Leer>, um die Hilfe zu verlassen und zur Paketliste zu "
 "gelangen.\n"
 
-#: dselect/helpmsgs.cc:80
+#: dselect/helpmsgs.cc
 msgid "Introduction to read-only package list browser"
 msgstr "Einführung in den Nur-Lese-Paketlisten-Browser"
 
-#: dselect/helpmsgs.cc:80
+#: dselect/helpmsgs.cc
 msgid ""
 "Welcome to dselect's main package listing.\n"
 "\n"
@@ -426,15 +426,15 @@ msgid ""
 "available\n"
 "for installation.  Since you do not have the privilege necessary to update\n"
 "package states, you are in a read-only mode.  You can navigate around the\n"
-"list using the cursor keys (please see the `Keystrokes' help screen), "
+"list using the cursor keys (please see the 'Keystrokes' help screen), "
 "observe\n"
 "the status of the packages and read information about them.\n"
 "\n"
 "You should read the list of keys and the explanations of the display.\n"
-"Much on-line help is available, please make use of it - press `?' at\n"
+"Much on-line help is available, please make use of it - press '?' at\n"
 "any time for help.\n"
 "\n"
-"When you have finished browsing, press `Q' or <enter> to quit.\n"
+"When you have finished browsing, press 'Q' or <enter> to quit.\n"
 "\n"
 "Press <space> to leave help and enter the list now.\n"
 msgstr ""
@@ -459,12 +459,12 @@ msgstr ""
 "Drücken Sie <Leer>, um die Hilfe zu verlassen und zur Paketliste zu "
 "gelangen.\n"
 
-#: dselect/helpmsgs.cc:99
+#: dselect/helpmsgs.cc
 msgid "Introduction to conflict/dependency resolution sub-list"
 msgstr "Hinweise zur Teilliste zum Auflösen von Konflikten/Abhängigkeiten"
 
 # Auch dieser Hilfebildschirm sollte die 22 Zeilen nicht überschreiten.
-#: dselect/helpmsgs.cc:99
+#: dselect/helpmsgs.cc
 msgid ""
 "Dependency/conflict resolution - introduction.\n"
 "\n"
@@ -475,27 +475,27 @@ msgid ""
 "\n"
 "You will see a sub-list containing the packages involved.  The bottom half "
 "of\n"
-"the display shows relevant conflicts and dependencies; use `i' to cycle "
+"the display shows relevant conflicts and dependencies; use 'i' to cycle "
 "between\n"
 "that, the package descriptions and the internal control information.\n"
 "\n"
-"A set of `suggested' packages has been calculated, and the initial markings "
+"A set of 'suggested' packages has been calculated, and the initial markings "
 "in\n"
 "this sub-list have been set to match those, so you can just hit Return to\n"
 "accept the suggestions if you wish.  You may abort the change(s) which "
 "caused\n"
-"the problem(s), and go back to the main list, by pressing capital `X'.\n"
+"the problem(s), and go back to the main list, by pressing capital 'X'.\n"
 "\n"
 "You can also move around the list and change the markings so that they are "
 "more\n"
-"like what you want, and you can `reject' my suggestions by using the "
+"like what you want, and you can 'reject' my suggestions by using the "
 "capital\n"
-"`D' or `R' keys (see the keybindings help screen).  You can use capital `Q' "
+"'D' or 'R' keys (see the keybindings help screen).  You can use capital 'Q' "
 "to\n"
 "force me to accept the situation currently displayed, in case you want to\n"
 "override a recommendation or think that the program is mistaken.\n"
 "\n"
-"Press <space> to leave help and enter the sub-list; remember: press `?' for "
+"Press <space> to leave help and enter the sub-list; remember: press '?' for "
 "help.\n"
 msgstr ""
 "Abhängigkeits/Konflikt-Auflösung - Einführung.\n"
@@ -528,39 +528,39 @@ msgstr ""
 "Zur der Liste kommen Sie mit der Leertaste; zur Erinnerung: »?« bringt "
 "Hilfe.\n"
 
-#: dselect/helpmsgs.cc:125
+#: dselect/helpmsgs.cc
 msgid "Display, part 1: package listing and status chars"
 msgstr "Anzeige, Teil 1: Paketliste und Statuskürzel"
 
 # Hier sind es bereits im Original 23 Zeilen. Es gibt wohl keine Chance,
 # das zu kürzen.
-#: dselect/helpmsgs.cc:125
+#: dselect/helpmsgs.cc
 msgid ""
 "The top half of the screen shows a list of packages.  For each package you "
 "see\n"
 "four columns for its current status on the system and mark.  In terse mode "
 "(use\n"
-"`v' to toggle verbose display) these are single characters, from left to "
+"'v' to toggle verbose display) these are single characters, from left to "
 "right:\n"
 "\n"
 " Error flag: Space - no error (but package may be in broken state - see "
 "below)\n"
-"              `R'  - serious error during installation, needs "
+"              'R'  - serious error during installation, needs "
 "reinstallation;\n"
 " Installed state:     Space    - not installed;\n"
-"                       `*'     - installed;\n"
-"                       `-'     - not installed but config files remain;\n"
-"   packages in these { `U'     - unpacked but not yet configured;\n"
-"   states are not    { `C'     - half-configured (an error happened);\n"
-"   (quite) properly  { `I'     - half-installed (an error happened);\n"
-"   installed         { `W',`t' - triggers are awaited resp. pending.\n"
+"                       '*'     - installed;\n"
+"                       '-'     - not installed but config files remain;\n"
+"   packages in these { 'U'     - unpacked but not yet configured;\n"
+"   states are not    { 'C'     - half-configured (an error happened);\n"
+"   (quite) properly  { 'I'     - half-installed (an error happened);\n"
+"   installed         { 'W','t' - triggers are awaited resp. pending.\n"
 " Old mark: what was requested for this package before presenting this list;\n"
 " Mark: what is requested for this package:\n"
-"  `*': marked for installation or upgrade;\n"
-"  `-': marked for removal, but any configuration files will remain;\n"
-"  `=': on hold: package will not be processed at all;\n"
-"  `_': marked for purge completely - even remove configuration;\n"
-"  `n': package is new and has yet to be marked for install/remove/&c.\n"
+"  '*': marked for installation or upgrade;\n"
+"  '-': marked for removal, but any configuration files will remain;\n"
+"  '=': on hold: package will not be processed at all;\n"
+"  '_': marked for purge completely - even remove configuration;\n"
+"  'n': package is new and has yet to be marked for install/remove/&c.\n"
 "\n"
 "Also displayed are each package's Priority, Section, name, installed and\n"
 "available version numbers (shift-V to display/hide) and summary "
@@ -596,16 +596,16 @@ msgstr ""
 "Auch angezeigt werden Priorität, Bereich, Name, installierte und verfügbare\n"
 "Version (»V« zum Ein-/Ausblenden) der Pakete sowie eine kurze Beschreibung.\n"
 
-#: dselect/helpmsgs.cc:152
+#: dselect/helpmsgs.cc
 msgid "Display, part 2: list highlight; information display"
 msgstr "Anzeige, Teil 2: Listenhervorhebung; Informationsanzeige"
 
 # Daran denken: 22 Zeilen, 80 Zeichen!
-#: dselect/helpmsgs.cc:152
+#: dselect/helpmsgs.cc
 msgid ""
 "* Highlight: One line in the package list will be highlighted.  It "
 "indicates\n"
-"  which package(s) will be affected by presses of `+', `-' and `_'.\n"
+"  which package(s) will be affected by presses of '+', '-' and '_'.\n"
 "\n"
 "* The dividing line in the middle of the screen shows a brief explanation "
 "of\n"
@@ -613,8 +613,8 @@ msgid ""
 "which\n"
 "  group is highlighted if a group line is.  If you don't understand the\n"
 "  meaning of some of the status characters displayed, go to the relevant\n"
-"  package and look at this divider line, or use the `v' key for a verbose\n"
-"  display (press `v' again to go back to the terse display).\n"
+"  package and look at this divider line, or use the 'v' key for a verbose\n"
+"  display (press 'v' again to go back to the terse display).\n"
 "\n"
 "* The bottom of the screen shows more information about the\n"
 "  currently-highlighted package (if there is only one).\n"
@@ -624,7 +624,7 @@ msgid ""
 "  package), or information about conflicts and dependencies involving the\n"
 "  current package (in conflict/dependency resolution sublists).\n"
 "\n"
-"  Use the `i' key to cycle through the displays, and `I' to hide the\n"
+"  Use the 'i' key to cycle through the displays, and 'I' to hide the\n"
 "  information display or expand it to use almost all of the screen.\n"
 msgstr ""
 "* Hervorhebung: Eine Zeile der Paketliste ist hervorgehoben. Sie zeigt\n"
@@ -654,11 +654,11 @@ msgstr ""
 "  Benutzen Sie »i«, um durch die Anzeigen zu wechseln und »I«, um die\n"
 "  Informationsanzeige zu verstecken oder sie zu vergrößern.\n"
 
-#: dselect/helpmsgs.cc:176
+#: dselect/helpmsgs.cc
 msgid "Introduction to method selection display"
 msgstr "Einführung zum Methoden-Auswahl-Menü"
 
-#: dselect/helpmsgs.cc:176
+#: dselect/helpmsgs.cc
 msgid ""
 "dselect and dpkg can do automatic installation, loading the package files to "
 "be\n"
@@ -673,13 +673,13 @@ msgid ""
 "As you move the highlight a description of each method, where available, is\n"
 "displayed in the bottom half of the screen.\n"
 "\n"
-"If you wish to quit without changing anything use the `x' key while in the "
+"If you wish to quit without changing anything use the 'x' key while in the "
 "list\n"
 "of installation methods.\n"
 "\n"
-"A full list of keystrokes is available by pressing `k' now, or from the "
+"A full list of keystrokes is available by pressing 'k' now, or from the "
 "help\n"
-"menu reachable by pressing `?'.\n"
+"menu reachable by pressing '?'.\n"
 msgstr ""
 "dselect und dpkg beherrschen automatische Installation, indem sie die zu\n"
 "installierenden Pakete von einem von mehreren möglichen Orten laden.\n"
@@ -700,11 +700,11 @@ msgstr ""
 "Eine Liste aller Tastenkürzel erhalten Sie, wenn sie jetzt die »k«-Taste\n"
 "drücken, oder später aus dem Hilfemenü, erreichbar mit der Taste »?«.\n"
 
-#: dselect/helpmsgs.cc:196
+#: dselect/helpmsgs.cc
 msgid "Keystrokes for method selection"
 msgstr "Tastenkürzel für die Methoden-Auswahl"
 
-#: dselect/helpmsgs.cc:196
+#: dselect/helpmsgs.cc
 msgid ""
 "Motion keys: Next/Previous, Top/End, Up/Down, Backwards/Forwards:\n"
 "  j, Down-arrow         k, Up-arrow             move highlight\n"
@@ -753,106 +753,106 @@ msgstr ""
 "  /                Suchen (Abbruch mit Eingabetaste)\n"
 "  \\                letzte Suche wiederholen\n"
 
-#: dselect/main.cc:63
+#: dselect/main.cc
 msgid "Type dselect --help for help."
 msgstr "Geben Sie dselect --help ein, um Hilfe zu erhalten."
 
-#: dselect/main.cc:145
+#: dselect/main.cc
 msgid "a"
 msgstr "z"
 
-#: dselect/main.cc:145
+#: dselect/main.cc
 msgid "[A]ccess"
 msgstr "[Z]ugriff"
 
-#: dselect/main.cc:145
+#: dselect/main.cc
 msgid "Choose the access method to use."
 msgstr "Zugriffsmethode auswählen."
 
-#: dselect/main.cc:146
+#: dselect/main.cc
 msgid "u"
 msgstr "e"
 
-#: dselect/main.cc:146
+#: dselect/main.cc
 msgid "[U]pdate"
 msgstr "[E]rneuern"
 
-#: dselect/main.cc:146
+#: dselect/main.cc
 msgid "Update list of available packages, if possible."
 msgstr "Liste der verfügbaren Pakete erneuern, falls möglich."
 
-#: dselect/main.cc:147
+#: dselect/main.cc
 msgid "s"
 msgstr "a"
 
-#: dselect/main.cc:147
+#: dselect/main.cc
 msgid "[S]elect"
 msgstr "[A]uswählen"
 
-#: dselect/main.cc:147
+#: dselect/main.cc
 msgid "Request which packages you want on your system."
 msgstr "Auswahl der für Ihr System gewünschten Pakete treffen."
 
-#: dselect/main.cc:148
+#: dselect/main.cc
 msgid "i"
 msgstr "i"
 
-#: dselect/main.cc:148
+#: dselect/main.cc
 msgid "[I]nstall"
 msgstr "[I]nstall."
 
-#: dselect/main.cc:148
+#: dselect/main.cc
 msgid "Install and upgrade wanted packages."
 msgstr "Gewünschte Pakete installieren und aktualisieren."
 
 # Vorsicht Falle: "k" geht leider nicht, denn diese Taste bewegt
 # die Hervorhebung um eine Zeile nach oben!
-#: dselect/main.cc:149
+#: dselect/main.cc
 msgid "c"
 msgstr "f"
 
-#: dselect/main.cc:149
+#: dselect/main.cc
 msgid "[C]onfig"
 msgstr "Kon[f]ig."
 
-#: dselect/main.cc:149
+#: dselect/main.cc
 msgid "Configure any packages that are unconfigured."
 msgstr "Alle unkonfigurierten Pakete konfigurieren."
 
-#: dselect/main.cc:150
+#: dselect/main.cc
 msgid "r"
 msgstr "l"
 
-#: dselect/main.cc:150
+#: dselect/main.cc
 msgid "[R]emove"
 msgstr "[L]öschen"
 
-#: dselect/main.cc:150
+#: dselect/main.cc
 msgid "Remove unwanted software."
 msgstr "Nicht gewünschte Software löschen."
 
-#: dselect/main.cc:151
+#: dselect/main.cc
 msgid "q"
 msgstr "b"
 
-#: dselect/main.cc:151
+#: dselect/main.cc
 msgid "[Q]uit"
 msgstr "[B]eenden"
 
-#: dselect/main.cc:151
+#: dselect/main.cc
 msgid "Quit dselect."
 msgstr "Dselect beenden."
 
-#: dselect/main.cc:152
+#: dselect/main.cc
 msgid "menu"
 msgstr "Menü"
 
-#: dselect/main.cc:157
+#: dselect/main.cc
 #, c-format
-msgid "Debian `%s' package handling frontend version %s.\n"
+msgid "Debian '%s' package handling frontend version %s.\n"
 msgstr "Debian »%s« Paketverwaltungs-Frontend Version %s.\n"
 
-#: dselect/main.cc:160
+#: dselect/main.cc
 msgid ""
 "This is free software; see the GNU General Public License version 2 or\n"
 "later for copying conditions. There is NO warranty.\n"
@@ -861,106 +861,114 @@ msgstr ""
 "Version 2 oder höher für Kopierbedingungen. Es wird KEINE Haftung "
 "übernommen.\n"
 
-#: dselect/main.cc:169 dselect/main.cc:217
+#: dselect/main.cc
 msgid "<standard output>"
 msgstr "<Standardausgabe>"
 
-#: dselect/main.cc:180
+#: dselect/main.cc
 #, c-format
 msgid ""
-"Usage: %s [<option> ...] [<action> ...]\n"
+"Usage: %s [<option>...] [<command>...]\n"
 "\n"
 msgstr ""
-"Aufruf: %s [<Option> ...] [<Aktion> ...]\n"
+"Aufruf: %s [<Option>...] [<Befehl>...]\n"
 "\n"
 
-#: dselect/main.cc:184
+#: dselect/main.cc
+#, c-format
+msgid "Commands:\n"
+msgstr "Befehle:\n"
+
+#: dselect/main.cc
 #, c-format
 msgid ""
 "Options:\n"
-"  --admindir <directory>     Use <directory> instead of %s.\n"
-"  --expert                   Turn on expert mode.\n"
-"  --debug <file> | -D<file>  Turn on debugging, sending output to <file>.\n"
-"  --colour | --color screenpart:[foreground],[background][:attr[+attr+...]]\n"
-"                             Configure screen colours.\n"
-"\n"
+"      --admindir <directory>       Use <directory> instead of %s.\n"
+"      --expert                     Turn on expert mode.\n"
+"  -D, --debug <file>               Turn on debugging, send output to "
+"<file>.\n"
+"      --color <color-spec>         Configure screen colors.\n"
+"      --colour <color-spec>        Ditto.\n"
 msgstr ""
 "Optionen:\n"
-"  --admindir <Verzeichnis>     <Verzeichnis> statt %s verwenden.\n"
-"  --expert                     Experten-Modus einschalten.\n"
-"  --debug <Datei> | -D<Datei>  Debuggen einschalten, Ausgaben an <Datei> "
-"senden\n"
-"  --colour | --color Element:[Vordergrund],[Hintergrund][:Attr[+Attr+...]]\n"
-"                               Bildschirmfarben konfigurieren.\n"
-"\n"
+"      --admindir <Verzeichnis>     <Verzeichnis> statt %s verwenden.\n"
+"      --expert                     Experten-Modus einschalten.\n"
+"  -D, --debug <Datei>              Debuggen einschalten, Ausgaben an\n"
+"                                     <Datei> senden.\n"
+"      --color <Farb-Spez>          Bildschirmfarben konfigurieren.\n"
+"      --colour <Farb-Spez>         Dito.\n"
 
-#: dselect/main.cc:193
+#: dselect/main.cc
 #, c-format
 msgid ""
-"  --help                     Show this help message.\n"
-"  --version                  Show the version.\n"
+"  -?, --help                       Show this help message.\n"
+"      --version                    Show the version.\n"
 "\n"
 msgstr ""
-"  --help                       Diesen Hilfetext anzeigen.\n"
-"  --version                    Version anzeigen.\n"
+"  -?, --help                       Diesen Hilfetext anzeigen.\n"
+"      --version                    Version anzeigen.\n"
 "\n"
 
-#: dselect/main.cc:197
+#: dselect/main.cc
 #, c-format
-msgid "Actions:\n"
-msgstr "Aktionen:\n"
+msgid ""
+"<color-spec> is <screen-part>:[<foreground>],[<background>][:"
+"<attr>[+<attr>]...]\n"
+msgstr ""
+"<Farb-Spez ist <Bildschirm-Element>:[<Vordergrund>],[<Hintergrund>][:"
+"<Attr>[+<Attr>]...]\n"
 
-#: dselect/main.cc:202
+#: dselect/main.cc
 #, c-format
-msgid "Screenparts:\n"
-msgstr "Bildschirmelemente:\n"
+msgid "<screen-part> is:"
+msgstr "<Bildschirm-Element> ist:"
 
-#: dselect/main.cc:207
+#: dselect/main.cc
 #, c-format
-msgid "Colours:\n"
-msgstr "Farben:\n"
+msgid "<color> is:"
+msgstr "<Farbe> ist:"
 
-#: dselect/main.cc:212
+#: dselect/main.cc
 #, c-format
-msgid "Attributes:\n"
-msgstr "Attribute:\n"
+msgid "<attr> is:"
+msgstr "<Attr> ist:"
 
-#: dselect/main.cc:232
+#: dselect/main.cc
 #, c-format
-msgid "couldn't open debug file `%.255s'\n"
+msgid "couldn't open debug file '%.255s'\n"
 msgstr "Debug-Datei »%.255s« konnte nicht geöffnet werden\n"
 
 # %s kann unterchiedliches Geschlecht haben (Farbe, Bildschirmelement, Farbattribut)
-#: dselect/main.cc:253
+#: dselect/main.cc
 #, c-format
 msgid "invalid %s '%s'"
 msgstr "%s »%s« ist ungültig"
 
-#: dselect/main.cc:272
+#: dselect/main.cc
 msgid "screen part"
 msgstr "Bildschirmelement"
 
-#: dselect/main.cc:278
+#: dselect/main.cc
 msgid "null colour specification"
 msgstr "Leere Farbspezifikation"
 
-#: dselect/main.cc:286 dselect/main.cc:291
+#: dselect/main.cc
 msgid "colour"
 msgstr "Farbe"
 
-#: dselect/main.cc:299
+#: dselect/main.cc
 msgid "colour attribute"
 msgstr "Farbattribut"
 
-#: dselect/main.cc:333
+#: dselect/main.cc
 msgid "Terminal does not appear to support cursor addressing.\n"
 msgstr "Das Terminal scheint Cursoradressierung nicht zu unterstützen.\n"
 
-#: dselect/main.cc:335
+#: dselect/main.cc
 msgid "Terminal does not appear to support highlighting.\n"
 msgstr "Das Terminal scheint Hervorhebung nicht zu unterstützen.\n"
 
-#: dselect/main.cc:337
+#: dselect/main.cc
 #, c-format
 msgid ""
 "Set your TERM variable correctly, use a better terminal,\n"
@@ -969,11 +977,11 @@ msgstr ""
 "Setzen Sie ihre TERM-Variable richtig, verwenden Sie ein besseres Terminal,\n"
 "oder begnügen Sie sich mit dem Werkzeug %s zur paketweisen Verwaltung.\n"
 
-#: dselect/main.cc:340
+#: dselect/main.cc
 msgid "terminal lacks necessary features, giving up"
 msgstr "Terminal lässt notwendige Fähigkeiten vermissen, Abbruch"
 
-#: dselect/main.cc:425
+#: dselect/main.cc
 msgid ""
 "\n"
 "\n"
@@ -987,7 +995,7 @@ msgstr ""
 "Drücken Sie <Eingabe> zur Bestätigung.   ^L zeichnet den Bildschirm neu.\n"
 "\n"
 
-#: dselect/main.cc:430
+#: dselect/main.cc
 msgid ""
 "Copyright (C) 1994-1996 Ian Jackson.\n"
 "Copyright (C) 2000,2001 Wichert Akkerman.\n"
@@ -995,7 +1003,7 @@ msgstr ""
 "Copyright (C) 1994-1996 Ian Jackson.\n"
 "Copyright (C) 2000,2001 Wichert Akkerman.\n"
 
-#: dselect/main.cc:436
+#: dselect/main.cc
 msgid ""
 "\n"
 "\n"
@@ -1005,57 +1013,57 @@ msgstr ""
 "\n"
 "Nur-Lese-Zugriff: Lediglich die Vorschau der Auswahlen ist verfügbar!"
 
-#: dselect/main.cc:455
+#: dselect/main.cc
 msgid "failed to getch in main menu"
 msgstr "getch im Hauptmenü fehlgeschlagen"
 
-#: dselect/main.cc:538
+#: dselect/main.cc
 #, c-format
-msgid "unknown action string `%.50s'"
+msgid "unknown action string '%.50s'"
 msgstr "unbekannte Aktionszeichenkette »%.50s«"
 
-#: dselect/methlist.cc:66
+#: dselect/methlist.cc
 msgid "Abbrev."
 msgstr "Abkürz."
 
-#: dselect/methlist.cc:67 dselect/pkgdisplay.cc:188 dselect/pkginfo.cc:110
+#: dselect/methlist.cc dselect/pkgdisplay.cc dselect/pkginfo.cc
 msgid "Description"
 msgstr "Beschreibung"
 
-#: dselect/methlist.cc:73
+#: dselect/methlist.cc
 msgid "dselect - list of access methods"
 msgstr "dselect - Liste der Zugriffsmethoden"
 
-#: dselect/methlist.cc:82
+#: dselect/methlist.cc
 #, c-format
-msgid "Access method `%s'."
+msgid "Access method '%s'."
 msgstr "Zugriffsmethode »%s«."
 
-#: dselect/methlist.cc:161 dselect/pkglist.cc:587
+#: dselect/methlist.cc dselect/pkglist.cc
 msgid "doupdate failed"
 msgstr "doupdate fehlgeschlagen"
 
-#: dselect/methlist.cc:164 dselect/pkglist.cc:590
+#: dselect/methlist.cc dselect/pkglist.cc
 msgid "failed to unblock SIGWINCH"
 msgstr "SIGWINCH konnte nicht entblockt werden"
 
-#: dselect/methlist.cc:169 dselect/pkglist.cc:595
+#: dselect/methlist.cc dselect/pkglist.cc
 msgid "failed to re-block SIGWINCH"
 msgstr "SIGWINCH konnte nicht erneut blockiert werden"
 
-#: dselect/methlist.cc:170 dselect/pkglist.cc:597
+#: dselect/methlist.cc dselect/pkglist.cc
 msgid "getch failed"
 msgstr "getch fehlgeschlagen"
 
-#: dselect/methlist.cc:187
+#: dselect/methlist.cc
 msgid "Explanation"
 msgstr "Beschreibung"
 
-#: dselect/methlist.cc:197
+#: dselect/methlist.cc
 msgid "No explanation available."
 msgstr "Keine Beschreibung verfügbar."
 
-#: dselect/method.cc:67
+#: dselect/method.cc
 #, c-format
 msgid ""
 "\n"
@@ -1066,7 +1074,7 @@ msgstr ""
 "\n"
 "%s: %s\n"
 
-#: dselect/method.cc:70
+#: dselect/method.cc
 msgid ""
 "\n"
 "Press <enter> to continue."
@@ -1074,190 +1082,190 @@ msgstr ""
 "\n"
 "Drücken Sie <Eingabe> zum Fortsetzen."
 
-#: dselect/method.cc:82
+#: dselect/method.cc
 msgid "cannot unlock access method area"
 msgstr "Zugriffsmethoden-Bereich kann nicht entsperrt werden"
 
-#: dselect/method.cc:96
+#: dselect/method.cc
 msgid "no access methods are available"
 msgstr "Es sind keine Zugriffsmethoden verfügbar"
 
-#: dselect/method.cc:115
+#: dselect/method.cc
 msgid "requested operation requires superuser privilege"
 msgstr "Angeforderte Operation benötigt Superuser-Rechte"
 
-#: dselect/method.cc:118
+#: dselect/method.cc
 msgid "cannot open or create access method lockfile"
 msgstr "Zugriffsmethoden-Sperrdatei kann nicht geöffnet oder angelegt werden"
 
-#: dselect/method.cc:125
+#: dselect/method.cc
 msgid "the access method area is already locked"
 msgstr "Der Zugriffsmethoden-Bereich ist bereits gesperrt"
 
-#: dselect/method.cc:128
+#: dselect/method.cc
 msgid "cannot lock access method area"
 msgstr "Zugriffsmethoden-Bereich kann nicht gesperrt werden"
 
-#: dselect/method.cc:161
+#: dselect/method.cc
 #, c-format
 msgid "Press <enter> to continue.\n"
 msgstr "Drücken Sie <Eingabe> zum Fortfahren.\n"
 
-#: dselect/method.cc:162
+#: dselect/method.cc
 msgid "<standard error>"
 msgstr "<Standardfehlerausgabe>"
 
 # CHECKME
-#: dselect/method.cc:165
+#: dselect/method.cc
 msgid "error reading acknowledgement of program failure message"
 msgstr "Fehler beim Lesen der Bestätigung der Programm-Fehlermeldung"
 
-#: dselect/method.cc:187
+#: dselect/method.cc
 msgid "no access method is selected or configured"
 msgstr "Es ist keine Zugriffsmethode ausgewählt oder konfiguriert"
 
-#: dselect/method.cc:196
+#: dselect/method.cc
 msgid "update available list script"
 msgstr "Skript zur Aktualisierung der Verfügbarkeitsliste"
 
-#: dselect/method.cc:200
+#: dselect/method.cc
 msgid "installation script"
 msgstr "Installationsskript"
 
-#: dselect/method.cc:246
+#: dselect/method.cc
 msgid "query/setup script"
 msgstr "Abfrage-/Einrichtungsskript"
 
 # CHECKME: »Options-Datei« oder »Optionen-Datei«?
-#: dselect/methparse.cc:53
+#: dselect/methparse.cc
 #, c-format
-msgid "syntax error in method options file `%.250s' -- %s"
+msgid "syntax error in method options file '%.250s' -- %s"
 msgstr "Syntaxfehler in Methoden-Options-Datei »%.250s« -- %s"
 
-#: dselect/methparse.cc:59
+#: dselect/methparse.cc
 #, c-format
-msgid "error reading options file `%.250s'"
+msgid "error reading options file '%.250s'"
 msgstr "Fehler beim Lesen der Options-Datei »%.250s«"
 
 # CHECKME
-#: dselect/methparse.cc:93
+#: dselect/methparse.cc
 #, c-format
-msgid "unable to read `%.250s' directory for reading methods"
+msgid "unable to read '%.250s' directory for reading methods"
 msgstr "Verzeichnis »%.250s« kann nicht gelesen werden, um Methoden zu lesen"
 
-#: dselect/methparse.cc:109
+#: dselect/methparse.cc
 #, c-format
-msgid "method `%.250s' has name that is too long (%d > %d characters)"
+msgid "method '%.250s' has name that is too long (%d > %d characters)"
 msgstr "Methode »%.250s« hat einen zu langen Namen (%d > %d Zeichen)"
 
-#: dselect/methparse.cc:120
+#: dselect/methparse.cc
 #, c-format
-msgid "unable to access method script `%.250s'"
+msgid "unable to access method script '%.250s'"
 msgstr "Auf Methodenskript »%.250s« kann nicht zugegriffen werden"
 
-#: dselect/methparse.cc:126
+#: dselect/methparse.cc
 #, c-format
-msgid "unable to read method options file `%.250s'"
+msgid "unable to read method options file '%.250s'"
 msgstr "Methoden-Options-Datei »%.250s« kann nicht gelesen werden"
 
-#: dselect/methparse.cc:150
+#: dselect/methparse.cc
 msgid "non-digit where digit wanted"
 msgstr "Nichtziffer, wo Ziffer erwartet wurde"
 
-#: dselect/methparse.cc:153
-msgid "EOF in index string"
-msgstr "EOF in Indexzeichenkette"
+#: dselect/methparse.cc
+msgid "end of file in index string"
+msgstr "Dateiende in Indexzeichenkette"
 
-#: dselect/methparse.cc:156
+#: dselect/methparse.cc
 msgid "index string too long"
 msgstr "Indexzeichenkette zu lang"
 
-#: dselect/methparse.cc:159
+#: dselect/methparse.cc
 msgid "newline before option name start"
 msgstr "Zeilenvorschub vor Optionsnamenanfang"
 
-#: dselect/methparse.cc:161
-msgid "EOF before option name start"
-msgstr "EOF vor Optionsnamenanfang"
+#: dselect/methparse.cc
+msgid "end of file before option name start"
+msgstr "Dateiende vor Optionsnamenanfang"
 
-#: dselect/methparse.cc:165
+#: dselect/methparse.cc
 msgid "nonalpha where option name start wanted"
 msgstr "Nichtbuchstabe, wo Anfang eines Optionsnamen erwartet wurde"
 
-#: dselect/methparse.cc:167
+#: dselect/methparse.cc
 msgid "non-alphanum in option name"
 msgstr "nicht-alphanumerisches Zeichen im Optionsnamen"
 
-#: dselect/methparse.cc:170
-msgid "EOF in option name"
-msgstr "EOF im Optionsnamen"
+#: dselect/methparse.cc
+msgid "end of file in option name"
+msgstr "Dateiende im Optionsnamen"
 
-#: dselect/methparse.cc:175
+#: dselect/methparse.cc
 msgid "newline before summary"
 msgstr "Zeilenvorschub vor Zusammenfassung"
 
-#: dselect/methparse.cc:177
-msgid "EOF before summary"
-msgstr "EOF vor Zusammenfassung"
+#: dselect/methparse.cc
+msgid "end of file before summary"
+msgstr "Dateiende vor Zusammenfassung"
 
-#: dselect/methparse.cc:183
-msgid "EOF in summary - missing newline"
-msgstr "EOF in Zusammenfassung - Zeilenvorschub fehlt"
+#: dselect/methparse.cc
+msgid "end of file in summary - missing newline"
+msgstr "Dateiende in Zusammenfassung - Zeilenvorschub fehlt"
 
-#: dselect/methparse.cc:193
+#: dselect/methparse.cc
 #, c-format
-msgid "unable to open option description file `%.250s'"
+msgid "unable to open option description file '%.250s'"
 msgstr "Options-Beschreibungs-Datei »%.250s« kann nicht geöffnet werden"
 
-#: dselect/methparse.cc:197
+#: dselect/methparse.cc
 #, c-format
-msgid "unable to stat option description file `%.250s'"
+msgid "unable to stat option description file '%.250s'"
 msgstr ""
 "Options-Beschreibungs-Datei »%.250s« kann nicht mit stat abgefragt werden"
 
-#: dselect/methparse.cc:201
+#: dselect/methparse.cc
 #, c-format
-msgid "failed to read option description file `%.250s'"
+msgid "failed to read option description file '%.250s'"
 msgstr "Options-Beschreibungs-Datei »%.250s« konnte nicht gelesen werden"
 
-#: dselect/methparse.cc:204
+#: dselect/methparse.cc
 #, c-format
-msgid "error during read of option description file `%.250s'"
+msgid "error during read of option description file '%.250s'"
 msgstr "Fehler beim Lesen der Options-Beschreibungs-Datei »%.250s«"
 
-#: dselect/methparse.cc:227
+#: dselect/methparse.cc
 #, c-format
-msgid "error during read of method options file `%.250s'"
+msgid "error during read of method options file '%.250s'"
 msgstr "Fehler beim Lesen der Methoden-Options-Datei »%.250s«"
 
-#: dselect/methparse.cc:250
+#: dselect/methparse.cc
 #, c-format
-msgid "unable to open current option file `%.250s'"
+msgid "unable to open current option file '%.250s'"
 msgstr "Aktuelle Options-Datei »%.250s« kann nicht geöffnet werden"
 
 # FIXME: Wäre »new option file« nicht besser?
-#: dselect/methparse.cc:286
+#: dselect/methparse.cc
 #, c-format
-msgid "unable to write new option to `%.250s'"
+msgid "unable to write new option to '%.250s'"
 msgstr "Neue Options-Datei kann nicht nach »%.250s« geschrieben werden"
 
-#: dselect/pkgdisplay.cc:36
+#: dselect/pkgdisplay.cc
 msgid "new package"
 msgstr "neues Paket"
 
-#: dselect/pkgdisplay.cc:37
+#: dselect/pkgdisplay.cc
 msgid "install"
 msgstr "install."
 
-#: dselect/pkgdisplay.cc:38
+#: dselect/pkgdisplay.cc
 msgid "hold"
 msgstr "halten"
 
-#: dselect/pkgdisplay.cc:39
+#: dselect/pkgdisplay.cc
 msgid "remove"
 msgstr "löschen"
 
-#: dselect/pkgdisplay.cc:40
+#: dselect/pkgdisplay.cc
 msgid "purge"
 msgstr "vollständig löschen"
 
@@ -1265,43 +1273,43 @@ msgstr "vollständig löschen"
 #. * the empty string to store information about the translation. DO NOT
 #. * CHANGE THAT IN A TRANSLATION! The code really relies on that being
 #. * a single space.
-#: dselect/pkgdisplay.cc:47
+#: dselect/pkgdisplay.cc
 msgid " "
 msgstr " "
 
-#: dselect/pkgdisplay.cc:48
+#: dselect/pkgdisplay.cc
 msgid "REINSTALL"
 msgstr "REINSTALL"
 
-#: dselect/pkgdisplay.cc:51
+#: dselect/pkgdisplay.cc
 msgid "not installed"
 msgstr "nicht installiert"
 
-#: dselect/pkgdisplay.cc:52
+#: dselect/pkgdisplay.cc
 msgid "removed (configs remain)"
 msgstr "entfernt (Konfiguration bleibt)"
 
-#: dselect/pkgdisplay.cc:53
+#: dselect/pkgdisplay.cc
 msgid "half installed"
 msgstr "halb installiert"
 
-#: dselect/pkgdisplay.cc:54
+#: dselect/pkgdisplay.cc
 msgid "unpacked (not set up)"
 msgstr "entpackt (nicht eingerichtet)"
 
-#: dselect/pkgdisplay.cc:55
+#: dselect/pkgdisplay.cc
 msgid "half configured (config failed)"
 msgstr "halb konfiguriert (Konfiguration fehlgeschlagen)"
 
-#: dselect/pkgdisplay.cc:56
+#: dselect/pkgdisplay.cc
 msgid "awaiting trigger processing"
 msgstr "auf Trigger-Verarbeitung wartend"
 
-#: dselect/pkgdisplay.cc:57
+#: dselect/pkgdisplay.cc
 msgid "triggered"
 msgstr "getriggered"
 
-#: dselect/pkgdisplay.cc:58
+#: dselect/pkgdisplay.cc
 msgid "installed"
 msgstr "installiert"
 
@@ -1309,299 +1317,284 @@ msgstr "installiert"
 # in der Statuszeile sowie (bei ausführlicher Anzeige) in der
 # Prioritätsspalte auf, das sieht richtig blöd aus!
 # CHECKME: Groß- oder Kleinschreibung?
-#: dselect/pkgdisplay.cc:61
+#: dselect/pkgdisplay.cc
 msgid "Required"
 msgstr "Erforderliche"
 
-#: dselect/pkgdisplay.cc:62
+#: dselect/pkgdisplay.cc
 msgid "Important"
 msgstr "Wichtige"
 
 # FIXME: Weder »Standard- Pakete« noch »Standard Pakete« ist toll :-(
-#: dselect/pkgdisplay.cc:63
+#: dselect/pkgdisplay.cc
 msgid "Standard"
 msgstr "Standard"
 
-#: dselect/pkgdisplay.cc:64
+#: dselect/pkgdisplay.cc
 msgid "Optional"
 msgstr "Optionale"
 
 # FIXME, siehe »Standard« oben
-#: dselect/pkgdisplay.cc:65
+#: dselect/pkgdisplay.cc
 msgid "Extra"
 msgstr "Extra"
 
-#: dselect/pkgdisplay.cc:66
-msgid "!Bug!"
-msgstr "!Fehler!"
-
-#: dselect/pkgdisplay.cc:67
+#: dselect/pkgdisplay.cc
 msgid "Unclassified"
 msgstr "Unklassifizierte"
 
 # CHECKME: Der Unterschied zwischen »befürwortet« und »empfiehlt«
 # dürfte vielen Leuten nicht so ohne weiteres klar sein.
 # Leider geht »schlägt vor« nicht: Paket A schlägt vor Paket B ... :-(
-#: dselect/pkgdisplay.cc:70
+#: dselect/pkgdisplay.cc
 msgid "suggests"
 msgstr "befürwortet"
 
-#: dselect/pkgdisplay.cc:71
+#: dselect/pkgdisplay.cc
 msgid "recommends"
 msgstr "empfiehlt"
 
-#: dselect/pkgdisplay.cc:72
+#: dselect/pkgdisplay.cc
 msgid "depends on"
 msgstr "hängt ab von"
 
-#: dselect/pkgdisplay.cc:73
+#: dselect/pkgdisplay.cc
 msgid "pre-depends on"
 msgstr "hängt ab (vorher) von"
 
 # CHECKME: breaks ist keine symmetrische Beziehung
-#: dselect/pkgdisplay.cc:74
+#: dselect/pkgdisplay.cc
 msgid "breaks"
 msgstr "beschädigt"
 
-#: dselect/pkgdisplay.cc:75
+#: dselect/pkgdisplay.cc
 msgid "conflicts with"
 msgstr "kollidiert mit"
 
-#: dselect/pkgdisplay.cc:76
+#: dselect/pkgdisplay.cc
 msgid "provides"
 msgstr "liefert"
 
-#: dselect/pkgdisplay.cc:77
+#: dselect/pkgdisplay.cc
 msgid "replaces"
 msgstr "ersetzt"
 
-#: dselect/pkgdisplay.cc:78
+#: dselect/pkgdisplay.cc
 msgid "enhances"
 msgstr "erweitert"
 
-#: dselect/pkgdisplay.cc:81
+#: dselect/pkgdisplay.cc
 msgid "Req"
 msgstr "Erf"
 
-#: dselect/pkgdisplay.cc:82
+#: dselect/pkgdisplay.cc
 msgid "Imp"
 msgstr "Wic"
 
-#: dselect/pkgdisplay.cc:83
+#: dselect/pkgdisplay.cc
 msgid "Std"
 msgstr "Std"
 
-#: dselect/pkgdisplay.cc:84
+#: dselect/pkgdisplay.cc
 msgid "Opt"
 msgstr "Opt"
 
-#: dselect/pkgdisplay.cc:85
+#: dselect/pkgdisplay.cc
 msgid "Xtr"
 msgstr "Ext"
 
-#: dselect/pkgdisplay.cc:86
+#: dselect/pkgdisplay.cc
 msgid "bUG"
 msgstr "bUG"
 
-#: dselect/pkgdisplay.cc:87
+#: dselect/pkgdisplay.cc
 msgid "?"
 msgstr "?"
 
-#: dselect/pkgdisplay.cc:95 dselect/pkgdisplay.cc:115
+#: dselect/pkgdisplay.cc
 msgid "Broken"
 msgstr "Defekte"
 
-#: dselect/pkgdisplay.cc:96
+#: dselect/pkgdisplay.cc
 msgid "New"
 msgstr "Neue"
 
-# FIXME: "Upgradable" (wie in aptitude) wäre besser
-#: dselect/pkgdisplay.cc:97
-msgid "Updated"
-msgstr "Aktualisierte"
+#: dselect/pkgdisplay.cc
+msgid "Upgradable"
+msgstr "Aktualisierbare"
 
-#: dselect/pkgdisplay.cc:98
+#: dselect/pkgdisplay.cc
 msgid "Obsolete/local"
 msgstr "Veraltete/Lokale"
 
-#: dselect/pkgdisplay.cc:99
-msgid "Up-to-date"
-msgstr "Aktuelle"
+#: dselect/pkgdisplay.cc
+msgid "Installed"
+msgstr "Installierte"
 
-#: dselect/pkgdisplay.cc:100
+#: dselect/pkgdisplay.cc
 msgid "Available"
 msgstr "Verfügbare"
 
-#: dselect/pkgdisplay.cc:101 dselect/pkgdisplay.cc:117
+#: dselect/pkgdisplay.cc
 msgid "Removed"
 msgstr "Entfernte"
 
-#: dselect/pkgdisplay.cc:102 dselect/pkgdisplay.cc:111
+#: dselect/pkgdisplay.cc
 msgid "Brokenly installed packages"
 msgstr "Unvollständig installierte Pakete"
 
-#: dselect/pkgdisplay.cc:103
+#: dselect/pkgdisplay.cc
 msgid "Newly available packages"
 msgstr "Neu verfügbare Pakete"
 
-# FIXME: "Upgradable", s.o.
-#: dselect/pkgdisplay.cc:104
-msgid "Updated packages (newer version is available)"
-msgstr "Aktualisierte Pakete (neuere Version ist verfügbar)"
+#: dselect/pkgdisplay.cc
+msgid "Upgradable packages"
+msgstr "Aktualisierbare Pakete"
 
-# CHECKME: »vorhanden« streichen?
-#: dselect/pkgdisplay.cc:105
-msgid "Obsolete and local packages present on system"
-msgstr "Veraltete und lokale Pakete im System vorhanden"
+#: dselect/pkgdisplay.cc
+msgid "Obsolete and locally created packages"
+msgstr "Veraltete und lokal erstellte Pakete"
 
-#: dselect/pkgdisplay.cc:106
-msgid "Up to date installed packages"
-msgstr "Aktuelle installierte Pakete"
-
-#: dselect/pkgdisplay.cc:107
-msgid "Available packages (not currently installed)"
-msgstr "Verfügbare Pakete (derzeit nicht installiert)"
-
-#: dselect/pkgdisplay.cc:108
-msgid "Removed and no longer available packages"
-msgstr "Entfernte und nicht mehr verfügbare Pakete"
-
-#: dselect/pkgdisplay.cc:112
+#: dselect/pkgdisplay.cc
 msgid "Installed packages"
 msgstr "Installierte Pakete"
 
-#: dselect/pkgdisplay.cc:113
+#: dselect/pkgdisplay.cc
+msgid "Available not installed packages"
+msgstr "Verfügbare nicht installierte Pakete"
+
+#: dselect/pkgdisplay.cc
+msgid "Removed and no longer available packages"
+msgstr "Entfernte und nicht mehr verfügbare Pakete"
+
+#: dselect/pkgdisplay.cc
 msgid "Removed packages (configuration still present)"
 msgstr "Entfernte Pakete (Konfigurationsdateien sind noch vorhanden)"
 
-#: dselect/pkgdisplay.cc:114
+#: dselect/pkgdisplay.cc
 msgid "Purged packages and those never installed"
 msgstr "Vollständig gelöschte und noch nie installierte Pakete"
 
-#: dselect/pkgdisplay.cc:116
-msgid "Installed"
-msgstr "Installiert"
-
-#: dselect/pkgdisplay.cc:118
+#: dselect/pkgdisplay.cc
 msgid "Purged"
 msgstr "Vollständig gelöscht"
 
-#: dselect/pkgdisplay.cc:138
+#: dselect/pkgdisplay.cc
 msgid "Error"
 msgstr "Fehler"
 
-#: dselect/pkgdisplay.cc:139
+#: dselect/pkgdisplay.cc
 msgid "Installed?"
 msgstr "Installiert?"
 
 # "Alte Markierung" würde abgeschnitten
-#: dselect/pkgdisplay.cc:140
+#: dselect/pkgdisplay.cc
 msgid "Old mark"
 msgstr "Alte Marke"
 
 # FIXME: Nach 10 oder 11 Zeichen wird abgeschnitten :-(
-#: dselect/pkgdisplay.cc:141
+#: dselect/pkgdisplay.cc
 msgid "Marked for"
 msgstr "Ausgewählt zur"
 
-#: dselect/pkgdisplay.cc:143
+#: dselect/pkgdisplay.cc
 msgid "EIOM"
 msgstr "FIAM"
 
-#: dselect/pkgdisplay.cc:147 dselect/pkgdisplay.cc:150
+#: dselect/pkgdisplay.cc
 msgid "Section"
 msgstr "Bereich"
 
 # FIXME: Nach 8 Zeichen wird abgeschnitten :-(
-#: dselect/pkgdisplay.cc:148
+#: dselect/pkgdisplay.cc
 msgid "Priority"
 msgstr "Priorität"
 
-#: dselect/pkgdisplay.cc:152
+#: dselect/pkgdisplay.cc
 msgid "Package"
 msgstr "Paket"
 
-#: dselect/pkgdisplay.cc:161 dselect/pkgdisplay.cc:165
+#: dselect/pkgdisplay.cc
 msgid "Avail.arch"
 msgstr "Verf.Arch"
 
-#: dselect/pkgdisplay.cc:164
+#: dselect/pkgdisplay.cc
 msgid "Inst.arch"
 msgstr "Inst.Arch"
 
-#: dselect/pkgdisplay.cc:178 dselect/pkgdisplay.cc:182
+#: dselect/pkgdisplay.cc
 msgid "Avail.ver"
 msgstr "Verf.Ver"
 
-#: dselect/pkgdisplay.cc:181
+#: dselect/pkgdisplay.cc
 msgid "Inst.ver"
 msgstr "Inst.Ver"
 
-#: dselect/pkgdisplay.cc:197
+#: dselect/pkgdisplay.cc
 msgid "dselect - recursive package listing"
 msgstr "dselect - Rekursive Paketliste"
 
-#: dselect/pkgdisplay.cc:199
+#: dselect/pkgdisplay.cc
 msgid "dselect - inspection of package states"
 msgstr "dselect - Ansicht der Paketzustände"
 
-#: dselect/pkgdisplay.cc:200
+#: dselect/pkgdisplay.cc
 msgid "dselect - main package listing"
 msgstr "dselect - Hauptpaketliste"
 
-#: dselect/pkgdisplay.cc:208
+#: dselect/pkgdisplay.cc
 msgid " (by section)"
 msgstr " (nach Bereich)"
 
-#: dselect/pkgdisplay.cc:211
+#: dselect/pkgdisplay.cc
 msgid " (avail., section)"
 msgstr " (Verfüg., Bereich)"
 
-#: dselect/pkgdisplay.cc:214
+#: dselect/pkgdisplay.cc
 msgid " (status, section)"
 msgstr " (Status, Bereich)"
 
-#: dselect/pkgdisplay.cc:223
+#: dselect/pkgdisplay.cc
 msgid " (by priority)"
 msgstr " (nach Priorität)"
 
-#: dselect/pkgdisplay.cc:226
+#: dselect/pkgdisplay.cc
 msgid " (avail., priority)"
 msgstr " (Verfüg., Priorität)"
 
-#: dselect/pkgdisplay.cc:229
+#: dselect/pkgdisplay.cc
 msgid " (status, priority)"
 msgstr " (Status, Priorität)"
 
-#: dselect/pkgdisplay.cc:238
+#: dselect/pkgdisplay.cc
 msgid " (alphabetically)"
 msgstr " (alphabetisch)"
 
-#: dselect/pkgdisplay.cc:241
+#: dselect/pkgdisplay.cc
 msgid " (by availability)"
 msgstr " (nach Verfügbarkeit)"
 
-#: dselect/pkgdisplay.cc:244
+#: dselect/pkgdisplay.cc
 msgid " (by status)"
 msgstr " (nach Status)"
 
-#: dselect/pkgdisplay.cc:259
+#: dselect/pkgdisplay.cc
 msgid " mark:+/=/- terse:v help:?"
 msgstr " Mark:+/=/- knapp:v Hilfe:?"
 
-#: dselect/pkgdisplay.cc:260
+#: dselect/pkgdisplay.cc
 msgid " mark:+/=/- verbose:v help:?"
 msgstr " Mark:+/=/- ausführlich:v Hilfe:?"
 
-#: dselect/pkgdisplay.cc:262
+#: dselect/pkgdisplay.cc
 msgid " terse:v help:?"
 msgstr " knapp:v Hilfe:?"
 
-#: dselect/pkgdisplay.cc:263
+#: dselect/pkgdisplay.cc
 msgid " verbose:v help:?"
 msgstr " ausführlich:v Hilfe:?"
 
-#: dselect/pkginfo.cc:85
+#: dselect/pkginfo.cc
 msgid ""
 "The line you have highlighted represents many packages; if you ask to "
 "install, remove, hold, etc. it you will affect all the packages which match "
@@ -1609,7 +1602,7 @@ msgid ""
 "\n"
 "If you move the highlight to a line for a particular package you will see "
 "information about that package displayed here.\n"
-"You can use `o' and `O' to change the sort order and give yourself the "
+"You can use 'o' and 'O' to change the sort order and give yourself the "
 "opportunity to mark packages in different kinds of groups."
 msgstr ""
 "Die hervorgehobene Zeile repräsentiert viele Pakete; wenn Sie um "
@@ -1621,81 +1614,113 @@ msgstr ""
 "Sie können »o« und »O« benutzen, um die Sortierreihenfolge zu ändern und "
 "damit die Pakete in anderen Gruppen zu markieren."
 
-#: dselect/pkginfo.cc:98
+#: dselect/pkginfo.cc
 msgid "Interrelationships"
 msgstr "Gegenseitige Beziehungen"
 
-#: dselect/pkginfo.cc:117
+#: dselect/pkginfo.cc
 msgid "No description available."
 msgstr "Keine Beschreibung verfügbar."
 
-#: dselect/pkginfo.cc:135
+#: dselect/pkginfo.cc
 msgid "Installed control file information"
 msgstr "Installierte Control-Datei-Informationen"
 
-#: dselect/pkginfo.cc:151
+#: dselect/pkginfo.cc
 msgid "Available control file information"
 msgstr "Verfügbare Control-Datei-Informationen"
 
-#: dselect/pkglist.cc:425
+#: dselect/pkglist.cc
 msgid "there are no packages"
 msgstr "Es gibt keine Pakete"
 
-#: dselect/pkglist.cc:521
+#: dselect/pkglist.cc
 msgid "invalid search option given"
 msgstr "ungültige Suchoption angegeben"
 
-#: dselect/pkglist.cc:536
+#: dselect/pkglist.cc
 msgid "error in regular expression"
 msgstr "Fehler in regulärem Ausdruck"
 
-#: dselect/pkgsublist.cc:111
+#: dselect/pkgsublist.cc
 msgid " does not appear to be available\n"
 msgstr " scheint nicht verfügbar zu sein\n"
 
-#: dselect/pkgsublist.cc:131
+#: dselect/pkgsublist.cc
 msgid " or "
 msgstr " oder "
 
-#: dselect/pkgtop.cc:58
+#: dselect/pkgtop.cc
 msgid "All"
 msgstr "Alle"
 
-#: dselect/pkgtop.cc:80
+#: dselect/pkgtop.cc
 msgid "All packages"
 msgstr "Alle Pakete"
 
 # CHECKME
-#: dselect/pkgtop.cc:84
+#: dselect/pkgtop.cc
 #, c-format
 msgid "%s packages without a section"
 msgstr "%s Pakete ohne einen Bereich"
 
-#: dselect/pkgtop.cc:86
+#: dselect/pkgtop.cc
 #, c-format
 msgid "%s packages in section %s"
 msgstr "%s Pakete im Bereich %s"
 
-#: dselect/pkgtop.cc:92
+#: dselect/pkgtop.cc
 #, c-format
 msgid "%s %s packages"
 msgstr "%s %s Pakete"
 
 # CHECKME
-#: dselect/pkgtop.cc:96
+#: dselect/pkgtop.cc
 #, c-format
 msgid "%s %s packages without a section"
 msgstr "%s %s Pakete ohne einen Bereich"
 
-#: dselect/pkgtop.cc:98
+#: dselect/pkgtop.cc
 #, c-format
 msgid "%s %s packages in section %s"
 msgstr "%s %s Pakete im Bereich %s"
 
-#: dselect/pkgtop.cc:119
+#: dselect/pkgtop.cc
 #, c-format
 msgid "%-*s %s%s%s;  %s (was: %s).  %s"
 msgstr "%-*s %s%s%s;  %s (war: %s).  %s"
+
+#~ msgid "Actions:\n"
+#~ msgstr "Aktionen:\n"
+
+#~ msgid "Colours:\n"
+#~ msgstr "Farben:\n"
+
+#~ msgid "Attributes:\n"
+#~ msgstr "Attribute:\n"
+
+#~ msgid "EOF before option name start"
+#~ msgstr "EOF vor Optionsnamenanfang"
+
+#~ msgid "EOF before summary"
+#~ msgstr "EOF vor Zusammenfassung"
+
+#~ msgid "!Bug!"
+#~ msgstr "!Fehler!"
+
+# FIXME: "Upgradable" (wie in aptitude) wäre besser
+#~ msgid "Updated"
+#~ msgstr "Aktualisierte"
+
+#~ msgid "Up-to-date"
+#~ msgstr "Aktuelle"
+
+# FIXME: "Upgradable", s.o.
+#~ msgid "Updated packages (newer version is available)"
+#~ msgstr "Aktualisierte Pakete (neuere Version ist verfügbar)"
+
+#~ msgid "Available packages (not currently installed)"
+#~ msgstr "Verfügbare Pakete (derzeit nicht installiert)"
 
 #~ msgid "foreign architectures enabled but multi-arch is not supported"
 #~ msgstr ""

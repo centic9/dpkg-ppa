@@ -26,10 +26,8 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 
-#include <assert.h>
 #include <errno.h>
 #include <limits.h>
-#include <ctype.h>
 #include <string.h>
 #include <dirent.h>
 #include <fcntl.h>
@@ -124,9 +122,12 @@ extracthalf(const char *debar, const char *dir,
   bool header_done;
   enum compressor_type decompressor = COMPRESSOR_TYPE_GZIP;
 
-  arfd = open(debar, O_RDONLY);
+  if (strcmp(debar, "-") == 0)
+    arfd = STDIN_FILENO;
+  else
+    arfd = open(debar, O_RDONLY);
   if (arfd < 0)
-    ohshite(_("failed to read archive `%.255s'"), debar);
+    ohshite(_("failed to read archive '%.255s'"), debar);
   if (fstat(arfd, &stab))
     ohshite(_("failed to fstat archive"));
 
@@ -153,7 +154,8 @@ extracthalf(const char *debar, const char *dir,
         char *infobuf;
 
         if (strncmp(arh.ar_name, DEBMAGIC, sizeof(arh.ar_name)) != 0)
-          ohshit(_("file `%.250s' is not a debian binary archive (try dpkg-split?)"),debar);
+          ohshit(_("file '%.250s' is not a debian binary archive (try dpkg-split?)"),
+                 debar);
         infobuf= m_malloc(memberlen+1);
         r = fd_read(arfd, infobuf, memberlen + (memberlen & 1));
         if (r != (memberlen + (memberlen & 1)))
@@ -275,7 +277,7 @@ extracthalf(const char *debar, const char *dir,
                " corrupted by being downloaded in ASCII mode"));
     }
 
-    ohshit(_("`%.255s' is not a debian format archive"),debar);
+    ohshit(_("'%.255s' is not a debian format archive"), debar);
   }
 
   m_pipe(p1);
@@ -475,6 +477,9 @@ do_raw_extract(const char *const *argv)
   debar = *argv++;
   if (debar == NULL)
     badusage(_("--%s needs .deb filename and directory arguments"),
+             cipaction->olong);
+  else if (strcmp(debar, "-") == 0)
+    badusage(_("--%s does not support (yet) reading the .deb from standard input"),
              cipaction->olong);
 
   dir = *argv++;

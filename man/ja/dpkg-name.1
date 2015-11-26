@@ -1,7 +1,7 @@
 .\" dpkg manual page - dpkg-name(1)
 .\"
 .\" Copyright 息 1995-1996 Erick Branderhorst
-.\" Copyright 息 2007-2012 Guillem Jover <guillem@debian.org>
+.\" Copyright 息 2007-2013, 2015 Guillem Jover <guillem@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -49,11 +49,16 @@ dpkg\-name \- Debian パッケージを完全パッケージ名にリネーム
 リネーム後のファイル名と同名のファイルがあれば、上書きする。
 .TP 
 \fB\-s\fP, \fB\-\-subdir\fP [\fIdir\fP]
-リネームしたファイルをサブディレクトリに移動する。引数で指定されたディレクトリが存在する場合、パッケージの制御情報のセクションフィールドから得られたターゲットディレクトリの代わりにそのディレクトリにファイルを移動する。通常、ターゲットディレクトリは
-`unstable/binary\-\fIarchitecture\fP/\fIsection\fP' である。制御情報にこのセクションがない場合は
-`no\-section' とみなされる。この場合、`non\-free' や `contrib' セクションの時と同様にターゲットディレクトリは
-`\fIsection\fP/binary\-\fIarchitecture\fP' となる。セクションフィールドは必須ではないため、多くのパッケージが
-`no\-section' になってしまうだろう。このオプションは注意して使用すること。この機能は完成度が低いので、使う時は注意すること。
+Files will be moved into a subdirectory. If the directory given as argument
+exists the files will be moved into that directory otherwise the name of the
+target directory is extracted from the section field in the control part of
+the package. The target directory will be
+\(Founstable/binary\-\fIarchitecture\fP/\fIsection\fP\(Fc.  If the section is not
+found in the control, then \fBno\-section\fP is assumed, and in this case, as
+well as for sections \fBnon\-free\fP and \fBcontrib\fP the target directory is
+\(Fo\fIsection\fP/binary\-\fIarchitecture\fP\(Fc.  The section field is not
+required so a lot of packages will find their way to the \fBno\-section\fP
+area.  Use this option with care, it's messy.
 .TP 
 \fB\-c\fP, \fB\-\-create\-dir\fP
 This option can used together with the \fB\-s\fP option. If a target directory
@@ -75,11 +80,12 @@ installation tools might depend on this naming structure.
 .SH 例
 .TP 
 \fBdpkg\-name bar\-foo.deb\fP
-ファイル `bar\-foo.deb' が bar\-foo_1.0\-2_i386.deb のような名前にリネームされる (実際にどうなるかは
-`bar\-foo.deb' の制御情報に依存する)。
+The file \fBbar\-foo.deb\fP will be renamed to bar\-foo_1.0\-2_i386.deb or
+something similar (depending on whatever information is in the control part
+of \fBbar\-foo.deb\fP).
 .TP 
 \fBfind /root/debian/ \-name \(aq*.deb\(aq | xargs \-n 1 dpkg\-name \-a\fP
-All files with the extension `deb' in the directory /root/debian and its
+All files with the extension \fBdeb\fP in the directory /root/debian and its
 subdirectory's will be renamed by \fBdpkg\-name\fP if required into names with
 no architecture information.
 .TP 

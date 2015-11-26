@@ -3,7 +3,7 @@
  * cleanup.c - cleanup functions, used when we need to unwind
  *
  * Copyright © 1995 Ian Jackson <ian@chiark.greenend.org.uk>
- * Copyright © 2007-2014 Guillem Jover <guillem@debian.org>
+ * Copyright © 2007-2015 Guillem Jover <guillem@debian.org>
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,7 +26,6 @@
 #include <sys/stat.h>
 
 #include <errno.h>
-#include <ctype.h>
 #include <string.h>
 #include <time.h>
 #include <utime.h>
@@ -39,6 +38,7 @@
 #include <dpkg/dpkg.h>
 #include <dpkg/dpkg-db.h>
 #include <dpkg/pkg.h>
+#include <dpkg/path.h>
 #include <dpkg/options.h>
 
 #include "filesdb.h"
@@ -84,14 +84,14 @@ void cu_installnew(int argc, void **argv) {
        * link to the new version we may have created. */
       debug(dbg_eachfiledetail,"cu_installnew restoring nonatomic");
       if (secure_remove(fnamevb.buf) && errno != ENOENT && errno != ENOTDIR)
-        ohshite(_("unable to remove newly-installed version of `%.250s' to allow"
+        ohshite(_("unable to remove newly-installed version of '%.250s' to allow"
                 " reinstallation of backup copy"),namenode->name);
     } else {
       debug(dbg_eachfiledetail,"cu_installnew restoring atomic");
     }
     /* Either we can do an atomic restore, or we've made room: */
     if (rename(fnametmpvb.buf,fnamevb.buf))
-      ohshite(_("unable to restore backup version of `%.250s'"),namenode->name);
+      ohshite(_("unable to restore backup version of '%.250s'"), namenode->name);
     /* If «pathname».dpkg-tmp was still a hard link to «pathname», then the
      * atomic rename did nothing, so we make sure to remove the backup. */
     else if (unlink(fnametmpvb.buf) && errno != ENOENT)
@@ -99,14 +99,15 @@ void cu_installnew(int argc, void **argv) {
   } else if (namenode->flags & fnnf_placed_on_disk) {
     debug(dbg_eachfiledetail,"cu_installnew removing new file");
     if (secure_remove(fnamevb.buf) && errno != ENOENT && errno != ENOTDIR)
-      ohshite(_("unable to remove newly-installed version of `%.250s'"),
+      ohshite(_("unable to remove newly-installed version of '%.250s'"),
 	      namenode->name);
   } else {
     debug(dbg_eachfiledetail,"cu_installnew not restoring");
   }
   /* Whatever, we delete «pathname».dpkg-new now, if it still exists. */
   if (secure_remove(fnamenewvb.buf) && errno != ENOENT && errno != ENOTDIR)
-    ohshite(_("unable to remove newly-extracted version of `%.250s'"),namenode->name);
+    ohshite(_("unable to remove newly-extracted version of '%.250s'"),
+            namenode->name);
 
   cleanup_pkg_failed--; cleanup_conflictor_failed--;
 }

@@ -1,4 +1,5 @@
 # Copyright © 2009-2010 Modestas Vainius <modax@debian.org>
+# Copyright © 2010, 2012-2015 Guillem Jover <guillem@debian.org>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,15 +20,17 @@ use strict;
 use warnings;
 
 our $VERSION = '0.01';
+our @EXPORT = qw(
+    cppfilt_demangle_cpp
+);
+our @EXPORT_OK = qw(
+    cppfilt_demangle
+);
 
 use Exporter qw(import);
 
 use Dpkg::ErrorHandling;
 use Dpkg::IPC;
-use IO::Handle;
-
-our @EXPORT = qw(cppfilt_demangle_cpp);
-our @EXPORT_OK = qw(cppfilt_demangle);
 
 # A hash of 'objects' referring to preforked c++filt processes for the distinct
 # demangling types.
@@ -47,7 +50,7 @@ sub get_cppfilt {
 	$filt->{pid} = spawn(exec => [ 'c++filt', "--format=$type" ],
 	                     from_pipe => \$filt->{from},
 	                     to_pipe => \$filt->{to});
-	syserr(_g('unable to execute %s'), 'c++filt')
+	syserr(g_('unable to execute %s'), 'c++filt')
 	    unless defined $filt->{from};
 	$filt->{from}->autoflush(1);
 

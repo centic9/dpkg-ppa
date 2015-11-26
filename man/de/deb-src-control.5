@@ -2,7 +2,7 @@
 .\"
 .\" Copyright Â© 2010 Oxan van Leeuwen <oxan@oxanvanleeuwen.nl>
 .\" Copyright Â© 2011 RaphaÃ«l Hertzog <hertzog@debian.org>
-.\" Copyright Â© 2011-2013 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2011-2015 Guillem Jover <guillem@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -30,7 +30,7 @@ deb\-src\-control \- Dateiformat der Hauptsteuerdatei von Debian\-Quellpaketen
 control
 .
 .SH BESCHREIBUNG
-Jedes Debian\-Quellpaket enhält die Hauptsteuerdatei »control«, die
+Jedes Debian\-Quellpaket enhält die Hauptsteuerdatei \(Focontrol\(Fc, die
 mindestens zwei Absätze enthält, die durch eine Leerzeile getrennt
 werden. Der erste Absatz führt alle allgemeinen Informationen über das
 Quellpaket auf, während jeder folgende Absatz genau ein Binärpaket
@@ -42,8 +42,8 @@ Zeile ohne Feldnamen sollte mit mindestens einem Leerzeichen beginnen. Der
 Inhalt des mehrzeiligen Feldes wird durch die Werkzeuge im Allgemeinen zu
 einer Zeile zusammengeführt (das Feld \fBDescription\fP ist eine Ausnahme,
 siehe unten). Um Leerzeilen in ein mehrzeiliges Feld einzufügen, verwenden
-Sie einen Satzpunkt nach dem Leerzeichen. Zeilen, die mit \fB»#«\fP beginnen,
-werden als Kommentare betrachtet.
+Sie einen Satzpunkt nach dem Leerzeichen. Zeilen, die mit \(oq\fB#\fP\(cq
+beginnen, werden als Kommentare betrachtet.
 .
 .SH QUELLPAKET\-FELDER
 .TP 
@@ -56,7 +56,7 @@ zwei Zeichen lang sein und mit einem alphanumerischen Zeichen beginnen.
 
 .TP 
 \fBMaintainer:\fP \fIVollständiger\-Name\-und\-E\-Mail\fP (verpflichtend)
-Sollte in dem Format »Joe Bloggs <jbloggs@foo.com>« sein und
+Sollte in dem Format \(FoJoe Bloggs <jbloggs@foo.com>\(Fc sein und
 verweist auf die Person, die derzeit das Paket betreut, im Gegensatz zum
 Autor der Software, die paketiert wurde, oder dem ursprünglichen Paketierer.
 
@@ -80,7 +80,8 @@ Die URL des Original\- (Upstream\-)Projekts.
 \fBBugs:\fP\fI URL\fP
 Die \fIURL\fP der Fehlerdatenbank für dieses Paket. Das derzeit verwendete
 Format ist \fIBTS\-Art\fP\fB://\fP\fIBTS\-Adresse\fP wie in
-\fBdebbugs://bugs.debian.org\fP. Dieses Feld wird normalerweise nicht benötigt.
+\fB\%debbugs://bugs.debian.org\fP. Dieses Feld wird normalerweise nicht
+benötigt.
 
 .TP 
 \fBVcs\-Arch*:\fP\fI URL\fP
@@ -117,13 +118,13 @@ Feld wird normalerweise nicht benötigt.
 .TP 
 \fBSection:\fP\fI Bereich\fP
 Dies ist ein allgemeines Feld, das dem Paket eine Kategorie gibt, basierend
-auf der Software, die es installiert. Einige übliche Bereiche sind »utils«,
-»net«, »mail«, »text«, »x11« usw.
+auf der Software, die es installiert. Einige übliche Bereiche sind \fButils\fP,
+\fBnet\fP, \fBmail\fP, \fBtext\fP, \fBx11\fP usw.
 
 .TP 
 \fBPriority:\fP\fI Priorität\fP
 Setzt die Bedeutung dieses Pakets in Bezug zu dem Gesamtsystem. Übliche
-Prioritäten sind »required«, »standard«, »optional«, »extra« usw.
+Prioritäten sind \fBrequired\fP, \fBstandard\fP, \fBoptional\fP, \fBextra\fP usw.
 
 In Debian haben die \fBSection\fP\- und \fBPriority\fP\-Felder einen definierten
 Satz an akzeptierten Werten, basierend auf dem Richtlinien\-Handbuch. Eine
@@ -177,38 +178,51 @@ architekturunabhängigen Pakete benötigt.
 Die Syntax der Felder \fBBuild\-Depends\fP, \fBBuild\-Depends\-Arch\fP und
 \fBBuild\-Depends\-Indep\fP ist eine Liste von Gruppen von alternativen
 Paketen. Jede Gruppe ist eine Liste von durch vertikale Striche (oder
-»Pipe«\-Symbole) »|« getrennten Paketen. Die Gruppen werden durch Kommata
-getrennt. Kommata müssen als »UND«, vertikale Striche als »ODER« gelesen
-werden, wobei die vertikalen Striche stärker binden. Jeder Paketname wird
-optional gefolgt von einer Versionsnummer\-Spezifikation in Klammern, einer
+\(lqPipe\(rq\-Symbole) \(oq\fB|\fP\(cq getrennten Paketen. Die Gruppen werden
+durch Kommata getrennt. Kommata müssen als \(lqUND\(rq, vertikale Striche
+als \(lqODER\(rq gelesen werden, wobei die vertikalen Striche stärker
+binden. Jeder Paketname wird optional von einer Architektur\-Spezifikation
+gefolgt, die nach einem Doppelpunkt \(oq\fB:\fP\(cq angehängt wird, optional
+gefolgt von einer Versionsnummer\-Spezifikation in Klammern, einer
 Architekturspezifikation in eckigen Klammern und einer Einschränkungsformel,
 die aus einer oder mehr Listen von Profilnamen in spitzen Klammern besteht.
 
 Syntaxtisch werden die Felder \fBBuild\-Conflicts\fP, \fBBuild\-Conflicts\-Arch\fP
 und \fBBuild\-Conflicts\-Indep\fP durch eine Komma\-separierte Liste von
-Paketnamen dargestellt, wobei das Komma als »UND« verstanden wird. Die
-Angabe alternativer Pakete mit dem »Pipe«\-Symbol wird nicht
+Paketnamen dargestellt, wobei das Komma als \(lqUND\(rq verstanden wird. Die
+Angabe alternativer Pakete mit dem \(lqPipe\(rq\-Symbol wird nicht
 unterstützt. Jedem Paketnamen folgt optional eine Versionnummerangabe in
 Klammern, eine Architekturspezifikation in eckigen Klammern und einer
 Einschränkungsformel, die aus einer oder mehr Listen von Profilnamen in
 spitzen Klammern besteht.
 
-Eine Versionsnummer kann mit »>>« beginnen, in diesem Falle passen
-alle neueren Versionen, und kann die Debian\-Paketrevision (getrennt durch
-einen Bindestrich) enthalten oder auch nicht. Akzeptierte
-Versionsbeziehungen sind »>>« für größer als, »<<« für
-kleiner als, »>=« für größer als oder identisch zu, »<=« für kleiner
-als oder identisch zu und »=« für identisch zu.
+Eine Architektur\-Spezifikation kann ein echter Debian\-Architekturname sein
+(seit Dpkg 1.16.5), \fBany\fP (seit Dpkg 1.16.2) oder \fBnative\fP (seit Dpkg
+1.16.5). Falls er fehlt, ist die Vorgabe für das Feld \fBBuild\-Depends\fP die
+aktuelle Host\-Architektur, die Vorgabe für das Feld \fBBuild\-Conflicts\fP ist
+\fBany\fP. Jeder echte Debian\-Architekturname passt genau auf diese Architektur
+für diesen Paketnamen, \fBany\fP passt auf jede Architektur für diesen
+Paketnamen, falls das Paket mit \fBMulti\-Arch: allowed\fP markiert ist, und
+\fBnative\fP passt auf die aktuelle Bau\-Architektur, falls das Paket nicht mit
+\fBMulti\-Arch: foreign\fP markiert ist.
+
+Eine Versionsnummer kann mit \(oq\fB>>\fP\(cq beginnen, in diesem Falle
+passen alle neueren Versionen, und kann die Debian\-Paketrevision (getrennt
+durch einen Bindestrich) enthalten oder auch nicht. Akzeptierte
+Versionsbeziehungen sind \(oq\fB>>\fP\(cq für größer als,
+\(oq\fB<<\fP\(cq für kleiner als, \(oq\fB>=\fP\(cq für größer als oder
+identisch zu, \(oq\fB<=\fP\(cq für kleiner als oder identisch zu und
+\(oq\fB=\fP\(cq für identisch zu.
 
 Eine Architekturspezifikation besteht aus einer oder mehreren durch
 Leerzeichen getrennten Architekturnamen. Jedem Namen darf ein Ausrufezeichen
-vorangestellt werden, das »NICHT« bedeutet.
+vorangestellt werden, das \(lqNICHT\(rq bedeutet.
 
 Eine Einschränkungsformel besteht aus einer oder mehrerer durch Leeraum
 getrennten Einschränkungslisten. Jede Einschränkungsliste wird in spitze
 Klammern eingeschlossen. Einträge in den Einschränkungslisten sind
 Bauprofilnamen, getrennt durch Leerraum. Diesen Listen kann ein
-Ausrufezeichen vorangestellt werden, das »NICHT« bedeutet. Eine
+Ausrufezeichen vorangestellt werden, das \(lqNICHT\(rq bedeutet. Eine
 Einschränkungsformel stellt einen Ausdruck in einer disjunkte Normalform
 dar.
 
@@ -243,8 +257,8 @@ möglich, Platzhalter für Architekturen in dieser Liste anzugeben (lesen Sie
 
 .TP 
 \fBPackage\-Type:\fP \fBdeb\fP|\fBudeb\fP
-Dieses Feld definiert die Art des Pakets. »udeb« ist für größenbegrenzte
-Pakete, wie sie vom Debian\-Installer verwandt werden. »deb« ist der
+Dieses Feld definiert die Art des Pakets. \fBudeb\fP ist für größenbegrenzte
+Pakete, wie sie vom Debian\-Installer verwandt werden. \fBdeb\fP ist der
 Standardwert, er wird angenommen, falls das Feld fehlt. Weitere Typen
 könnten in der Zukunft hinzugefügt werden.
 

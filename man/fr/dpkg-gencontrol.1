@@ -2,7 +2,7 @@
 .\"
 .\" Copyright Â© 1995-1996 Ian Jackson <ian@chiark.chu.cam.ac.uk>
 .\" Copyright Â© 2000 Wichert Akkerman <wakkerma@debian.org>
-.\" Copyright Â© 2006, 2012-2013 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2006, 2012-2013, 2015 Guillem Jover <guillem@debian.org>
 .\" Copyright Â© 2007-2008 RaphaÃ«l Hertzog <hertzog@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
@@ -65,10 +65,9 @@ Fixe la valeur d'une variable de substitution. Consultez \fBdeb\-substvars\fP(5)
 pour une discussion sur la valeur de substitution.
 .TP 
 \fB\-T\fP\fIfichier/substvars\fP
-Lecture des variables de substitution depuis \fIsubstvarsfile\fP\ ; la valeur
-par défaut est \fBdebian/substvars\fP. Cette option peut être utilisée
-plusieurs fois pour lire les variables de substitution depuis plusieurs
-fichiers.
+Read substitution variables in \fIsubstvars\-file\fP; the default is
+\fBdebian/substvars\fP.  This option can be used multiple times to read
+substitution variables from multiple files (since dpkg 1.15.6).
 .TP 
 \fB\-D\fP\fIchamp\fP\fB=\fP\fIvaleur\fP
 Remplace ou ajoute en sortie un champ dans le fichier de contrôle.
@@ -119,10 +118,9 @@ contrôle (on utilise la commande \fBdu\fP)\ ; elle donne aussi l'emplacement par
 défaut pour le fichier de sortie.
 .TP 
 \fB\-O\fP[\fInom\-de\-fichier\fP]
-Affiche le fichier «\ control\ » sur la sortie standard (ou \fInom\-de\-fichier\fP)
-au lieu de \fBdebian/tmp/DEBIAN/control\fP (ou
-\fIrep\-de\-construction\-du\-paquet\fP\fB/DEBIAN/control\fP si l'option \fB\-P\fP a été
-utilisée).
+Print the control file to standard output (or \fIfilename\fP if specified,
+since dpkg 1.17.2), rather than to \fBdebian/tmp/DEBIAN/control\fP (or
+\fIpackage\-build\-dir\fP\fB/DEBIAN/control\fP if \fB\-P\fP was used).
 .TP 
 \fB\-?\fP, \fB\-\-help\fP
 Affiche un message d'aide puis quitte.

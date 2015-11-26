@@ -2,7 +2,7 @@
 .\"
 .\" Copyright Â© 1995-1996 Ian Jackson <ian@chiark.chu.cam.ac.uk>
 .\" Copyright Â© 2000 Wichert Akkerman <wakkerma@debian.org>
-.\" Copyright Â© 2006-2014 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2006-2015 Guillem Jover <guillem@debian.org>
 .\" Copyright Â© 2008-2010 RaphaÃ«l Hertzog <hertzog@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
@@ -40,21 +40,23 @@ podstawie tworzy plik kontrolny wydania (plik \fB.changes\fP).
 .TP 
 \fB\-g\fP
 Specifies that only source and architecture independent packages should be
-uploaded (no architecture specific packages will be included).
+uploaded, thus no architecture specific packages will be included (since
+dpkg 1.17.11).
 .TP 
 \fB\-G\fP
 Specifies that only source and architecture specific packages should be
-uploaded (no architecture independent packages will be included).
+uploaded, thus no architecture independent packages will be included (since
+dpkg 1.17.11).
 .TP 
 \fB\-b\fP, \fB\-B\fP, \fB\-A\fP
-Okre¶la, ¿e wykonywane jest budowanie tylko pakietów binarnych (bez
-w³±czania jakichkolwiek plików ¼ród³owych). Nie ma ró¿nicy miêdzy \fB\-b\fP,
-\fB\-B\fP i \fB\-A\fP, wygenerowany plik \fB.changes\fP bêdzie zawieraæ wszystkie pliki
-utworzone przez regu³y \fBbinary\-*\fP budowanych w³a¶nie pakietów.
+Specifies that a binary\-only build is taking place, thus no source files are
+to be included.  There's no distinction between \fB\-b\fP, \fB\-B\fP and \fB\-A\fP, the
+produced \fB.changes\fP file will include whatever files were created by the
+\fBbinary\-*\fP target(s) of the package being built.
 .TP 
 \fB\-S\fP
-Okre¶la, ¿e tylko ¼ród³a bêd± do³±czone do wydania (bez ¿adnych pakietów
-binarnych).
+Specifies that only the source should be uploaded, thus no binary packages
+will be included.
 .PP
 Opcje \fB\-s\fP\fIx\fP okre¶laj±, czy do wydania do³±czane s± oryginalne pliki
 ¼ród³owe, je¿eli zostanie wygenerowany choæ jeden z nich (tj. nie u¿yto
@@ -95,11 +97,11 @@ Ustawia zmienn± podstawienia wyj¶cia. Szczegó³owy opis podstawiania
 zmiennych wyj¶ciowych znajduje siê w \fBdeb\-substvars\fP(5).
 .TP 
 \fB\-T\fP\fIplik\-zmiennych\-podst\fP
-Odczytuje zmienne podstawiania z \fIpliku\-zmiennych\-podst\fP; domy¶lnie jest to
-\fBdebian/substvars\fP. Nie s± robione ¿adne podstawiania na ¿adnym z pól,
-które s± wypisywane na wyj¶ciu, jednak¿e specjalna zmienna \fIFormat\fP
-nadpisze pole o tej samej nazwie. Opcja ta mo¿e zostaæ podana wiele razy,
-aby odczytaæ zmienne podstawiania z wielu plików.
+Read substitution variables in \fIsubstvars\-file\fP; the default is
+\fBdebian/substvars\fP.  No variable substitution is done on any of the fields
+that are output, however the special variable \fIFormat\fP will override the
+field of the same name. This option can be used multiple times to read
+substitution variables from multiple files (since dpkg 1.15.6).
 
 .TP 
 \fB\-D\fP\fIpole\fP\fB=\fP\fIwarto¶æ\fP

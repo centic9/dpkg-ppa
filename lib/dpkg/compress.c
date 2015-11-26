@@ -4,7 +4,7 @@
  *
  * Copyright © 2000 Wichert Akkerman <wakkerma@debian.org>
  * Copyright © 2004 Scott James Remnant <scott@netsplit.com>
- * Copyright © 2006-2014 Guillem Jover <guillem@debian.org>
+ * Copyright © 2006-2015 Guillem Jover <guillem@debian.org>
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -503,7 +503,7 @@ filter_lzma(struct io_lzma *io, int fd_in, int fd_out)
 		ohshite(_("%s: lzma close error"), io->desc);
 }
 
-static void
+static void DPKG_ATTR_NORET
 filter_lzma_error(struct io_lzma *io, lzma_ret ret)
 {
 	ohshit(_("%s: lzma error: %s"), io->desc,
@@ -534,7 +534,7 @@ filter_xz_init(struct io_lzma *io, lzma_stream *s)
 	preset = io->params->level;
 	if (io->params->strategy == COMPRESSOR_STRATEGY_EXTREME)
 		preset |= LZMA_PRESET_EXTREME;
-	ret = lzma_easy_encoder(s, preset, LZMA_CHECK_CRC32);
+	ret = lzma_easy_encoder(s, preset, LZMA_CHECK_CRC64);
 	if (ret != LZMA_OK)
 		filter_lzma_error(io, ret);
 }
@@ -829,6 +829,8 @@ decompress_filter(enum compressor_type type, int fd_in, int fd_out,
 	va_end(args);
 
 	compressor(type)->decompress(fd_in, fd_out, desc.buf);
+
+	varbuf_destroy(&desc);
 }
 
 void
@@ -843,4 +845,6 @@ compress_filter(struct compress_params *params, int fd_in, int fd_out,
 	va_end(args);
 
 	compressor(params->type)->compress(fd_in, fd_out, params, desc.buf);
+
+	varbuf_destroy(&desc);
 }

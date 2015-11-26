@@ -21,6 +21,7 @@ use warnings;
 our $VERSION = '1.00';
 
 use Dpkg::Control;
+
 use parent qw(Dpkg::Control);
 
 =encoding utf8
@@ -34,7 +35,7 @@ Dpkg::Control::Changelog - represent info fields output by dpkg-parsechangelog
 This object derives directly from Dpkg::Control with the type
 CTRL_CHANGELOG.
 
-=head1 FUNCTIONS
+=head1 METHODS
 
 =over 4
 
@@ -55,7 +56,7 @@ sub new {
 
 =head1 CHANGES
 
-=head2 Version 1.00
+=head2 Version 1.00 (dpkg 1.15.6)
 
 Mark the module as public.
 

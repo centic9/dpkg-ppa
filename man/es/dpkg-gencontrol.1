@@ -2,7 +2,7 @@
 .\"
 .\" Copyright Â© 1995-1996 Ian Jackson <ian@chiark.chu.cam.ac.uk>
 .\" Copyright Â© 2000 Wichert Akkerman <wakkerma@debian.org>
-.\" Copyright Â© 2006, 2012-2013 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2006, 2012-2013, 2015 Guillem Jover <guillem@debian.org>
 .\" Copyright Â© 2007-2008 RaphaÃ«l Hertzog <hertzog@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
@@ -65,9 +65,9 @@ Define una variable de sustitución de la salida. Consulte
 salida.
 .TP 
 \fB\-T\fP\fIfichero\-variables\-sustitución\fP
-Lee variables de sustitución desde el \fIfichero\-variables\-sust\fP;
-\fBdebian/substvars\fP es el valor por omisión. Puede utilizar esta opción
-varias veces para leer variables de sustitución de varios ficheros.
+Read substitution variables in \fIsubstvars\-file\fP; the default is
+\fBdebian/substvars\fP.  This option can be used multiple times to read
+substitution variables from multiple files (since dpkg 1.15.6).
 .TP 
 \fB\-D\fP\fIcampo\fP\fB=\fP\fIvalor\fP
 Sobreescribe o añade un campo en el fichero de control de salida.
@@ -117,8 +117,8 @@ fichero de control \fBInstalled\-Size\fP, tamaño instalado, (usando \fBdu\fP), y
 para establecer la ruta predefinida del fichero de salida.
 .TP 
 \fB\-O\fP[\fIfilename\fP]
-Print the control file to standard output (or \fIfilename\fP if specified),
-rather than to \fBdebian/tmp/DEBIAN/control\fP (or
+Print the control file to standard output (or \fIfilename\fP if specified,
+since dpkg 1.17.2), rather than to \fBdebian/tmp/DEBIAN/control\fP (or
 \fIpackage\-build\-dir\fP\fB/DEBIAN/control\fP if \fB\-P\fP was used).
 .TP 
 \fB\-?\fP, \fB\-\-help\fP

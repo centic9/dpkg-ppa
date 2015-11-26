@@ -50,11 +50,11 @@ Pierwszy plik tar zawiera informacje kontrolne, jako seriê zwyczajnych
 plików. Zawsze musi byæ obecny plik \fBcontrol\fP zawieraj±cy g³ówne informacje
 kontrolne.
 .PP
-W bardzo starych archiwach, pliki w archiwum kontrolnym mog³y byæ
-umieszczone w podkatalogu \fBDEBIAN\fP. W takim wypadku katalog \fBDEBIAN\fP
-bêdzie wystêpowa³ równie¿ w archiwum kontrolnym, które bêdzie zawiera³o
-pliki tylko w tym katalogu. Opcjonalnie archiwum kontrolne mo¿e zawieraæ
-równie¿ wpis dla "\fB.\fP", czyli katalogu bie¿±cego.
+In some very old archives, the files in the control tarfile may optionally
+be in a \fBDEBIAN\fP subdirectory. In that case, the \fBDEBIAN\fP subdirectory
+will be in the control tarfile too, and the control tarfile will have only
+files in that directory. Optionally the control tarfile may contain an entry
+for \(oq\fB.\fP\(cq, that is, the current directory.
 .PP
 Drugim skompresowanym archiwum tar jest archiwum systemu plików, zawieraj±ce
 nazwy ¶cie¿ek relatywne do g³ównego katalogu systemu, na którym bêd±

@@ -1,7 +1,7 @@
 .\" dpkg manual page - dpkg-maintscript-helper(1)
 .\"
 .\" Copyright Â© 2010-2012 RaphaÃ«l Hertzog <hertzog@debian.org>
-.\" Copyright Â© 2011-2014 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2011-2015 Guillem Jover <guillem@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -87,10 +87,14 @@ che effettua l'effettivo cambiamento nello script del manutentore nella
 versione \fB3.0\-1\fP, dovrebbe impostare \fIversione\-prec\fP a \fB3.0\-1~\fP.
 .TP 
 \fBpacchetto\fP
-Il nome del pacchetto. Quando il pacchetto è «Multi\-Arch: same» questo
-parametro deve includere il qualificatore dell'architettura. Se vuoto o
-omesso, viene usata la variabile d'ambiente \fBDPKG_MAINTSCRIPT_PACKAGE\fP
-(come impostata da \fBdpkg\fP).
+The package name. When the package is \(lqMulti\-Arch: same\(rq this
+parameter must include the architecture qualifier, otherwise it should
+\fBnot\fP usually include the architecture qualifier (as it would disallow
+cross\-grades, or switching from being architecture specific to architecture
+\fBall\fP or vice versa).  If the parameter is empty or omitted, the
+\fBDPKG_MAINTSCRIPT_PACKAGE\fP and \fBDPKG_MAINTSCRIPT_ARCH\fP environment
+variables (as set by \fBdpkg\fP)  will be used to generate an arch\-qualified
+package name.
 .TP 
 \fB\-\-\fP
 Tutti i parametri degli script dei manutentori devono essere passati al

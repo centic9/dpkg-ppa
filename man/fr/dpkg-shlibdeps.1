@@ -4,7 +4,7 @@
 .\" Copyright Â© 2000 Wichert Akkerman <wakkerma@debian.org>
 .\" Copyright Â© 2006 Frank Lichtenheld <djpig@debian.org>
 .\" Copyright Â© 2007-2011 RaphaÃ«l Hertzog <hertzog@debian.org>
-.\" Copyright Â© 2012-2013 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2011-2013, 2015 Guillem Jover <guillem@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -162,17 +162,16 @@ toute variable de substitution commençant par
 du fichier de substitution des variables.
 .TP 
 \fB\-O\fP[\fInom\-de\-fichier\fP]
-Affiche les définitions des variables de substitution sur la sortie standard
-(ou \fInom\-de\-fichier\fP si spécifié), plutôt que de les ajouter dans le
-fichier de substitution des variables qui est par défaut
-\fBdebian/substvars\fP.
+Print substitution variable settings to standard output (or \fIfilename\fP if
+specified, since dpkg 1.17.2), rather than being added to the substitution
+variables file (\fBdebian/substvars\fP by default).
 .TP 
 \fB\-t\fP\fItype\fP
-Préférer les informations sur les dépendances des bibliothèques partagées
-qui sont étiquetées pour un type de paquet donné. Si aucune information de
-type n'est donnée, il n'utilisera pas d'information. Par défaut, le type de
-paquet est «\ deb\ ». On peut créer une étiquette pour ces informations en les
-préfixant par le nom du type, un deux\-points et une espace.
+Prefer shared library dependency information tagged for the given package
+type. If no tagged information is available, falls back to untagged
+information. The default package type is \fBdeb\fP. Shared library dependency
+information is tagged for a given type by prefixing it with the name of the
+type, a colon, and whitespace.
 .TP 
 \fB\-L\fP\fIfichier\-local\-shlibs\fP
 Lire les informations de remplacement concernant les dépendances envers les
@@ -184,45 +183,43 @@ bibliothèques partagées dans \fIfichier\-local\-shlibs\fP au lieu de
 par défaut est \fBdebian/substvars\fP.
 .TP 
 \fB\-v\fP
-Active le mode bavard. De nombreux messages sont affichés pour expliquer ce
-que \fBdpkg\-shlibdeps\fP fait.
+Enable verbose mode (since dpkg 1.14.8).  Numerous messages are displayed to
+explain what \fBdpkg\-shlibdeps\fP does.
 .TP 
 \fB\-x\fP\fIpackage\fP
-Exclut le paquet des dépendances générées. Cela évite les auto\-dépendances
-pour les paquets fournissant des exécutables ELF (exécutables ou modules
-complémentaires de bibliothèque) qui utilisent une bibliothèque incluse dans
-ce même paquet. Cette option peut être utilisée plusieurs fois pour exclure
-plusieurs paquets.
+Exclude the package from the generated dependencies (since dpkg 1.14.8).
+This is useful to avoid self\-dependencies for packages which provide ELF
+binaries (executables or library plugins) using a library contained in the
+same package. This option can be used multiple times to exclude several
+packages.
 .TP 
 \fB\-S\fP\fIrépertoire\-construction\-paquet\fP
-Recherche dans \fIrépertoire\-construction\-paquet\fP en premier et essaie de
-trouver une bibliothèque. C'est utile lorsque le paquet source construit
-plusieurs saveurs de la même bibliothèque et que vous voulez vous assurer
-que vous obtiendrez la dépendance d'un paquet binaire donné. Cette option
-peut être utilisée plusieurs fois\ : les répertoires seront examinés dans le
-même ordre avant les répertoires d'autres paquets binaires.
+Look into \fIpackage\-build\-dir\fP first when trying to find a library (since
+dpkg 1.14.15).  This is useful when the source package builds multiple
+flavors of the same library and you want to ensure that you get the
+dependency from a given binary package. You can use this option multiple
+times: directories will be tried in the same order before directories of
+other binary packages.
 .TP 
 \fB\-\-ignore\-missing\-info\fP
-Pas d'échec si l'information de dépendance ne peut pas être trouvée pour une
-bibliothèque partagée. L'utilisation de cette option est déconseillée,
-toutes les bibliothèques devraient fournir leurs informations de dépendance
-(que ce soit avec les fichiers shlibs, ou avec les fichiers symboles), même
-si elles ne sont pas encore utilisées par d'autres paquets.
+Do not fail if dependency information can't be found for a shared library
+(since dpkg 1.14.8).  Usage of this option is discouraged, all libraries
+should provide dependency information (either with shlibs files, or with
+symbols files)  even if they are not yet used by other packages.
 .TP 
 \fB\-\-warnings=\fP\fIvaleur\fP
-\fIvaleur\fP est un champ de «\ bit\ » définissant l'ensemble des avertissements
-qui peuvent être émis par \fBdpkg\-shlibdeps\fP. Le bit 0 (valeur = 1) active
-l'avertissement «\ symbole \fIsym\fP utilisé par le \fIbinaire\fP trouvé dans
-aucune des bibliothèques\ ». Le bit 1 (valeur = 2) active l'avertissement
-«\ le paquet pourrait éviter une dépendance inutile\ ». Le bit 2 (valeur = 4)
-active l'avertissement «\ Le \fIbinaire\fP ne devrait pas être lié à
-\fIbibliothèque\fP\ ». La \fIvaleur\fP par défaut est 3\ : les deux premières mises
-en garde sont actives par défaut, la dernière ne l'est pas. Positionnez la
-\fIvaleur\fP à 7 si vous souhaitez que tous les avertissements soient actifs.
+\fIvalue\fP is a bit field defining the set of warnings that can be emitted by
+\fBdpkg\-shlibdeps\fP (since dpkg 1.14.17).  Bit 0 (value=1) enables the warning
+\(lqsymbol \fIsym\fP used by \fIbinary\fP found in none of the libraries\(rq, bit
+1 (value=2) enables the warning \(lqpackage could avoid a useless
+dependency\(rq and bit 2 (value=4) enables the warning \(lq\fIbinary\fP should
+not be linked against \fIlibrary\fP\(rq.  The default \fIvalue\fP is 3: the first
+two warnings are active by default, the last one is not. Set \fIvalue\fP to 7
+if you want all warnings to be active.
 .TP 
 \fB\-\-admindir\fP=\fIdir\fP
-Change l'endroit où se trouve la base de données de \fBdpkg\fP. Par défaut,
-c'est \fI/var/lib/dpkg\fP.
+Change the location of the \fBdpkg\fP database (since dpkg 1.14.0).  The
+default location is \fI/var/lib/dpkg\fP.
 .TP 
 \fB\-?\fP, \fB\-\-help\fP
 Affiche un message d'aide puis quitte.

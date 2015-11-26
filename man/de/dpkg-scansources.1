@@ -37,8 +37,8 @@ erstellen, der auf der Standardausgabe ausgegeben wird.
 .PP
 Die \fIoverride\-Datei\fP wird, falls angegeben, verwendet, um die Prioritäten
 in den ergebenen Index\-Datensätzen zu setzen und sich über das Betreuer\-Feld
-in den \fI.dsc\fP\-Dateien hinwegzusetzen. Diese Datei kann komprimiert
-sein. Lesen Sie \fBdpkg\-scanpackages\fP(1) für das Format dieser
+in den \fI.dsc\fP\-Dateien hinwegzusetzen. Diese Datei kann komprimiert sein
+(seit Dpkg 1.15.5). Lesen Sie \fBdpkg\-scanpackages\fP(1) für das Format dieser
 Datei. Hinweis: Da die override\-Datei nach Binär\- und nicht Quellpaketen
 indiziert wird, gibt es hier ein kleines Problem. Die aktuelle
 Implementierung verwendet die höchste Priorität aller von einer
@@ -65,13 +65,13 @@ Sortiere die Index\-Datensätze nicht. Normalerweise werden sie nach
 Quellpaketnamen sortiert.
 .TP 
 .IP "\fB\-e\fP, \fB\-\-extra\-override\fP \fIDatei\fP" 4
-Durchsuche \fIDatei\fP, um zusätzliche Overrides zu finden (die Datei kann
-komprimiert sein). Lesen Sie \fBdeb\-extra\-override\fP(5) für weitere
-Informationen über deren Format.
+Durchsuche \fIDatei\fP, um zusätzliche Overrides zu finden (seit Dpkg 1.15.4;
+die Datei kann seit Dpkg 1.15.5 komprimiert sein). Lesen Sie
+\fBdeb\-extra\-override\fP(5) für weitere Informationen über deren Format.
 .IP "\fB\-s\fP, \fB\-\-source\-override\fP \fIDatei\fP" 4
-Verwenden Sie \fIDatei\fP als Quell\-override\-Datei (die Datei kann komprimiert
-sein). Die Standardeinstellung ist der Name der override\-Datei, die Sie
-angegeben haben, um \fI.src\fP ergänzt.
+Verwenden Sie \fIDatei\fP als Quell\-override\-Datei (die Datei kann seit Dpkg
+1.15.5 komprimiert sein). Die Standardeinstellung ist der Name der
+override\-Datei, die Sie angegeben haben, um \fI.src\fP ergänzt.
 .sp
 Die Quell\-override\-Datei hat ein anderes Format als die
 Binär\-override\-Datei.Sie enthält nur zwei, durch Leerzeichen separierte

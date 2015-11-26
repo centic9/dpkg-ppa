@@ -2,7 +2,7 @@
 .\"
 .\" Copyright Â© 1995-1996 Ian Jackson <ian@chiark.chu.cam.ac.uk>
 .\" Copyright Â© 2000 Wichert Akkerman <wakkerma@debian.org>
-.\" Copyright Â© 2006, 2012-2013 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2006, 2012-2013, 2015 Guillem Jover <guillem@debian.org>
 .\" Copyright Â© 2007-2008 RaphaÃ«l Hertzog <hertzog@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
@@ -68,7 +68,7 @@ eine Besprechung der Ausgabesubstitution.
 \fB\-T\fP\fISubstvars\-Datei\fP
 Lese die Substitutionsvariablen aus \fISubstvars\-Datei\fP; standardmäßig
 \fBdebian/substvars\fP. Diese Option kann mehrfach verwandt werden, um
-Substitutionsvariablen aus mehreren Dateien einzulesen.
+Substitutionsvariablen aus mehreren Dateien einzulesen (seit Dpkg 1.15.6).
 .TP 
 \fB\-D\fP\fIFeld\fP\fB=\fP\fIWert\fP
 Überschreibe oder ergänze ein Ausgabe\-Steuerdatei\-Feld.
@@ -118,8 +118,8 @@ der Substitutionsvariablen \fBInstalled\-Size\fP und des Feldes der Steuerdatei
 Ausgabedatei.
 .TP 
 \fB\-O\fP[\fIDateiname\fP]
-Die Steuerdatei in die Standardausgabe (oder \fIDateiname\fP falls angegeben)
-statt nach \fBdebian/tmp/DEBIAN/control\fP (oder
+Die Steuerdatei in die Standardausgabe (oder \fIDateiname\fP falls angegeben,
+seit Dpkg 1.17.2) statt nach \fBdebian/tmp/DEBIAN/control\fP (oder
 \fIPaketbauverzeichnis\fP\fB/DEBIAN/control\fP falls \fB\-P\fP verwendet worden ist)
 ausgeben.
 .TP 

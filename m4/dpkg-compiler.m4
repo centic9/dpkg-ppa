@@ -1,5 +1,5 @@
 # Copyright © 2004 Scott James Remnant <scott@netsplit.com>
-# Copyright © 2006,2009-2011,2013-2014 Guillem Jover <guillem@debian.org>
+# Copyright © 2006,2009-2011,2013-2015 Guillem Jover <guillem@debian.org>
 
 # DPKG_CHECK_COMPILER_FLAG
 # ------------------------
@@ -46,9 +46,12 @@ AC_DEFUN([DPKG_CHECK_COMPILER_WARNINGS], [
   DPKG_CHECK_COMPILER_FLAG([-Wno-missing-field-initializers])
   DPKG_CHECK_COMPILER_FLAG([-Wmissing-declarations])
   DPKG_CHECK_COMPILER_FLAG([-Wmissing-format-attribute])
-  DPKG_CHECK_COMPILER_FLAG([-Wformat-security])
+  DPKG_CHECK_COMPILER_FLAG([-Wformat -Wformat-security])
+  DPKG_CHECK_COMPILER_FLAG([-Wsizeof-array-argument])
   DPKG_CHECK_COMPILER_FLAG([-Wpointer-arith])
   DPKG_CHECK_COMPILER_FLAG([-Wlogical-op])
+  DPKG_CHECK_COMPILER_FLAG([-Wlogical-not-parentheses])
+  DPKG_CHECK_COMPILER_FLAG([-Wswitch-bool])
   DPKG_CHECK_COMPILER_FLAG([-Wvla])
   DPKG_CHECK_COMPILER_FLAG([-Winit-self])
   DPKG_CHECK_COMPILER_FLAG([-Wwrite-strings])
@@ -63,6 +66,7 @@ AC_DEFUN([DPKG_CHECK_COMPILER_WARNINGS], [
     DPKG_CHECK_COMPILER_FLAG([-Wstrict-prototypes])
     DPKG_CHECK_COMPILER_FLAG([-Wmissing-prototypes])
     DPKG_CHECK_COMPILER_FLAG([-Wold-style-definition])
+    DPKG_CHECK_COMPILER_FLAG([-Wc99-c11-compat])
   ],
   [C++], [
     DPKG_CHECK_COMPILER_FLAG([-Wc++11-compat])
@@ -158,28 +162,35 @@ AC_DEFUN([DPKG_TRY_C99],
 # DPKG_C_C99
 # ----------
 # Check whether the compiler can do C99
-AC_DEFUN([DPKG_C_C99],
-[AC_CACHE_CHECK([whether $CC supports C99 features], [dpkg_cv_c99],
-	[DPKG_TRY_C99([dpkg_cv_c99=yes], [dpkg_cv_c99=no])])
-AS_IF([test "x$dpkg_cv_c99" = "xyes"],
-	[AC_DEFINE([HAVE_C99], 1, [Define to 1 if the compiler supports C99.])],
-	[AC_CACHE_CHECK([for $CC option to accept C99 features],
-		[dpkg_cv_c99_arg],
-		[dpkg_cv_c99_arg=none
-		 dpkg_save_CC="$CC"
-		 for arg in "-std=gnu99" "-std=c99" "-c99" "-AC99" \
-		            "-xc99=all" "-qlanglvl=extc99"; do
-		    CC="$dpkg_save_CC $arg"
-		    DPKG_TRY_C99([dpkg_arg_worked=yes], [dpkg_arg_worked=no])
-		    CC="$dpkg_save_CC"
+AC_DEFUN([DPKG_C_C99], [
+  AC_CACHE_CHECK([whether $CC supports C99 features], [dpkg_cv_c99], [
+    DPKG_TRY_C99([dpkg_cv_c99=yes], [dpkg_cv_c99=no])
+  ])
+  AS_IF([test "x$dpkg_cv_c99" != "xyes"], [
+    AC_CACHE_CHECK([for $CC option to accept C99 features], [dpkg_cv_c99_arg], [
+      dpkg_cv_c99_arg=none
+      dpkg_save_CC="$CC"
+      for arg in "-std=gnu99" "-std=c99" "-c99" "-AC99" "-xc99=all" \
+                 "-qlanglvl=extc99"; do
+        CC="$dpkg_save_CC $arg"
+        DPKG_TRY_C99([dpkg_arg_worked=yes], [dpkg_arg_worked=no])
+        CC="$dpkg_save_CC"
 
-		    AS_IF([test "x$dpkg_arg_worked" = "xyes"],
-			  [dpkg_cv_c99_arg="$arg"; break])
-		 done])
-	 AS_IF([test "x$dpkg_cv_c99_arg" != "xnone"],
-	       [CC="$CC $dpkg_cv_c99_arg"
-		AC_DEFINE([HAVE_C99], 1)],
-	       [AC_MSG_ERROR([unsupported required C99 extensions])])])[]dnl
+        AS_IF([test "x$dpkg_arg_worked" = "xyes"], [
+          dpkg_cv_c99_arg="$arg"; break
+        ])
+      done
+    ])
+    AS_IF([test "x$dpkg_cv_c99_arg" != "xnone"], [
+      CC="$CC $dpkg_cv_c99_arg"
+      dpkg_cv_c99=1
+    ])
+  ])
+  AS_IF([test "x$dpkg_cv_c99" = "xyes"], [
+    AC_DEFINE([HAVE_C99], 1, [Define to 1 if the compiler supports C99.])
+  ], [
+    AC_MSG_ERROR([unsupported required C99 extensions])
+  ])
 ])# DPKG_C_C99
 
 # DPKG_TRY_CXX11([ACTION-IF-FOUND], [ACTION-IF-NOT-FOUND])

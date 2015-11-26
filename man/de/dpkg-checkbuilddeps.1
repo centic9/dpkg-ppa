@@ -1,7 +1,7 @@
 .\" dpkg manual page - dpkg-checkbuilddeps(1)
 .\"
 .\" Copyright Â© 2001 Joey Hess <joeyh@debian.org>
-.\" Copyright Â© 2007-2012 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2007-2013, 2015 Guillem Jover <guillem@debian.org>
 .\" Copyright Â© 2008-2011 RaphaÃ«l Hertzog <hertzog@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
@@ -22,7 +22,7 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH dpkg\-checkbuilddeps 1 2013\-09\-17 Debian\-Projekt dpkg\-Hilfsprogramme
+.TH dpkg\-checkbuilddeps 1 2015\-07\-05 Debian\-Projekt dpkg\-Hilfsprogramme
 .SH BEZEICHNUNG
 dpkg\-checkbuilddeps \- überprüfe Bauabhängigkeiten und \-konflikte
 .
@@ -36,19 +36,19 @@ sind. Falls welche davon nicht erfüllt sind, zeigt es diese an und beendet
 sich mit einem von Null verschiedenen Rückgabewert.
 .P
 Standardmäßig wird \fBdebian/control\fP gelesen, aber ein alternativer
-Steuerdateiname kann auf der Befehlszeile angegeben werden.
+Steuerdateiname kann auf der Kommandozeile angegeben werden.
 .
 .SH OPTIONEN
 .TP 
 \fB\-\-admindir=\fP\fIVerz\fP
-Ändert den Ablageort der \fBdpkg\fP\-Datenbank. Der Standardort ist
-\fI/var/lib/dpkg\fP.
+Ändert den Ablageort der \fBdpkg\fP\-Datenbank (seit Dpkg 1.14.0). Der
+Standardort ist \fI/var/lib/dpkg\fP.
 .TP 
 \fB\-A\fP
-Ignoriere \fBBuild\-Depends\-Indep\fP und
-\fBBuild\-Conflicts\-Arch\fP\-Zeilen. Verwenden Sie dies, wenn nur
-arch\-indep\-Pakete gebaut werden oder kombinieren Sie es mit \fB\-B\fP, wenn nur
-ein Quellpaket gebaut werden soll.
+Ignoriere \fBBuild\-Depends\-Indep\fP und \fBBuild\-Conflicts\-Arch\fP\-Zeilen (seit
+Dpkg 1.16.4). Verwenden Sie dies, wenn nur arch\-indep\-Pakete gebaut werden
+oder kombinieren Sie es mit \fB\-B\fP, wenn nur ein Quellpaket gebaut werden
+soll.
 .TP 
 \fB\-B\fP
 Ignoriere \fBBuild\-Depends\-Indep\fP und
@@ -56,21 +56,28 @@ Ignoriere \fBBuild\-Depends\-Indep\fP und
 arch\-dep\-Pakete gebaut werden oder kombinieren Sie es mit \fB\-A\fP, wenn nur
 ein Quellpaket gebaut werden soll.
 .TP 
+\fB\-I\fP
+Ignoriert eingebaute Bauabhängigkeiten und \-konflikte (seit Dpkg
+1.18.2). Dies sind implizite Abhängigkeiten, die normalerweise in einer
+bestimmten Distribution benötigt werden, die sogenannte
+»Build\-Essential«\-Paketgruppe.
+.TP 
 \fB\-d \fP\fIZeichenkette\-für\-Bauabhängigkeiten\fP
 .TP 
 \fB\-c \fP\fIZeichenkette\-für\-Baukonflikte\fP
 Verwende die angegebenen Bauabhängigkeiten/\-konflikte statt denen der Datei
-\fIdebian/control\fP.
+\fIdebian/control\fP (seit Dpkg 1.14.17).
 .TP 
 \fB\-a \fP\fIArchitektur\fP
 Überprüfe Bauabhängigkeiten/\-konflikte unter der Annahme, dass das Paket in
 der Datei »control« für die angegebene Host\-Architektur statt für die
-Architektur des aktuellen Systems gebaut werden soll.
+Architektur des aktuellen Systems gebaut werden soll (seit Dpkg 1.16.2).
 .TP 
 \fB\-P \fP\fIProfil\fP[\fB,\fP?]
 Überprüfe Bauabhängigkeiten/\-konflikte unter der Annahme, dass das Paket in
-der Datei »control« für das/die angegebene(n) Bauprofile gebaut werden
-soll. Das Argument ist eine Kommata\-getrennte Liste von Profilnamen.
+der Datei »control« für das/die angegebene(n) Bauprofile gebaut werden soll
+(seit Dpkg 1.17.2). Das Argument ist eine Kommata\-getrennte Liste von
+Profilnamen.
 .TP 
 \fB\-?\fP, \fB\-\-help\fP
 Zeige den Bedienungshinweis und beende.

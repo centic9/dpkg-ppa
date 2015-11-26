@@ -4,7 +4,7 @@
  *
  * Copyright © 1995,1996 Ian Jackson <ian@chiark.greenend.org.uk>
  * Copyright © 2000,2001 Wichert Akkerman <wakkerma@debian.org>
- * Copyright © 2006-2014 Guillem Jover <guillem@debian.org>
+ * Copyright © 2006-2015 Guillem Jover <guillem@debian.org>
  * Copyright © 2011 Linaro Limited
  * Copyright © 2011 Raphaël Hertzog <hertzog@debian.org>
  *
@@ -222,8 +222,9 @@ Desired=Unknown/Install/Remove/Purge/Hold\n\
 }
 
 static void
-list1package(struct pkginfo *pkg, struct list_format *fmt, struct pkg_array *array)
+pkg_array_list_item(struct pkg_array *array, struct pkginfo *pkg, void *pkg_data)
 {
+  struct list_format *fmt = pkg_data;
   int l;
   const char *pdesc;
 
@@ -241,21 +242,6 @@ list1package(struct pkginfo *pkg, struct list_format *fmt, struct pkg_array *arr
                     versiondescribe(&pkg->installed.version, vdew_nonambig),
                     dpkg_arch_describe(pkg->installed.arch),
                     pdesc, l);
-}
-
-static void
-list_found_packages(struct list_format *fmt, struct pkg_array *array)
-{
-  int i;
-
-  for (i = 0; i < array->n_pkgs; i++) {
-    struct pkginfo *pkg = array->pkgs[i];
-
-    if (pkg == NULL)
-      continue;
-
-    list1package(pkg, fmt, array);
-  }
 }
 
 static int
@@ -284,13 +270,13 @@ listpackages(const char *const *argv)
         array.pkgs[i] = NULL;
     }
 
-    list_found_packages(&fmt, &array);
+    pkg_array_foreach(&array, pkg_array_list_item, &fmt);
   } else {
     int argc, ip, *found;
     struct pkg_spec *ps;
 
     for (argc = 0; argv[argc]; argc++);
-    found = m_calloc(sizeof(int) * argc);
+    found = m_calloc(argc, sizeof(int));
 
     ps = m_malloc(sizeof(*ps) * argc);
     for (ip = 0; ip < argc; ip++) {
@@ -299,21 +285,21 @@ listpackages(const char *const *argv)
     }
 
     for (i = 0; i < array.n_pkgs; i++) {
+      bool pkg_found = false;
+
       pkg = array.pkgs[i];
       for (ip = 0; ip < argc; ip++) {
         if (pkg_spec_match_pkg(&ps[ip], pkg, &pkg->installed)) {
+          pkg_found = true;
           found[ip]++;
-          break;
         }
       }
-      if (ip == argc)
+      if (!pkg_found)
         array.pkgs[i] = NULL;
     }
 
-    list_found_packages(&fmt, &array);
+    pkg_array_foreach(&array, pkg_array_list_item, &fmt);
 
-    /* FIXME: we might get non-matching messages for sub-patterns specified
-     * after their super-patterns, due to us skipping on first match. */
     for (ip = 0; ip < argc; ip++) {
       if (!found[ip]) {
         notice(_("no packages found matching %s"), argv[ip]);
@@ -392,18 +378,6 @@ searchfiles(const char *const *argv)
   while ((thisarg = *argv++) != NULL) {
     found= 0;
 
-    /* Trim trailing ‘/’ and ‘/.’ from the argument if it's
-     * not a pattern, just a path. */
-    if (!strpbrk(thisarg, "*[?\\")) {
-      varbuf_reset(&path);
-      varbuf_add_str(&path, thisarg);
-      varbuf_end_str(&path);
-
-      varbuf_trunc(&path, path_trim_slash_slashdot(path.buf));
-
-      thisarg = path.buf;
-    }
-
     if (!strchr("*[?/",*thisarg)) {
       varbuf_reset(&vb);
       varbuf_add_char(&vb, '*');
@@ -413,7 +387,14 @@ searchfiles(const char *const *argv)
       thisarg= vb.buf;
     }
     if (!strpbrk(thisarg, "*[?\\")) {
-      namenode= findnamenode(thisarg, 0);
+      /* Trim trailing ‘/’ and ‘/.’ from the argument if it is not
+       * a pattern, just a pathname. */
+      varbuf_reset(&path);
+      varbuf_add_str(&path, thisarg);
+      varbuf_end_str(&path);
+      varbuf_trunc(&path, path_trim_slash_slashdot(path.buf));
+
+      namenode = findnamenode(path.buf, 0);
       found += searchoutput(namenode);
     } else {
       iter = files_db_iter_new();
@@ -494,7 +475,7 @@ enqperpackage(const char *const *argv)
         ensure_diversions();
         file= pkg->clientdata->files;
         if (!file) {
-          printf(_("Package `%s' does not contain any files (!)\n"),
+          printf(_("Package '%s' does not contain any files (!)\n"),
                  pkg_name(pkg, pnaw_nonambig));
         } else {
           while (file) {
@@ -538,6 +519,14 @@ enqperpackage(const char *const *argv)
   return failures;
 }
 
+static void
+pkg_array_show_item(struct pkg_array *array, struct pkginfo *pkg, void *pkg_data)
+{
+  struct pkg_format_node *fmt = pkg_data;
+
+  pkg_format_show(fmt, pkg, &pkg->installed);
+}
+
 static int
 showpackages(const char *const *argv)
 {
@@ -576,7 +565,7 @@ showpackages(const char *const *argv)
     struct pkg_spec *ps;
 
     for (argc = 0; argv[argc]; argc++);
-    found = m_calloc(sizeof(int) * argc);
+    found = m_calloc(argc, sizeof(int));
 
     ps = m_malloc(sizeof(*ps) * argc);
     for (ip = 0; ip < argc; ip++) {
@@ -585,18 +574,21 @@ showpackages(const char *const *argv)
     }
 
     for (i = 0; i < array.n_pkgs; i++) {
+      bool pkg_found = false;
+
       pkg = array.pkgs[i];
       for (ip = 0; ip < argc; ip++) {
         if (pkg_spec_match_pkg(&ps[ip], pkg, &pkg->installed)) {
-          pkg_format_show(fmt, pkg, &pkg->installed);
+          pkg_found = true;
           found[ip]++;
-          break;
         }
       }
+      if (!pkg_found)
+        array.pkgs[i] = NULL;
     }
 
-    /* FIXME: we might get non-matching messages for sub-patterns specified
-     * after their super-patterns, due to us skipping on first match. */
+    pkg_array_foreach(&array, pkg_array_show_item, fmt);
+
     for (ip = 0; ip < argc; ip++) {
       if (!found[ip]) {
         notice(_("no packages found matching %s"), argv[ip]);
@@ -777,7 +769,7 @@ static void DPKG_ATTR_NORET
 printversion(const struct cmdinfo *ci, const char *value)
 {
   printf(_("Debian %s package management program query tool version %s.\n"),
-         DPKGQUERY, DPKG_VERSION_ARCH);
+         DPKGQUERY, PACKAGE_RELEASE);
   printf(_(
 "This is free software; see the GNU General Public License version 2 or\n"
 "later for copying conditions. There is NO warranty.\n"));
@@ -798,7 +790,7 @@ usage(const struct cmdinfo *ci, const char *value)
 "Commands:\n"
 "  -s|--status <package> ...        Display package status details.\n"
 "  -p|--print-avail <package> ...   Display available version details.\n"
-"  -L|--listfiles <package> ...     List files `owned' by package(s).\n"
+"  -L|--listfiles <package> ...     List files 'owned' by package(s).\n"
 "  -l|--list [<pattern> ...]        List packages concisely.\n"
 "  -W|--show [<pattern> ...]        Show information on package(s).\n"
 "  -S|--search <pattern> ...        Find package(s) owning file(s).\n"

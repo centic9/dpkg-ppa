@@ -2,7 +2,7 @@
 .\"
 .\" Copyright Â© 1995-1996 Ian Jackson <ian@chiark.chu.cam.ac.uk>
 .\" Copyright Â© 2000 Wichert Akkerman <wakkerma@debian.org>
-.\" Copyright Â© 2006-2014 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2006-2015 Guillem Jover <guillem@debian.org>
 .\" Copyright Â© 2008-2010 RaphaÃ«l Hertzog <hertzog@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
@@ -40,21 +40,23 @@ Debian\-Steuerdatei für das Hochladen (die \fB.changes\fP\-Datei).
 .TP 
 \fB\-g\fP
 Gibt an, dass nur die Quellen und architekturunabhängige Pakete hochgeladen
-werden sollen (keine architekturspezifischen Pakete werden enthalten sein).
+werden sollen, daher werden keine architekturspezifischen Pakete enthalten
+sein (seit Dpkg 1.17.11).
 .TP 
 \fB\-G\fP
 Gibt an, dass nur die Quellen und architekturabhängige Pakete hochgeladen
-werden sollen (keine architekturunabhängigen Pakete werden enthalten sein).
+werden sollen, daher werden keine architekturunabhängigen Pakete enthalten
+sein (seit Dpkg 1.17.11).
 .TP 
 \fB\-b\fP, \fB\-B\fP, \fB\-A\fP
-Gibt an, das ein rein\-binärer Bau stattfindet (keine Quelldateien sollen
-eingeschlossen werden). Es gibt zwischen \fB\-b\fP, \fB\-B\fP und \fB\-A\fP keinen
-Unterschied, die erstellte Datei \fB.changes\fP beinhaltet alle Dateien, die
-von den \fBbinary\-*\fP\-Zielen der zu bauenden Pakete erstellt werden.
+Gibt an, das ein rein\-binärer Bau stattfindet, daher sollen keine
+Quelldateien eingeschlossen werden. Es gibt zwischen \fB\-b\fP, \fB\-B\fP und \fB\-A\fP
+keinen Unterschied, die erstellte Datei \fB.changes\fP beinhaltet alle Dateien,
+die von den \fBbinary\-*\fP\-Zielen der zu bauenden Pakete erstellt werden.
 .TP 
 \fB\-S\fP
-Gibt an, dass nur die Quellen hochgeladen werden sollen (keine Binärpakete
-werden enthalten sein).
+Gibt an, dass nur die Quellen hochgeladen werden sollen, daher werden keine
+Binärpakete enthalten sein.
 .PP
 Die \fB\-s\fP\fIx\fP Optionen steuern, ob das Original\-Quellarchiv dem Upload
 hinzugefügt wird, falls die Quellen erzeugt werden (d.h. \fB\-b\fP oder \fB\-B\fP
@@ -101,7 +103,8 @@ Lese die Substitutionsvariablen aus \fISubstvars\-Datei\fP; standardmäßig
 \fBdebian/substvars\fP. Bei den ausgegeben Feldern erfolgt keine
 Variablensubstitution, die besondere Variable \fIFormat\fP wird allerdings das
 Feld mit dem gleichen Namen überschreiben. Diese Option kann mehrfach
-verwandt werden, um Substitutionsvariablen aus mehreren Dateien einzulesen.
+verwandt werden, um Substitutionsvariablen aus mehreren Dateien einzulesen
+(seit Dpkg 1.15.6).
 
 .TP 
 \fB\-D\fP\fIFeld\fP\fB=\fP\fIWert\fP

@@ -1,26 +1,23 @@
 # Copyright © 2005 Scott James Remnant <scott@netsplit.com>
-# Copyright © 2008, 2009 Guillem Jover <guillem@debian.org>
+# Copyright © 2008-2009,2015 Guillem Jover <guillem@debian.org>
 
 # DPKG_FUNC_VA_COPY
 # -----------------
-# Define HAVE_VA_COPY if we have va_copy, fail if they can't be assigned
-AC_DEFUN([DPKG_FUNC_VA_COPY],
-[AC_CACHE_CHECK([for va_copy], [dpkg_cv_va_copy],
-	[AC_RUN_IFELSE([AC_LANG_SOURCE(
-[[#include <stdarg.h>
-int main()
-{
+# Define HAVE_VA_COPY if we have va_copy.
+AC_DEFUN([DPKG_FUNC_VA_COPY], [
+  AC_CACHE_CHECK([for va_copy], [dpkg_cv_va_copy], [
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <stdarg.h>]], [[
 va_list v1, v2;
-va_copy (v1, v2);
-exit (0);
-}
-	]])],
-	[dpkg_cv_va_copy=yes],
-	[dpkg_cv_va_copy=no],
-	[dpkg_cv_va_copy=no])])
-AS_IF([test "x$dpkg_cv_va_copy" = "xyes"],
-	[AC_DEFINE([HAVE_VA_COPY], 1,
-	           [Define to 1 if the 'va_copy' macro exists])])
+va_copy(v1, v2);
+]]
+      )],
+      [dpkg_cv_va_copy=yes],
+      [dpkg_cv_va_copy=no]
+    )
+  ])
+  AS_IF([test "x$dpkg_cv_va_copy" = "xyes"], [
+    AC_DEFINE([HAVE_VA_COPY], [1], [Define to 1 if the 'va_copy' macro exists])
+  ])
 ])# DPKG_FUNC_VA_COPY
 
 # DPKG_FUNC_C99_SNPRINTF
@@ -60,7 +57,22 @@ int main()
 	]])],
 	[dpkg_cv_c99_snprintf=yes],
 	[dpkg_cv_c99_snprintf=no],
-	[dpkg_cv_c99_snprintf=no])])
+	[dpkg_cv_c99_snprintf=maybe])
+
+  AS_IF([test "x$dpkg_cv_c99_snprintf" = "xmaybe"],
+    AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+#define _GNU_SOURCE 1
+#include <unistd.h>
+#if !defined(_XOPEN_VERSION) || _XOPEN_VERSION < 600
+#error "snprintf() has conflicting semantics with C99 on SUSv2 and earlier"
+#endif
+]]
+      )],
+      [dpkg_cv_c99_snprintf=yes],
+      [dpkg_cv_c99_snprintf=no]
+    )
+  )
+])
 AS_IF([test "x$dpkg_cv_c99_snprintf" = "xyes"],
 	[AC_DEFINE([HAVE_C99_SNPRINTF], 1,
 	           [Define to 1 if the 'snprintf' family is C99 conformant])],

@@ -58,10 +58,6 @@
    */
 #undef HAVE_DCGETTEXT
 
-/* Define to 1 if you have the declaration of `strnlen', and to 0 if you
-   don't. */
-#undef HAVE_DECL_STRNLEN
-
 /* Define to 1 if you have the declaration of `sys_errlist', and to 0 if you
    don't. */
 #undef HAVE_DECL_SYS_ERRLIST
@@ -139,6 +135,9 @@
 
 /* Define to 1 if 'makedev' is declared in <sys/types.h> */
 #undef HAVE_MAKEDEV
+
+/* Define to 1 if you have the <md5.h> header file. */
+#undef HAVE_MD5_H
 
 /* Define to 1 if you have the `memcpy' function. */
 #undef HAVE_MEMCPY
@@ -284,6 +283,9 @@
 
 /* Define to the full name of this package. */
 #undef PACKAGE_NAME
+
+/* Define the project release information, version and architecture */
+#undef PACKAGE_RELEASE
 
 /* Define to the full name and version of this package. */
 #undef PACKAGE_STRING

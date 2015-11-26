@@ -1,4 +1,5 @@
 # Copyright © 2007-2009 Raphaël Hertzog <hertzog@debian.org>
+# Copyright © 2009, 2012-2015 Guillem Jover <guillem@debian.org>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -60,11 +61,11 @@ modified. Empty lines and lines containing only dots are prefixed with
 During parsing, trailing spaces are stripped on all lines while leading
 spaces are stripped only on the first line of each field.
 
-=head1 FUNCTIONS
+=head1 METHODS
 
 =over 4
 
-=item my $c = Dpkg::Control::Hash->new(%opts)
+=item $c = Dpkg::Control::Hash->new(%opts)
 
 Creates a new object with the indicated options. Supported options
 are:
@@ -133,7 +134,7 @@ sub new {
 # that everything gets garbage-collected.
 
 sub DESTROY {
-    my ($self) = @_;
+    my $self = shift;
     delete $$self->{fields};
 }
 
@@ -148,7 +149,7 @@ sub set_options {
     $$self->{$_} = $opts{$_} foreach keys %opts;
 }
 
-=item my $value = $c->get_option($option)
+=item $value = $c->get_option($option)
 
 Returns the value of the corresponding option.
 
@@ -174,7 +175,7 @@ sub parse_error {
     my ($self, $file, $msg) = (shift, shift, shift);
 
     $msg = sprintf($msg, @_) if (@_);
-    error(_g('syntax error in %s at line %d: %s'), $file, $., $msg);
+    error(g_('syntax error in %s at line %d: %s'), $file, $., $msg);
 }
 
 =item $c->parse($fh, $description)
@@ -204,11 +205,11 @@ sub parse {
 	    $parabody = 1;
 	    my ($name, $value) = ($1, $2);
 	    if ($name =~ m/^-/) {
-		$self->parse_error($desc, _g('field cannot start with a hyphen'));
+		$self->parse_error($desc, g_('field cannot start with a hyphen'));
 	    }
 	    if (exists $self->{$name}) {
 		unless ($$self->{allow_duplicate}) {
-		    $self->parse_error($desc, _g('duplicate field %s found'), $name);
+		    $self->parse_error($desc, g_('duplicate field %s found'), $name);
 		}
 	    }
 	    $value =~ s/\s*$//;
@@ -217,12 +218,12 @@ sub parse {
 	} elsif (m/^\s(\s*\S.*)$/) {
 	    my $line = $1;
 	    unless (defined($cf)) {
-		$self->parse_error($desc, _g('continued value line not in field'));
+		$self->parse_error($desc, g_('continued value line not in field'));
             }
+	    $line =~ s/\s*$//;
 	    if ($line =~ /^\.+$/) {
 		$line = substr $line, 1;
 	    }
-	    $line =~ s/\s*$//;
 	    $self->{$cf} .= "\n$line";
 	} elsif (m/^-----BEGIN PGP SIGNED MESSAGE-----[\r\t ]*$/) {
 	    $expect_pgp_sig = 1;
@@ -232,7 +233,7 @@ sub parse {
 		    last if m/^\s*$/;
 		}
 	    } else {
-		$self->parse_error($desc, _g('OpenPGP signature not allowed here'));
+		$self->parse_error($desc, g_('OpenPGP signature not allowed here'));
 	    }
 	} elsif (m/^\s*$/ ||
 	         ($expect_pgp_sig && m/^-----BEGIN PGP SIGNATURE-----[\r\t ]*$/)) {
@@ -240,13 +241,13 @@ sub parse {
 		# Skip empty lines
 		$_ = <$fh> while defined && m/^\s*$/;
 		unless (length) {
-		    $self->parse_error($desc, _g('expected OpenPGP signature, ' .
-		                                 'found EOF after blank line'));
+		    $self->parse_error($desc, g_('expected OpenPGP signature, ' .
+		                                 'found end of file after blank line'));
 		}
 		chomp;
 		unless (m/^-----BEGIN PGP SIGNATURE-----[\r\t ]*$/) {
-		    $self->parse_error($desc, _g('expected OpenPGP signature, ' .
-		                                 "found something else \`%s'"), $_);
+		    $self->parse_error($desc, g_('expected OpenPGP signature, ' .
+		                                 "found something else '%s'"), $_);
                 }
 		# Skip OpenPGP signature
 		while (<$fh>) {
@@ -254,7 +255,7 @@ sub parse {
 		    last if m/^-----END PGP SIGNATURE-----[\r\t ]*$/;
 		}
 		unless (defined) {
-		    $self->parse_error($desc, _g('unfinished OpenPGP signature'));
+		    $self->parse_error($desc, g_('unfinished OpenPGP signature'));
                 }
 		# This does not mean the signature is correct, that needs to
 		# be verified by gnupg.
@@ -263,12 +264,12 @@ sub parse {
 	    last; # Finished parsing one block
 	} else {
 	    $self->parse_error($desc,
-	                       _g('line with unknown format (not field-colon-value)'));
+	                       g_('line with unknown format (not field-colon-value)'));
 	}
     }
 
     if ($expect_pgp_sig and not $$self->{is_pgp_signed}) {
-	$self->parse_error($desc, _g('unfinished OpenPGP signature'));
+	$self->parse_error($desc, g_('unfinished OpenPGP signature'));
     }
 
     return defined($cf);
@@ -308,7 +309,7 @@ sub get_custom_field {
 Write the string representation of the control information to a
 file.
 
-=item my $str = $c->output()
+=item $str = $c->output()
 
 =item "$c"
 
@@ -368,7 +369,7 @@ sub output {
 	    # Print it out
             if ($fh) {
 	        print { $fh } $kv
-	            or syserr(_g('write error on control data'));
+	            or syserr(g_('write error on control data'));
             }
 	    $str .= $kv if defined wantarray;
 	}
@@ -439,6 +440,9 @@ package Dpkg::Control::HashCore::Tie;
 # which fields have been added in order to be able to dump them in the
 # same order. But the order information is stored in a parent object of
 # type Dpkg::Control.
+
+use strict;
+use warnings;
 
 use Dpkg::Checksums;
 use Dpkg::Control::FieldsCore;
@@ -538,11 +542,11 @@ sub NEXTKEY {
 
 =head1 CHANGES
 
-=head2 Version 1.01
+=head2 Version 1.01 (dpkg 1.17.2)
 
 New method: $c->parse_error().
 
-=head2 Version 1.00
+=head2 Version 1.00 (dpkg 1.17.0)
 
 Mark the module as public.
 

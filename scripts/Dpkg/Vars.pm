@@ -20,13 +20,16 @@ use strict;
 use warnings;
 
 our $VERSION = '0.03';
+our @EXPORT = qw(
+    get_source_package
+    set_source_package
+);
+
+use Exporter qw(import);
 
 use Dpkg::ErrorHandling;
 use Dpkg::Gettext;
 use Dpkg::Package;
-
-use Exporter qw(import);
-our @EXPORT = qw(get_source_package set_source_package);
 
 my $sourcepackage;
 
@@ -37,12 +40,12 @@ sub get_source_package {
 sub set_source_package {
     my $v = shift;
     my $err = pkg_name_is_illegal($v);
-    error(_g("source package name '%s' is illegal: %s"), $v, $err) if $err;
+    error(g_("source package name '%s' is illegal: %s"), $v, $err) if $err;
 
     if (not defined($sourcepackage)) {
         $sourcepackage = $v;
     } elsif ($v ne $sourcepackage) {
-        error(_g('source package has two conflicting values - %s and %s'),
+        error(g_('source package has two conflicting values - %s and %s'),
               $sourcepackage, $v);
     }
 }

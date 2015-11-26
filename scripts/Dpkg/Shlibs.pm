@@ -1,4 +1,5 @@
 # Copyright © 2007 Raphaël Hertzog <hertzog@debian.org>
+# Copyright © 2007-2008, 2012-2015 Guillem Jover <guillem@debian.org>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,14 +18,18 @@ package Dpkg::Shlibs;
 
 use strict;
 use warnings;
+use feature qw(state);
 
 our $VERSION = '0.02';
+our @EXPORT_OK = qw(
+    blank_library_paths
+    setup_library_paths
+    get_library_paths
+    add_library_dir
+    find_library
+);
 
 use Exporter qw(import);
-our @EXPORT_OK = qw(add_library_dir get_library_paths reset_library_paths
-                    find_library);
-
-
 use File::Spec;
 
 use Dpkg::Gettext;
@@ -36,56 +41,20 @@ use Dpkg::Arch qw(debarch_to_gnutriplet get_build_arch get_host_arch
                   gnutriplet_to_multiarch debarch_to_multiarch);
 
 use constant DEFAULT_LIBRARY_PATH =>
-    qw(/lib /usr/lib /lib32 /usr/lib32 /lib64 /usr/lib64
-       /emul/ia32-linux/lib /emul/ia32-linux/usr/lib);
+    qw(/lib /usr/lib);
+# XXX: Deprecated multilib paths.
+use constant DEFAULT_MULTILIB_PATH =>
+    qw(/lib32 /usr/lib32 /lib64 /usr/lib64);
 
-# Adjust set of directories to consider when we're in a situation of a
-# cross-build or a build of a cross-compiler
-my @crosslibrarypaths;
-my ($crossprefix, $multiarch);
-# Detect cross compiler builds
-if ($ENV{GCC_TARGET}) {
-    $crossprefix = debarch_to_gnutriplet($ENV{GCC_TARGET});
-    $multiarch = debarch_to_multiarch($ENV{GCC_TARGET});
-}
-if ($ENV{DEB_TARGET_GNU_TYPE} and
-    ($ENV{DEB_TARGET_GNU_TYPE} ne $ENV{DEB_BUILD_GNU_TYPE}))
-{
-    $crossprefix = $ENV{DEB_TARGET_GNU_TYPE};
-    $multiarch = gnutriplet_to_multiarch($ENV{DEB_TARGET_GNU_TYPE});
-}
-# host for normal cross builds.
-if (get_build_arch() ne get_host_arch()) {
-    $crossprefix = debarch_to_gnutriplet(get_host_arch());
-    $multiarch = debarch_to_multiarch(get_host_arch());
-}
-# Define list of directories containing crossbuilt libraries
-if ($crossprefix) {
-    push @crosslibrarypaths, "/lib/$multiarch", "/usr/lib/$multiarch",
-            "/$crossprefix/lib", "/usr/$crossprefix/lib",
-            "/$crossprefix/lib32", "/usr/$crossprefix/lib32",
-            "/$crossprefix/lib64", "/usr/$crossprefix/lib64";
-}
+my @librarypaths;
+my $librarypaths_init;
 
-my @librarypaths = (DEFAULT_LIBRARY_PATH, @crosslibrarypaths);
-
-# XXX: Deprecated. Update library paths with LD_LIBRARY_PATH
-if ($ENV{LD_LIBRARY_PATH}) {
-    foreach my $path (reverse split( /:/, $ENV{LD_LIBRARY_PATH} )) {
-	$path =~ s{/+$}{};
-	add_library_dir($path);
-    }
-}
-
-# Update library paths with ld.so config
-parse_ldso_conf('/etc/ld.so.conf') if -e '/etc/ld.so.conf';
-
-my %visited;
 sub parse_ldso_conf {
     my $file = shift;
+    state %visited;
     local $_;
 
-    open my $fh, '<', $file or syserr(_g('cannot open %s'), $file);
+    open my $fh, '<', $file or syserr(g_('cannot open %s'), $file);
     $visited{$file}++;
     while (<$fh>) {
 	next if /^\s*$/;
@@ -107,22 +76,71 @@ sub parse_ldso_conf {
     close $fh;
 }
 
+sub blank_library_paths {
+    @librarypaths = ();
+    $librarypaths_init = 1;
+}
+
+sub setup_library_paths {
+    @librarypaths = ();
+
+    # XXX: Deprecated. Update library paths with LD_LIBRARY_PATH.
+    if ($ENV{LD_LIBRARY_PATH}) {
+        foreach my $path (split /:/, $ENV{LD_LIBRARY_PATH}) {
+            $path =~ s{/+$}{};
+            push @librarypaths, $path;
+        }
+    }
+
+    # Adjust set of directories to consider when we're in a situation of a
+    # cross-build or a build of a cross-compiler.
+    my $multiarch;
+
+    # Detect cross compiler builds.
+    if ($ENV{DEB_TARGET_GNU_TYPE} and
+        ($ENV{DEB_TARGET_GNU_TYPE} ne $ENV{DEB_BUILD_GNU_TYPE}))
+    {
+        $multiarch = gnutriplet_to_multiarch($ENV{DEB_TARGET_GNU_TYPE});
+    }
+    # Host for normal cross builds.
+    if (get_build_arch() ne get_host_arch()) {
+        $multiarch = debarch_to_multiarch(get_host_arch());
+    }
+    # Define list of directories containing crossbuilt libraries.
+    if ($multiarch) {
+        push @librarypaths, "/lib/$multiarch", "/usr/lib/$multiarch";
+    }
+
+    push @librarypaths, DEFAULT_LIBRARY_PATH;
+
+    # Update library paths with ld.so config.
+    parse_ldso_conf('/etc/ld.so.conf') if -e '/etc/ld.so.conf';
+
+    push @librarypaths, DEFAULT_MULTILIB_PATH;
+
+    $librarypaths_init = 1;
+}
+
 sub add_library_dir {
-    my ($dir) = @_;
+    my $dir = shift;
+
+    setup_library_paths() if not $librarypaths_init;
+
     unshift @librarypaths, $dir;
 }
 
 sub get_library_paths {
-    return @librarypaths;
-}
+    setup_library_paths() if not $librarypaths_init;
 
-sub reset_library_paths {
-    @librarypaths = ();
+    return @librarypaths;
 }
 
 # find_library ($soname, \@rpath, $format, $root)
 sub find_library {
     my ($lib, $rpath, $format, $root) = @_;
+
+    setup_library_paths() if not $librarypaths_init;
+
     $root //= '';
     $root =~ s{/+$}{};
     my @rpath = @{$rpath};

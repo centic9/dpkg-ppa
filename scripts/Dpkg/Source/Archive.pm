@@ -20,16 +20,16 @@ use warnings;
 
 our $VERSION = '0.01';
 
-use Dpkg::Source::Functions qw(erasedir fixperms);
-use Dpkg::Gettext;
-use Dpkg::IPC;
-use Dpkg::ErrorHandling;
-
 use Carp;
 use File::Temp qw(tempdir);
 use File::Basename qw(basename);
 use File::Spec;
 use Cwd;
+
+use Dpkg::Gettext;
+use Dpkg::ErrorHandling;
+use Dpkg::IPC;
+use Dpkg::Source::Functions qw(erasedir fixperms);
 
 use parent qw(Dpkg::Compression::FileHandle);
 
@@ -48,9 +48,9 @@ sub create {
     $spawn_opts{from_pipe} = \*$self->{tar_input};
     # Call tar creation process
     $spawn_opts{delete_env} = [ 'TAR_OPTIONS' ];
-    $spawn_opts{exec} = [ 'tar', '--null', '-T', '-', '--numeric-owner',
-                            '--owner', '0', '--group', '0', '--format=gnu',
-                            @{$opts{options}}, '-cf', '-' ];
+    $spawn_opts{exec} = [ 'tar', '-cf', '-', '--format=gnu', '--null',
+                          '--numeric-owner', '--owner=0', '--group=0',
+                          @{$opts{options}}, '-T', '-' ];
     *$self->{pid} = spawn(%spawn_opts);
     *$self->{cwd} = getcwd();
 }
@@ -61,7 +61,7 @@ sub _add_entry {
     croak 'call create() first' unless *$self->{tar_input};
     $file = $2 if ($file =~ /^\Q$cwd\E\/(.+)$/); # Relative names
     print({ *$self->{tar_input} } "$file\0")
-        or syserr(_g('write on tar input'));
+        or syserr(g_('write on tar input'));
 }
 
 sub add_file {
@@ -87,8 +87,9 @@ sub add_directory {
 }
 
 sub finish {
-    my ($self) = @_;
-    close(*$self->{tar_input}) or syserr(_g('close on tar input'));
+    my $self = shift;
+
+    close(*$self->{tar_input}) or syserr(g_('close on tar input'));
     wait_child(*$self->{pid}, cmdline => 'tar -cf -');
     delete *$self->{pid};
     delete *$self->{tar_input};
@@ -113,7 +114,7 @@ sub extract {
         my $template = basename($self->get_filename()) .  '.tmp-extract.XXXXX';
         unless (-e $dest) {
             # Kludge so that realpath works
-            mkdir($dest) or syserr(_g('cannot create directory %s'), $dest);
+            mkdir($dest) or syserr(g_('cannot create directory %s'), $dest);
         }
         $tmp = tempdir($template, DIR => Cwd::realpath("$dest/.."), CLEANUP => 1);
         $spawn_opts{chdir} = $tmp;
@@ -125,8 +126,8 @@ sub extract {
 
     # Call tar extraction process
     $spawn_opts{delete_env} = [ 'TAR_OPTIONS' ];
-    $spawn_opts{exec} = [ 'tar', '--no-same-owner', '--no-same-permissions',
-                            @{$opts{options}}, '-xf', '-' ];
+    $spawn_opts{exec} = [ 'tar', '-xf', '-', '--no-same-permissions',
+                          '--no-same-owner', @{$opts{options}} ];
     spawn(%spawn_opts);
     $self->close();
 
@@ -144,18 +145,18 @@ sub extract {
     return if $opts{in_place};
 
     # Rename extracted directory
-    opendir(my $dir_dh, $tmp) or syserr(_g('cannot opendir %s'), $tmp);
+    opendir(my $dir_dh, $tmp) or syserr(g_('cannot opendir %s'), $tmp);
     my @entries = grep { $_ ne '.' && $_ ne '..' } readdir($dir_dh);
     closedir($dir_dh);
     my $done = 0;
     erasedir($dest);
     if (scalar(@entries) == 1 && ! -l "$tmp/$entries[0]" && -d _) {
 	rename("$tmp/$entries[0]", $dest)
-	    or syserr(_g('unable to rename %s to %s'),
+	    or syserr(g_('unable to rename %s to %s'),
 	              "$tmp/$entries[0]", $dest);
     } else {
 	rename($tmp, $dest)
-	    or syserr(_g('unable to rename %s to %s'), $tmp, $dest);
+	    or syserr(g_('unable to rename %s to %s'), $tmp, $dest);
     }
     erasedir($tmp);
 }

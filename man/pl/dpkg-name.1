@@ -1,7 +1,7 @@
 .\" dpkg manual page - dpkg-name(1)
 .\"
 .\" Copyright Â© 1995-1996 Erick Branderhorst
-.\" Copyright Â© 2007-2012 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2007-2013, 2015 Guillem Jover <guillem@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -52,16 +52,16 @@ Istniej±ce pliki bêd± nadpisane, je¿eli ich nazwy s± takie same jak nazwy
 plików wynikowych.
 .TP 
 \fB\-s\fP, \fB\-\-subdir\fP [\fIkatalog\fP]
-Pliki bêd± przeniesione do podkatalogu. Je¶li istnieje katalog podany jako
-argument tej opcji, to pliki zostan± przeniesione do tego katalogu, w
-przeciwnym wypadku nazwa katalogu docelowego jest wyodrêbniana z pola
-Section w czê¶ci kontrolnej pakietu. Katalogiem docelowym bêdzie wtedy
-"unstable/binary\-\fIarchitektura\fP/\fIsekcja\fP". Je¶li sekcja nie zostanie
-znaleziona w pliku kontrolnym, to jest przyjmowane "no\-section" i w tym
-przypadku, jak i w przypadku sekcji "non\-free" oraz "contrib", katalogiem
-docelowym bêdzie \fIsekcja\fP/binary\-\fIarchitektura\fP". Pole kontrolne Section
-nie jest wymagane, tak wiêc w ten sposób wiele pakietów bêdzie umieszczonych
-w katalogu "no\-section". Proszê ostro¿nie u¿ywaæ tej opcji, jest niechlujna.
+Files will be moved into a subdirectory. If the directory given as argument
+exists the files will be moved into that directory otherwise the name of the
+target directory is extracted from the section field in the control part of
+the package. The target directory will be
+\(Founstable/binary\-\fIarchitecture\fP/\fIsection\fP\(Fc.  If the section is not
+found in the control, then \fBno\-section\fP is assumed, and in this case, as
+well as for sections \fBnon\-free\fP and \fBcontrib\fP the target directory is
+\(Fo\fIsection\fP/binary\-\fIarchitecture\fP\(Fc.  The section field is not
+required so a lot of packages will find their way to the \fBno\-section\fP
+area.  Use this option with care, it's messy.
 .TP 
 \fB\-c\fP, \fB\-\-create\-dir\fP
 This option can used together with the \fB\-s\fP option. If a target directory
@@ -83,12 +83,12 @@ installation tools might depend on this naming structure.
 .SH PRZYK£ADY
 .TP 
 \fBdpkg\-name bar\-foo.deb\fP
-Nazwa pliku "bar\-foo.deb" zostanie zmieniona na bar\-foo_1.0\-2_i386.deb lub
-co¶ podobnego (w zale¿no¶ci od informacji zawartych w pliku kontrolnym
-pakietu "bar\-foo.deb").
+The file \fBbar\-foo.deb\fP will be renamed to bar\-foo_1.0\-2_i386.deb or
+something similar (depending on whatever information is in the control part
+of \fBbar\-foo.deb\fP).
 .TP 
 \fBfind /root/debian/ \-name \(aq*.deb\(aq | xargs \-n 1 dpkg\-name \-a\fP
-All files with the extension `deb' in the directory /root/debian and its
+All files with the extension \fBdeb\fP in the directory /root/debian and its
 subdirectory's will be renamed by \fBdpkg\-name\fP if required into names with
 no architecture information.
 .TP 

@@ -2,6 +2,7 @@
 .\"
 .\" Copyright Â© 1995-1996 Ian Jackson <ian@chiark.chu.cam.ac.uk>
 .\" Copyright Â© 2000 Wichert Akkerman <wakkerma@debian.org>
+.\" Copyright Â© 2006-2009,2012-2015 Guillem Jover <guillem@debian.org>
 .\" Copyright Â© 2009-2010 RaphaÃ«l Hertzog <hertzog@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
@@ -22,7 +23,7 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH deb\-substvars 5 "15 de julio del 2009" "Proyecto Debian" "Herramientas de dpkg"
+.TH deb\-substvars 5 2015\-01\-20 "Proyecto Debian" "Herramientas de dpkg"
 .SH NOMBRE
 deb\-substvars \- Sustitución de variables de fuentes de Debian
 .
@@ -83,7 +84,8 @@ línea, las líneas vacías y las líneas que comiencen con el símbolo \fB#\fP
 De manera adicional, las siguientes variables estándar están disponibles:
 .TP 
 \fBArch\fP
-La arquitectura de construcción actual (de \fBdpkg \-\-print\-architecture\fP).
+The current host architecture (i.e. the architecture the package is being
+built for, the equivalent of \fBDEB_HOST_ARCH\fP).
 .TP 
 \fBsource:Version\fP
 La versión del paquete fuente.
@@ -102,10 +104,17 @@ variable está \fBobsoleta\fP, ya que su significado difiere de su función. Use
 \fBsource:Version\fP o \fBbinary:Version\fP según requiera la ocasión.
 .TP 
 \fBInstalled\-Size\fP
-El tamaño total de los ficheros del paquete ya instalado. Este valor se
-copia al campo del fichero de control correspondiente; definirlo modifica el
-valor de dicho campo. Si la variable no está definida, \fBdpkg\-gencontrol\fP
-usará \fBdu \-k debian/tmp\fP para hallar el valor predefinido.
+The approximate total size of the package's installed files. This value is
+copied into the corresponding control file field; setting it will modify the
+value of that field. If this variable is not set \fBdpkg\-gencontrol\fP will
+compute the default value by accumulating the size of each regular file and
+symlink rounded to 1 KiB used units, and a baseline of 1 KiB for any other
+filesystem object type.
+
+\fBNote:\fP Take into account that this can only ever be an approximation, as
+the actual size used on the installed system will depend greatly on the
+filesystem used and its parameters, which might end up using either more or
+less space than the specified in this field.
 .TP 
 \fBExtra\-Size\fP
 El espacio en disco adicional usado cuando se instala el paquete. Si se

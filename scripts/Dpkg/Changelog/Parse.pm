@@ -1,5 +1,6 @@
 # Copyright © 2005, 2007 Frank Lichtenheld <frank@lichtenheld.de>
 # Copyright © 2009       Raphaël Hertzog <hertzog@debian.org>
+# Copyright © 2010, 2012-2015 Guillem Jover <guillem@debian.org>
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -22,10 +23,8 @@ Dpkg::Changelog::Parse - generic changelog parser for dpkg-parsechangelog
 
 =head1 DESCRIPTION
 
-This module provides a single function changelog_parse() which reproduces
-all the features of dpkg-parsechangelog.
-
-=head2 FUNCTIONS
+This module provides a set of functions which reproduce all the features
+of dpkg-parsechangelog.
 
 =cut
 
@@ -34,31 +33,115 @@ package Dpkg::Changelog::Parse;
 use strict;
 use warnings;
 
-our $VERSION = '1.00';
-
-use Dpkg ();
-use Dpkg::Gettext;
-use Dpkg::ErrorHandling;
-use Dpkg::Control::Changelog;
+our $VERSION = '1.01';
+our @EXPORT = qw(
+    changelog_parse_debian
+    changelog_parse_plugin
+    changelog_parse
+);
 
 use Exporter qw(import);
-our @EXPORT = qw(changelog_parse);
+
+use Dpkg ();
+use Dpkg::Util qw(none);
+use Dpkg::Gettext;
+use Dpkg::ErrorHandling;
+use Dpkg::Changelog::Debian;
+use Dpkg::Control::Changelog;
+
+=head1 FUNCTIONS
 
 =over 4
 
-=item my $fields = changelog_parse(%opt)
+=item $fields = changelog_parse_debian(%opt)
 
-This function will parse a changelog. In list context, it return as many
-Dpkg::Control object as the parser did output. In scalar context, it will
-return only the first one. If the parser didn't return any data, it will
-return an empty in list context or undef on scalar context. If the parser
-failed, it will die.
+This function will parse a changelog. In list context, it returns as many
+Dpkg::Control objects as the parser did create. In scalar context, it will
+return only the first one. If the parser did not return any data, it will
+return an empty list in list context or undef on scalar context. If the
+parser failed, it will die.
+
+The changelog file that is parsed is F<debian/changelog> by default but it
+can be overridden with $opt{file}. The default output format is "dpkg" but
+it can be overridden with $opt{format}.
+
+The parsing itself is done by Dpkg::Changelog::Debian.
+
+=cut
+
+sub changelog_parse_debian {
+    my (%options) = @_;
+
+    # Setup and sanity checks.
+    $options{file} //= 'debian/changelog';
+    $options{label} //= $options{file};
+    $options{format} //= 'dpkg';
+    $options{all} = 1 if exists $options{all};
+
+    if (none { defined $options{$_} } qw(since until from to offset count all)) {
+        $options{count} = 1;
+    }
+
+    my $range;
+    foreach my $opt (qw(since until from to offset count all)) {
+        $range->{$opt} = $options{$opt} if exists $options{$opt};
+    }
+
+    my $changes = Dpkg::Changelog::Debian->new(reportfile => $options{label},
+                                               range => $range);
+    $changes->load($options{file})
+        or error(g_('fatal error occurred while parsing %s'), $options{file});
+
+    # Get the output into several Dpkg::Control objects.
+    my @res;
+    if ($options{format} eq 'dpkg') {
+        push @res, $changes->dpkg($range);
+    } elsif ($options{format} eq 'rfc822') {
+        push @res, $changes->rfc822($range)->get();
+    } else {
+        error(g_('unknown output format %s'), $options{format});
+    }
+
+    if (wantarray) {
+        return @res;
+    } else {
+        return $res[0] if @res;
+        return;
+    }
+}
+
+sub _changelog_detect_format {
+    my $file = shift;
+    my $format = 'debian';
+
+    # Extract the format from the changelog file if possible
+    if ($file ne '-') {
+        local $_;
+
+        open my $format_fh, '-|', 'tail', '-n', '40', $file
+            or syserr(g_('cannot create pipe for %s'), 'tail');
+        while (<$format_fh>) {
+            $format = $1 if m/\schangelog-format:\s+([0-9a-z]+)\W/;
+        }
+        close $format_fh or subprocerr(g_('tail of %s'), $file);
+    }
+
+    return $format;
+}
+
+=item $fields = changelog_parse_plugin(%opt)
+
+This function will parse a changelog. In list context, it returns as many
+Dpkg::Control objects as the parser did output. In scalar context, it will
+return only the first one. If the parser did not return any data, it will
+return an empty list in list context or undef on scalar context. If the
+parser failed, it will die.
 
 The parsing itself is done by an external program (searched in the
 following list of directories: $opt{libdir},
-F</usr/local/lib/dpkg/parsechangelog>, F</usr/lib/dpkg/parsechangelog>) That
-program is named according to the format that it's able to parse. By
-default it's either "debian" or the format name lookep up in the 40 last
+F</usr/local/lib/dpkg/parsechangelog>, F</usr/lib/dpkg/parsechangelog>).
+That program is named according to the format that it is able to parse. By
+default it is either "debian" or the format name looked up in the 40 last
 lines of the changelog itself (extracted with this perl regular expression
 "\schangelog-format:\s+([0-9a-z]+)\W"). But it can be overridden
 with $opt{changelogformat}. The program expects the content of the
@@ -68,22 +151,26 @@ The changelog file that is parsed is F<debian/changelog> by default but it
 can be overridden with $opt{file}.
 
 All the other keys in %opt are forwarded as parameter to the external
-parser. If the key starts with "-", it's passed as is. If not, it's passed
+parser. If the key starts with "-", it is passed as is. If not, it is passed
 as "--<key>". If the value of the corresponding hash entry is defined, then
-it's passed as the parameter that follows.
+it is passed as the parameter that follows.
 
 =cut
 
-sub changelog_parse {
+sub changelog_parse_plugin {
     my (%options) = @_;
+
+    # Setup and sanity checks.
+    $options{file} //= 'debian/changelog';
+
     my @parserpath = ('/usr/local/lib/dpkg/parsechangelog',
                       "$Dpkg::LIBDIR/parsechangelog",
                       '/usr/lib/dpkg/parsechangelog');
-    my $format = 'debian';
-    my $force = 0;
+    my $format;
 
     # Extract and remove options that do not concern the changelog parser
     # itself (and that we shouldn't forward)
+    delete $options{forceplugin};
     if (exists $options{libdir}) {
 	unshift @parserpath, $options{libdir};
 	delete $options{libdir};
@@ -91,23 +178,8 @@ sub changelog_parse {
     if (exists $options{changelogformat}) {
 	$format = $options{changelogformat};
 	delete $options{changelogformat};
-	$force = 1;
-    }
-
-    # Set a default filename
-    $options{file} //= 'debian/changelog';
-    my $changelogfile = $options{file};
-
-    # Extract the format from the changelog file if possible
-    unless ($force or ($changelogfile eq '-')) {
-	local $_;
-
-	open(my $format_fh, '-|', 'tail', '-n', '40', $changelogfile)
-	    or syserr(_g('cannot create pipe for %s'), 'tail');
-	while (<$format_fh>) {
-	    $format = $1 if m/\schangelog-format:\s+([0-9a-z]+)\W/;
-	}
-	close($format_fh) or subprocerr(_g('tail of %s'), $changelogfile);
+    } else {
+	$format = _changelog_detect_format($options{file});
     }
 
     # Find the right changelog parser
@@ -119,13 +191,13 @@ sub changelog_parse {
 	    $parser = $candidate;
 	    last;
 	} else {
-	    warning(_g('format parser %s not executable'), $candidate);
+	    warning(g_('format parser %s not executable'), $candidate);
 	}
     }
-    error(_g('changelog format %s is unknown'), $format) if not defined $parser;
+    error(g_('changelog format %s is unknown'), $format) if not defined $parser;
 
     # Create the arguments for the changelog parser
-    my @exec = ($parser, "-l$changelogfile");
+    my @exec = ($parser, "-l$options{file}");
     foreach my $option (keys %options) {
 	if ($option =~ m/^-/) {
 	    # Options passed untouched
@@ -139,19 +211,19 @@ sub changelog_parse {
 
     # Fork and call the parser
     my $pid = open(my $parser_fh, '-|');
-    syserr(_g('cannot fork for %s'), $parser) unless defined $pid;
+    syserr(g_('cannot fork for %s'), $parser) unless defined $pid;
     if (not $pid) {
-	exec(@exec) or syserr(_g('cannot exec format parser: %s'), $parser);
+        exec @exec or syserr(g_('cannot execute format parser: %s'), $parser);
     }
 
     # Get the output into several Dpkg::Control objects
     my (@res, $fields);
     while (1) {
         $fields = Dpkg::Control::Changelog->new();
-        last unless $fields->parse($parser_fh, _g('output of changelog parser'));
+        last unless $fields->parse($parser_fh, g_('output of changelog parser'));
 	push @res, $fields;
     }
-    close($parser_fh) or subprocerr(_g('changelog parser %s'), $parser);
+    close($parser_fh) or subprocerr(g_('changelog parser %s'), $parser);
     if (wantarray) {
 	return @res;
     } else {
@@ -160,11 +232,47 @@ sub changelog_parse {
     }
 }
 
+=item $fields = changelog_parse(%opt)
+
+This function will parse a changelog. In list context, it returns as many
+Dpkg::Control objects as the parser did create. In scalar context, it will
+return only the first one. If the parser did not return any data, it will
+return an empty list in list context or undef on scalar context. If the
+parser failed, it will die.
+
+If $opt{forceplugin} is false and $opt{changelogformat} is "debian", then
+changelog_parse_debian() is called to perform the parsing. Otherwise
+changelog_parse_plugin() is used.
+
+The changelog file that is parsed is F<debian/changelog> by default but it
+can be overridden with $opt{file}.
+
+=cut
+
+sub changelog_parse {
+    my (%options) = @_;
+
+    $options{forceplugin} //= 0;
+    $options{file} //= 'debian/changelog';
+    $options{changelogformat} //= _changelog_detect_format($options{file});
+
+    if (not $options{forceplugin} and
+        $options{changelogformat} eq 'debian') {
+        return changelog_parse_debian(%options);
+    } else {
+        return changelog_parse_plugin(%options);
+    }
+}
+
 =back
 
 =head1 CHANGES
 
-=head2 Version 1.00
+=head2 Version 1.01 (dpkg 1.18.2)
+
+New functions: changelog_parse_debian(), changelog_parse_plugin().
+
+=head2 Version 1.00 (dpkg 1.15.6)
 
 Mark the module as public.
 

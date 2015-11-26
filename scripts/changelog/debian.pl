@@ -4,7 +4,7 @@
 #
 # Copyright © 1996 Ian Jackson
 # Copyright © 2005,2007 Frank Lichtenheld
-# Copyright © 2006-2012 Guillem Jover <guillem@debian.org>
+# Copyright © 2006-2014 Guillem Jover <guillem@debian.org>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@ use warnings;
 use Getopt::Long qw(:config posix_default bundling no_ignorecase);
 
 use Dpkg ();
+use Dpkg::Util qw(none);
 use Dpkg::Gettext;
 use Dpkg::ErrorHandling;
 use Dpkg::Changelog::Debian;
@@ -34,40 +35,36 @@ textdomain('dpkg-dev');
 $Dpkg::PROGNAME = "parsechangelog/$Dpkg::PROGNAME";
 
 sub version {
-    printf _g("Debian %s version %s.\n"), $Dpkg::PROGNAME, $Dpkg::PROGVERSION;
+    printf g_("Debian %s version %s.\n"), $Dpkg::PROGNAME, $Dpkg::PROGVERSION;
 
-    printf _g('
+    printf g_('
 This is free software; see the GNU General Public License version 2 or
 later for copying conditions. There is NO warranty.
 ');
 }
 
 sub usage {
-    printf _g(
-"Usage: %s [<option>...] [<changelogfile>]
-
-Options:
-    -?, --help                  print usage information
-    --version, -V               print version information
-    --label, -l <file>          name of the changelog file to
-                                use in error messages
-    --file <file>               changelog file to parse, defaults
-                                to '-' (standard input)
-    --format <outputformat>     see man page for list of available
-                                output formats, defaults to 'dpkg'
-                                for compatibility with dpkg-dev
-    --since, -s, -v <version>   include all changes later than version
-    --until, -u <version>       include all changes earlier than version
-    --from, -f <version>        include all changes equal or later
-                                than version
-    --to, -t <version>          include all changes up to or equal
-                                than version
-    --count, -c, -n <number>    include <number> entries from the top
-                                (or the tail if <number> is lower than 0)
-    --offset, -o <number>       change the starting point for --count,
-                                counted from the top (or the tail if
-                                <number> is lower than 0)
-    --all                       include all changes
+    printf g_(
+'Usage: %s [<option>...] [<changelog-file>]')
+    . "\n\n" . g_(
+"Options:
+      --file <file>       changelog <file> to parse (defaults to '-').
+  -l, --label <file>      changelog <file> name to use in error messages.
+      --format <output-format>
+                          set the output format (defaults to 'dpkg').
+      --all               include all changes.
+  -s, --since <version>   include all changes later than <version>.
+  -v <version>            ditto.
+  -u, --until <version>   include all changes earlier than <version>.
+  -f, --from <version>    include all changes equal or later than <version>.
+  -t, --to <version>      include all changes up to or equal than <version>.
+  -c, --count <number>    include <number> entries from the top (or tail if
+                            <number> is lower than 0).
+  -n <number>             ditto.
+  -o, --offset <number>   change starting point for --count, counted from
+                            the top (or tail if <number> is lower than 0).
+  -?, --help              print usage information.
+  -V, --version           print version information.
 "), $Dpkg::PROGNAME;
 }
 
@@ -83,7 +80,7 @@ sub set_format {
     my ($opt, $val) = @_;
 
     unless ($allowed_formats{$val}) {
-	usageerr(_g('output format %s not supported'), $val );
+	usageerr(g_('output format %s not supported'), $val );
     }
 
     $format = $val;
@@ -113,7 +110,7 @@ usageerr('too many arguments') if @ARGV > 1;
 
 if (@ARGV) {
     if ($file && ($file ne $ARGV[0])) {
-	usageerr(_g('more than one file specified (%s and %s)'),
+	usageerr(g_('more than one file specified (%s and %s)'),
 		 $file, $ARGV[0] );
     }
     $file = $ARGV[0];
@@ -121,23 +118,21 @@ if (@ARGV) {
 
 $file //= $default_file;
 $label //= $file;
-unless (defined($since) or defined($until) or defined($from) or
-        defined($to) or defined($offset) or defined($count) or
-        defined($all))
-{
-    $count = 1;
-}
+
 my %all = $all ? ( all => $all ) : ();
 my $range = {
     since => $since, until => $until, from => $from, to => $to,
     count => $count, offset => $offset,
     %all
 };
+if (none { defined $range->{$_} } qw(since until from to offset count all)) {
+    $range->{count} = 1;
+}
 
 my $changes = Dpkg::Changelog::Debian->new(reportfile => $label, range => $range);
 
 $changes->load($file)
-    or error(_g('fatal error occurred while parsing %s'), $file);
+    or error(g_('fatal error occurred while parsing %s'), $file);
 
 eval qq{
     my \$output = \$changes->$format(\$range);

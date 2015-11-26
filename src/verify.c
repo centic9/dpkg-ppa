@@ -2,7 +2,7 @@
  * dpkg - main program for package management
  * verify.c - verify package integrity
  *
- * Copyright © 2012-2014 Guillem Jover <guillem@debian.org>
+ * Copyright © 2012-2015 Guillem Jover <guillem@debian.org>
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -99,7 +99,7 @@ verify_package(struct pkginfo *pkg)
 
 	ensure_packagefiles_available(pkg);
 	parse_filehash(pkg, &pkg->installed);
-	oldconffsetflags(pkg->installed.conffiles);
+	pkg_conffiles_mark_old(pkg);
 
 	for (file = pkg->clientdata->files; file; file = file->next) {
 		struct verify_checks checks;

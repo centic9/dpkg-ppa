@@ -1,4 +1,5 @@
 # Copyright © 2009-2011 Raphaël Hertzog <hertzog@debian.org>
+# Copyright © 2009, 2011-2015 Guillem Jover <guillem@debian.org>
 #
 # Hardening build flags handling derived from work of:
 # Copyright © 2009-2011 Kees Cook <kees@debian.org>
@@ -24,13 +25,13 @@ use warnings;
 
 our $VERSION = '0.01';
 
-use parent qw(Dpkg::Vendor::Default);
-
 use Dpkg::Gettext;
 use Dpkg::ErrorHandling;
 use Dpkg::Control::Types;
 use Dpkg::BuildOptions;
 use Dpkg::Arch qw(get_host_arch debarch_to_debtriplet);
+
+use parent qw(Dpkg::Vendor::Default);
 
 =encoding utf8
 
@@ -51,6 +52,10 @@ sub run_hook {
     if ($hook eq 'keyrings') {
         return ('/usr/share/keyrings/debian-keyring.gpg',
                 '/usr/share/keyrings/debian-maintainers.gpg');
+    } elsif ($hook eq 'builtin-build-depends') {
+        return qw(build-essential:native);
+    } elsif ($hook eq 'builtin-build-conflicts') {
+        return ();
     } elsif ($hook eq 'register-custom-fields') {
     } elsif ($hook eq 'extend-patch-header') {
         my ($textref, $ch_info) = @params;
@@ -69,6 +74,7 @@ sub run_hook {
     } elsif ($hook eq 'update-buildflags') {
 	$self->_add_qa_flags(@params);
 	$self->_add_reproducible_flags(@params);
+	$self->_add_sanitize_flags(@params);
 	$self->_add_hardening_flags(@params);
     } else {
         return $self->SUPER::run_hook($hook, @params);
@@ -90,12 +96,12 @@ sub _parse_build_options {
 		if (exists $use_feature->{$feature}) {
 		    $use_feature->{$feature} = $value;
 		} else {
-		    warning(_g('unknown %s feature in %s variable: %s'),
+		    warning(g_('unknown %s feature in %s variable: %s'),
 		            $area, $variable, $feature);
 		}
 	    }
 	} else {
-	    warning(_g('incorrect value in %s option of %s variable: %s'),
+	    warning(g_('incorrect value in %s option of %s variable: %s'),
 	            $area, $variable, $feature);
 	}
     }
@@ -168,13 +174,69 @@ sub _add_reproducible_flags {
     }
 }
 
+sub _add_sanitize_flags {
+    my ($self, $flags) = @_;
+
+    # Default feature states.
+    my %use_feature = (
+        address => 0,
+        thread => 0,
+        leak => 0,
+        undefined => 0,
+    );
+
+    # Adjust features based on user or maintainer's desires.
+    $self->_parse_feature_area('sanitize', \%use_feature);
+
+    # Handle logical feature interactions.
+    if ($use_feature{address} and $use_feature{thread}) {
+        # Disable the thread sanitizer when the address one is active, they
+        # are mutually incompatible.
+        $use_feature{thread} = 0;
+    }
+    if ($use_feature{address} or $use_feature{thread}) {
+        # Disable leak sanitizer, it is implied by the address or thread ones.
+        $use_feature{leak} = 0;
+    }
+
+    if ($use_feature{address}) {
+        my $flag = '-fsanitize=address -fno-omit-frame-pointer';
+        $flags->append('CFLAGS', $flag);
+        $flags->append('CXXFLAGS', $flag);
+        $flags->append('LDFLAGS', '-fsanitize=address');
+    }
+
+    if ($use_feature{thread}) {
+        my $flag = '-fsanitize=thread';
+        $flags->append('CFLAGS', $flag);
+        $flags->append('CXXFLAGS', $flag);
+        $flags->append('LDFLAGS', $flag);
+    }
+
+    if ($use_feature{leak}) {
+        $flags->append('LDFLAGS', '-fsanitize=leak');
+    }
+
+    if ($use_feature{undefined}) {
+        my $flag = '-fsanitize=undefined';
+        $flags->append('CFLAGS', $flag);
+        $flags->append('CXXFLAGS', $flag);
+        $flags->append('LDFLAGS', $flag);
+    }
+
+    # Store the feature usage.
+    while (my ($feature, $enabled) = each %use_feature) {
+       $flags->set_feature('sanitize', $feature, $enabled);
+    }
+}
+
 sub _add_hardening_flags {
     my ($self, $flags) = @_;
     my $arch = get_host_arch();
     my ($abi, $os, $cpu) = debarch_to_debtriplet($arch);
 
     unless (defined $abi and defined $os and defined $cpu) {
-        warning(_g("unknown host architecture '%s'"), $arch);
+        warning(g_("unknown host architecture '%s'"), $arch);
         ($abi, $os, $cpu) = ('', '', '');
     }
 

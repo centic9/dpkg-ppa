@@ -51,12 +51,11 @@ El primer fichero tar contiene la información de control como un conjunto de
 ficheros comunes. El fichero \fBcontrol\fP debe estar presente, ya que contiene
 la información de control básica.
 .PP
-En algunos archivos muy antiguos, los ficheros de control en el fichero tar
-pueden estar opcionalmente en un subdirectorio \fBDEBIAN\fP. En este caso, el
-subdirectorio \fBDEBIAN\fP estará también en el fichero tar de control, y el
-fichero tar de control tendrá solamente archivos en este directorio. De
-forma opcional, el fichero tar podrá contener una entrada para «\fB.\fP», esto
-es, el directorio actual.
+In some very old archives, the files in the control tarfile may optionally
+be in a \fBDEBIAN\fP subdirectory. In that case, the \fBDEBIAN\fP subdirectory
+will be in the control tarfile too, and the control tarfile will have only
+files in that directory. Optionally the control tarfile may contain an entry
+for \(oq\fB.\fP\(cq, that is, the current directory.
 .PP
 El segundo fichero tar comprimido con gzip es el archivo del sistema de
 ficheros, que contiene las rutas relativas al directorio raíz del sistema

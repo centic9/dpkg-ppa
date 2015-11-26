@@ -4,7 +4,7 @@
  *
  * Copyright © 2011 Linaro Limited
  * Copyright © 2011 Raphaël Hertzog <hertzog@debian.org>
- * Copyright © 2011-2014 Guillem Jover <guillem@debian.org>
+ * Copyright © 2011-2015 Guillem Jover <guillem@debian.org>
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -67,11 +67,19 @@ pkg_spec_is_illegal(struct pkg_spec *ps)
 
 	if (!ps->name_is_pattern &&
 	    (emsg = pkg_name_is_illegal(ps->name))) {
+		const char *arch_sep;
+
+		/* Only check for DPKG_ARCH_NONE, because for everything else
+		 * we want to see the passed package specification, even if
+		 * the architecture is empty. */
+		if (ps->arch->type == DPKG_ARCH_NONE)
+			arch_sep = "";
+		else
+			arch_sep = ":";
+
 		snprintf(msg, sizeof(msg),
 		         _("illegal package name in specifier '%s%s%s': %s"),
-		         ps->name,
-		         (ps->arch->type != DPKG_ARCH_NONE) ? ":" : "",
-		         ps->arch->name, emsg);
+		         ps->name, arch_sep, ps->arch->name, emsg);
 		return msg;
 	}
 
@@ -94,10 +102,7 @@ pkg_spec_is_illegal(struct pkg_spec *ps)
 		/* Single instancing only applies with no architecture. */
 		if (ps->arch->type == DPKG_ARCH_NONE &&
 		    pkgset_installed_instances(set) > 1) {
-			snprintf(msg, sizeof(msg),
-			         _("ambiguous package name '%s' with more "
-			           "than one installed instance"), ps->name);
-			return msg;
+			ps->arch = dpkg_arch_get(DPKG_ARCH_NATIVE);
 		}
 	}
 

@@ -18,10 +18,11 @@ use warnings;
 
 use Test::More tests => 3;
 
-use Dpkg::IPC;
 use File::Spec;
 use File::Compare;
 use File::Temp;
+
+use Dpkg::IPC;
 
 my $srcdir = $ENV{srcdir} || '.';
 my $datadir = "$srcdir/t/merge_changelogs";
@@ -35,7 +36,7 @@ sub test_merge {
 	  wait_child => 1, nocheck => 1);
     my $res = compare($expected_file, $fh->filename);
     if ($res) {
-	system("diff -u $expected_file $fh->filename >&2");
+	system('diff', '-u', $expected_file, $fh->filename);
     }
     ok($res == 0, "merged changelog matches expected one ($expected_file)");
 }

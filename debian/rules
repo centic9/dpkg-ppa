@@ -5,32 +5,39 @@
 
 WFLAGS := -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers
 
+# XXX: Stack Protector Strong is only available in gcc >= 4.9
+cc_version = $(shell $(CC) -dumpversion 2>/dev/null)
+cc_version_lt = $(shell dpkg --compare-versions "$(cc_version)" lt-nl "$(1)" && echo yes)
+hardening_old = DEB_BUILD_MAINT_OPTIONS="hardening=-stackprotectorstrong"
+
 # Use the in-tree dpkg-buildflags
 dpkg_buildflags = \
+	$(if $(call cc_version_lt,4.9),$(hardening_old)) \
 	DEB_CFLAGS_MAINT_APPEND="$(WFLAGS)" \
 	DEB_CXXFLAGS_MAINT_APPEND="$(WFLAGS)" \
-	$(CURDIR)/run-script perl $(CURDIR)/scripts/dpkg-buildflags.pl
+	$(CURDIR)/run-script perl scripts/dpkg-buildflags.pl
 
-# These are used for cross-compiling and for saving the configure script
-# from having to guess our platform (since we know it already)
-DEB_HOST_GNU_TYPE   ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
 DEB_BUILD_GNU_TYPE  ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
+DEB_HOST_GNU_TYPE   ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
+DEB_HOST_ARCH_OS    ?= $(shell dpkg-architecture -qDEB_HOST_ARCH_OS)
+DEB_HOST_MULTIARCH  ?= $(shell dpkg-architecture -qDEB_HOST_MULTIARCH)
 
+# Support cross-compiling.
 ifeq ($(DEB_BUILD_GNU_TYPE), $(DEB_HOST_GNU_TYPE))
 	confflags += --build=$(DEB_HOST_GNU_TYPE)
 else
 	confflags += --build=$(DEB_BUILD_GNU_TYPE) --host=$(DEB_HOST_GNU_TYPE)
 endif
 
-# Don't enable everything on all platforms
-DEB_HOST_ARCH_OS  ?= $(shell dpkg-architecture -qDEB_HOST_ARCH_OS)
-
+# Do not enable everything on all platforms.
 ifeq ($(DEB_HOST_ARCH_OS),linux)
 	confflags += --with-selinux
 endif
 ifeq (,$(filter maintainer-build,$(DEB_BUILD_OPTIONS)))
 	confflags += --disable-silent-rules
 endif
+
+D := $(CURDIR)/debian/tmp
 
 # Create configure script if necessary, automake handles rebuilding it.
 configure:
@@ -51,6 +58,7 @@ build-tree/config.status: configure
 		--sysconfdir=/etc \
 		--sbindir=/sbin \
 		--localstatedir=/var \
+		--with-devlibdir=\$${prefix}/lib/$(DEB_HOST_MULTIARCH) \
 		--with-zlib \
 		--with-liblzma \
 		--with-bz2
@@ -76,13 +84,13 @@ install: check
 	dh_prep
 	dh_installdirs
 
-	cd build-tree && $(MAKE) DESTDIR="$(CURDIR)/debian/tmp" install
+	cd build-tree && $(MAKE) DESTDIR=$(D) install
 
 ifeq (yes,$(shell dpkg-vendor --derives-from Ubuntu && echo yes))
 	# Ubuntu's «i386» architecture is built for i686 (the Debian default
 	# is i586).
 	sed -ri 's/^(i386[[:space:]]+)[^[:space:]]+/\1i686/' \
-	        $(CURDIR)/debian/tmp/usr/share/dpkg/cputable
+	        $(D)/usr/share/dpkg/cputable
 endif
 
 define dpkg-installmanl10n

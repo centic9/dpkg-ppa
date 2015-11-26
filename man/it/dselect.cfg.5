@@ -1,7 +1,7 @@
 .\" dselect manual page - dselect.cfg(5)
 .\"
 .\" Copyright Â© 2002 Wichert Akkerman <wakkerma@debian.org>
-.\" Copyright Â© 2009-2011 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2009-2011, 2013, 2015 Guillem Jover <guillem@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -26,12 +26,11 @@
 dselect.cfg \- file di configurazione di dselect
 .
 .SH DESCRIZIONE
-Questo file contiene le opzioni predefinite per dselect. Ogni riga contiene
-un'unica opzione che è esattamente identica alla normale opzione per la riga
-di comando di dselect, tranne per i trattini iniziali che non vengono
-utilizzati in questo caso. Le virgolette che racchiudono i valori delle
-opzioni vengono rimosse. È permesso usare righe di commento facendole
-iniziare con un carattere «\fB#\fP».
+This file contains default options for dselect. Each line contains a single
+option which is exactly the same as a normal command line option for dselect
+except for the leading hyphens which are not used here. Quotes surrounding
+option values are stripped. Comments are allowed by starting a line with a
+hash sign (\(oq\fB#\fP\(cq).
 .
 .SH FILE
 \fI/etc/dpkg/dselect.cfg.d/[0\-9a\-zA\-Z_\-]*\fP

@@ -3,7 +3,7 @@
 .\" Copyright © 1995-1996 Ian Jackson <ian@chiark.chu.cam.ac.uk>
 .\" Copyright © 2000 Wichert Akkerman <wakkerma@debian.org>
 .\" Copyright © 2006-2007 Frank Lichtenheld <djpig@debian.org>
-.\" Copyright © 2006-2013 Guillem Jover <guillem@debian.org>
+.\" Copyright © 2006-2015 Guillem Jover <guillem@debian.org>
 .\" Copyright © 2008-2011 Raphaël Hertzog <hertzog@debian.org>
 .\" Copyright © 2010 Joey Hess <joeyh@debian.org>
 .\"
@@ -39,8 +39,7 @@ separate argument.
 .SH COMMANDS
 .TP
 .BR \-x ", " \-\-extract " \fIfilename\fP.dsc [\fIoutput-directory\fP]"
-Extract a source package.
-The \fB\-\-extract\fP alias was added in dpkg 1.17.14.
+Extract a source package (\fB\-\-extract\fP since dpkg 1.17.14).
 One non-option argument must be supplied,
 the name of the Debian source control file
 .RB ( .dsc ).
@@ -65,14 +64,13 @@ extracted directories will be too, and all the files and directories
 will inherit its group ownership.
 
 If the source package uses a non-standard format (currently this means all
-formats except "1.0"), its name will be stored in
+formats except \(lq1.0\(rq), its name will be stored in
 \fBdebian/source/format\fP so that the following builds of the source
 package use the same format by default.
 
 .TP
 .BR \-b ", " \-\-build " \fIdirectory\fP [\fIformat-specific-parameters\fP]"
-Build a source package.
-The \fB\-\-build\fP alias was added in dpkg 1.17.14.
+Build a source package (\fB\-\-build\fP since dpkg 1.17.14).
 The first non-option argument is taken as the
 name of the directory containing the debianized source tree (i.e. with a
 debian sub-directory and maybe changes to the original files).
@@ -83,7 +81,8 @@ additional parameters might be accepted.
 found in this ordered list:
 the format indicated with the \fI\-\-format\fP command line option,
 the format indicated in \fBdebian/source/format\fP,
-"1.0". The fallback to "1.0" is deprecated and will be removed at some
+\(lq1.0\(rq.
+The fallback to \(lq1.0\(rq is deprecated and will be removed at some
 point in the future, you should always document the desired source format
 in \fBdebian/source/format\fP. See section \fBSOURCE PACKAGE FORMATS\fP
 for an extensive description of the various source package formats.
@@ -92,11 +91,12 @@ for an extensive description of the various source package formats.
 .RI "\fB\-\-print\-format\fP " directory
 Print the source format that would be used to build the source package if
 \fBdpkg\-source \-\-build \fIdirectory\fR was called (in the same conditions
-and with the same parameters).
+and with the same parameters; since dpkg 1.15.5).
 
 .TP
 .RI "\fB\-\-before\-build\fP " directory
-Run the corresponding hook of the source package format. This hook is
+Run the corresponding hook of the source package format (since dpkg 1.15.8).
+This hook is
 called before any build of the package (\fBdpkg\-buildpackage\fP calls it
 very early even before \fBdebian/rules clean\fP). This command is
 idempotent and can be called multiple times. Not all source formats
@@ -106,7 +106,8 @@ are applied.
 
 .TP
 .RI "\fB\-\-after\-build\fP " directory
-Run the corresponding hook of the source package format. This hook is
+Run the corresponding hook of the source package format (since dpkg 1.15.8).
+This hook is
 called after any build of the package (\fBdpkg\-buildpackage\fP calls it
 last). This command is idempotent and can be called multiple times. Not
 all source formats implement something in this hook, and those that do
@@ -114,8 +115,9 @@ usually use it to undo what \fB\-\-before\-build\fP has done.
 
 .TP
 .RI "\fB\-\-commit\fP [" directory "] ..."
-Record changes in the source tree unpacked in \fIdirectory\fP. This
-command can take supplementary parameters depending on the source format.
+Record changes in the source tree unpacked in \fIdirectory\fP
+(since dpkg 1.16.1).
+This command can take supplementary parameters depending on the source format.
 It will error out for formats where this operation doesn't mean anything.
 
 .TP
@@ -147,8 +149,8 @@ Specifies the format of the changelog. See \fBdpkg\-parsechangelog\fP(1)
 for information about alternative formats.
 .TP
 .BI \-\-format= value
-Use the given format for building the source package. It does
-override any format given in \fBdebian/source/format\fP.
+Use the given format for building the source package (since dpkg 1.14.17).
+It does override any format given in \fBdebian/source/format\fP.
 .TP
 .BI \-V name = value
 Set an output substitution variable.
@@ -158,7 +160,7 @@ See \fBdeb\-substvars\fP(5) for a discussion of output substitution.
 Read substitution variables in
 .IR substvars-file ;
 the default is to not read any file. This option can be used multiple
-times to read substitution variables from multiple files.
+times to read substitution variables from multiple files (since dpkg 1.15.6).
 .TP
 .BI \-D field = value
 Override or add an output control file field.
@@ -167,7 +169,8 @@ Override or add an output control file field.
 Remove an output control file field.
 .TP
 .BR \-Z "\fIcompression\fP, " \-\-compression =\fIcompression\fP
-Specify the compression to use for created files (tarballs and diffs).
+Specify the compression to use for created tarballs and diff files
+(\fB\-\-compression\fP since dpkg 1.15.5).
 Note that this option will not cause existing tarballs to be recompressed,
 it only affects new files. Supported values are:
 .IR gzip ", " bzip2 ", " lzma " and " xz .
@@ -175,14 +178,17 @@ The default is \fIxz\fP for formats 2.0 and newer, and \fIgzip\fP for
 format 1.0. \fIxz\fP is only supported since dpkg 1.15.5.
 .TP
 .BR \-z "\fIlevel\fP, " \-\-compression\-level =\fIlevel\fP
-Compression level to use. As with \fB\-Z\fP it only affects newly created
+Compression level to use (\fB\-\-compression\-level\fP since dpkg 1.15.5).
+As with \fB\-Z\fP it only affects newly created
 files. Supported values are:
 .IR 1 " to " 9 ", " best ", and " fast .
 The default is \fI9\fP for gzip and bzip2, \fI6\fP for xz and lzma.
 .TP
 .BR \-i "[\fIregex\fP], " \-\-diff\-ignore [=\fIregex\fP]
 You may specify a perl regular expression to match files you want
-filtered out of the list of files for the diff. (This list is
+filtered out of the list of files for the diff (\fB\-\-diff\-ignore\fP
+since dpkg 1.15.6).
+(This list is
 generated by a find command.) (If the source package is being built as a
 version 3 source package using a VCS, this can be used to ignore
 uncommited changes on specific files. Using \-i.* will ignore all of them.)
@@ -202,12 +208,12 @@ contain (e.g. CVS/, .cvsignore, .svn/). The default regex is already
 very exhaustive, but if you need to replace it, please note that by
 default it can match any part of a path, so if you want to match the
 begin of a filename or only full filenames, you will need to provide
-the necessary anchors (e.g. '(^|/)', '($|/)') yourself.
+the necessary anchors (e.g. \(oq(^|/)\(cq, \(oq($|/)\(cq) yourself.
 .TP
 .BR \-\-extend\-diff\-ignore =\fIregex\fP
-The perl regular expression specified will extend the default value
-used by \fB\-\-diff\-ignore\fP and its current value (if set). It does
-this by concatenating "\fB|\fP\fIregex\fP" to the existing value.
+The perl regular expression specified will extend the default value used by
+\fB\-\-diff\-ignore\fP and its current value, if set (since dpkg 1.15.6).
+It does this by concatenating \(lq\fB|\fP\fIregex\fP\(rq to the existing value.
 This option is convenient to use in \fBdebian/source/options\fP to exclude
 some auto-generated files from the automatic patch generation.
 .TP
@@ -215,7 +221,9 @@ some auto-generated files from the automatic patch generation.
 If this option is specified, the pattern will be passed to
 .BR tar (1)'s
 .B \-\-exclude
-option when it is called to generate a .orig.tar or .tar file. For
+option when it is called to generate a .orig.tar or .tar file
+(\fB\-\-tar\-ignore\fP since dpkg 1.15.6).
+For
 example, \fB\-I\fPCVS will make tar skip over CVS directories when generating
 a .tar.gz file. The option may be repeated multiple times to list multiple
 patterns to exclude.
@@ -242,28 +250,30 @@ in the output of the \fB\-\-help\fP command.
 .SS Generic extract options
 .TP
 .BI \-\-no\-copy
-Do not copy original tarballs near the extracted source package.
+Do not copy original tarballs near the extracted source package
+(since dpkg 1.14.17).
 .TP
 .BI \-\-no\-check
-Do not check signatures and checksums before unpacking.
+Do not check signatures and checksums before unpacking (since dpkg 1.14.17).
 .TP
 .BI \-\-require\-valid\-signature
 Refuse to unpack the source package if it doesn't contain an OpenPGP
-signature that can be verified either with the user's
+signature that can be verified (since dpkg 1.15.0) either with the user's
 \fItrustedkeys.gpg\fP keyring, one of the vendor-specific keyrings, or one
 of the official Debian keyrings
 (\fI/usr/share/keyrings/debian\-keyring.gpg\fP
 and \fI/usr/share/keyrings/debian\-maintainers.gpg\fP).
 .TP
 .B \-\-ignore\-bad\-version
-Turns the bad source package version check into a non-fatal warning.
+Turns the bad source package version check into a non-fatal warning
+(since dpkg 1.17.7).
 This option should only be necessary when extracting ancient source
 packages with broken versions, just for backwards compatibility.
 
 .SH SOURCE PACKAGE FORMATS
 If you don't know what source format to use, you should probably pick
-either "3.0 (quilt)" or "3.0 (native)". See
-https://wiki.debian.org/Projects/DebSrc3.0 for information on the
+either \(lq3.0 (quilt)\(rq or \(lq3.0 (native)\(rq.
+See https://wiki.debian.org/Projects/DebSrc3.0 for information on the
 deployment of those formats within Debian.
 
 .SS Format: 1.0
@@ -287,7 +297,7 @@ will be left over).
 
 Building a native package is just creating a single tarball with
 the source directory. Building a non-native package involves
-extracting the original tarball in a separate ".orig" directory and
+extracting the original tarball in a separate \(lq.orig\(rq directory and
 regenerating the \fB.diff.gz\fP by comparing the source package
 \fIdirectory\fP with the .orig directory.
 
@@ -380,7 +390,8 @@ is the default.
 .TP
 .B \-\-abort\-on\-upstream\-changes
 The process fails if the generated diff contains changes to files
-outside of the debian sub-directory. This option is not allowed in
+outside of the debian sub-directory (since dpkg 1.15.8).
+This option is not allowed in
 \fBdebian/source/options\fP but can be used in
 \fBdebian/source/local\-options\fP.
 .PP
@@ -409,14 +420,16 @@ options are mutually exclusive. If you specify more than one only the
 last one will be used.
 .TP
 .B \-\-skip\-debianization
-Skips application of the debian diff on top of the upstream sources.
+Skips application of the debian diff on top of the upstream sources
+(since dpkg 1.15.1).
 .
 .SS Format: 2.0
+Extraction supported since dpkg 1.13.9, building supported since dpkg 1.14.8.
 Also known as wig&pen. This format is not recommended for wide-spread
-usage, the format "3.0 (quilt)" replaces it. Wig&pen was the first
-specification of a new-generation source package format.
+usage, the format \(lq3.0 (quilt)\(rq replaces it.
+Wig&pen was the first specification of a new-generation source package format.
 
-The behaviour of this format is the same as the "3.0 (quilt)" format
+The behaviour of this format is the same as the \(lq3.0 (quilt)\(rq format
 except that it doesn't use an explicit list of patches. All files in
 \fBdebian/patches/\fP matching the perl regular expression \fB[\\w\-]+\fP
 must be valid patches: they are applied at extraction time.
@@ -425,6 +438,7 @@ When building a new source package, any change to the upstream source
 is stored in a patch named \fBzz_debian\-diff\-auto\fP.
 .
 .SS Format: 3.0 (native)
+Supported since dpkg 1.14.17.
 This format is an extension of the native package format as defined
 in the 1.0 format. It supports all compression methods and
 will ignore by default any VCS specific files and directories
@@ -432,12 +446,14 @@ as well as many temporary files (see default value associated to
 \fB\-I\fP option in the \fB\-\-help\fP output).
 .
 .SS Format: 3.0 (quilt)
+Supported since dpkg 1.14.17.
 A source package in this format contains at least
 an original tarball (\fB.orig.tar.\fP\fIext\fP where \fIext\fP can be
 \fBgz\fP, \fBbz2\fP, \fBlzma\fP and \fBxz\fP) and a debian tarball
 (\fB.debian.tar.\fP\fIext\fP). It can also contain additional original
 tarballs (\fB.orig\-\fP\fIcomponent\fP\fB.tar.\fP\fIext\fP).
-\fIcomponent\fP can only contain alphanumeric characters and hyphens ("\-").
+\fIcomponent\fP can only contain alphanumeric characters and hyphens
+(\(oq\-\(cq).
 .PP
 .B Extracting
 .PP
@@ -461,6 +477,10 @@ after the patch filename and one or more spaces), it does ignore those
 options and always expect patches that can be applied with the \fB\-p1\fP
 option of \fBpatch\fP. It will thus emit a warning when it encounters
 such options, and the build is likely to fail.
+.PP
+The timestamp of all patched files is reset to the extraction time of
+the source package (this avoids timestamp skews leading to problems
+when autogenerated files are patched).
 .PP
 Contrary to \fBquilt\fP's default behaviour, patches are expected to apply
 without any fuzz. When that is not the case, you should refresh such
@@ -541,7 +561,8 @@ they end up in the debian tarball (exactly like \fBdpkg-source
 .BI \-\-allow\-version\-of\-quilt\-db= version
 Allow \fBdpkg\-source\fP to build the source package if the version of
 the \fBquilt\fP metadata is the one specified, even if \fBdpkg\-source\fP
-doesn't know about it. Effectively this says that the given version of the
+doesn't know about it (since dpkg 1.15.5.4).
+Effectively this says that the given version of the
 \fBquilt\fP metadata is compatible with the version 2 that \fBdpkg\-source\fP
 currently supports. The version of the \fBquilt\fP metadata is stored in
 \fB.pc/.version\fP.
@@ -560,12 +581,13 @@ in subsequent builds and this option is thus no more needed.
 .TP
 .B \-\-no\-preparation
 Do not try to prepare the build tree by applying patches which are
-apparently unapplied.
+apparently unapplied (since dpkg 1.14.18).
 .TP
 .B \-\-single\-debian\-patch
 Use \fBdebian/patches/debian\-changes\fP instead of
 \fBdebian/patches/debian\-changes\-\fP\fIversion\fP for the name of the
-automatic patch generated during build. This option is particularly
+automatic patch generated during build (since dpkg 1.15.5.4).
+This option is particularly
 useful when the package is maintained in a VCS and a patch set can't reliably
 be generated. Instead the current diff with upstream should be stored in a
 single patch. The option would be put in \fBdebian/source/local\-options\fP
@@ -575,20 +597,25 @@ VCS that is used.
 .TP
 .B \-\-create\-empty\-orig
 Automatically create the main original tarball as empty if it's missing
-and if there are supplementary original tarballs. This option is meant to
+and if there are supplementary original tarballs (since dpkg 1.15.6).
+This option is meant to
 be used when the source package is just a bundle of multiple upstream
-software and where there's no "main" software.
+software and where there's no \(lqmain\(rq software.
 .TP
 .B \-\-no\-unapply\-patches, \-\-unapply\-patches
 By default, \fBdpkg\-source\fP will automatically unapply the patches in the
 \fB\-\-after\-build\fP hook if it did apply them during
-\fB\-\-before\-build\fP. Those options allow you to forcefully disable
+\fB\-\-before\-build\fP (\fB\-\-unapply\-patches\fP since dpkg 1.15.8,
+\fB\-\-no\-unapply\-patches\fP since dpkg 1.16.5).
+Those options allow you to forcefully disable
 or enable the patch unapplication process. Those options are only allowed
 in \fBdebian/source/local\-options\fP so that all generated source
 packages have the same behavior by default.
 .TP
 .B \-\-abort\-on\-upstream\-changes
-The process fails if an automatic patch has been generated. This option
+The process fails if an automatic patch has been generated
+(since dpkg 1.15.8).
+This option
 can be used to ensure that all changes were properly recorded in separate
 \fBquilt\fP patches prior to the source package build. This option is not
 allowed in \fBdebian/source/options\fP but can be used in
@@ -602,13 +629,16 @@ it's immediately recorded in the \fBquilt\fP series.
 .B Extract options
 .TP
 .B \-\-skip\-debianization
-Skips extraction of the debian tarball on top of the upstream sources.
+Skips extraction of the debian tarball on top of the upstream sources
+(since dpkg 1.15.1).
 .TP
 .B \-\-skip\-patches
-Do not apply patches at the end of the extraction.
+Do not apply patches at the end of the extraction (since dpkg 1.14.18).
 .
 .SS Format: 3.0 (custom)
-This format is special. It doesn't represent a real source package
+Supported since dpkg 1.14.17.
+This format is special.
+It doesn't represent a real source package
 format but can be used to create source packages with arbitrary files.
 .PP
 .B Build options
@@ -620,9 +650,10 @@ in the current directory. At least one file must be given.
 .BI \-\-target\-format= value
 \fBRequired\fP. Defines the real format of the generated source package.
 The generated .dsc file will contain this value in its \fBFormat\fP field
-and not "3.0 (custom)".
+and not \(lq3.0 (custom)\(rq.
 .
 .SS Format: 3.0 (git)
+Supported since dpkg 1.14.17.
 This format is experimental.
 .PP
 A source package in this format consists of a
@@ -633,13 +664,13 @@ git clone.
 .B Extracting
 .PP
 The bundle is cloned as a git repository to the target directory.
-If there is a gitshallow file, it is installed as `.git/shallow` inside
+If there is a gitshallow file, it is installed as \fI.git/shallow\fP inside
 the cloned git repository.
 .PP
 Note that by default the new repository will have the same branch checked
-out that was checked out in the original source. (Typically "master", but
-it could be anything.) Any other branches will be available under
-`remotes/origin/`.
+out that was checked out in the original source.
+(Typically \(lqmaster\(rq, but it could be anything.)
+Any other branches will be available under \fIremotes/origin/\fP.
 .PP
 .B Building
 .PP
@@ -666,8 +697,9 @@ branches, except for the private branch, use \fB\-\-git\-ref=\fP\-\-all
 Creates a shallow clone with a history truncated to the specified number of
 revisions.
 .SS Format: 3.0 (bzr)
-This format is experimental. It generates a single tarball
-containing the bzr repository.
+Supported since dpkg 1.14.17.
+This format is experimental.
+It generates a single tarball containing the bzr repository.
 .PP
 .B Extracting
 .PP
@@ -685,23 +717,23 @@ various cleanup are done to save space.
 .SH DIAGNOSTICS
 .SS no source format specified in debian/source/format
 The file \fBdebian/source/format\fP should always exist and indicate the
-desired source format. For backwards compatibility, format "1.0" is
+desired source format. For backwards compatibility, format \(lq1.0\(rq is
 assumed when the file doesn't exist but you should not rely on this:
 at some point in the future \fBdpkg\-source\fP will be modified to fail
 when that file doesn't exist.
 
-The rationale is that format "1.0" is no longer the recommended format,
-you should usually pick one of the newer formats ("3.0 (quilt)", "3.0
-(native)") but \fBdpkg\-source\fP will not do this automatically for you.
+The rationale is that format \(lq1.0\(rq is no longer the recommended format,
+you should usually pick one of the newer formats (\(lq3.0 (quilt)\(rq, \(lq3.0
+(native)\(rq) but \fBdpkg\-source\fP will not do this automatically for you.
 If you want to continue using the old format, you should be explicit about
-it and put "1.0" in \fBdebian/source/format\fP.
+it and put \(lq1.0\(rq in \fBdebian/source/format\fP.
 .SS the diff modifies the following upstream files
-When using source format "1.0" it is usually a bad idea to modify
+When using source format \(lq1.0\(rq it is usually a bad idea to modify
 upstream files directly as the changes end up hidden and mostly
 undocumented in the .diff.gz file. Instead you should store your changes
 as patches in the debian directory and apply them at build-time. To avoid
-this complexity you can also use the format "3.0 (quilt)" that offers this
-natively.
+this complexity you can also use the format \(lq3.0 (quilt)\(rq that offers
+this natively.
 .SS cannot represent change to \fIfile\fP
 Changes to upstream sources are usually stored with patch files, but not
 all changes can be represented with patches: they can only alter the
@@ -727,7 +759,8 @@ or trailing spaces are allowed.
 .SS debian/source/include\-binaries
 This file contains a list of binary files (one per line) that should be
 included in the debian tarball. Leading and trailing spaces are stripped.
-Lines starting with "#" are comments and are skipped. Empty lines are ignored.
+Lines starting with \(oq\fB#\fP\(cq are comments and are skipped.
+Empty lines are ignored.
 .SS debian/source/options
 This file contains a list of long options that should be automatically
 prepended to the set of command line options of a \fBdpkg\-source \-\-build\fR
@@ -736,9 +769,11 @@ or \fBdpkg\-source \-\-print\-format\fR call. Options like
 this file.
 .P
 Each option should be put on a separate line. Empty lines and lines
-starting with "#" are ignored. The leading "\-\-" should be
-stripped and short options are not allowed. Optional spaces are allowed
-around the "=" symbol and optional quotes are allowed around the value.
+starting with \(oq\fB#\fP\(cq are ignored.
+The leading \(oq\fB\-\-\fP\(cq should be stripped and short options are
+not allowed.
+Optional spaces are allowed around the \(oq\fB=\fP\(cq symbol and optional
+quotes are allowed around the value.
 Here's an example of such a file:
 .P
   # let dpkg\-source create a debian.tar.bz2 with maximal compression
@@ -758,17 +793,19 @@ a preference tied to the maintainer or to the VCS repository where
 the source package is maintained.
 .SS debian/source/local\-patch\-header \fRand\fP debian/source/patch\-header
 Free form text that is put on top of the automatic patch generated
-in formats "2.0" or "3.0 (quilt)". \fBlocal\-patch\-header\fP is not
+in formats \(lq2.0\(rq or \(lq3.0 (quilt)\(rq. \fBlocal\-patch\-header\fP is not
 included in the generated source package while \fBpatch\-header\fP is.
 .SS debian/patches/series
 This file lists all patches that have to be applied (in the given order)
 on top of the upstream source package. Leading and trailing spaces are
-stripped. Lines starting with "#" are comments and are skipped. Empty
-lines are ignored. Remaining lines start with a patch filename (relative
+stripped.
+Lines starting with \(oq\fB#\fP\(cq are comments and are skipped.
+Empty lines are ignored.
+Remaining lines start with a patch filename (relative
 to the \fBdebian/patches/\fP directory) up to the first space character or
 the end of line. Optional \fBquilt\fP options can follow up to the end of line
-or the first "#" preceded by one or more spaces (which marks the start of
-a comment up to the end of line).
+or the first \(oq\fB#\fP\(cq preceded by one or more spaces (which marks the
+start of a comment up to the end of line).
 .SH BUGS
 The point at which field overriding occurs compared to certain
 standard output field settings is rather confused.

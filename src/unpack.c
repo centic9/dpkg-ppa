@@ -3,7 +3,7 @@
  * unpack.c - the huge function process_archive
  *
  * Copyright © 1995 Ian Jackson <ian@chiark.greenend.org.uk>
- * Copyright © 2006-2014 Guillem Jover <guillem@debian.org>
+ * Copyright © 2006-2015 Guillem Jover <guillem@debian.org>
  * Copyright © 2011 Linaro Limited
  * Copyright © 2011 Raphaël Hertzog <hertzog@debian.org>
  *
@@ -30,7 +30,6 @@
 
 #include <assert.h>
 #include <errno.h>
-#include <ctype.h>
 #include <string.h>
 #include <time.h>
 #include <utime.h>
@@ -42,6 +41,7 @@
 #include <stdio.h>
 
 #include <dpkg/i18n.h>
+#include <dpkg/c-ctype.h>
 #include <dpkg/dpkg.h>
 #include <dpkg/dpkg-db.h>
 #include <dpkg/pkg.h>
@@ -93,7 +93,7 @@ deb_reassemble(const char **filename, const char **pfilename)
   if (!reasmbuf)
     reasmbuf = dpkg_db_get_path(REASSEMBLETMP);
   if (unlink(reasmbuf) && errno != ENOENT)
-    ohshite(_("error ensuring `%.250s' doesn't exist"), reasmbuf);
+    ohshite(_("error ensuring '%.250s' doesn't exist"), reasmbuf);
 
   push_cleanup(cu_pathname, ~0, NULL, 0, 1, (void *)reasmbuf);
 
@@ -189,7 +189,7 @@ get_control_dir(char *cidir)
     strcat(cidir, "/" CONTROLDIRTMP);
 
     /* Make sure the control information directory is empty. */
-    ensure_pathname_nonexisting(cidir);
+    path_remove_tree(cidir);
   }
 
   strcat(cidir, "/");
@@ -229,7 +229,7 @@ deb_parse_conffiles(struct pkginfo *pkg, const char *control_conffiles,
     if (p[-1] != '\n')
       ohshit(_("conffile name '%s' is too long, or missing final newline"),
              conffilenamebuf);
-    while (p > conffilenamebuf && isspace(p[-1]))
+    while (p > conffilenamebuf && c_isspace(p[-1]))
       --p;
     if (p == conffilenamebuf)
       continue;
@@ -309,7 +309,7 @@ static void
 pkg_infodb_remove_file(const char *filename, const char *filetype)
 {
   if (unlink(filename))
-    ohshite(_("unable to delete control info file `%.250s'"), filename);
+    ohshite(_("unable to delete control info file '%.250s'"), filename);
 
   debug(dbg_scripts, "removal_bulk info unlinked %s", filename);
 }
@@ -320,7 +320,7 @@ static void
 pkg_infodb_update_file(const char *filename, const char *filetype)
 {
   if (strlen(filetype) > MAXCONTROLFILENAME)
-    ohshit(_("old version of package has overly-long info file name starting `%.250s'"),
+    ohshit(_("old version of package has overly-long info file name starting '%.250s'"),
            filename);
 
   /* We do the list separately. */
@@ -358,12 +358,12 @@ pkg_infodb_update(struct pkginfo *pkg, char *cidir, char *cidirrest)
     } else if (errno == ENOENT) {
       /* Right, no new version. */
       if (unlink(match_node->filename))
-        ohshite(_("unable to remove obsolete info file `%.250s'"),
+        ohshite(_("unable to remove obsolete info file '%.250s'"),
                 match_node->filename);
       debug(dbg_scripts, "process_archive info unlinked %s",
             match_node->filename);
     } else {
-      ohshite(_("unable to install (supposed) new info file `%.250s'"), cidir);
+      ohshite(_("unable to install (supposed) new info file '%.250s'"), cidir);
     }
     match_head = match_node->next;
     match_node_free(match_node);
@@ -384,16 +384,16 @@ pkg_infodb_update(struct pkginfo *pkg, char *cidir, char *cidirrest)
       continue;
     }
     if (strlen(de->d_name) > MAXCONTROLFILENAME)
-      ohshit(_("package contains overly-long control info file name (starting `%.50s')"),
+      ohshit(_("package contains overly-long control info file name (starting '%.50s')"),
              de->d_name);
 
     strcpy(cidirrest, de->d_name);
 
     /* First we check it's not a directory. */
     if (rmdir(cidir) == 0)
-      ohshit(_("package control info contained directory `%.250s'"), cidir);
+      ohshit(_("package control info contained directory '%.250s'"), cidir);
     else if (errno != ENOTDIR)
-      ohshite(_("package control info rmdir of `%.250s' didn't say not a dir"),
+      ohshite(_("package control info rmdir of '%.250s' didn't say not a dir"),
               de->d_name);
 
     /* Ignore the control file. */
@@ -411,7 +411,7 @@ pkg_infodb_update(struct pkginfo *pkg, char *cidir, char *cidirrest)
     /* Right, install it */
     newinfofilename = pkg_infodb_get_file(pkg, &pkg->available, de->d_name);
     if (rename(cidir, newinfofilename))
-      ohshite(_("unable to install new info file `%.250s' as `%.250s'"),
+      ohshite(_("unable to install new info file '%.250s' as '%.250s'"),
               cidir, newinfofilename);
 
     debug(dbg_scripts,
@@ -618,8 +618,8 @@ void process_archive(const char *filename) {
   if (wanttoinstall(pkg)) {
     pkg_set_want(pkg, PKG_WANT_INSTALL);
   } else {
-      pop_cleanup(ehflag_normaltidy);
-      return;
+    pop_cleanup(ehflag_normaltidy);
+    return;
   }
 
   /* Deconfigure other instances from a pkgset if they are not in sync. */
@@ -724,11 +724,11 @@ void process_archive(const char *filename) {
 
   /* All the old conffiles are marked with a flag, so that we don't delete
    * them if they seem to disappear completely. */
-  oldconffsetflags(pkg->installed.conffiles);
+  pkg_conffiles_mark_old(pkg);
   for (conflictor_iter = conflictors.head;
        conflictor_iter;
        conflictor_iter = conflictor_iter->next)
-    oldconffsetflags(conflictor_iter->pkg->installed.conffiles);
+    pkg_conffiles_mark_old(conflictor_iter->pkg);
 
   oldversionstatus= pkg->status;
 
@@ -1096,7 +1096,7 @@ void process_archive(const char *filename) {
 	    memcpy(cfile->namenode->filestat, &tmp_stat, sizeof(struct stat));
 	  } else {
 	    if (!(errno == ENOENT || errno == ELOOP || errno == ENOTDIR))
-	      ohshite(_("unable to stat other new file `%.250s'"),
+	      ohshite(_("unable to stat other new file '%.250s'"),
 		      cfile->namenode->name);
 	    cfile->namenode->filestat = &empty_stat;
 	    continue;
@@ -1239,6 +1239,7 @@ void process_archive(const char *filename) {
   pkg->installed.maintainer= pkg->available.maintainer;
   pkg->installed.source= pkg->available.source;
   pkg->installed.arch = pkg->available.arch;
+  pkg->installed.pkgname_archqual = pkg->available.pkgname_archqual;
   pkg->installed.installedsize= pkg->available.installedsize;
   pkg->installed.version= pkg->available.version;
   pkg->installed.origin = pkg->available.origin;
@@ -1457,7 +1458,7 @@ void process_archive(const char *filename) {
     varbuf_add_str(&fnametmpvb, usenode->name);
     varbuf_add_str(&fnametmpvb, DPKGTEMPEXT);
     varbuf_end_str(&fnametmpvb);
-    ensure_pathname_nonexisting(fnametmpvb.buf);
+    path_remove_tree(fnametmpvb.buf);
   }
 
   /* OK, we're now fully done with the main package.

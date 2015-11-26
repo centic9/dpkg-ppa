@@ -19,6 +19,21 @@ use strict;
 use warnings;
 
 our $VERSION = '1.00';
+our @EXPORT = qw(
+    CTRL_UNKNOWN
+    CTRL_INFO_SRC
+    CTRL_INFO_PKG
+    CTRL_INDEX_SRC
+    CTRL_INDEX_PKG
+    CTRL_PKG_SRC
+    CTRL_PKG_DEB
+    CTRL_FILE_CHANGES
+    CTRL_FILE_VENDOR
+    CTRL_FILE_STATUS
+    CTRL_CHANGELOG
+);
+
+use Exporter qw(import);
 
 use Dpkg::Gettext;
 use Dpkg::ErrorHandling;
@@ -26,13 +41,7 @@ use Dpkg::Control::Types;
 use Dpkg::Control::Hash;
 use Dpkg::Control::Fields;
 
-use Exporter qw(import);
-
 use parent qw(Dpkg::Control::Hash);
-
-our @EXPORT = qw(CTRL_UNKNOWN CTRL_INFO_SRC CTRL_INFO_PKG CTRL_INDEX_SRC
-                 CTRL_INDEX_PKG CTRL_PKG_SRC CTRL_PKG_DEB CTRL_FILE_CHANGES
-                 CTRL_FILE_VENDOR CTRL_FILE_STATUS CTRL_CHANGELOG);
 
 =encoding utf8
 
@@ -104,14 +113,14 @@ Corresponds to the output of dpkg-parsechangelog.
 
 =back
 
-=head1 FUNCTIONS
+=head1 METHODS
 
 All the methods of Dpkg::Control::Hash are available. Those listed below
 are either new or overridden with a different behaviour.
 
 =over 4
 
-=item my $c = Dpkg::Control->new(%opts)
+=item $c = Dpkg::Control->new(%opts)
 
 If the "type" option is given, it's used to setup default values
 for other options. See set_options() for more details.
@@ -150,25 +159,25 @@ sub set_options {
         $$self->{allow_pgp} = ($t & (CTRL_PKG_SRC | CTRL_FILE_CHANGES)) ? 1 : 0;
         $$self->{drop_empty} = ($t & (CTRL_INFO_PKG | CTRL_INFO_SRC)) ?  0 : 1;
         if ($t == CTRL_INFO_SRC) {
-            $$self->{name} = _g('general section of control info file');
+            $$self->{name} = g_('general section of control info file');
         } elsif ($t == CTRL_INFO_PKG) {
-            $$self->{name} = _g("package's section of control info file");
+            $$self->{name} = g_("package's section of control info file");
         } elsif ($t == CTRL_CHANGELOG) {
-            $$self->{name} = _g('parsed version of changelog');
+            $$self->{name} = g_('parsed version of changelog');
         } elsif ($t == CTRL_INDEX_SRC) {
-            $$self->{name} = sprintf(_g("entry in repository's %s file"), 'Sources');
+            $$self->{name} = sprintf(g_("entry in repository's %s file"), 'Sources');
         } elsif ($t == CTRL_INDEX_PKG) {
-            $$self->{name} = sprintf(_g("entry in repository's %s file"), 'Packages');
+            $$self->{name} = sprintf(g_("entry in repository's %s file"), 'Packages');
         } elsif ($t == CTRL_PKG_SRC) {
-            $$self->{name} = sprintf(_g('%s file'), '.dsc');
+            $$self->{name} = sprintf(g_('%s file'), '.dsc');
         } elsif ($t == CTRL_PKG_DEB) {
-            $$self->{name} = _g('control info of a .deb package');
+            $$self->{name} = g_('control info of a .deb package');
         } elsif ($t == CTRL_FILE_CHANGES) {
-            $$self->{name} = sprintf(_g('%s file'), '.changes');
+            $$self->{name} = sprintf(g_('%s file'), '.changes');
         } elsif ($t == CTRL_FILE_VENDOR) {
-            $$self->{name} = _g('vendor file');
+            $$self->{name} = g_('vendor file');
         } elsif ($t == CTRL_FILE_STATUS) {
-            $$self->{name} = _g("entry in dpkg's status file");
+            $$self->{name} = g_("entry in dpkg's status file");
         }
         $self->set_output_order(field_ordered_list($opts{type}));
     }
@@ -185,7 +194,7 @@ set during new().
 =cut
 
 sub get_type {
-    my ($self) = @_;
+    my $self = shift;
     return $$self->{type};
 }
 
@@ -193,7 +202,7 @@ sub get_type {
 
 =head1 CHANGES
 
-=head2 Version 1.00
+=head2 Version 1.00 (dpkg 1.15.6)
 
 Mark the module as public.
 

@@ -2,7 +2,7 @@
 .\"
 .\" Copyright Â© 1995-1996 Ian Jackson <ian@chiark.chu.cam.ac.uk>
 .\" Copyright Â© 2000 Wichert Akkerman <wakkerma@debian.org>
-.\" Copyright Â© 2006, 2012-2013 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2006, 2012-2013, 2015 Guillem Jover <guillem@debian.org>
 .\" Copyright Â© 2007-2008 RaphaÃ«l Hertzog <hertzog@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
@@ -64,9 +64,9 @@ Ustawia zmienn± podstawienia wyj¶cia. Szczegó³owy opis podstawiania
 zmiennych wyj¶ciowych znajduje siê w \fBdeb\-substvars\fP(5).
 .TP 
 \fB\-T\fP\fIplik\-zmiennych\-podst\fP
-Odczytuje zmienne podstawiania z \fIpliku\-zmiennych\-podst\fP; domy¶lnie jest to
-\fBdebian/substvars\fP. Opcja mo¿e byæ u¿yta wielokrotnie, aby odczytaæ
-podstawiania z wielu plików.
+Read substitution variables in \fIsubstvars\-file\fP; the default is
+\fBdebian/substvars\fP.  This option can be used multiple times to read
+substitution variables from multiple files (since dpkg 1.15.6).
 .TP 
 \fB\-D\fP\fIpole\fP\fB=\fP\fIwarto¶æ\fP
 Nadpisuje lub dodaje wyj¶ciowe pole pliku kontrolnego.
@@ -116,8 +116,8 @@ u¿ywany do znalezienia domy¶lnych warto¶ci zmiennej podstawiania
 \fBdu\fP) oraz domy¶lnej lokalizacji pliku wynikowego.
 .TP 
 \fB\-O\fP[\fIfilename\fP]
-Print the control file to standard output (or \fIfilename\fP if specified),
-rather than to \fBdebian/tmp/DEBIAN/control\fP (or
+Print the control file to standard output (or \fIfilename\fP if specified,
+since dpkg 1.17.2), rather than to \fBdebian/tmp/DEBIAN/control\fP (or
 \fIpackage\-build\-dir\fP\fB/DEBIAN/control\fP if \fB\-P\fP was used).
 .TP 
 \fB\-?\fP, \fB\-\-help\fP

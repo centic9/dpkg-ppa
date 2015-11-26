@@ -2,7 +2,7 @@
 .\"
 .\" Copyright Â© 2007-2011 RaphaÃ«l Hertzog <hertzog@debian.org>
 .\" Copyright Â© 2009-2010 Modestas Vainius <modestas@vainius.eu>
-.\" Copyright Â© 2012-2013 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2012-2015 Guillem Jover <guillem@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH dpkg\-gensymbols 1 2013\-09\-06 Debian\-Projekt dpkg\-Hilfsprogramme
+.TH dpkg\-gensymbols 1 2014\-12\-29 Debian\-Projekt dpkg\-Hilfsprogramme
 .SH BEZEICHNUNG
 dpkg\-gensymbols \- erstelle Symboldateien (Abhängigkeitsinformationen für
 Laufzeitbibliotheken)
@@ -80,7 +80,7 @@ zu entfernen, so dass Backports mit einer niedrigeren Versionsnummer aber
 der gleichen Version der Originalautoren immer noch die erstellten
 Abhängigkeiten erfüllen. Falls die Debian\-Revision nicht entfernt werden
 kann, da das Symbol wirklich von der Debian\-spezifischen Änderung
-hinzugefügt wurde, dann sollte der Version »~« angehängt werden.
+hinzugefügt wurde, dann sollte der Version \(oq\fB~\fP\(cq angehängt werden.
 .P
 Bevor irgendein Patch auf die Symboldatei angewendet wird, sollte der
 Betreuer zweimal prüfen, dass der Patch vernünftig ist. Öffentliche Symbole
@@ -88,9 +88,9 @@ sollten nicht verschwinden, daher sollte der Patch idealerweise nur neue
 Zeilen hinzufügen.
 .P
 Beachten Sie, dass Sie in Symboldateien Kommentare einfügen können: jede
-Zeile, die mit »#« als ersten Zeichen beginnt, ist ein Kommentare, falls sie
-nicht mit »#include« beginnt (siehe Abschnitt \fBIncludes
-verwenden\fP). Zeilen, die mit »#MISSING:« anfangen, sind besondere
+Zeile, die mit \(oq#\(cq als ersten Zeichen beginnt, ist ein Kommentare,
+falls sie nicht mit \(oq#include\(cq beginnt (siehe Abschnitt \fBIncludes
+verwenden\fP). Zeilen, die mit \(oq#MISSING:\(cq anfangen, sind besondere
 Kommentare, die verschwundene Symbole dokumentieren.
 .P
 Vergessen Sie nicht, zu überprüfen, ob alte Versionen aktualisiert werden
@@ -166,8 +166,8 @@ Verhalten dient als Erinnerung für den Betreuer, dass so ein Symbol aus der
 Symboldatei entfernt oder wieder der Bibliothek hinzugefügt werden
 muss. Wenn das optionale Symbol, dass bisher als MISSING bezeichnet gewesen
 war, plötzlich in der nächsten Version wieder auftaucht, wird es wieder auf
-den Status »existing« (existierend) gebracht, wobei die minimale Version
-unverändert bleibt.
+den Status \(lqexisting\(rq (existierend) gebracht, wobei die minimale
+Version unverändert bleibt.
 
 Diese Markierung ist für private Symbole nützlich, deren Verschwinden keinen
 ABI\-Bruch auslöst. Beispielsweise fallen die meisten
@@ -176,19 +176,26 @@ kann auch diese einen beliebigen Wert haben: sie könnte angeben, warum
 dieses Symbol als optional betrachtet wird.
 .TP 
 \fBarch=\fP\fIArchitekturliste\fP
-Die Markierung erlaubt es, den Satz an Architekturen einzugrenzen, auf denen
-das Symbol existieren sollte. Wenn die Symbolliste mit den in der Bibliothek
-entdeckten Symbolen aktualisiert wird, werden alle architekturspezifischen
-Symbole, die nicht auf die aktuelle Host\-Architektur passen, so behandelt,
-als ob sie nicht existierten. Falls ein architekturspezifisches Symbol, das
-auf die aktuelle Host\-Architektur passt, in der Bibliothek nicht existiert,
-werden die normalen Regeln für fehlende Symbole angewandt und
-\fBdpkg\-gensymbols\fP könnte dadurch fehlschlagen. Auf der anderen Seite, falls
-das architekturspezifische Symbol gefunden wurde, wenn es nicht existieren
-sollte (da die aktuelle Host\-Architektur nicht in der Markierung aufgeführt
-ist), wird sie architekturneutral gemacht (d.h. die Architekturmarkierung
-wird entfernt und das Symbol wird im Diff aufgrund dieser Änderung
-auftauchen), aber es wird nicht als neu betrachtet.
+.TQ
+\fBarch\-bits=\fP\fIArchitektur\-Bits\fP
+.TQ
+\fBarch\-endian=\fP\fIArchitektur\-Endianness\fP
+Diese Markierungen erlauben es, den Satz an Architekturen einzugrenzen, auf
+denen das Symbol existieren sollte. Die Markierungen \fBarch\-bits\fP und
+\fBarch\-endian\fP werden seit Dpkg 1.18.0 unterstützt. Wenn die Symbolliste mit
+den in der Bibliothek entdeckten Symbolen aktualisiert wird, werden alle
+architekturspezifischen Symbole, die nicht auf die aktuelle Host\-Architektur
+passen, so behandelt, als ob sie nicht existierten. Falls ein
+architekturspezifisches Symbol, das auf die aktuelle Host\-Architektur passt,
+in der Bibliothek nicht existiert, werden die normalen Regeln für fehlende
+Symbole angewandt und \fBdpkg\-gensymbols\fP könnte dadurch fehlschlagen. Auf
+der anderen Seite, falls das architekturspezifische Symbol gefunden wurde,
+wenn es nicht existieren sollte (da die aktuelle Host\-Architektur nicht in
+der Markierung aufgeführt ist oder nicht auf die Endianess und Bits passt),
+wird sie architekturneutral gemacht (d.h. die Architektur\-,
+Architektur\-Bits\- und Architektur\-Endianessmarkierungen werden entfernt und
+das Symbol wird im Diff aufgrund dieser Änderung auftauchen), aber es wird
+nicht als neu betrachtet.
 
 Beim Betrieb im standardmäßigen nicht\-Vorlagen\-Modus werden unter den
 architekturspezifischen Symbolen nur die in die Symboldatei geschrieben, die
@@ -206,6 +213,20 @@ betrachtet wird.
  (arch=alpha any\-amd64 ia64)a_64bit_specific_symbol@Base 1.0
  (arch=linux\-any)linux_specific_symbol@Base 1.0
  (arch=!armel)symbol_armel_does_not_have@Base 1.0
+
+\fIarchitecture\-bits\fP ist entweder \fB32\fP oder \fB64\fP.
+
+ (arch\-bits=32)a_32bit_specific_symbol@Base 1.0
+ (arch\-bits=64)a_64bit_specific_symbol@Base 1.0
+
+\fIarchitecture\-endianness\fP ist entweder \fBlittle\fP oder \fBbig\fP.
+
+ (arch\-endian=little)a_little_endian_specific_symbol@Base 1.0
+ (arch\-endian=big)a_big_endian_specific_symbol@Base 1.0
+
+Mehrere Einschränkungen können aneinandergehängt werden.
+
+ (arch\-bits=32|arch\-endian=little)a_32bit_le_symbol@Base 1.0
 .TP 
 \fBignore\-blacklist\fP
 dpkg\-gensymbols verfügt über eine interne Ausschußliste (»blacklist«) von

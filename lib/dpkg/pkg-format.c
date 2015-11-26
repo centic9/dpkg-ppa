@@ -3,7 +3,7 @@
  * pkg-format.c - customizable package formatting
  *
  * Copyright © 2001 Wichert Akkerman <wakkerma@debian.org>
- * Copyright © 2008-2012 Guillem Jover <guillem@debian.org>
+ * Copyright © 2008-2015 Guillem Jover <guillem@debian.org>
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -326,7 +326,7 @@ virt_source_version(struct varbuf *vb,
 	}
 }
 
-const struct fieldinfo virtinfos[] = {
+static const struct fieldinfo virtinfos[] = {
 	{ FIELD("binary:Package"), NULL, virt_package },
 	{ FIELD("binary:Summary"), NULL, virt_summary },
 	{ FIELD("db:Status-Abbrev"), NULL, virt_status_abbrev },

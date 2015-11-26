@@ -1,6 +1,6 @@
 # Copyright © 2008-2009 Raphaël Hertzog <hertzog@debian.org>
 # Copyright © 2008 Frank Lichtenheld <djpig@debian.org>
-# Copyright © 2008-2010,2012-2014 Guillem Jover <guillem@debian.org>
+# Copyright © 2008-2010, 2012-2015 Guillem Jover <guillem@debian.org>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,14 +20,17 @@ package Dpkg::IPC;
 use strict;
 use warnings;
 
-our $VERSION = '1.01';
-
-use Dpkg::ErrorHandling;
-use Dpkg::Gettext;
+our $VERSION = '1.02';
+our @EXPORT = qw(
+    spawn
+    wait_child
+);
 
 use Carp;
 use Exporter qw(import);
-our @EXPORT = qw(spawn wait_child);
+
+use Dpkg::ErrorHandling;
+use Dpkg::Gettext;
 
 =encoding utf8
 
@@ -42,11 +45,11 @@ other programs in an easy, yet flexible way, while hiding
 all the gory details of IPC (Inter-Process Communication)
 from you.
 
-=head1 METHODS
+=head1 FUNCTIONS
 
 =over 4
 
-=item spawn
+=item $pid = spawn(%opts)
 
 Creates a child process and executes another program in it.
 The arguments are interpreted as a hash of options, specifying
@@ -230,25 +233,25 @@ sub spawn {
     my ($input_pipe, $output_pipe, $error_pipe);
     if ($opts{from_pipe}) {
 	pipe($opts{from_handle}, $input_pipe)
-	    or syserr(_g('pipe for %s'), "@prog");
+	    or syserr(g_('pipe for %s'), "@prog");
 	${$opts{from_pipe}} = $input_pipe;
 	push @{$opts{close_in_child}}, $input_pipe;
     }
     if ($opts{to_pipe}) {
 	pipe($output_pipe, $opts{to_handle})
-	    or syserr(_g('pipe for %s'), "@prog");
+	    or syserr(g_('pipe for %s'), "@prog");
 	${$opts{to_pipe}} = $output_pipe;
 	push @{$opts{close_in_child}}, $output_pipe;
     }
     if ($opts{error_to_pipe}) {
 	pipe($error_pipe, $opts{error_to_handle})
-	    or syserr(_g('pipe for %s'), "@prog");
+	    or syserr(g_('pipe for %s'), "@prog");
 	${$opts{error_to_pipe}} = $error_pipe;
 	push @{$opts{close_in_child}}, $error_pipe;
     }
     # Fork and exec
     my $pid = fork();
-    syserr(_g('cannot fork for %s'), "@prog") unless defined $pid;
+    syserr(g_('cannot fork for %s'), "@prog") unless defined $pid;
     if (not $pid) {
 	# Define environment variables
 	if ($opts{env}) {
@@ -270,39 +273,39 @@ sub spawn {
 	}
 	# Change the current directory
 	if ($opts{chdir}) {
-	    chdir($opts{chdir}) or syserr(_g('chdir to %s'), $opts{chdir});
+	    chdir($opts{chdir}) or syserr(g_('chdir to %s'), $opts{chdir});
 	}
 	# Redirect STDIN if needed
 	if ($opts{from_file}) {
 	    open(STDIN, '<', $opts{from_file})
-	        or syserr(_g('cannot open %s'), $opts{from_file});
+	        or syserr(g_('cannot open %s'), $opts{from_file});
 	} elsif ($opts{from_handle}) {
 	    open(STDIN, '<&', $opts{from_handle})
-		or syserr(_g('reopen stdin'));
+		or syserr(g_('reopen stdin'));
 	    close($opts{from_handle}); # has been duped, can be closed
 	}
 	# Redirect STDOUT if needed
 	if ($opts{to_file}) {
 	    open(STDOUT, '>', $opts{to_file})
-	        or syserr(_g('cannot write %s'), $opts{to_file});
+	        or syserr(g_('cannot write %s'), $opts{to_file});
 	} elsif ($opts{to_handle}) {
 	    open(STDOUT, '>&', $opts{to_handle})
-		or syserr(_g('reopen stdout'));
+		or syserr(g_('reopen stdout'));
 	    close($opts{to_handle}); # has been duped, can be closed
 	}
 	# Redirect STDERR if needed
 	if ($opts{error_to_file}) {
 	    open(STDERR, '>', $opts{error_to_file})
-	        or syserr(_g('cannot write %s'), $opts{error_to_file});
+	        or syserr(g_('cannot write %s'), $opts{error_to_file});
 	} elsif ($opts{error_to_handle}) {
 	    open(STDERR, '>&', $opts{error_to_handle})
-	        or syserr(_g('reopen stdout'));
+	        or syserr(g_('reopen stdout'));
 	    close($opts{error_to_handle}); # has been duped, can be closed
 	}
 	# Close some inherited filehandles
 	close($_) foreach (@{$opts{close_in_child}});
 	# Execute the program
-	exec({ $prog[0] } @prog) or syserr(_g('unable to execute %s'), "@prog");
+	exec({ $prog[0] } @prog) or syserr(g_('unable to execute %s'), "@prog");
     }
     # Close handle that we can't use any more
     close($opts{from_handle}) if exists $opts{from_handle};
@@ -337,7 +340,7 @@ sub spawn {
 }
 
 
-=item wait_child
+=item wait_child($pid, %opts)
 
 Takes as first argument the pid of the process to wait for.
 Remaining arguments are taken as a hash of options. Returns
@@ -361,8 +364,8 @@ non-zero return code).
 
 =item timeout
 
-Set a maximum time to wait for the process, after that fail
-with an error message.
+Set a maximum time to wait for the process, after that kill the process and
+fail with an error message.
 
 =back
 
@@ -370,16 +373,17 @@ with an error message.
 
 sub wait_child {
     my ($pid, %opts) = @_;
-    $opts{cmdline} //= _g('child process');
+    $opts{cmdline} //= g_('child process');
     croak 'no PID set, cannot wait end of process' unless $pid;
     eval {
         local $SIG{ALRM} = sub { die "alarm\n" };
         alarm($opts{timeout}) if defined($opts{timeout});
-        $pid == waitpid($pid, 0) or syserr(_g('wait for %s'), $opts{cmdline});
+        $pid == waitpid($pid, 0) or syserr(g_('wait for %s'), $opts{cmdline});
         alarm(0) if defined($opts{timeout});
     };
     if ($@) {
         die $@ unless $@ eq "alarm\n";
+        kill 'TERM', $pid;
         error(P_("%s didn't complete in %d second",
                  "%s didn't complete in %d seconds",
                  $opts{timeout}),
@@ -397,11 +401,15 @@ __END__
 
 =head1 CHANGES
 
-=head2 Version 1.01
+=head2 Version 1.02 (dpkg 1.18.0)
+
+Change options: wait_child() now kills the process when reaching the 'timeout'.
+
+=head2 Version 1.01 (dpkg 1.17.11)
 
 New options: spawn() now accepts 'sig' and 'delete_sig'.
 
-=head2 Version 1.00
+=head2 Version 1.00 (dpkg 1.15.6)
 
 Mark the module as public.
 

@@ -2,6 +2,7 @@
 .\"
 .\" Copyright Â© 1995-1996 Ian Jackson <ian@chiark.chu.cam.ac.uk>
 .\" Copyright Â© 2000 Wichert Akkerman <wakkerma@debian.org>
+.\" Copyright Â© 2006-2009,2012-2015 Guillem Jover <guillem@debian.org>
 .\" Copyright Â© 2009-2010 RaphaÃ«l Hertzog <hertzog@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
@@ -22,7 +23,7 @@
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH deb\-substvars 5 2009\-07\-15 Debian\-Projekt dpkg\-Hilfsprogramme
+.TH deb\-substvars 5 2015\-01\-20 Debian\-Projekt dpkg\-Hilfsprogramme
 .SH BEZEICHNUNG
 deb\-substvars \- Substitutionsvariablen in Debian\-Quellen
 .
@@ -82,7 +83,8 @@ mit dem \fB#\fP\-Symbol starten (Kommentare) werden ignoriert.
 Zusätzlich sind die folgenden Standardvariablen verfügbar:
 .TP 
 \fBArch\fP
-Die aktuelle Bau\-Architektur (von \fBdpkg \-\-print\-architecture\fP).
+Die aktuelle Host\-Architektur (d.h. die Architektur, für die das Paket
+gebaut wird, das Äquivalent zu \fBDEB_HOST_ARCH\fP).
 .TP 
 \fBsource:Version\fP
 Die Quellpaket\-Version.
@@ -101,11 +103,17 @@ Die Quellpaketversion (aus der changelog\-Datei). Diese Variable ist jetzt
 Sie \fBsource:Version\fP oder \fBbinary:Version\fP wo zutreffend.
 .TP 
 \fBInstalled\-Size\fP
-Die Gesamtgröße der vom Paket installierten Dateien. Dieser Wert wird in das
-entsprechende Feld der »control«\-Datei kopiert; wird es gesetzt, verändert
-es den Wert dieses Feldes. Falls diese Variable nicht gesetzt ist, wird
-\fBdpkg\-gencontrol\fP »\fBdu \-k debian/tmp\fP« verwenden, um den Standardwert zu
-ermitteln.
+Die ungefähre Gesamtgröße der vom Paket installierten Dateien. Dieser Wert
+wird in das entsprechende Feld der »control«\-Datei kopiert; wird es gesetzt,
+verändert es den Wert dieses Feldes. Falls diese Variable nicht gesetzt ist,
+wird \fBdpkg\-gencontrol\fP den Vorgabewert berechnen, indem es die Größen jeder
+regulären Datei und jedes Symlinks (gerundet auf 1 KiB) aufsammelt und einen
+Grundwert von 1 KiB für aller anderen Dateisystemobjekttypen verwendet.
+
+\fBHinweis\fP: Beachten Sie, dass dies stets nur ein Schätzwert sein kann, da
+die tatsächliche Größe im installierten System stark vom verwandten
+Dateisystem und seinen Parametern abhängt. Daher kann es am Ende mehr oder
+weniger als in diesem Feld angegebenen Platz belegen.
 .TP 
 \fBExtra\-Size\fP
 Zusätzlicher Plattenplatz, der verwendet wird, wenn das Paket installiert

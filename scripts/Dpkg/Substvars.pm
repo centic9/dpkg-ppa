@@ -1,4 +1,4 @@
-# Copyright © 2006-2009,2012-2014 Guillem Jover <guillem@debian.org>
+# Copyright © 2006-2009, 2012-2015 Guillem Jover <guillem@debian.org>
 # Copyright © 2007-2010 Raphaël Hertzog <hertzog@debian.org>
 #
 # This program is free software; you can redistribute it and/or modify
@@ -19,15 +19,15 @@ package Dpkg::Substvars;
 use strict;
 use warnings;
 
-our $VERSION = '1.03';
+our $VERSION = '1.04';
+
+use POSIX qw(:errno_h);
+use Carp;
 
 use Dpkg ();
 use Dpkg::Arch qw(get_host_arch);
 use Dpkg::ErrorHandling;
 use Dpkg::Gettext;
-
-use Carp;
-use POSIX qw(:errno_h);
 
 use parent qw(Dpkg::Interface::Storable);
 
@@ -56,7 +56,7 @@ use constant {
 
 =over 8
 
-=item my $s = Dpkg::Substvars->new($file)
+=item $s = Dpkg::Substvars->new($file)
 
 Create a new object that can do substitutions. By default it contains
 generic substitutions like ${Newline}, ${Space}, ${Tab}, ${dpkg:Version}
@@ -203,7 +203,7 @@ sub parse {
 	next if m/^\s*\#/ || !m/\S/;
 	s/\s*\n$//;
 	if (! m/^(\w[-:0-9A-Za-z]*)\=(.*)$/) {
-	    error(_g('bad line in substvars file %s at line %d'),
+	    error(g_('bad line in substvars file %s at line %d'),
 		  $varlistfile, $.);
 	}
 	$self->set($1, $2);
@@ -251,7 +251,7 @@ This will never be warned about when unused.
 =cut
 
 sub set_arch_substvars {
-    my ($self) = @_;
+    my $self = shift;
 
     my $attr = SUBSTVAR_ATTR_USED | SUBSTVAR_ATTR_AUTO;
 
@@ -280,9 +280,11 @@ sub substvars {
 
         if ($count >= $maxsubsts) {
             error($opts{msg_prefix} .
-	          _g("too many substitutions - recursive ? - in \`%s'"), $v);
+                  g_("too many substitutions - recursive ? - in '%s'"), $v);
         }
-        $lhs = $1; $vn = $2; $rhs = $3;
+        $lhs = $1;
+        $vn = $2;
+        $rhs = $3;
         if (defined($self->{vars}{$vn})) {
             $v = $lhs . $self->{vars}{$vn} . $rhs;
             $self->mark_as_used($vn);
@@ -290,10 +292,10 @@ sub substvars {
 
             if (not $opts{no_warn} and $self->{attr}{$vn} & SUBSTVAR_ATTR_OLD) {
                 warning($opts{msg_prefix} .
-                        _g('deprecated substitution variable ${%s}'), $vn);
+                        g_('deprecated substitution variable ${%s}'), $vn);
             }
         } else {
-            warning($opts{msg_prefix} . _g('unknown substitution variable ${%s}'),
+            warning($opts{msg_prefix} . g_('unknown substitution variable ${%s}'),
 	            $vn) unless $opts{no_warn};
             $v = $lhs . $rhs;
         }
@@ -317,7 +319,7 @@ sub warn_about_unused {
         # that they are not required in the current situation
         # (example: debhelper's misc:Depends in many cases)
         next if $self->{vars}{$vn} eq '';
-        warning($opts{msg_prefix} . _g('unused substitution variable ${%s}'),
+        warning($opts{msg_prefix} . g_('unused substitution variable ${%s}'),
                 $vn);
     }
 }
@@ -332,6 +334,25 @@ by the module.
 sub set_msg_prefix {
     my ($self, $prefix) = @_;
     $self->{msg_prefix} = $prefix;
+}
+
+=item $s->filter(remove => $rmfunc)
+=item $s->filter(keep => $keepfun)
+
+Filter the substitution variables, either removing or keeping all those
+that return true when &$rmfunc($key) or &keepfunc($key) is called.
+
+=cut
+
+sub filter {
+    my ($self, %opts) = @_;
+
+    my $remove = $opts{remove} // sub { 0 };
+    my $keep = $opts{keep} // sub { 1 };
+
+    foreach my $vn (keys %{$self->{vars}}) {
+        $self->delete($vn) if &$remove($vn) or not &$keep($vn);
+    }
 }
 
 =item $s->save($file)
@@ -368,11 +389,15 @@ sub output {
 
 =head1 CHANGES
 
-=head2 Version 1.03
+=head2 Version 1.04 (dpkg 1.18.0)
+
+New method: $s->filter().
+
+=head2 Version 1.03 (dpkg 1.17.11)
 
 New method: $s->set_as_auto().
 
-=head2 Version 1.02
+=head2 Version 1.02 (dpkg 1.16.5)
 
 New argument: Accept a $binaryversion in $s->set_version_substvars(),
 passing a single argument is still supported.
@@ -381,11 +406,11 @@ New method: $s->mark_as_used().
 
 Deprecated method: $s->no_warn(), use $s->mark_as_used() instead.
 
-=head2 Version 1.01
+=head2 Version 1.01 (dpkg 1.16.4)
 
 New method: $s->set_as_used().
 
-=head2 Version 1.00
+=head2 Version 1.00 (dpkg 1.15.6)
 
 Mark the module as public.
 
