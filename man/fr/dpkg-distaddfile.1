@@ -1,14 +1,32 @@
+.\" dpkg manual page - dpkg-distaddfile(1)
+.\"
+.\" Copyright Â© 1995-1996 Ian Jackson <ian@chiark.chu.cam.ac.uk>
+.\" Copyright Â© 2000 Wichert Akkerman <wakkerma@debian.org>
+.\"
+.\" This is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <https://www.gnu.org/licenses/>.
+.
 .\"*******************************************************************
 .\"
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH dpkg\-distaddfile 1 18\-08\-2008 "Projet Debian" "Utilitaires de dpkg"
+.TH dpkg\-distaddfile 1 04\-05\-2012 "Projet Debian" "Utilitaires de dpkg"
 .SH NOM
 dpkg\-distaddfile \- Ajouter une entrée au fichier debian/files.
 .
 .SH SYNOPSIS
-\fBdpkg\-distaddfile\fP [\fIoptions\fP]\fI fichier section priorité\fP
+\fBdpkg\-distaddfile\fP [\fIoptions\fP...]\fI fichier section priorité\fP
 .
 .SH DESCRIPTION
 \fBdpkg\-distaddfile\fP ajoute une entrée pour un fichier dans \fBdebian/files\fP.
@@ -27,7 +45,7 @@ plutôt que relativement au répertoire dans lequel est exécuté
 Lit ou écrit la liste des fichiers qui doivent être envoyés vers l'archive
 dans ce fichier plutôt que dans le fichier \fBdebian/files\fP.
 .TP 
-\fB\-h\fP, \fB\-\-help\fP
+\fB\-?\fP, \fB\-\-help\fP
 Affiche un message d'aide puis quitte.
 .TP 
 \fB\-\-version\fP
@@ -39,14 +57,6 @@ Affiche le numéro de version puis quitte.
 La liste des fichiers créés qui seront installés sur le
 serveur. \fBdpkg\-distaddfile\fP peut être utilisé pour ajouter des fichiers
 supplémentaires.
-.
-.SH AUTEURS
-Copyright \(co 1995\-1996 Ian Jackson
-.br
-Copyright \(co 2000 Wichert Akkerman
-.sp
-Ce programme est un logiciel libre\ ; voyez la «\ GNU General Public Licence\ »
-version 2 ou supérieure pour le copyright. Il n'y a PAS de garantie.
 .SH TRADUCTION
 Ariel VARDI <ariel.vardi@freesbee.fr>, 2002.
 Philippe Batailler, 2006.

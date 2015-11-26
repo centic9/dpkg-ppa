@@ -1,17 +1,35 @@
+.\" dselect manual page - dselect(1)
+.\"
+.\" Copyright Â© 1995 Juho Vuori <javuori@cc.helsinki.fi>
+.\" Copyright Â© 2000 Josip Rodin
+.\" Copyright Â© 2001 Joost Kooij
+.\" Copyright Â© 2001 Wichert Akkerman <wakkerma@debian.org>
+.\" Copyright Â© 2010-2011 Guillem Jover <guillem@debian.org>
+.\"
+.\" This is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <https://www.gnu.org/licenses/>.
+.
 .\"*******************************************************************
 .\"
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH dselect 1 2010\-03\-07 "Projekt Debiana" Debian
+.TH dselect 1 2012\-04\-07 "Projekt Debian" Debian
 .SH NAZWA
 dselect \- konsolowe narzêdzie zarz±dzania pakietami Debiana
 .
 .SH SK£ADNIA
-\fBdselect\fP [\fB\-\-admindir\fP \fI<directory>\fP] [\fB\-\-help\fP] [\fB\-\-version\fP]
-[\fB\-\-expert\fP] [\fB\-\-debug\fP|\fB\-D\fP\fI<file>\fP] [\fI<action>\fP]
-[\fB\-\-colour\fP|\fB\-\-color\fP
-\fIscreenpart:\fP[\fIforeground\fP],[\fIbackground\fP][\fI:attr\fP[\fI+attr+..\fP]]]
+\fBdselect\fP [\fIopcja\fP...] \fIdzia³anie\fP
 .
 .SH OPIS
 \fBdselect\fP
@@ -43,28 +61,26 @@ modyfikuj± zachowanie \fBdselecta\fP albo wy¶wietlaj± dodatkowe informacje o
 programie.
 .
 .SH OPCJE
-Wszystkie opcje mog± byæ podane zarówno w linii poleceñ, jak i w pliku
-konfiguracyjnym \fI/etc/dpkg/dselect.cfg\fP programu \fBdselect\fP lub w plikach w
-katalogu konfiguracyjnym \fI/etc/dpkg/dpkg.cfg.d/\fP. Ka¿da linia pliku
-konfiguracyjnego jest albo opcj± (dok³adnie tak± sam± jak opcja linii
-poleceñ, ale bez pocz±tkowych my¶lników), albo komentarzem (je¿eli zaczyna
-siê od \fB#\fP).
+All options can be specified both on the command line and in the \fBdselect\fP
+configuration file \fI/etc/dpkg/dselect.cfg\fP or the files on the
+configuration directory \fI/etc/dpkg/dselect.cfg.d/\fP. Each line in the
+configuration file is either an option (exactly the same as the command line
+option but without leading hyphens) or a comment (if it starts with a \fB#\fP).
 .br
 .TP 
-\fB\-\-admindir\fP\fI <katalog>\fP
+\fB\-\-admindir\fP\fI katalog\fP
 Zmienia katalog zawieraj±cy pliki "\fIstatus\fP" ,"\fIavailable\fP" i inne
 potrzebne programowi \fBdpkg\fP. Domy¶lnym katalogiem jest \fI/var/lib/dpkg\fP i
 zazwyczaj nie powinno byæ potrzeby zmieniania go na inny.
 .TP 
-\fB\-\-debug\fP\fI <plik> \fP|\fI \fP\fB\-D\fP\fI<plik>\fP
-W³±cza opcjê debuggera. Informacje debuggera s± wysy³ane do
-\fI<pliku>\fP.
+\fB\-\-debug\fP\fI plik \fP|\fI \fP\fB\-D\fP\fIplik\fP
+W³±cza opcjê debuggera. Informacje debuggera s± wysy³ane do \fIpliku\fP.
 .TP 
 \fB\-\-expert\fP
 W³±cza tryb do¶wiadczonego u¿ytkownika i na przyk³ad nie wy¶wietla mêcz±cych
 informacji z pomoc±.
 .TP 
-\fB\-\-colour\fP|\fB\-\-color\fP \fIczê¶æ_ekranu:\fP[\fIpierwszoplan\fP],[\fIt³o\fP][\fI:atr\fP[\fI+atr+..\fP]]
+\fB\-\-colour\fP|\fB\-\-color\fP \fIczê¶æ_ekranu:\fP[\fIpierwszoplan\fP],[\fIt³o\fP][\fI:atr\fP[\fI+atr+...\fP]]
 Ustawia kolory ekranu. Dzia³a tylko pod warunkiem, ¿e terminal obs³uguje
 kolory. Ta opcja mo¿e zostaæ u¿yta wiele razy (i najlepiej jej u¿ywaæ w
 \fIdselect.cfg\fP). Ka¿de u¿ycie zmienia kolor (i opcjonalnie inne atrybuty)
@@ -126,16 +142,17 @@ Wy¶wietla krótk± informacjê o pomocy i pomy¶lnie koñczy dzia³anie.
 \fB\-\-version\fP
 Wy¶wietla informacjê o wersji i pomy¶lnie koñczy dzia³anie.
 .
-.SH U¯YTKOWANIE
-\fBdselect\fP uruchomiony w trybie interakcyjnym wy¶wietla menu z nastêpuj±cymi
-akcjami:
+.SH AKCJE
+Uruchomiony \fBdselect\fP, mo¿e przeprowadziæ nastêpuj±ce dzia³ania albo
+bezpo¶rednio, jak podano w wierszu poleceñ, albo przez zapytanie u¿ytkownika
+z menu z dostêpnymi dzia³aniami, je¶li zostanie uruchomiony interaktywnie:
 .SS "access (dostêp)"
 Wybiera metodê dostêpu u¿ywan± do znalezienia repozytorium pakietów.
 .sp
-Domy¶lnie istnieje kilka metod, takich jak \fIfloppy\fP (dyskietka),
-\fIharddisk\fP (dysk twardy) lub \fIcdrom\fP (CD\-ROM), ale inne pakiety mog±
-dostarczyæ dodatkowych metod, na przyk³ad metody \fIapt\fP dostarcza pakiet
-\fBapt\fP, a \fImulti_cd\fP \- pakiet \fBdpkg\-multicd\fP.
+Domy¶lnie istnieje kilka metod, takich jak \fIcdrom\fP, \fImulti_cd\fP, \fInfs\fP,
+\fImulti_nfs\fP, \fIharddisk\fP, \fImounted\fP, \fImulti_mount\fP, \fIfloppy\fP lub \fIftp\fP,
+ale inne pakiety mog± dostarczyæ dodatkowych metod, na przyk³ad metody
+\fIapt\fP dostarcza pakiet \fBapt\fP.
 .sp
 Zalecane jest u¿ywanie metody \fIapt\fP.
 .sp
@@ -169,8 +186,8 @@ sugestii zaproponowanych przez \fBdselect\fP, uniewa¿niæ je lub wycofaæ siê ze
 zmian, w³±czaj±c w to pakiety, które spowodowa³y niespe³nione zale¿no¶ci lub
 konflikty.
 .sp
-U¿ywanie ekrany do zarz±dania interaktywnym wyborem pakietów jest
-szczegó³owo wyj±¶nione poni¿ej.
+U¿ywanie ekrany do zarz±dzania interaktywnym wyborem pakietów jest
+szczegó³owo wyja¶nione poni¿ej.
 .sp
 .SS "install (instalacja)"
 Instaluje wybrane pakiety.
@@ -210,7 +227,7 @@ Wyj¶cie z \fBdselect\fP.
 Wychodzi z programu z zerowym kodem b³êdu (pomy¶lnie).
 .sp
 .
-.SH "Zarz±dzanie wyborem pakietów"
+.SH "PACKAGE SELECTIONS MANAGEMENT"
 .sp
 .SS Wstêp
 .sp
@@ -423,8 +440,8 @@ pomy³kê.
 .SH ¦RODOWISKO
 .TP 
 \fBHOME\fP
-If set, \fBdselect\fP will use it as the directory from which to read the user
-specific configuration file.
+Je¶li ustawiona, \fBdselect\fP bêdzie jej u¿ywa³ jako katalogu z którego
+odczyta plik konfiguracyjny u¿ytkownika.
 .
 .SH B£ÊDY
 Dla nowych u¿ytkowników, \fBdselect\fP mo¿e byæ trudny do opanowania. Podobno
@@ -442,15 +459,7 @@ tak¿e jest o wiele bardziej elastyczna ni¿ metody wbudowane.
 .
 .SH "ZOBACZ TAK¯E"
 \fBdpkg\fP(1), \fBapt\-get\fP(8), \fBsources.list\fP(5), \fBdeb\fP(5).
-.
-.SH AUTORZY
-\fBdselect\fP was written by Ian Jackson (ijackson@gnu.ai.mit.edu). Full list
-of contributors may be found in 'dselect \-\-version'.
-.br
-Podrêcznik napisali Juho Vuori <javuori@cc.helsinki.fi>, Josip Rodin
-i Joost kooij.
-
-.SH "T£UMACZE"
+.SH T£UMACZE
 Piotr Roszatycki <dexter@debian.org>, 1999
 .br
 Bartosz Feñski <fenio@debian.org>, 2004-2005
@@ -458,3 +467,5 @@ Bartosz Feñski <fenio@debian.org>, 2004-2005
 Robert Luberda <robert@debian.org>, 2006-2008
 .br
 Wiktor Wandachowicz <siryes@gmail.com>, 2008
+.br
+Micha³ Ku³ach <michal.kulach@gmail.com>, 2012

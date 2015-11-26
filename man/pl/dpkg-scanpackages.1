@@ -1,5 +1,11 @@
+.\" dpkg manual page - dpkg-scanpackages(1)
+.\"
 .\" Copyright Â© 1996 Michael Shields <shields@crosslink.net>
-.\" This is free software; you may redistribute it and/or modify
+.\" Copyright Â© 2006 Frank Lichtenheld <djpig@debian.org>
+.\" Copyright Â© 2007 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2009 RaphaÃ«l Hertzog <hertzog@debian.org>
+.\"
+.\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
 .\" the Free Software Foundation; either version 2 of the License, or
 .\" (at your option) any later version.
@@ -10,19 +16,20 @@
 .\" GNU General Public License for more details.
 .\"
 .\" You should have received a copy of the GNU General Public License
-.\" along with this program.  If not, see <http://www.gnu.org/licenses/>.
+.\" along with this program.  If not, see <https://www.gnu.org/licenses/>.
+.
 .\"*******************************************************************
 .\"
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH dpkg\-scanpackages 1 2009\-10\-01 "Projekt Debiana" "programy pomocnicze dpkg"
+.TH dpkg\-scanpackages 1 2012\-05\-07 "Projekt Debian" "programy pomocnicze dpkg"
 .SH NAZWA
 dpkg\-scanpackages \- tworzy plik indeksowe Packages
 .
 .SH SK£ADNIA
-\fBdpkg\-scanpackages\fP [\fIopcje\fP] \fIkatalog_binarny\fP [\fIplik_nadpisañ\fP
-[\fIprefiks_¶cie¿ki\fP]] \fB>\fP \fIPackages\fP
+\fBdpkg\-scanpackages\fP [\fIopcja\fP...] \fIkatalog\-binarny\fP [\fIplik\-nadpisañ\fP
+[\fIprefiks\-¶cie¿ki\fP]] \fB>\fP \fIPackages\fP
 .
 .SH OPIS
 \fBdpkg\-scanpackages\fP przechodzi po drzewie binarnych pakietów Debiana i
@@ -33,22 +40,21 @@ mo¿na znale¼æ w mirrorach archiwum Debiana i na CD\-ROM\-ach. Programu
 \fBdpkg\-scanpackages\fP mo¿na u¿yæ podczas tworzenia katalogu lokalnych
 pakietów do zainstalowania w grupie komputerów.
 .PP
-\fBNote:\fP If you want to access the generated Packages file with \fBapt\fP you
-will probably need to compress the file with \fBbzip2\fP(1)  (generating a
-Packages.bz2 file) or \fBgzip\fP(1)  (generating a Packages.gz file). apt
-ignores uncompressed Packages files except on local access (i.e.  \fBfile://\fP
-sources).
+\fBUwaga\fP: Aby \fBapt\fP mog³o u¿yæ wygenerowanego pliku Packages, nale¿y go
+skompresowaæ programem \fBbzip2\fP(1) (tworz±c plik Packages.bz2) lub
+\fBgzip\fP(1) (tworz±c plik Packages.gz). apt ignoruje nieskompresowane pliki
+Packages z wyj±tkiem lokalnego dostêpu (tj. pochodz±cego z \fBfile://\fP).
 .PP
-\fIkatalog_binarny\fP jest nazw± drzewa pakietów binarnych do przetworzenia (na
+\fIkatalog\-binarny\fP jest nazw± drzewa pakietów binarnych do przetworzenia (na
 przyk³ad \fBcontrib/binary\-i386\fP). Najlepiej, ¿eby by³ podany relatywnie w
 stosunku do korzenia drzewa archiwum Debiana, poniewa¿  warto¶æ ka¿dego pola
 Filename w nowym pliku Packages bêdzie siê zaczynaæ od tego ³añcucha znaków.
 .PP
-\fIoverridefile\fP is the name of a file to read which contains information
-about how the package fits into the distribution (it can be a compressed
-file); see \fBdeb\-override\fP(5).
+\fIplik\-nadpisañ\fP jest nazw± pliku, z którego bêd± odczytane informacje o
+tym, jak umiejscowiæ pakiet w dystrybucji (plik mo¿e byæ skompresowany),
+patrz \fBdeb\-override\fP(5).
 .PP
-\fIprefiks_¶cie¿ki\fP jest opcjonalnym ³añcuchem znaków, który bêdzie
+\fIprefiks\-¶cie¿ki\fP jest opcjonalnym ³añcuchem znaków, który bêdzie
 poprzedza³ nazwy plików w polu Filename.
 .PP
 Je¿eli bêdzie znaleziona wiêcej ni¿ jedna wersja pakietu, to tylko najnowsza
@@ -61,27 +67,24 @@ u¿yta pierwsza znaleziona wersja.
 \fB\-t\fP, \fB\-\-type\fP \fItyp\fP
 Szukanie plików *.\fItyp\fP zamiast *.deb.
 .TP 
-\fB\-u\fP, \fB\-\-udeb\fP
-\fBPrzestarza³y\fP alias dla \fB\-tudeb\fP.
-.TP 
 \fB\-e\fP, \fB\-\-extra\-override\fP \fIplik\fP
-Scan \fIfile\fP to find supplementary overrides (the file can be
-compressed). See \fBdeb\-extra\-override\fP(5)  for more information on its
-format.
+Przegl±da \fIplik\fP w celu znalezienia dodatkowych nadpisañ (plik mo¿e byæ
+skompresowany). Proszê zajrzeæ do \fBdeb\-extra\-override\fP(5), aby poznaæ pe³ny
+opis wymaganego formatu.
 .TP 
 \fB\-a\fP, \fB\-\-arch\fP \fIarchitektura\fP
-Use a pattern consisting of \fI*_all.deb\fP and \fI*_arch.deb\fP instead of
-scanning for all debs.
+U¿ywa wzorca zawieraj±cego \fI*_all.deb\fP i \fI*_arch.deb\fP zamiast poszukiwaæ
+wszystkich plików deb.
 .TP 
 \fB\-m\fP, \fB\-\-multiversion\fP
 Wypisuje wszystkie znalezione pakiety.
 .TP 
-\fB\-M\fP, \fB\-\-medium\fP \fIid\-string\fP
-Add an X\-Medium field containing the value \fIid\-string\fP. This field is
-required if you want to generate \fBPackages.cd\fP files for use by the multicd
-access method of dselect.
+\fB\-M\fP, \fB\-\-medium\fP \fIidentyfikator\-³añcucha\fP
+Dodaje pole X\-Medium zawieraj±ce warto¶æ \fIidentyfikator\-³añcucha\fP. Pole to
+jest wymagane, je¶li tworzone maj± byæ pliki \fBPackages.cd\fP do u¿ycia z
+metod± dostêpu multicd programu dselect.
 .TP 
-\fB\-h\fP, \fB\-\-help\fP
+\fB\-?\fP, \fB\-\-help\fP
 Wy¶wietla informacjê o u¿ytkowaniu i koñczy dzia³anie.
 .TP 
 \fB\-\-version\fP
@@ -95,9 +98,11 @@ pole Filename, nie s± wymienione w pliku nadpisañ lub maj± zdefiniowane
 podstawienia opiekunów nie przynosz±ce efektu.
 .
 .SH "ZOBACZ TAK¯E"
+.ad l
+.nh
 \fBdpkg\fP(1), \fBdselect\fP(1), \fBdeb\-override\fP(5), \fBdeb\-extra\-override\fP(5),
 \fBdpkg\-scansources\fP(1).
-.SH "T£UMACZE"
+.SH T£UMACZE
 Piotr Roszatycki <dexter@debian.org>, 1999
 .br
 Bartosz Feñski <fenio@debian.org>, 2004-2005
@@ -105,3 +110,5 @@ Bartosz Feñski <fenio@debian.org>, 2004-2005
 Robert Luberda <robert@debian.org>, 2006-2008
 .br
 Wiktor Wandachowicz <siryes@gmail.com>, 2008
+.br
+Micha³ Ku³ach <michal.kulach@gmail.com>, 2012

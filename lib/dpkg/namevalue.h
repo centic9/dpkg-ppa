@@ -16,7 +16,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #ifndef LIBDPKG_NAMEVALUE_H
@@ -25,6 +25,12 @@
 #include <dpkg/macros.h>
 
 DPKG_BEGIN_DECLS
+
+/**
+ * @defgroup namevalue Name/Value data
+ * @ingroup dpkg-public
+ * @{
+ */
 
 struct namevalue {
 	const char *name;
@@ -39,6 +45,8 @@ struct namevalue {
 
 const struct namevalue *namevalue_find_by_name(const struct namevalue *head,
                                                const char *str);
+
+/** @} */
 
 DPKG_END_DECLS
 

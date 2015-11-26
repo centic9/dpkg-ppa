@@ -1,4 +1,22 @@
-.\" Authors: Ian Jackson
+.\" dpkg manual page - deb-substvars(5)
+.\"
+.\" Copyright Â© 1995-1996 Ian Jackson <ian@chiark.chu.cam.ac.uk>
+.\" Copyright Â© 2000 Wichert Akkerman <wakkerma@debian.org>
+.\" Copyright Â© 2009-2010 RaphaÃ«l Hertzog <hertzog@debian.org>
+.\"
+.\" This is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <https://www.gnu.org/licenses/>.
+.
 .\"*******************************************************************
 .\"
 .\" This file was generated with po4a. Translate the source file.
@@ -31,7 +49,7 @@ par un signe \fB$\fP.
 
 Lorsque le remplacement de variables est effectué sur tous les champs de
 contrôle, certains de ces champs sont utilisés et nécessaires pendant la
-constructions alors même que la substitution n'a pas encore pu être
+construction alors même que la substitution n'a pas encore pu être
 effectuée. Cela explique pourquoi il n'est pas possible d'utiliser de
 variables dans les champs \fBPackage\fP, \fBSource\fP et \fBArchitecture\fP.
 
@@ -53,7 +71,7 @@ Le résultat final sera\ :
   foo est bar.
   foo est super.
   .
-  More text.
+  Encore du texte.
 
 On peut définir les variables en utilisant l'option commune \fB\-V\fP. On peut
 aussi se servir du fichier \fBdebian/substvars\fP (ou tout autre fichier avec
@@ -121,29 +139,18 @@ La version amont de dpkg.
 La version complète de dpkg.
 .LP
 Quand une variable est référencée mais n'est pas définie, cela produit un
-avertissement et une valeur nulle est assumée.
+avertissement et une valeur nulle est supposée.
 .
 .SH FICHIERS
 .TP 
 \fBdebian/substvars\fP
 La liste des variables de substitution et leurs valeurs.
 .
-.SH BOGUES
-Le moment où a lieu le remplacement d'un champ par rapport à certaines
-déterminations de champ affichées sur la sortie standard est plutôt
-embrouillé.
-
 .SH "VOIR AUSSI"
+.ad l
+.nh
 \fBdpkg\fP(1), \fBdpkg\-genchanges\fP(1), \fBdpkg\-gencontrol\fP(1),
 \fBdpkg\-shlibdeps\fP(1), \fBdpkg\-source\fP(1).
-.
-.SH AUTEUR
-Copyright \(co 1995\-1996 Ian Jackson
-.br
-Copyright \(co 2000 Wichert Akkerman
-.sp
-Ce programme est un logiciel libre\ ; voyez la «\ GNU General Public Licence\ »
-version 2 ou supérieure pour le copyright. Il n'y a PAS de garantie.
 .SH TRADUCTION
 Ariel VARDI <ariel.vardi@freesbee.fr>, 2002.
 Philippe Batailler, 2006.

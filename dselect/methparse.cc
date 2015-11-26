@@ -15,7 +15,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
@@ -44,8 +44,8 @@
 #include "method.h"
 
 int noptions=0;
-struct dselect_option *options=0, *coption=0;
-struct method *methods=0;
+struct dselect_option *options = nullptr, *coption = nullptr;
+struct method *methods = nullptr;
 
 static void DPKG_ATTR_NORET
 badmethod(const char *pathname, const char *why)
@@ -62,7 +62,10 @@ eofmethod(const char *pathname, FILE *f, const char *why)
 
 void readmethods(const char *pathbase, dselect_option **optionspp, int *nread) {
   static const char *const methodprograms[]= {
-    METHODSETUPSCRIPT, METHODUPDATESCRIPT, METHODINSTALLSCRIPT, 0
+    METHODSETUPSCRIPT,
+    METHODUPDATESCRIPT,
+    METHODINSTALLSCRIPT,
+    nullptr
   };
   const char *const *ccpp;
   int methodlen, c, baselen;
@@ -92,7 +95,7 @@ void readmethods(const char *pathbase, dselect_option **optionspp, int *nread) {
 
   debug(dbg_general, "readmethods('%s',...) directory open", pathbase);
 
-  while ((dent= readdir(dir)) != 0) {
+  while ((dent = readdir(dir)) != nullptr) {
     c= dent->d_name[0];
     debug(dbg_general, "readmethods('%s',...) considering '%s' ...",
           pathbase, dent->d_name);
@@ -130,7 +133,7 @@ void readmethods(const char *pathbase, dselect_option **optionspp, int *nread) {
     strcpy(meth->path+baselen+1+methodlen,"/");
     meth->pathinmeth= meth->path+baselen+1+methodlen+1;
     meth->next= methods;
-    meth->prev = 0;
+    meth->prev = nullptr;
     if (methods)
       methods->prev = meth;
     methods= meth;
@@ -188,7 +191,7 @@ void readmethods(const char *pathbase, dselect_option **optionspp, int *nread) {
       if (!descfile) {
         if (errno != ENOENT)
           ohshite(_("unable to open option description file `%.250s'"),pathbuf);
-        opt->description= 0;
+        opt->description = nullptr;
       } else { /* descfile != 0 */
         if (fstat(fileno(descfile),&stab))
           ohshite(_("unable to stat option description file `%.250s'"),pathbuf);
@@ -229,7 +232,7 @@ void readmethods(const char *pathbase, dselect_option **optionspp, int *nread) {
   delete[] pathbuf;
 }
 
-static char *methoptfile= 0;
+static char *methoptfile = nullptr;
 
 void getcurrentopt() {
   char methoptbuf[IMETHODMAXLEN+1+IOPTIONMAXLEN+2];
@@ -237,10 +240,10 @@ void getcurrentopt() {
   int l;
   char *p;
 
-  if (methoptfile == NULL)
+  if (methoptfile == nullptr)
     methoptfile = dpkg_db_get_path(CMETHOPTFILE);
 
-  coption= 0;
+  coption = nullptr;
   cmo= fopen(methoptfile,"r");
   if (!cmo) {
     if (errno == ENOENT) return;
@@ -274,25 +277,14 @@ void getcurrentopt() {
 }
 
 void writecurrentopt() {
-  FILE *cmo;
-  int l;
-  static char *newfile=0;
+  struct atomic_file *file;
 
   assert(methoptfile);
-  if (!newfile) {
-    l= strlen(methoptfile);
-    newfile= new char[l + sizeof(NEWDBEXT) + 1];
-    strcpy(newfile,methoptfile);
-    strcpy(newfile+l, NEWDBEXT);
-  }
-  cmo= fopen(newfile,"w");
-  if (!cmo) ohshite(_("unable to open new option file `%.250s'"),newfile);
-  if (fprintf(cmo,"%s %s\n",coption->meth->name,coption->name) == EOF) {
-    fclose(cmo);
-    ohshite(_("unable to write new option to `%.250s'"),newfile);
-  }
-  if (fclose(cmo))
-    ohshite(_("unable to close new option file `%.250s'"),newfile);
-  if (rename(newfile,methoptfile))
-    ohshite(_("unable to install new option as `%.250s'"),methoptfile);
+  file = atomic_file_new(methoptfile, (enum atomic_file_flags)0);
+  atomic_file_open(file);
+  if (fprintf(file->fp, "%s %s\n", coption->meth->name, coption->name) == EOF)
+    ohshite(_("unable to write new option to `%.250s'"), file->name_new);
+  atomic_file_close(file);
+  atomic_file_commit(file);
+  atomic_file_free(file);
 }

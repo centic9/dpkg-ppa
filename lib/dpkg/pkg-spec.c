@@ -1,9 +1,10 @@
 /*
  * libdpkg - Debian packaging suite library routines
- * pkg-spec.c - routines to handle package specifiers
+ * pkg-spec.c - primitives for pkg specifier handling
  *
  * Copyright © 2011 Linaro Limited
  * Copyright © 2011 Raphaël Hertzog <hertzog@debian.org>
+ * Copyright © 2011-2012 Guillem Jover <guillem@debian.org>
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,7 +17,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
@@ -25,7 +26,6 @@
 #include <stdlib.h>
 #include <fnmatch.h>
 #include <string.h>
-#include <assert.h>
 
 #include <dpkg/i18n.h>
 #include <dpkg/dpkg.h>
@@ -33,75 +33,30 @@
 #include <dpkg/arch.h>
 #include <dpkg/pkg-spec.h>
 
-static void pkg_spec_iter_reset(struct pkg_spec *ps);
-static bool pkg_spec_do_checks(struct pkg_spec *ps, bool fail_on_error);
-static bool pkg_spec_match_flags(struct pkg_spec *ps, struct pkginfo *pkg);
-static bool pkg_spec_match_arch(struct pkg_spec *ps, const struct dpkg_arch *arch);
-static bool pkg_spec_match_pkgname(struct pkg_spec *ps, const char *name);
-
-void
-pkg_spec_reset(struct pkg_spec *ps)
+static void
+pkg_spec_blank(struct pkg_spec *ps)
 {
-	if (!(ps->flags & psf_no_copy))
-		free(ps->name);
 	ps->name = NULL;
 	ps->arch = NULL;
-	pkg_spec_iter_reset(ps);
-	/* flags is left untouched on purpose */
-}
-
-bool
-pkg_spec_parse(struct pkg_spec *ps, const char *string)
-{
-	char *arch;
-
-	pkg_spec_reset(ps);
-
-	if (ps->flags & psf_no_copy)
-		ps->name = (char *) string;
-	else
-		ps->name = m_strdup(string);
-
-	arch = strchr(ps->name, ':');
-	if (arch) {
-		arch[0] = '\0';
-		arch++;
-	}
-	ps->arch = dpkg_arch_find(arch);
-
-	return pkg_spec_do_checks(ps, !(ps->flags & psf_no_check));
-}
-
-bool
-pkg_spec_do_checks(struct pkg_spec *ps, bool fail_on_error)
-{
-	const char *emsg;
 
 	ps->name_is_pattern = false;
 	ps->arch_is_pattern = false;
-
-	/* Detect if we have patterns and/or illegal names */
-	if ((ps->flags & psf_patterns) && strpbrk(ps->name, "*[?\\"))
-		ps->name_is_pattern = true;
-
-	if ((ps->flags & psf_patterns) && strpbrk(ps->arch->name, "*[?\\"))
-		ps->arch_is_pattern = true;
-
-	emsg = pkg_spec_is_illegal(ps);
-	if (fail_on_error && emsg)
-		ohshit("%s", emsg);
-
-	return (emsg == NULL);
 }
 
-bool
-pkg_spec_is_pattern(struct pkg_spec *ps)
+static void
+pkg_spec_iter_blank(struct pkg_spec *ps)
 {
-	if (ps->name_is_pattern || ps->arch_is_pattern)
-		return true;
-	if ((ps->flags & psf_def_wildcard) && ps->arch->type == arch_none)
-		return true;
-	return false;
+	ps->pkg_iter = NULL;
+	ps->pkg_next = NULL;
+}
+
+void
+pkg_spec_init(struct pkg_spec *ps, enum pkg_spec_flags flags)
+{
+	ps->flags = flags;
+
+	pkg_spec_blank(ps);
+	pkg_spec_iter_blank(ps);
 }
 
 const char *
@@ -111,151 +66,226 @@ pkg_spec_is_illegal(struct pkg_spec *ps)
 	const char *emsg;
 
 	if (!ps->name_is_pattern &&
-	    (emsg = pkg_name_is_illegal(ps->name, NULL))) {
-		snprintf(msg, 1024, _("package name in specifier '%s%s%s' is "
-		                      "illegal: %s"), ps->name,
-		         (ps->arch->type != arch_none) ? ":" : "",
+	    (emsg = pkg_name_is_illegal(ps->name))) {
+		snprintf(msg, sizeof(msg),
+		         _("illegal package name in specifier '%s%s%s': %s"),
+		         ps->name, (ps->arch->type != arch_none) ? ":" : "",
 		         ps->arch->name, emsg);
 		return msg;
 	}
 
-	if (!ps->arch_is_pattern && ps->arch->type == arch_illegal) {
+	if ((!ps->arch_is_pattern && ps->arch->type == arch_illegal) ||
+	    ps->arch->type == arch_empty) {
 		emsg = dpkg_arch_name_is_illegal(ps->arch->name);
-		snprintf(msg, 1024, _("architecture name in specifier '%s%s%s' "
-		                      "is illegal: %s"), ps->name,
-		         (ps->arch->type != arch_none) ? ":" : "",
-		         ps->arch->name, emsg);
+		snprintf(msg, sizeof(msg),
+		         _("illegal architecture name in specifier '%s:%s': %s"),
+		         ps->name, ps->arch->name, emsg);
 		return msg;
+	}
+
+	/* If we have been requested a single instance, check that the
+	 * package does not contain other instances. */
+	if (!ps->arch_is_pattern && ps->flags & psf_arch_def_single) {
+		struct pkgset *set;
+
+		set = pkg_db_find_set(ps->name);
+
+		/* Single instancing only applies with no architecture. */
+		if (ps->arch->type == arch_none &&
+		    pkgset_installed_instances(set) > 1) {
+			ps->arch = dpkg_arch_get(arch_native);
+		}
 	}
 
 	return NULL;
 }
 
-struct pkginfo *
-pkg_spec_find_pkg(struct pkg_spec *ps, const char *string)
+static const char *
+pkg_spec_prep(struct pkg_spec *ps, char *pkgname, const char *archname)
 {
-	struct pkginfo *pkg = NULL;
-	const char *emsg;
+	ps->name = pkgname;
+	ps->arch = dpkg_arch_find(archname);
 
-	if (ps->flags & (psf_patterns | psf_def_wildcard))
-		internerr("pkg_spec_find_pkg() incompatible with patterns");
+	ps->name_is_pattern = false;
+	ps->arch_is_pattern = false;
 
-	if (string)
-		pkg_spec_parse(ps, string);
+	/* Detect if we have patterns and/or illegal names. */
+	if ((ps->flags & psf_patterns) && strpbrk(ps->name, "*[?\\"))
+		ps->name_is_pattern = true;
 
-	emsg = pkg_spec_is_illegal(ps);
-	if (emsg)
-		ohshit("%s", emsg);
+	if ((ps->flags & psf_patterns) && strpbrk(ps->arch->name, "*[?\\"))
+		ps->arch_is_pattern = true;
 
-	pkg = pkg_db_find_pkg(ps->name, ps->arch);
-	if (!pkg_spec_match_flags(ps, pkg))
-		pkg = NULL;
+	return pkg_spec_is_illegal(ps);
+}
 
-	if (string)
-		pkg_spec_reset(ps);
+const char *
+pkg_spec_set(struct pkg_spec *ps, const char *pkgname, const char *archname)
+{
+	return pkg_spec_prep(ps, m_strdup(pkgname), archname);
+}
 
-	return pkg;
+const char *
+pkg_spec_parse(struct pkg_spec *ps, const char *str)
+{
+	char *pkgname, *archname;
+
+	archname = strchr(str, ':');
+	if (archname == NULL) {
+		pkgname = m_strdup(str);
+	} else {
+		pkgname = m_strndup(str, archname - str);
+		archname++;
+	}
+
+	return pkg_spec_prep(ps, pkgname, archname);
 }
 
 static bool
-pkg_spec_match_arch(struct pkg_spec *ps, const struct dpkg_arch *arch)
+pkg_spec_match_name(struct pkg_spec *ps, const char *name)
+{
+	if (ps->name_is_pattern)
+		return (fnmatch(ps->name, name, 0) == 0);
+	else
+		return (strcmp(ps->name, name) == 0);
+}
+
+static bool
+pkg_spec_match_arch(struct pkg_spec *ps, struct pkginfo *pkg,
+                    const struct dpkg_arch *arch)
 {
 	if (ps->arch_is_pattern)
 		return (fnmatch(ps->arch->name, arch->name, 0) == 0);
 	else if (ps->arch->type != arch_none) /* !arch_is_pattern */
 		return (ps->arch == arch);
 
-	/* No arch specified  */
-	switch (ps->flags & psf_def_mask) {
-	case psf_def_native:
-		return (arch->type == arch_native || arch->type == arch_all ||
-		        arch->type == arch_none);
-	case psf_def_wildcard:
+	/* No arch specified. */
+	switch (ps->flags & psf_arch_def_mask) {
+	case psf_arch_def_single:
+		return pkgset_installed_instances(pkg->set) <= 1;
+	case psf_arch_def_wildcard:
 		return true;
 	default:
-		internerr("multiple/unknown/no psf_def_* configured in pkg_spec");
+		internerr("unknown psf_arch_def_* flags %d in pkg_spec",
+		          ps->flags & psf_arch_def_mask);
 	}
-}
-
-static bool
-pkg_spec_match_pkgname(struct pkg_spec *ps, const char *name)
-{
-	if (ps->name_is_pattern) {
-		return (fnmatch(ps->name, name, 0) == 0);
-	} else {
-		return (strcmp(ps->name, name) == 0);
-	}
-}
-
-static bool
-pkg_spec_match_flags(struct pkg_spec *ps, struct pkginfo *pkg)
-{
-	if ((ps->flags & psf_skip_not_installed) &&
-	    pkg->status == stat_notinstalled)
-		return false;
-	if ((ps->flags & psf_skip_config_files) && pkg &&
-	    pkg->status == stat_configfiles)
-		return false;
-	return true;
 }
 
 bool
 pkg_spec_match_pkg(struct pkg_spec *ps, struct pkginfo *pkg,
-                   struct pkgbin *pbin)
+                   struct pkgbin *pkgbin)
 {
-	return (pkg_spec_match_flags(ps, pkg) &&
-	        pkg_spec_match_arch(ps, pbin->arch) &&
-	        pkg_spec_match_pkgname(ps, pkg->set->name));
+	return (pkg_spec_match_name(ps, pkg->set->name) &&
+	        pkg_spec_match_arch(ps, pkg, pkgbin->arch));
 }
 
-static void
-pkg_spec_iter_reset(struct pkg_spec *ps)
+static struct pkginfo *
+pkg_spec_get_pkg(struct pkg_spec *ps)
 {
-	if (ps->pkg_iter) {
-		pkg_db_iter_free(ps->pkg_iter);
-		ps->pkg_iter = NULL;
+	if (ps->arch->type == arch_none)
+		return pkg_db_find_singleton(ps->name);
+	else
+		return pkg_db_find_pkg(ps->name, ps->arch);
+}
+
+struct pkginfo *
+pkg_spec_parse_pkg(const char *str, struct dpkg_error *err)
+{
+	struct pkg_spec ps;
+	struct pkginfo *pkg;
+	const char *emsg;
+
+	pkg_spec_init(&ps, psf_arch_def_single);
+	emsg = pkg_spec_parse(&ps, str);
+	if (emsg) {
+		dpkg_put_error(err, "%s", emsg);
+		pkg = NULL;
+	} else {
+		pkg = pkg_spec_get_pkg(&ps);
 	}
-	ps->pkg_next = NULL;
+	pkg_spec_destroy(&ps);
+
+	return pkg;
+}
+
+struct pkginfo *
+pkg_spec_find_pkg(const char *pkgname, const char *archname,
+                  struct dpkg_error *err)
+{
+	struct pkg_spec ps;
+	struct pkginfo *pkg;
+	const char *emsg;
+
+	pkg_spec_init(&ps, psf_arch_def_single);
+	emsg = pkg_spec_set(&ps, pkgname, archname);
+	if (emsg) {
+		dpkg_put_error(err, "%s", emsg);
+		pkg = NULL;
+	} else {
+		pkg = pkg_spec_get_pkg(&ps);
+	}
+	pkg_spec_destroy(&ps);
+
+	return pkg;
 }
 
 void
-pkg_spec_iter_start(struct pkg_spec *ps)
+pkg_spec_iter_init(struct pkg_spec *ps)
 {
-	/* Cleanup from previous run if needed */
-	pkg_spec_iter_reset(ps);
-	/* Initialize iteration variables */
-	if (ps->name_is_pattern) {
+	if (ps->name_is_pattern)
 		ps->pkg_iter = pkg_db_iter_new();
-	} else {
+	else
 		ps->pkg_next = &pkg_db_find_set(ps->name)->pkg;
+}
+
+static struct pkginfo *
+pkg_spec_iter_next_pkgname(struct pkg_spec *ps)
+{
+	struct pkginfo *pkg;
+
+	while ((pkg = pkg_db_iter_next_pkg(ps->pkg_iter))) {
+		if (pkg_spec_match_pkg(ps, pkg, &pkg->installed))
+			return pkg;
 	}
+
+	return NULL;
+}
+
+static struct pkginfo *
+pkg_spec_iter_next_pkgarch(struct pkg_spec *ps)
+{
+	struct pkginfo *pkg;
+
+	while ((pkg = ps->pkg_next)) {
+		ps->pkg_next = pkg->arch_next;
+
+		if (pkg_spec_match_arch(ps, pkg, pkg->installed.arch))
+			return pkg;
+	}
+
+	return NULL;
 }
 
 struct pkginfo *
 pkg_spec_iter_next_pkg(struct pkg_spec *ps)
 {
-	struct pkginfo *r;
-	struct pkgset *set;
+	if (ps->name_is_pattern)
+		return pkg_spec_iter_next_pkgname(ps);
+	else
+		return pkg_spec_iter_next_pkgarch(ps);
+}
 
-loop_arch:
-	/* Loop over all architectures and return the matching ones */
-	while (ps->pkg_next) {
-		r = ps->pkg_next;
-		ps->pkg_next = r->arch_next;
-		if (pkg_spec_match_flags(ps, r) &&
-		    pkg_spec_match_arch(ps, r->installed.arch))
-			return r;
-	}
+void
+pkg_spec_iter_destroy(struct pkg_spec *ps)
+{
+	pkg_db_iter_free(ps->pkg_iter);
+	pkg_spec_iter_blank(ps);
+}
 
-	/* Iterate over other package sets when needed */
-	if (!ps->pkg_iter)
-		return NULL;
-
-	while ((set = pkg_db_iter_next_set(ps->pkg_iter))) {
-		if (!pkg_spec_match_pkgname(ps, set->name))
-			continue;
-		ps->pkg_next = &set->pkg;
-		goto loop_arch;
-	}
-	return NULL;
+void
+pkg_spec_destroy(struct pkg_spec *ps)
+{
+	free(ps->name);
+	pkg_spec_blank(ps);
+	pkg_spec_iter_destroy(ps);
 }

@@ -1,5 +1,5 @@
 /*
- * dpkg - main program for package management
+ * libdpkg - Debian packaging suite library routines
  * trigdeferred.l - parsing of triggers/Deferred
  *
  * Copyright © 2007 Canonical Ltd
@@ -16,7 +16,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 %option prefix="trigdef_yy"
@@ -28,15 +28,17 @@
 %option nodefault
 %option perf-report
 %option warn
+%option noinput
 %option nounput
 
 %x midline
 
-%{
-
+%top {
 #include <config.h>
 #include <compat.h>
+}
 
+%{
 #include <sys/stat.h>
 #include <sys/fcntl.h>
 
@@ -48,7 +50,6 @@
 #include <dpkg/trigdeferred.h>
 #include <dpkg/triglib.h>
 
-#define YY_NO_INPUT
 #define YY_DECL int trigdef_parse(void)
 
 static struct varbuf fn, newfn;
@@ -101,6 +102,7 @@ constructfn(struct varbuf *vb, const char *dir, const char *tail)
 {
 	varbuf_reset(vb);
 	varbuf_add_str(vb, dir);
+	varbuf_add_char(vb, '/');
 	varbuf_add_str(vb, tail);
 	varbuf_end_str(vb);
 }

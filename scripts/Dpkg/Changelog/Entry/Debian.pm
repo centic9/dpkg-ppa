@@ -1,4 +1,5 @@
 # Copyright © 2009 Raphaël Hertzog <hertzog@debian.org>
+# Copyright © 2012-2013 Guillem Jover <guillem@debian.org>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -11,23 +12,25 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 package Dpkg::Changelog::Entry::Debian;
 
 use strict;
 use warnings;
 
-our $VERSION = "1.00";
+our $VERSION = '1.01';
 
-use Exporter;
+use Exporter qw(import);
 use Dpkg::Changelog::Entry;
-use base qw(Exporter Dpkg::Changelog::Entry);
-our @EXPORT_OK = qw($regex_header $regex_trailer find_closes);
+use parent qw(Dpkg::Changelog::Entry);
+our @EXPORT_OK = qw(match_header match_trailer find_closes
+                    $regex_header $regex_trailer);
 
 use Date::Parse;
 
 use Dpkg::Gettext;
+use Dpkg::Control::Fields;
 use Dpkg::Control::Changelog;
 use Dpkg::Version;
 
@@ -43,21 +46,22 @@ This object represents a Debian changelog entry. It implements the
 generic interface Dpkg::Changelog::Entry. Only functions specific to this
 implementation are described below.
 
-=head1 VARIABLES
-
-$regex_header, $regex_trailer are two regular expressions that can be used
-to match a line and know whether it's a valid header/trailer line.
-
-The matched content for $regex_header is the source package name ($1), the
-version ($2), the target distributions ($3) and the options on the rest
-of the line ($4). For $regex_trailer, it's the maintainer name ($1), its
-email ($2), some blanks ($3) and the timestamp ($4).
-
 =cut
 
 my $name_chars = qr/[-+0-9a-z.]/i;
-our $regex_header = qr/^(\w$name_chars*) \(([^\(\) \t]+)\)((?:\s+$name_chars+)+)\;(.*)$/i;
+
+# XXX: Backwards compatibility, stop exporting on VERSION 2.00.
+## no critic (Variables::ProhibitPackageVars)
+
+# The matched content is the source package name ($1), the version ($2),
+# the target distributions ($3) and the options on the rest of the line ($4).
+our $regex_header = qr/^(\w$name_chars*) \(([^\(\) \t]+)\)((?:\s+$name_chars+)+)\;(.*?)\s*$/i;
+
+# The matched content is the maintainer name ($1), its email ($2),
+# some blanks ($3) and the timestamp ($4).
 our $regex_trailer = qr/^ \-\- (.*) <(.*)>(  ?)((\w+\,\s*)?\d{1,2}\s+\w+\s+\d{4}\s+\d{1,2}:\d\d:\d\d\s+[-+]\d{4}(\s+\([^\\\(\)]\))?)\s*$/o;
+
+## use critic
 
 =head1 FUNCTIONS
 
@@ -76,7 +80,7 @@ following line necessarily starts a new item).
 sub get_change_items {
     my ($self) = @_;
     my (@items, @blanks, $item);
-    foreach my $line (@{$self->get_part("changes")}) {
+    foreach my $line (@{$self->get_part('changes')}) {
 	if ($line =~ /^\s*\*/) {
 	    push @items, $item if defined $item;
 	    $item = "$line\n";
@@ -114,7 +118,7 @@ sub check_header {
     my ($self) = @_;
     my @errors;
     if (defined($self->{header}) and $self->{header} =~ $regex_header) {
-	my $options = $4;
+	my ($version, $options) = ($2, $4);
 	$options =~ s/^\s+//;
 	my %optdone;
 	foreach my $opt (split(/\s*,\s*/, $options)) {
@@ -122,18 +126,25 @@ sub check_header {
 		push @errors, sprintf(_g("bad key-value after \`;': \`%s'"), $opt);
 		next;
 	    }
-	    my ($k, $v) = (ucfirst($1), $2);
+	    my ($k, $v) = (field_capitalize($1), $2);
 	    if ($optdone{$k}) {
-		push @errors, sprintf(_g("repeated key-value %s"), $k);
+		push @errors, sprintf(_g('repeated key-value %s'), $k);
 	    }
 	    $optdone{$k} = 1;
 	    if ($k eq 'Urgency') {
-		push @errors, sprintf(_g("badly formatted urgency value: %s"), $v)
+		push @errors, sprintf(_g('badly formatted urgency value: %s'), $v)
 		    unless ($v =~ m/^([-0-9a-z]+)((\s+.*)?)$/i);
+	    } elsif ($k eq 'Binary-Only') {
+		push @errors, sprintf(_g('bad binary-only value: %s'), $v)
+		    unless ($v eq 'yes');
 	    } elsif ($k =~ m/^X[BCS]+-/i) {
 	    } else {
-		push @errors, sprintf(_g("unknown key-value %s"), $k);
+		push @errors, sprintf(_g('unknown key-value %s'), $k);
 	    }
+	}
+	my ($ok, $msg) = version_check($version);
+	unless ($ok) {
+	    push @errors, sprintf(_g("version '%s' is invalid: %s"), $version, $msg);
 	}
     } else {
 	push @errors, _g("the header doesn't match the expected regex");
@@ -146,7 +157,7 @@ sub check_trailer {
     my @errors;
     if (defined($self->{trailer}) and $self->{trailer} =~ $regex_trailer) {
 	if ($3 ne '  ') {
-	    push @errors, _g("badly formatted trailer line");
+	    push @errors, _g('badly formatted trailer line');
 	}
 	unless (defined str2time($4)) {
 	    push @errors, sprintf(_g("couldn't parse date %s"), $4);
@@ -175,7 +186,7 @@ sub get_source {
     if (defined($self->{header}) and $self->{header} =~ $regex_header) {
 	return $1;
     }
-    return undef;
+    return;
 }
 
 sub get_version {
@@ -183,7 +194,7 @@ sub get_version {
     if (defined($self->{header}) and $self->{header} =~ $regex_header) {
 	return Dpkg::Version->new($2);
     }
-    return undef;
+    return;
 }
 
 sub get_distributions {
@@ -195,8 +206,7 @@ sub get_distributions {
 	return @dists if wantarray;
 	return $dists[0];
     }
-    return () if wantarray;
-    return undef;
+    return;
 }
 
 sub get_optional_fields {
@@ -213,7 +223,7 @@ sub get_optional_fields {
     }
     my @closes = find_closes(join("\n", @{$self->{changes}}));
     if (@closes) {
-	$f->{Closes} = join(" ", @closes);
+	$f->{Closes} = join(' ', @closes);
     }
     return $f;
 }
@@ -225,7 +235,7 @@ sub get_urgency {
 	$f->{Urgency} =~ s/\s.*$//;
 	return lc($f->{Urgency});
     }
-    return undef;
+    return;
 }
 
 sub get_maintainer {
@@ -233,7 +243,7 @@ sub get_maintainer {
     if (defined($self->{trailer}) and $self->{trailer} =~ $regex_trailer) {
 	return "$1 <$2>";
     }
-    return undef;
+    return;
 }
 
 sub get_timestamp {
@@ -241,14 +251,40 @@ sub get_timestamp {
     if (defined($self->{trailer}) and $self->{trailer} =~ $regex_trailer) {
 	return $4;
     }
-    return undef;
+    return;
 }
 
 =back
 
 =head1 UTILITY FUNCTIONS
 
-=head3 my @closed_bugs = find_closes($changes)
+=over 4
+
+=item my $bool = match_header($line)
+
+Checks if the line matches a valid changelog header line.
+
+=cut
+
+sub match_header {
+    my ($line) = @_;
+
+    return $line =~ /$regex_header/;
+}
+
+=item my $bool = match_trailer($line)
+
+Checks if the line matches a valid changelog trailing line.
+
+=cut
+
+sub match_trailer {
+    my ($line) = @_;
+
+    return $line =~ /$regex_trailer/;
+}
+
+=item my @closed_bugs = find_closes($changes)
 
 Takes one string as argument and finds "Closes: #123456, #654321" statements
 as supported by the Debian Archive software in it. Returns all closed bug
@@ -268,6 +304,15 @@ sub find_closes {
     my @closes = sort { $a <=> $b } keys %closes;
     return @closes;
 }
+
+=back
+
+=head1 CHANGES
+
+=head2 Version 1.01
+
+New functions: match_header(), match_trailer()
+Deprecated variables: $regex_header, $regex_trailer
 
 =head1 AUTHOR
 

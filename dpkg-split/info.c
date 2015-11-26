@@ -3,6 +3,7 @@
  * info.c - information about split archives
  *
  * Copyright © 1995 Ian Jackson <ian@chiark.greenend.org.uk>
+ * Copyright © 2008-2012 Guillem Jover <guillem@debian.org>
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,7 +16,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
@@ -23,6 +24,7 @@
 
 #include <sys/stat.h>
 
+#include <errno.h>
 #include <limits.h>
 #include <ctype.h>
 #include <string.h>
@@ -37,7 +39,7 @@
 #include <dpkg/dpkg.h>
 #include <dpkg/dpkg-db.h>
 #include <dpkg/ar.h>
-#include <dpkg/myopt.h>
+#include <dpkg/options.h>
 
 #include "dpkg-split.h"
 
@@ -47,9 +49,12 @@ parse_intmax(const char *value, const char *fn, const char *what)
   intmax_t r;
   char *endp;
 
+  errno = 0;
   r = strtoimax(value, &endp, 10);
   if (value == endp || *endp)
     ohshit(_("file `%.250s' is corrupt - bad digit (code %d) in %s"),fn,*endp,what);
+  if (r < 0 || errno == ERANGE)
+    ohshit(_("file '%s' is corrupt; out of range integer in %s"), fn, what);
   return r;
 }
 
@@ -80,6 +85,7 @@ struct partinfo *read_info(FILE *partfile, const char *fn, struct partinfo *ir) 
   size_t thisilen;
   intmax_t templong;
   char magicbuf[sizeof(DPKG_AR_MAGIC) - 1], *rip, *partnums, *slash;
+  const char *err;
   struct ar_hdr arh;
   int c;
   struct stat stab;
@@ -99,7 +105,7 @@ struct partinfo *read_info(FILE *partfile, const char *fn, struct partinfo *ir) 
 
   if (strncmp(arh.ar_name, PARTMAGIC, sizeof(arh.ar_name)) != 0)
     return NULL;
-  if (memcmp(arh.ar_fmag,ARFMAG,sizeof(arh.ar_fmag)))
+  if (dpkg_ar_member_is_illegal(&arh))
     ohshit(_("file `%.250s' is corrupt - bad magic at end of first header"),fn);
   thisilen = dpkg_ar_member_get_size(fn, &arh);
   if (thisilen >= readinfobuflen) {
@@ -119,10 +125,13 @@ struct partinfo *read_info(FILE *partfile, const char *fn, struct partinfo *ir) 
   ir->filename= fn;
 
   rip= readinfobuf;
-  ir->fmtversion = nfstrsave(nextline(&rip, fn, _("format version number")));
-  if (strcmp(ir->fmtversion,SPLITVERSION))
-    ohshit(_("file `%.250s' is format version `%.250s' - you need a newer dpkg-split"),
-           fn,ir->fmtversion);
+  err = deb_version_parse(&ir->fmtversion,
+                          nextline(&rip, fn, _("format version number")));
+  if (err)
+    ohshit(_("file '%.250s' has invalid format version: %s"), fn, err);
+  if (ir->fmtversion.major != 2)
+    ohshit(_("file '%.250s' is format version %d.%d; get a newer dpkg-split"),
+           fn, ir->fmtversion.major, ir->fmtversion.minor);
 
   ir->package = nfstrsave(nextline(&rip, fn, _("package name")));
   ir->version = nfstrsave(nextline(&rip, fn, _("package version number")));
@@ -151,11 +160,18 @@ struct partinfo *read_info(FILE *partfile, const char *fn, struct partinfo *ir) 
     ohshit(_("file '%.250s' is corrupt - bad archive part number"),fn);
   ir->thispartn= templong;
 
+  /* If the package was created with dpkg 1.16.1 or later it will include
+   * the architecture. */
+  if (*rip != '\0')
+    ir->arch = nfstrsave(nextline(&rip, fn, _("package architecture")));
+  else
+    ir->arch = NULL;
+
   if (fread(&arh,1,sizeof(arh),partfile) != sizeof(arh)) rerreof(partfile,fn);
 
   dpkg_ar_normalize_name(&arh);
 
-  if (memcmp(arh.ar_fmag,ARFMAG,sizeof(arh.ar_fmag)))
+  if (dpkg_ar_member_is_illegal(&arh))
     ohshit(_("file `%.250s' is corrupt - bad magic at end of second header"),fn);
   if (strncmp(arh.ar_name,"data",4))
     ohshit(_("file `%.250s' is corrupt - second member is not data member"),fn);
@@ -200,9 +216,10 @@ void mustgetpartinfo(const char *filename, struct partinfo *ri) {
 
 void print_info(const struct partinfo *pi) {
   printf(_("%s:\n"
-         "    Part format version:            %s\n"
+         "    Part format version:            %d.%d\n"
          "    Part of package:                %s\n"
          "        ... version:                %s\n"
+         "        ... architecture:           %s\n"
          "        ... MD5 checksum:           %s\n"
          "        ... length:                 %jd bytes\n"
          "        ... split every:            %jd bytes\n"
@@ -211,9 +228,10 @@ void print_info(const struct partinfo *pi) {
          "    Part offset:                    %jd bytes\n"
          "    Part file size (used portion):  %jd bytes\n\n"),
          pi->filename,
-         pi->fmtversion,
+         pi->fmtversion.major, pi->fmtversion.minor,
          pi->package,
          pi->version,
+         pi->arch ? pi->arch : C_("architecture", "<unknown>"),
          pi->md5sum,
          (intmax_t)pi->orglength,
          (intmax_t)pi->maxpartlen,
@@ -224,7 +242,9 @@ void print_info(const struct partinfo *pi) {
          (intmax_t)pi->filesize);
 }
 
-void do_info(const char *const *argv) {
+int
+do_info(const char *const *argv)
+{
   const char *thisarg;
   struct partinfo *pi, ps;
   FILE *part;
@@ -245,4 +265,6 @@ void do_info(const char *const *argv) {
     }
     m_output(stdout, _("<standard output>"));
   }
+
+  return 0;
 }

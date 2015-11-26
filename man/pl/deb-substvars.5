@@ -1,10 +1,28 @@
-.\" Authors: Ian Jackson
+.\" dpkg manual page - deb-substvars(5)
+.\"
+.\" Copyright Â© 1995-1996 Ian Jackson <ian@chiark.chu.cam.ac.uk>
+.\" Copyright Â© 2000 Wichert Akkerman <wakkerma@debian.org>
+.\" Copyright Â© 2009-2010 RaphaÃ«l Hertzog <hertzog@debian.org>
+.\"
+.\" This is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <https://www.gnu.org/licenses/>.
+.
 .\"*******************************************************************
 .\"
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH deb\-substvars 5 2009\-07\-15 "Projekt Debiana" "programy pomocnicze dpkg"
+.TH deb\-substvars 5 2009\-07\-15 "Projekt Debian" "programy pomocnicze dpkg"
 .SH NAZWA
 deb\-substvars \- zmienne podstawiania ¼ród³owych pakietów Debiana
 .
@@ -31,19 +49,18 @@ jednak niektóre z tych pól s± u¿ywane oraz wymagane podczas budowania, gdy
 podstawienie nie zosta³o jeszcze wykonane. Dlatego nie mo¿na u¿ywaæ
 zmiennych w polach \fBPackage\fP, \fBSource\fP oraz \fBArchitecture\fP.
 
-Variable substitution happens on the content of the fields after they have
-been parsed, thus if you want a variable to expand over multiple lines you
-do not have to include a space after the newline. This is done implicitly
-when the field is output. For example, if the variable \fB${Description}\fP is
-set to "foo is bar.${Newline}foo is great." and if you have the following
-field:
+Podstawianie zmiennych ma miejsce na zawarto¶ci pól po ich przetworzeniu,
+tak wiêc aby rozwin±æ zmienn± w wiele wierszy nie nale¿y umieszczaæ spacji
+po znaku nowego wiersza. Jest to wykonywane jawnie, gdy pole jest
+wynikiem. Na przyk³ad, je¶li zmienna \fB${Description}\fP jest ustawiona na
+"foo is bar.${Newline}foo is great." i pole wygl±da nastêpuj±co:
 
  Description: foo application
   ${Description}
   .
   More text.
 
-It will result in:
+To wynikiem bêdzie:
 
  Description: foo application
   foo is bar.
@@ -123,23 +140,12 @@ ostrze¿enie i przyjmowana jest pusta warto¶æ zmiennej.
 \fBdebian/substvars\fP
 Lista zmiennych podstawiania i ich warto¶ci.
 .
-.SH B£ÊDY
-Punkt, w którym nastêpuje nadpisywanie pól w porównaniu do pewnych
-standardowych ustawieñ pól wyj¶ciowych jest do¶æ zagmatwany.
-
 .SH "ZOBACZ TAK¯E"
+.ad l
+.nh
 \fBdpkg\fP(1), \fBdpkg\-genchanges\fP(1), \fBdpkg\-gencontrol\fP(1),
 \fBdpkg\-shlibdeps\fP(1), \fBdpkg\-source\fP(1).
-.
-.SH AUTOR
-Copyright \(co 1995\-1996 Ian Jackson
-.br
-Copyright \(co 2000 Wichert Akkerman
-.sp
-Niniejszy program jest oprogramowaniem wolnym, sprawd¼ Powszechn± Licencjê
-Publiczn± GNU w wersji drugiej lub pó¼niejszej, by dowiedzieæ siê o
-warunkach dystrybucji. Brak JAKIEJKOLWIEK gwarancji.
-.SH "T£UMACZE"
+.SH T£UMACZE
 Piotr Roszatycki <dexter@debian.org>, 1999
 .br
 Bartosz Feñski <fenio@debian.org>, 2004-2005
@@ -147,3 +153,5 @@ Bartosz Feñski <fenio@debian.org>, 2004-2005
 Robert Luberda <robert@debian.org>, 2006-2008
 .br
 Wiktor Wandachowicz <siryes@gmail.com>, 2008
+.br
+Micha³ Ku³ach <michal.kulach@gmail.com>, 2012

@@ -1,6 +1,11 @@
 #line 2 "trigdeferred.c"
+#line 37 "trigdeferred.l"
+#include <config.h>
+#include <compat.h>
 
-#line 4 "trigdeferred.c"
+
+
+#line 9 "trigdeferred.c"
 
 #define  YY_INT_ALIGNED short int
 
@@ -492,7 +497,7 @@ int trigdef_yy_flex_debug = 0;
 char *trigdef_yytext;
 #line 1 "trigdeferred.l"
 /*
- * dpkg - main program for package management
+ * libdpkg - Debian packaging suite library routines
  * trigdeferred.l - parsing of triggers/Deferred
  *
  * Copyright © 2007 Canonical Ltd
@@ -509,16 +514,14 @@ char *trigdef_yytext;
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 /* Reset the name to the default value (instead of using "trigdeferred.c")
  * so that automake (ylwrap) can find it. */
+#define YY_NO_INPUT 1
 
-#line 36 "trigdeferred.l"
 
-#include <config.h>
-#include <compat.h>
-
+#line 42 "trigdeferred.l"
 #include <sys/stat.h>
 #include <sys/fcntl.h>
 
@@ -530,14 +533,13 @@ char *trigdef_yytext;
 #include <dpkg/trigdeferred.h>
 #include <dpkg/triglib.h>
 
-#define YY_NO_INPUT
 #define YY_DECL int trigdef_parse(void)
 
 static struct varbuf fn, newfn;
 
 static const struct trigdefmeths *trigdef;
 
-#line 541 "trigdeferred.c"
+#line 543 "trigdeferred.c"
 
 #define INITIAL 0
 #define midline 1
@@ -723,10 +725,10 @@ YY_DECL
 	register char *yy_cp, *yy_bp;
 	register int yy_act;
     
-#line 60 "trigdeferred.l"
+#line 61 "trigdeferred.l"
 
 
-#line 730 "trigdeferred.c"
+#line 732 "trigdeferred.c"
 
 	if ( !(yy_init) )
 		{
@@ -808,18 +810,18 @@ do_action:	/* This label is used only to access EOF actions. */
 case 1:
 /* rule 1 can match eol */
 YY_RULE_SETUP
-#line 62 "trigdeferred.l"
+#line 63 "trigdeferred.l"
 /* whitespace */
 	YY_BREAK
 case 2:
 /* rule 2 can match eol */
 YY_RULE_SETUP
-#line 63 "trigdeferred.l"
+#line 64 "trigdeferred.l"
 /* comments */
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 64 "trigdeferred.l"
+#line 65 "trigdeferred.l"
 {
 	trigdef->trig_begin(trigdef_yytext);
 	BEGIN(midline);
@@ -827,12 +829,12 @@ YY_RULE_SETUP
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 69 "trigdeferred.l"
+#line 70 "trigdeferred.l"
 /* whitespace */
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 70 "trigdeferred.l"
+#line 71 "trigdeferred.l"
 {
 	if (trigdef_yytext[0] == '-' && trigdef_yytext[1])
 		ohshit(_("invalid package name `%.250s' in triggers deferred "
@@ -843,21 +845,21 @@ YY_RULE_SETUP
 case 6:
 /* rule 6 can match eol */
 YY_RULE_SETUP
-#line 76 "trigdeferred.l"
+#line 77 "trigdeferred.l"
 {
 	trigdef->trig_end();
 	BEGIN(0);
 	}
 	YY_BREAK
 case YY_STATE_EOF(midline):
-#line 80 "trigdeferred.l"
+#line 81 "trigdeferred.l"
 {
 	ohshit(_("truncated triggers deferred file `%.250s'"), fn.buf);
 	}
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 84 "trigdeferred.l"
+#line 85 "trigdeferred.l"
 {
 	ohshit(_("syntax error in triggers deferred file `%.250s' at "
 	         "character `%s'%s"),
@@ -866,10 +868,10 @@ YY_RULE_SETUP
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 90 "trigdeferred.l"
+#line 91 "trigdeferred.l"
 YY_FATAL_ERROR( "flex scanner jammed" );
 	YY_BREAK
-#line 873 "trigdeferred.c"
+#line 875 "trigdeferred.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -1831,7 +1833,7 @@ void trigdef_yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 90 "trigdeferred.l"
+#line 91 "trigdeferred.l"
 
 
 
@@ -1847,6 +1849,7 @@ constructfn(struct varbuf *vb, const char *dir, const char *tail)
 {
 	varbuf_reset(vb);
 	varbuf_add_str(vb, dir);
+	varbuf_add_char(vb, '/');
 	varbuf_add_str(vb, tail);
 	varbuf_end_str(vb);
 }

@@ -1,9 +1,26 @@
+.\" dpkg manual page - dpkg-trigger(1)
+.\"
+.\" Copyright Â© 2008-2011 Guillem Jover <guillem@debian.org>
+.\"
+.\" This is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <https://www.gnu.org/licenses/>.
+.
 .\"*******************************************************************
 .\"
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH dpkg\-trigger 1 2009\-03\-15 Debianprojektet Dpkg\-sviten
+.TH dpkg\-trigger 1 2011\-08\-14 Debianprojektet Dpkg\-sviten
 .SH NAMN
 dpkg\-trigger \- ett verktyg för paketutlösare
 .
@@ -28,11 +45,12 @@ Okända utlösarnamnsyntaxer är ett fel för \fBdpkg\-trigger\fP.
 .TP 
 \fB\-\-check\-supported\fP
 Se om den \fBdpkg\fP som körs stöder utlösare (anropas vanligtvis från ett
-postinst\-skript). Avslutar med 0 om en \fBdpkg\fP med utlösarstöd har kört,
-eller 1 med ett felmeddelande på standard fel om inte. Det är dock normalt
-sett bättre att bara aktivera den önskade utlösaren med \fBdpkg\-trigger\fP.
+postinst\-skript). Avslutar med \fB0\fP om en \fBdpkg\fP med utlösarstöd har kört,
+eller \fB1\fP med ett felmeddelande på standard fel om inte. Det är dock
+normalt sett bättre att bara aktivera den önskade utlösaren med
+\fBdpkg\-trigger\fP.
 .TP 
-\fB\-h\fP, \fB\-\-help\fP
+\fB\-?\fP, \fB\-\-help\fP
 Visar hjälpskärm och avslutar.
 .TP 
 \fB\-\-version\fP
@@ -45,7 +63,7 @@ Visar version och avslutar.
 .TP 
 \fB\-\-by\-package=\fP\fIpaket\fP
 Överstyr den som väntar på en utlösare (sätts vanligen av \fBdpkg\fP genom
-miljövariabeln DPKG_MAINTSCRIPT_PACKAGE i utvecklarskript, för att namnge
+miljövariabeln \fBDPKG_MAINTSCRIPT_PACKAGE\fP i utvecklarskript, för att namnge
 det paket som skriptet tillhör, och detta används som standard).
 .TP 
 \fB\-\-no\-await\fP
@@ -58,8 +76,13 @@ har hanterat utlösaren.
 \fB\-\-no\-act\fP
 Bara testa, ändra inte på någonting.
 .
+.SH MILJÖVARIABLER
+.TP 
+\fBDPKG_ADMINDIR\fP
+If set and the \fB\-\-admindir\fP option has not been specified, it will be used
+as the \fBdpkg\fP data directory.
+.
 .SH "SE ÄVEN"
 \fBdpkg\fP(1), \fBdeb\-triggers\fP(5), \fB/usr/share/doc/dpkg\-dev/triggers.txt.gz\fP.
-
-.SH "ÖVERSÄTTNING"
+.SH ÖVERSÄTTNING
 Peter Krefting och Daniel Nylander.

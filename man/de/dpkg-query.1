@@ -1,14 +1,34 @@
+.\" dpkg manual page - dpkg-query(1)
+.\"
+.\" Copyright Â© 2001 Wichert Akkerman <wakkerma@debian.org>
+.\" Copyright Â© 2006-2007 Frank Lichtenheld <djpig@debian.org>
+.\" Copyright Â© 2006-2012 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2008-2011 RaphaÃ«l Hertzog <hertzog@debian.org>
+.\"
+.\" This is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <https://www.gnu.org/licenses/>.
+.
 .\"*******************************************************************
 .\"
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH dpkg\-query 1 2010\-03\-07 Debian\-Projekt dpkg\-Programmsammlung
+.TH dpkg\-query 1 2012\-04\-03 Debian\-Projekt dpkg\-Programmsammlung
 .SH NAME
 dpkg\-query \- ein Werkzeug, um die dpkg\-Datenbank abzufragen
 .
 .SH ÜBERSICHT
-\fBdpkg\-query\fP [\fIOption\fP...] \fIBefehl\fP
+\fBdpkg\-query\fP [\fIOption\fP ?] \fIBefehl\fP
 .
 .SH BESCHREIBUNG
 \fBdpkg\-query\fP ist ein Werkzeug, um Informationen über Pakete zu zeigen, die
@@ -16,7 +36,7 @@ in der \fBdpkg\fP\-Datenbank aufgeführt sind.
 .
 .SH BEFEHLE
 .TP 
-\fB\-l\fP, \fB\-\-list\fP \fIPaketname\-Muster\fP ...
+\fB\-l\fP, \fB\-\-list\fP [\fIPaketname\-Muster\fP ?]
 Liste Pakete auf, deren Namen auf ein bestimmtes Muster passt. Falls kein
 \fIPaketname\-Muster\fP angegeben ist, liste alle Pakete in
 \fI/var/lib/dpkg/status\fP auf. Dabei werden alle Pakete ausgeschlossen, die
@@ -44,8 +64,8 @@ Gewünschte Aktion:
 
 Paketstatus:
 .nf
-  n = Nicht
-  c = Config
+  n = Nicht installiert
+  c = Config\-Datei
   H = Halb installiert
   U = Entpackt
   F = Fehlgeschl. Konfiguration
@@ -70,45 +90,62 @@ Leser gedacht und nicht leicht maschinenlesbar. Lesen Sie über die Optionen
 \fB\-W\fP (\fB\-\-show\fP) und \fB\-\-showformat\fP, um das Ausgabeformat zu
 konfigurieren.
 .TP 
-\fB\-W\fP, \fB\-\-show\fP \fIPaketname\-Muster\fP ...
+\fB\-W\fP, \fB\-\-show\fP [\fIPaketname\-Muster\fP ?]
 Genau wie die \fB\-\-list\fP\-Option wird dies alle Pakete, die auf das angegebene
 Muster passen, aufführen. Allerdings kann die Ausgabe mit der
 \fB\-\-showformat\fP\-Option angepasst werden. Im Standardausgabeformat wird eine
-Zeile pro passendem Paket ausgegeben, wobei in jeder Zeile Name und
+Zeile pro passendem Paket ausgegeben, wobei in jeder Zeile Name (erweitert
+mit dem Architektur\-Kennzeichner für \fBMulti\-Arch\fP\-\fBsame\fP\-Pakete) und
 installierte Version des Pakets getrennt durch einen Tabulator enthalten
 sind.
 .TP 
-\fB\-s\fP, \fB\-\-status\fP \fIPaketname\fP ...
+\fB\-s\fP, \fB\-\-status\fP \fIPaketname\fP ?
 Berichte Zustand des angegebenen Paketes. Dies zeigt nur den Eintrag in der
-Datenbank der Zustände der installierten Pakete.
+Datenbank der Zustände der installierten Pakete. Wenn mehrere \fIPaketname\fP
+aufgeführt sind, werden die angeforderten Statuseinträge durch Leerzeilen
+getrennt, wobei die Reihenfolge identisch zu der in der Argumentenliste ist.
 .TP 
-\fB\-L\fP, \fB\-\-listfiles\fP \fIPaketname\fP ...
-Aufführen von Dateien, die durch \fIPaketname\fP installiert wurden. Beachten
-Sie aber, dass Dateien, die durch Paket\-spezifische Installationsskripte
-angelegt wurden, nicht aufgeführt werden.
+\fB\-L\fP, \fB\-\-listfiles\fP \fIPaketname\fP ?
+Aufführen von Dateien, die durch \fIPaketname\fP installiert wurden. Wenn
+mehrere \fIPaketname\fP aufgeführt sind, werden die angeforderten Dateilisten
+durch Leerzeilen getrennt, wobei die Reihenfolge identisch zu der in der
+Argumentenliste ist. Beachten Sie aber, dass Dateien, die durch
+Paket\-spezifische Installationsskripte angelegt wurden, nicht aufgeführt
+werden.
+.TP 
+\fB\-\-control\-list\fP \fIPaketname\fP
+Aufführen von Steuerdateien, die auf Ihrem System von \fIPaketname\fP
+installiert wurden. Diese können als Eingabeargumente für \fB\-\-control\-show\fP
+verwandt werden.
+.TP 
+\fB\-\-control\-show\fP \fIPaketname\fP \fISteuerdatei\fP
+Die \fISteuerdatei\fP, die auf Ihrem System von \fIPaketname\fP installiert wurde,
+auf der Standardausgabe ausgeben.
 .TP 
 \fB\-c\fP, \fB\-\-control\-path\fP \fIPaketname\fP [\fISteuerdatei\fP]
 Listet die Pfade für Steuerdateien auf, die von \fIPaketname\fP auf Ihrem
 System installiert wurden. Falls \fISteuerdatei\fP angegeben wurde, liste nur
 den Pfad für diese Steuerdatei auf, falls sie existiert. \fBWarnung:\fP: Dieser
-Befehl ist halb\-öffentlich, er sollte nur als letzter Rettungsanker verwandt
-werden, falls keine weitere Schnittstelle verfügbar ist. Er könnte später
-veraltet werden, falls bessere Schnittstellen oder die aktuellen,
-Architektur\-bedingten Defizite gelöst wurden.
+Befehl ist veraltet, bitte verwenden Sie stattdessen \fB\-\-control\-list\fP und
+\fB\-\-control\-show\fP.
 .TP 
-\fB\-S\fP, \fB\-\-search\fP \fIDateiname\-Suchmuster\fP ...
-Suche nach einem Dateinamen aus einem installierten Paket. Alle
-Standard\-Jokerzeichen (»wildcards«) der Shell können in diesem Muster
-verwandt werden. Dieser Befehl wird weder die zusätzlichen Dateien, die
-durch Betreuer\-Skripte angelegt wurden, noch Alternativen aufführen.
+\fB\-S\fP, \fB\-\-search\fP \fIDateiname\-Suchmuster\fP ?
+Suche nach Paketen, denen Paketen, die auf ein bestimmtes Muster passen,
+gehören. Die normalen Jokerzeichen (»wildcards«) der Shell können in diesem
+Muster verwandt werden. Dieser Befehl wird weder die zusätzlichen Dateien,
+die durch Betreuer\-Skripte angelegt wurden, noch Alternativen aufführen.
 .TP 
-\fB\-p\fP, \fB\-\-print\-avail\fP \fIPaketname\fP
+\fB\-p\fP, \fB\-\-print\-avail\fP \fIPaketname\fP ?
 Zeige Details über \fIPaketname\fP an, wie diese in \fI/var/lib/dpkg/available\fP
-vorliegen. Benutzer APT\-basierter Oberflächen sollten \fBapt\-cache show\fP
-\fIPaketname\fP verwenden, da die Datei \fIavailable\fP nur bei der Benutzung von
-\fBdselect\fP aktuell bleibt.
+vorliegen. Wenn mehrere \fIPaketname\fP aufgeführt sind, werden die
+angeforderten \fIavailable\fP\-Einträge durch Leerzeilen getrennt, wobei die
+Reihenfolge identisch zu der in der Argumentenliste ist.
+
+Benutzer APT\-basierter Oberflächen sollten \fBapt\-cache show\fP \fIPaketname\fP
+verwenden, da die Datei \fIavailable\fP nur bei der Benutzung von \fBdselect\fP
+aktuell bleibt.
 .TP 
-\fB\-h\fP, \fB\-\-help\fP
+\fB\-?\fP, \fB\-\-help\fP
 Zeige den Bedienungshinweis und beende.
 .TP 
 \fB\-\-version\fP
@@ -119,6 +156,10 @@ Gebe die Version aus und beende sich.
 \fB\-\-admindir=\fP\fIVerz\fP
 Ändert den Ablageort der \fBdpkg\fP\-Datenbank. Der Standardort ist
 \fI/var/lib/dpkg\fP.
+.TP 
+\fB\-\-load\-avail\fP
+Auch die »available«\-Datei laden, wenn die Befehle \fB\-\-show\fP und \fB\-\-list\fP
+verwandt werden, die jetzt standardmnäßig nur die Statusdatei laden.
 .TP 
 \fB\-f\fP, \fB\-\-showformat=\fP\fIFormat\fP
 Diese Option wird dazu verwendet, das Format der Ausgabe anzugeben, das
@@ -156,11 +197,11 @@ Felder, die im Binärpaket abgespeichert sind, landen dort):
     \fBDescription\fP
     \fBEnhances\fP
     \fBEssential\fP
-    \fBFilename\fP (intern, Dselect\-bezogen)
+    \fBFilename\fP (intern, Oberflächen\-bezogen)
     \fBHomepage\fP
     \fBInstalled\-Size\fP
-    \fBMD5sum\fP (intern, Dselect\-bezogen)
-    \fBMSDOS\-Filename\fP (intern, Dselect\-bezogen)
+    \fBMD5sum\fP (intern, Oberflächen\-bezogen)
+    \fBMSDOS\-Filename\fP (intern, Oberflächen\-bezogen)
     \fBMaintainer\fP
     \fBOrigin\fP
     \fBPackage\fP
@@ -171,50 +212,67 @@ Felder, die im Binärpaket abgespeichert sind, landen dort):
     \fBReplaces\fP
     \fBRevision\fP (veraltet)
     \fBSection\fP
-    \fBSize\fP (intern, Dselect\-bezogen)
+    \fBSize\fP (intern, Oberflächen\-bezogen)
     \fBSource\fP
     \fBStatus\fP (intern)
     \fBSuggests\fP
-    \fBTag\fP (normalerweise nicht in dem .deb sondern in APTs Packages\-Dateien
+    \fBTag\fP (normalerweise nicht im .deb sondern in Packages\-Dateien des Depots)
     \fBTriggers\-Awaited\fP (intern)
     \fBTriggers\-Pending\fP (intern)
     \fBVersion\fP
+    \fBshow:Summary\fP (virtuell)
+    \fBshow:Status\-Abbrev\fP (virtuell)
+.fi
+
+Die folgenden Felder sind virtuell, sie werden von \fBdpkg\-query\fP aus Werten
+aus anderen Feldern erstellt (beachten Sie, dass diese keine gültigen Namen
+für Felder in Steuerdateien benutzen):
+
+.nf
+    \fBbinary:Package\fP
+    \fBbinary:Summary\fP
+    \fBdb:Status\-Abbrev\fP
+    \fBsource:Package\fP
+    \fBsource:Version\fP
 .fi
 
 Die Standard\-Formatzeichenkette ist
-\(lq\fB${Package}\et${Version}\en\fP\(rq. Tatsächlich können auch alle anderen
-Felder, die in der Statusdatei gefunden werden können
+\(lq\fB${binary:Package}\et${Version}\en\fP\(rq. Tatsächlich können auch alle
+anderen Felder, die in der Statusdatei gefunden werden können
 (d.h. benutzerdefinierte Felder), abgefragt werden. Sie werden so
 dargestellt, wie sie gefunden werden, es erfolgt keine Umwandlung oder
-Fehlerüberprüfung. Um den Namen des Dpkg\-Betreuers und die installierte
-Version zu erhalten, könnten Sie folgendes ausführen:
+Fehlerüberprüfung. \fBbinary:Package\fP ist ein besonderes Feld, das den
+Paketnamen mit einem Architektur\-Kennzeichner (wie »libc6:amd64«) ausgibt,
+falls das Paket ein Feld \fBMulti\-Arch\fP mit dem Wert \fBsame\fP trägt und daher
+der Name mehrdeutig sein könnte. Um den Namen des \fBdpkg\fP\-Betreuers und die
+installierte Version zu erhalten, könnten Sie folgendes ausführen:
 
 .nf
-  \fBdpkg\-query \-W \-f=\(aq${Package} ${Version}\et${Maintainer}\en\(aq dpkg\fP
+  \fBdpkg\-query \-W \-f=\(aq${binary:Package} ${Version}\et${Maintainer}\en\(aq dpkg\fP
 .fi
 .
 .SH RÜCKGABEWERT
-.IP 0
+.TP 
+\fB0\fP
 Die angeforderte Abfrage wurde erfolgreich ausgeführt.
-.IP 1
+.TP 
+\fB1\fP
 Beim Lesen der Kommandozeile oder beim Ausführen der Abfrage traten Probleme
 auf. Dazu gehören auch keine Datei oder Paket gefunden (außer für
-\-\-control\-path).
+\fB\-\-control\-path\fP).
 .
 .SH UMGEBUNG
+.TP 
+\fBDPKG_ADMINDIR\fP
+Falls gesetzt und die Option \fB\-\-admindir\fP nicht verwandt wurde, wird dies
+als Datenverzeichnis von \fBdpkg\fP verwandt.
 .TP 
 \fBCOLUMNS\fP
 Diese Einstellung beeinflusst die Ausgabe der \fB\-\-list\fP\-Option durch
 Verändern der Breite ihrer Ausgabe.
 .
-.SH AUTOR
-Copyright \(co 2001 Wichert Akkerman
-.sp
-Dies ist Freie Software; lesen Sie die GNU General Public License Version 2
-oder neuer für die Kopierbedingungen. Es gibt KEINE Haftung.
-.
 .SH ÜBERSETZUNG
-Die deutsche Übersetzung wurde 2004, 2006-2010 von Helge Kreutzmann
+Die deutsche Übersetzung wurde 2004, 2006-2013 von Helge Kreutzmann
 <debian@helgefjell.de>, 2007 von Florian Rehnisch <eixman@gmx.de> und
 2008 von Sven Joachim <svenjoac@gmx.de>
 angefertigt. Diese Übersetzung ist Freie Dokumentation; lesen Sie die

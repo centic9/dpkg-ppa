@@ -1,5 +1,9 @@
-.\" This manpage is copyright (C) 1996 Michael Shields <shields@crosslink.net>.
-.\" This is free software; you may redistribute it and/or modify
+.\" dpkg manual page - deb-override(5)
+.\"
+.\" Copyright Â© 1996 Michael Shields <shields@crosslink.net>
+.\" Copyright Â© 2010 RaphaÃ«l Hertzog <hertzog@debian.org>
+.\"
+.\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
 .\" the Free Software Foundation; either version 2 of the License, or
 .\" (at your option) any later version.
@@ -10,13 +14,14 @@
 .\" GNU General Public License for more details.
 .\"
 .\" You should have received a copy of the GNU General Public License
-.\" along with this program.  If not, see <http://www.gnu.org/licenses/>.
+.\" along with this program.  If not, see <https://www.gnu.org/licenses/>.
+.
 .\"*******************************************************************
 .\"
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH deb\-override 5 07\-03\-2007 "Projet Debian" "Utilitaires de dpkg"
+.TH deb\-override 5 14\-08\-2011 "Projet Debian" "Utilitaires de dpkg"
 .SH NOM
 deb\-override \- Fichier override d'une archive Debian
 .
@@ -42,10 +47,10 @@ concernant des paquets qui ne sont pas dans l'arborescence des paquets
 binaires sont ignorées.
 .PP
 \fIpriority\fP et \fIsection\fP correspondent respectivement aux champs de
-contrôle présent dans le fichier .deb. Les valeurs autorisée sont définies
+contrôle présents dans le fichier .deb. Les valeurs autorisées sont définies
 dans la Charte Debian.
 .PP
-L'élément \fIresponsable,\fP quand il existe, peut représenter soit le nom du
+L'élément \fIresponsable\fP, quand il existe, peut représenter soit le nom du
 responsable quand il s'agit d'un remplacement sans condition, soit la chaîne
 \fIancienresponsable\fP \fB=>\fP \fInouveauresponsable\fP pour un changement de
 responsable.
@@ -55,6 +60,8 @@ fichiers officiels «\ Packages\ », dans le répertoire \fIindices\fP des miroirs
 Debian.
 .
 .SH "VOIR AUSSI"
+.ad l
+.nh
 \fBdpkg\-scanpackages\fP(1), \fBdpkg\-scansources\fP(1), \fBapt\-ftparchive\fP(1),
 \fB/usr/share/doc/debian\-policy/policy.html/index.html\fP.
 .SH TRADUCTION

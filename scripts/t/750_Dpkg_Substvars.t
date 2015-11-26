@@ -1,4 +1,4 @@
-# -*- mode: cperl;-*-
+#!/usr/bin/perl
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -11,14 +11,14 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use Test::More tests => 26;
+use Test::More tests => 32;
 
 use strict;
 use warnings;
 
-use Dpkg qw($version);
+use Dpkg ();
 use Dpkg::Arch qw(get_host_arch);
 
 use_ok('Dpkg::Substvars');
@@ -46,9 +46,9 @@ is($s->get('var3'), undef, 'var3 deleted');
 
 # default variables
 is($s->get('Newline'), "\n", 'newline');
-is($s->get('Space'), " ", 'space');
+is($s->get('Space'), ' ', 'space');
 is($s->get('Tab'), "\t", 'tab');
-is($s->get('dpkg:Version'), $version, 'dpkg version 1');
+is($s->get('dpkg:Version'), $Dpkg::PROGVERSION, 'dpkg version 1');
 
 # special variables
 is($s->get('Arch'), undef, 'no arch');
@@ -56,48 +56,56 @@ $s->set_arch_substvars();
 is($s->get('Arch'), get_host_arch(),'arch');
 
 is($s->get($_), undef, 'no ' . $_) for qw/binary:Version source:Version source:Upstream-Version/;
-$s->set_version_substvars("1:2.3.4~5-6.7.8~nmu9+b0");
-is($s->get("binary:Version"), "1:2.3.4~5-6.7.8~nmu9+b0", "binary:Version");
-is($s->get("source:Version"), "1:2.3.4~5-6.7.8~nmu9", "source:Version");
-is($s->get("source:Upstream-Version"), "1:2.3.4~5", "source:Upstream-Version");
+$s->set_version_substvars('1:2.3.4~5-6.7.8~nmu9', '1:2.3.4~5-6.7.8~nmu9+bin0');
+is($s->get('binary:Version'), '1:2.3.4~5-6.7.8~nmu9+bin0', 'binary:Version');
+is($s->get('source:Version'), '1:2.3.4~5-6.7.8~nmu9', 'source:Version');
+is($s->get('source:Upstream-Version'), '1:2.3.4~5', 'source:Upstream-Version');
+$s->set_version_substvars('2.3.4~5-6.7.8~nmu9+b1', '1:2.3.4~5-6.7.8~nmu9+b1');
+is($s->get('binary:Version'), '1:2.3.4~5-6.7.8~nmu9+b1', 'binary:Version');
+is($s->get('source:Version'), '2.3.4~5-6.7.8~nmu9', 'source:Version');
+is($s->get('source:Upstream-Version'), '2.3.4~5', 'source:Upstream-Version');
+$s->set_version_substvars('1:2.3.4~5-6.7.8~nmu9+b0');
+is($s->get('binary:Version'), '1:2.3.4~5-6.7.8~nmu9+b0', 'binary:Version');
+is($s->get('source:Version'), '1:2.3.4~5-6.7.8~nmu9', 'source:Version');
+is($s->get('source:Upstream-Version'), '1:2.3.4~5', 'source:Upstream-Version');
 
 # Replace stuff
 is($s->substvars('This is a string ${var1} with variables ${binary:Version}'),
-                 "This is a string New value with variables 1:2.3.4~5-6.7.8~nmu9+b0",
-		 "substvars simple");
+                 'This is a string New value with variables 1:2.3.4~5-6.7.8~nmu9+b0',
+                 'substvars simple');
 
 my $output;
-$SIG{'__WARN__'} = sub { $output .= $_[0] };
+$SIG{__WARN__} = sub { $output .= $_[0] };
 is($s->substvars('This is a string with unknown variable ${blubb}'),
-                 "This is a string with unknown variable ",
-		 "substvars missing");
-delete $SIG{'__WARN__'};
+                 'This is a string with unknown variable ',
+                 'substvars missing');
+delete $SIG{__WARN__};
 is($output, '750_Dpkg_Substvars.t: warning: unknown substitution variable ${blubb}'."\n"
           , 'missing variables warning');
 
 # Recursive replace
-$s->set("rvar", 'recursive ${var1}');
+$s->set('rvar', 'recursive ${var1}');
 is($s->substvars('This is a string with ${rvar}'),
-                 "This is a string with recursive New value",
-		 "substvars recursive");
+                 'This is a string with recursive New value',
+                 'substvars recursive');
 
 # Strange input
 is($s->substvars('Nothing to $ ${substitute  here}, is it ${}?, it ${is'),
                  'Nothing to $ ${substitute  here}, is it ${}?, it ${is',
-		 "substvars strange");
+                 'substvars strange');
 
 # Warnings about unused variables
 $output = '';
-$SIG{'__WARN__'} = sub { $output .= $_[0] };
+$SIG{__WARN__} = sub { $output .= $_[0] };
 $s->warn_about_unused();
-delete $SIG{'__WARN__'};
+delete $SIG{__WARN__};
 is($output, "750_Dpkg_Substvars.t: warning: unused substitution variable \${var2}\n",
           , 'unused variables warnings');
 
 # Disable warnings for a certain variable
-$s->no_warn('var2');
+$s->mark_as_used('var2');
 $output = '';
-$SIG{'__WARN__'} = sub { $output .= $_[0] };
+$SIG{__WARN__} = sub { $output .= $_[0] };
 $s->warn_about_unused();
-delete $SIG{'__WARN__'};
+delete $SIG{__WARN__};
 is($output, '', 'disabled unused variables warnings');

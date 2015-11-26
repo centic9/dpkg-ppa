@@ -3,6 +3,8 @@
 # dpkg-checkbuilddeps
 #
 # Copyright © 2001 Joey Hess <joeyh@debian.org>
+# Copyright © 2006-2009,2011-2012 Guillem Jover <guillem@debian.org>
+# Copyright © 2007-2011 Raphael Hertzog <hertzog@debian.org>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,60 +17,79 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use strict;
 use warnings;
 
 use Getopt::Long qw(:config posix_default bundling no_ignorecase);
 
-use Dpkg;
+use Dpkg ();
 use Dpkg::Gettext;
 use Dpkg::ErrorHandling;
 use Dpkg::Arch qw(get_host_arch);
+use Dpkg::BuildProfiles qw(get_build_profiles set_build_profiles);
 use Dpkg::Deps;
 use Dpkg::Control::Info;
 
-textdomain("dpkg-dev");
+textdomain('dpkg-dev');
 
 sub version()
 {
-	printf(_g("Debian %s version %s.\n"), $progname, $version);
+	printf(_g("Debian %s version %s.\n"), $Dpkg::PROGNAME, $Dpkg::PROGVERSION);
 	exit(0);
 }
 
 sub usage {
 	printf _g(
-"Usage: %s [<option>...] [<control-file>]")
+'Usage: %s [<option>...] [<control-file>]')
 	. "\n\n" . _g(
-"Options:
-  -B             binary-only, ignore -Indep.
+'Options:
+  -A             ignore Build-Depends-Arch and Build-Conflicts-Arch.
+  -B             ignore Build-Depends-Indep and Build-Conflicts-Indep.
   -d build-deps  use given string as build dependencies instead of
                  retrieving them from control file
   -c build-conf  use given string for build conflicts instead of
                  retrieving them from control file
+  -a arch        assume given host architecture
+  -P profiles    assume given build profiles (comma-separated list)
   --admindir=<directory>
                  change the administrative directory.
-  -h, --help     show this help message.
-      --version  show the version.")
+  -?, --help     show this help message.
+      --version  show the version.')
 	. "\n\n" . _g(
-"<control-file> is the control file to process (default: debian/control).")
-	. "\n", $progname;
+'<control-file> is the control file to process (default: debian/control).')
+	. "\n", $Dpkg::PROGNAME;
 }
 
-my $binary_only=0;
+my $ignore_bd_arch = 0;
+my $ignore_bd_indep = 0;
 my ($bd_value, $bc_value);
-if (!GetOptions('B' => \$binary_only,
-                'help|h' => sub { usage(); exit(0); },
-                'version' => \&version,
-                'd=s' => \$bd_value,
-                'c=s' => \$bc_value,
-                'admindir=s' => \$admindir)) {
-	usage();
-	exit(2);
+my $bp_value;
+my $host_arch = get_host_arch();
+my $admindir = $Dpkg::ADMINDIR;
+my @options_spec = (
+    'help|?' => sub { usage(); exit(0); },
+    'version' => \&version,
+    'A' => \$ignore_bd_arch,
+    'B' => \$ignore_bd_indep,
+    'd=s' => \$bd_value,
+    'c=s' => \$bc_value,
+    'a=s' => \$host_arch,
+    'P=s' => \$bp_value,
+    'admindir=s' => \$admindir,
+);
+
+{
+    local $SIG{__WARN__} = sub { usageerr($_[0]) };
+    GetOptions(@options_spec);
 }
 
-my $controlfile = shift || "debian/control";
+# Update currently active build profiles.
+set_build_profiles(split(/,/, $bp_value)) if ($bp_value);
+my @build_profiles = get_build_profiles();
+
+my $controlfile = shift || 'debian/control';
 
 my $control = Dpkg::Control::Info->new($controlfile);
 my $fields = $control->get_source();
@@ -76,55 +97,59 @@ my $fields = $control->get_source();
 my $facts = parse_status("$admindir/status");
 
 unless (defined($bd_value) or defined($bc_value)) {
-    $bd_value = 'build-essential';
-    $bd_value .= ", " . $fields->{"Build-Depends"} if defined $fields->{"Build-Depends"};
-    if (not $binary_only and defined $fields->{"Build-Depends-Indep"}) {
-	$bd_value .= ", " . $fields->{"Build-Depends-Indep"};
-    }
-    $bc_value = $fields->{"Build-Conflicts"} if defined $fields->{"Build-Conflicts"};
-    if (not $binary_only and defined $fields->{"Build-Conflicts-Indep"}) {
-	if ($bc_value) {
-	    $bc_value .= ", " . $fields->{"Build-Conflicts-Indep"};
-	} else {
-	    $bc_value = $fields->{"Build-Conflicts-Indep"};
-	}
-    }
+    my @bd_list = ('build-essential:native', $fields->{'Build-Depends'});
+    push @bd_list, $fields->{'Build-Depends-Arch'} if not $ignore_bd_arch;
+    push @bd_list, $fields->{'Build-Depends-Indep'} if not $ignore_bd_indep;
+    $bd_value = deps_concat(@bd_list);
+
+    my @bc_list = ($fields->{'Build-Conflicts'});
+    push @bc_list, $fields->{'Build-Conflicts-Arch'} if not $ignore_bd_arch;
+    push @bc_list, $fields->{'Build-Conflicts-Indep'} if not $ignore_bd_indep;
+    $bc_value = deps_concat(@bc_list);
 }
 my (@unmet, @conflicts);
 
 if ($bd_value) {
-	push @unmet, build_depends('Build-Depends/Build-Depends-Indep)',
-		deps_parse($bd_value, reduce_arch => 1), $facts);
+	push @unmet, build_depends('Build-Depends/Build-Depends-Arch/Build-Depends-Indep',
+		deps_parse($bd_value, reduce_restrictions => 1, build_dep => 1,
+			   build_profiles => \@build_profiles,
+			   host_arch => $host_arch), $facts);
 }
 if ($bc_value) {
-	push @conflicts, build_conflicts('Build-Conflicts/Build-Conflicts-Indep',
-		deps_parse($bc_value, reduce_arch => 1, union => 1), $facts);
+	push @conflicts, build_conflicts('Build-Conflicts/Build-Conflicts-Arch/Build-Conflicts-Indep',
+		deps_parse($bc_value, reduce_restrictions => 1, build_dep => 1,
+			   build_profiles => \@build_profiles, union => 1,
+			   host_arch => $host_arch), $facts);
 }
 
 if (@unmet) {
-	printf STDERR _g("%s: Unmet build dependencies: "), $progname;
-	print STDERR join(" ", map { $_->output() } @unmet), "\n";
+	printf { *STDERR } _g('%s: Unmet build dependencies: '), $Dpkg::PROGNAME;
+	print { *STDERR } join(' ', map { $_->output() } @unmet), "\n";
 }
 if (@conflicts) {
-	printf STDERR _g("%s: Build conflicts: "), $progname;
-	print STDERR join(" ", map { $_->output() } @conflicts), "\n";
+	printf { *STDERR } _g('%s: Build conflicts: '), $Dpkg::PROGNAME;
+	print { *STDERR } join(' ', map { $_->output() } @conflicts), "\n";
 }
 exit 1 if @unmet || @conflicts;
 
 # Silly little status file parser that returns a Dpkg::Deps::KnownFacts
 sub parse_status {
 	my $status = shift;
-	
+
 	my $facts = Dpkg::Deps::KnownFacts->new();
 	local $/ = '';
-	open(STATUS, "<$status") || die "$status: $!\n";
-	while (<STATUS>) {
+	open(my $status_fh, '<', $status)
+		or syserr(_g('cannot open %s'), $status);
+	while (<$status_fh>) {
 		next unless /^Status: .*ok installed$/m;
-	
+
 		my ($package) = /^Package: (.*)$/m;
 		my ($version) = /^Version: (.*)$/m;
-		$facts->add_installed_package($package, $version);
-	
+		my ($arch) = /^Architecture: (.*)$/m;
+		my ($multiarch) = /^Multi-Arch: (.*)$/m;
+		$facts->add_installed_package($package, $version, $arch,
+		                              $multiarch);
+
 		if (/^Provides: (.*)$/m) {
 			my $provides = deps_parse($1, reduce_arch => 1, union => 1);
 			next if not defined $provides;
@@ -137,7 +162,7 @@ sub parse_status {
 			}
 		}
 	}
-	close STATUS;
+	close $status_fh;
 
 	return $facts;
 }
@@ -148,7 +173,7 @@ sub parse_status {
 #
 # Additional parameters that must be passed:
 # * A reference to a hash of all "ok installed" the packages on the system,
-#   with the hash key being the package name, and the value being the 
+#   with the hash key being the package name, and the value being the
 #   installed version.
 # * A reference to a hash, where the keys are package names, and the
 #   value is a true value iff some package installed on the system provides
@@ -175,13 +200,11 @@ sub check_line {
 	my $fieldname=shift;
 	my $dep_list=shift;
 	my $facts=shift;
-	my $host_arch = shift || get_host_arch();
-	chomp $host_arch;
 
 	my @unmet=();
 
 	unless(defined($dep_list)) {
-	    error(_g("error occurred while parsing %s"), $fieldname);
+	    error(_g('error occurred while parsing %s'), $fieldname);
 	}
 
 	if ($build_depends) {

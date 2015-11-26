@@ -1,15 +1,35 @@
+.\" dpkg manual page - dpkg-deb(1)
+.\"
+.\" Copyright Â© 1995-1996 Ian Jackson <ian@chiark.chu.cam.ac.uk>
+.\" Copyright Â© 1999 Wichert Akkerman <wakkerma@debian.org>
+.\" Copyright Â© 2006 Frank Lichtenheld <djpig@debian.org>
+.\" Copyright Â© 2007-2012 Guillem Jover <guillem@debian.org>
+.\"
+.\" This is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <https://www.gnu.org/licenses/>.
+.
 .\"*******************************************************************
 .\"
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH dpkg\-deb 1 "7 de Marzo de 2010" "Proyecto Debian" "Herramientas de dpkg"
+.TH dpkg\-deb 1 2013\-03\-27 "Proyecto Debian" "Herramientas de dpkg"
 .SH NOMBRE
 dpkg\-deb \- Herramienta de manipulación de archivos de paquete («.deb») de
 Debian
 .
 .SH SINOPSIS
-\fBdpkg\-deb\fP [\fIopciones\fP] \fIorden\fP
+\fBdpkg\-deb\fP [\fIopción\fP...] \fIorden\fP
 .
 .SH DESCRIPCIÓN
 \fBdpkg\-deb\fP empaqueta, desempaqueta y ofrece información sobre archivos de
@@ -17,9 +37,9 @@ Debian.
 .PP
 Use \fBdpkg\fP para instalar y eliminar paquetes de su sistema.
 .PP
-También puede invocar \fBdpkg\-deb\fP usando \fBdpkg\fP con cualquiera de las
-opciones que desee introducir a \fBdpkg\-deb\fP. \fBdpkg\fP notará que desea usar
-\fBdpkg\-deb\fP, y lo ejecutará por usted.
+También puede ejecutar \fBdpkg\-deb\fP usando \fBdpkg\fP con cualquiera de las
+opciones que desee introducir a \fBdpkg\-deb\fP. \fBdpkg\fP notará que desea
+utilizar \fBdpkg\-deb\fP, y lo ejecutará por usted.
 .
 .SH ÓRDENES
 .TP 
@@ -46,7 +66,7 @@ Si el archivo a crear ya existe se sobreescribirá.
 Si el segundo argumento es un directorio, \fBdpkg\-deb\fP escribirá en el
 fichero \fIpaquete\fP\fB_\fP\fIversión\fP\fB_\fP\fIarquitectura\fP\fB.deb\fP, o
 \fIpaquete\fP\fB_\fP\fIversión\fP\fB.deb\fP si el campo \fBArquitecture\fP no está presente
-en el fichero de control del paquete. No se debería usar la opción
+en el fichero de control del paquete. No se debería utilizar la opción
 \fB\-\-nocheck\fP cuando se especifica un directorio de destino en lugar de un
 fichero ya que \fBdpkg\-deb\fP necesita leer y analizar el fichero de control
 del paquete para así determinar qué nombre de archivo usar.
@@ -99,13 +119,22 @@ Se creará el \fIdirectorio\fP (pero no los directorios padre) de ser necesario,
 modificando sus permisos de acuerdo a los contenidos del paquete.
 .TP 
 \fB\-X\fP, \fB\-\-vextract\fP \fIdirectorio\-archivo\fP
-Similar a \fB\-\-extract\fP (\fB\-x\fP), pero muestra una lista de ficheros a medida
-que se extraen.
+Similar a \fB\-\-extract\fP (\fB\-x\fP) con \fB\-\-verbose\fP (\fB\-v\fP), que muestra una
+lista de ficheros a medida que se extraen.
+.TP 
+\fB\-R\fP, \fB\-\-raw\-extract\fP \fIdirectorio\-archivo\fP
+Extrae el árbol del sistema de ficheros de un archivo de paquete al
+directorio especificado, y los ficheros de información de control en un
+subdirectorio «DEBIAN» dentro del directorio especificado.
+
+El directorio de destino (pero no los directorios padre) se creará de ser
+necesario.
 .TP 
 \fB\-\-fsys\-tarfile\fP \fIarchivo\fP
 Extrae los datos del árbol de sistema de ficheros de un paquete binario,
-enviándolo por la salida estándar en formato \fBtar\fP. Se puede usar junto con
-\fBtar\fP para extraer un fichero específico del archivo de paquetes.
+enviándolo por la salida estándar en formato \fBtar\fP. Se puede utilizar junto
+con \fBtar\fP(1) para extraer un fichero específico de un archivo de
+paquetes. El archivo de entrada siempre se procesa de forma secuencial.
 .TP 
 \fB\-e\fP, \fB\-\-control\fP \fIarchivo\fP [\fIdirectorio\fP]
 Extrae los ficheros de información de control de un archivo de paquete al
@@ -117,7 +146,7 @@ del directorio actual.
 El directorio de destino (pero no los directorios padre) se creará de ser
 necesario.
 .TP 
-\fB\-h\fP, \fB\-\-help\fP
+\fB\-?\fP, \fB\-\-help\fP
 Muestra el modo de uso y termina.
 .TP 
 \fB\-\-version\fP
@@ -138,31 +167,49 @@ explicación de la opción \fB\-\-showformat\fP en \fBdpkg\-query\fP (1).
 
 El valor predefinido de este campo es «${Package}\et${Version}\en».
 .TP 
-\fB\-z\fP\fIcompress_level\fP
-Define el nivel de compresión a introducir al programa de compresión externo
-al construir un paquete.
+\fB\-z\fP\fInivel\-compresión\fP
+Define el nivel de compresión que utilizar para el sistema de de compresión
+al construir un paquete (el valor predeterminado es 9 para gzip y bzip, y 6
+para xz y lzma). Los valores permitidos son 0\-9 con: cero implica sin
+compresión para gzip, e implica nivel 1 de compresión para bzip2. Antes de
+la versión 1.16.2 de dpkg, el nivel cero equivalía a no comprimir para todos
+los sistemas de compresión.
 .TP 
-\fB\-Z\fP\fIcompress_type\fP
-Especifica el tipo de compresión a usar al construir un paquete. Los valores
-aceptados son \fIgzip\fP, \fIxz\fP, \fIbzip2\fP, \fIlzma\fP, y \fInone\fP (ninguno). El
-valor predefinido es \fIgzip\fP.
+\fB\-Z\fP\fIsistema\-de\-compresión\fP
+Specify which compression strategy to use on the compressor backend, when
+building a package (since dpkg 1.16.2). Allowed values are \fInone\fP (since
+dpkg 1.16.4), \fIfiltered\fP, \fIhuffman\fP, \fIrle\fP and \fIfixed\fP for gzip (since
+dpkg 1.17.0) and \fIextreme\fP for xz.
+.TP 
+\fB\-Z\fP\fItipo\-de\-compresión\fP
+Specify which compression type to use when building a package. Allowed
+values are \fIgzip\fP, \fIxz\fP, \fIbzip2\fP, \fIlzma\fP, and \fInone\fP (default is
+\fIxz\fP).
+.TP 
+\fB\-\-deb\-format=\fP\fIformat\fP
+Set the archive format version used when building (since dpkg 1.17.0).
+Allowed values are \fI2.0\fP for the new format, and \fI0.939000\fP for the old
+one (default is \fI2.0\fP).
+
+The old archive format is less easily parsed by non\-Debian tools and is now
+obsolete; its only use is when building packages to be parsed by versions of
+dpkg older than 0.93.76 (September 1995), which was released as i386 a.out
+only.
 .TP 
 \fB\-\-new\fP
-Asegura que \fBdpkg\-deb\fP construya un archivo con el «nuevo» formato. Éste es
-el comportamiento por omisión.
+This is a legacy alias for \fB\-\-deb\-format=2.0\fP.
 .TP 
 \fB\-\-old\fP
-Fuerza que \fBdpkg\-deb\fP construya un archivo con el formato antiguo
-(«old»). Este formato antiguo de archivo es más difícil de analizar por las
-herramientas que no forman parte de Debian, y a día de hoy está
-obsoleto. Sólo se usa al construir paquetes que versiones de dpkg anteriores
-a 0.93.76 (septiembre 1995) analizarán, la cual se distribuyó sólo para
-sistemas i386 en formato «a.out.»
+This is a legacy alias for \fB\-\-deb\-format=0.939000\fP.
 .TP 
 \fB\-\-nocheck\fP
 Impide las comprobaciones habituales de \fBdpkg\-deb \-\-build\fP sobre los
 contenidos del archivo. Puede construir cualquier archivo que desee, no
 importa lo mal que esté.
+.TP 
+\fB\-v\fP, \fB\-\-verbose\fP
+Activa la salida de información detallada. Actualmente, solo afecta a
+\fB\-\-extract\fP, provocando un funcionamiento similar a \fB\-\-vextract\fP.
 .TP 
 \fB\-D\fP, \fB\-\-debug\fP
 Activa los mensajes de depuración. No son muy interesantes.
@@ -172,6 +219,12 @@ Activa los mensajes de depuración. No son muy interesantes.
 \fBTMPDIR\fP
 Si se define, \fBdpkg\-deb\fP lo usará como el directorio en el que crear
 ficheros temporales y directorios.
+.
+.SH NOTAS
+¡No use \fBdpkg\-deb\fP para instalar software! Debe utilizar \fBdpkg\fP para
+asegurar que todos los ficheros se instalan en el sitio correcto, los
+scripts del paquete se ejecuten y que se registren los contenidos y estado
+el de éste.
 .
 .SH FALLOS
 \fBdpkg\-deb \-I\fP \fIpaquete1\fP\fB.deb\fP \fIpaquete2\fP\fB.deb\fP no funciona como
@@ -183,20 +236,10 @@ APT son capaces de autenticar paquetes obtenidos desde el repositorio dado,
 y la mayoría de estos ofrecen a día de hoy un fichero de sumas de control
 md5 generado por «debian/rules». Las herramientas de bajo nivel no tienen
 una compatibilidad directa con estos procesos.
-
-¡No use \fBdpkg\-deb\fP para instalar software! Debe usar \fBdpkg\fP para asegurar
-que todos los ficheros se instalan en el sitio correcto, los scripts del
-paquete se ejecuten y que se registren los contenidos y estado el de éste.
 .
 .SH "VÉASE TAMBIÉN"
 \fBdeb\fP(5), \fBdeb\-control\fP(5), \fBdpkg\fP(1), \fBdselect\fP(1).
-.
-.SH AUTOR
-Copyright \(co 1995\-1996 Ian Jackson
-.sp
-Esto es software libre; vea la versión 2 o posterior de la Licencia Pública
-General GNU para condiciones de copia. NO hay ninguna garantía.
-.SH "TRADUCTOR"
+.SH TRADUCTOR
 Rudy Godoy <rudy@kernel\-panik.org>,
 Rubén Porras <nahoo@inicia.es>,
 Bruno Barrera C. <bruno.barrera@igloo.cl>,

@@ -1,22 +1,39 @@
-.\" update\-alternatives.8
-.\" This man page is copyright 1997 Charles Briscoe-Smith
-.\" This is free documentation; you can redistribute it and/or modify
-.\" it under the terms of the GNU General Public License as published
-.\" by the Free Software Foundation; either version 2 of the License, or
-.\" (at your option) any later version.  There is NO WARRANTY.  You can
-.\" find the GNU GPL in /usr/share/common-licenses/GPL on any Debian system.
+.\" dpkg manual page - update-alternatives(8)
+.\"
+.\" Copyright Â© 1997-1998 Charles Briscoe-Smith
+.\" Copyright Â© 1999 Ben Collins <bcollins@debian.org>
+.\" Copyright Â© 2000 Wichert Akkerman <wakkerma@debian.org>
+.\" Copyright Â© 2003 Adam Heath <doogie@debian.org>
+.\" Copyright Â© 2005 Scott James Remnant <scott@netsplit.com>
+.\" Copyright Â© 2006-2012 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2008 Pierre Habouzit <madcoder@debian.org>
+.\" Copyright Â© 2009-2011 RaphaÃ«l Hertzog <hertzog@debian.org>
+.\"
+.\" This is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <https://www.gnu.org/licenses/>.
+.
 .\"*******************************************************************
 .\"
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH update\-alternatives 8 13\-04\-2009 "Projet Debian" "Utilitaires de dpkg"
+.TH update\-alternatives 8 31\-07\-2012 "Projet Debian" "Utilitaires de dpkg"
 .SH NOM
 update\-alternatives \- maintenance des liens symboliques déterminant les noms
 par défaut de certaines commandes
 .
 .SH SYNOPSIS
-\fBupdate\-alternatives\fP [\fIoptions\fP] \fIcommande\fP
+\fBupdate\-alternatives\fP [\fIoption\fP...] \fIcommande\fP
 .
 .SH DESCRIPTION
 \fBupdate\-alternatives\fP crée, enlève, conserve et affiche des informations
@@ -50,7 +67,7 @@ symbolique vers le fichier réellement visé. Les modifications faites par
 l'administrateur système sont ainsi confinées dans le répertoire \fI/etc\fP\ ;
 le FHS (lisez\-le) donne de Bonnes Raisons de faire ainsi.
 .PP
-Chaque fois qu'un paquet proposant un fichier pour une fonction déterminée,
+Chaque fois qu'un paquet, proposant un fichier pour une fonction déterminée,
 est installé, modifié ou désinstallé, \fBupdate\-alternatives\fP est appelé pour
 mettre à jour les informations concernant ce fichier dans le système des
 «\ alternatives\ ». En général, \fBupdate\-alternatives\fP est appelé dans les
@@ -58,7 +75,7 @@ scripts \fBpostinst\fP (configure) et \fBprerm\fP (install) des paquets Debian.
 .PP
 Il est souvent utile de synchroniser certaines alternatives, de manière à
 pouvoir les manipuler globalement\ ; par exemple, quand plusieurs versions de
-\fBvi\fP(1)  sont installées, la page de manuel qui est visée par
+\fBvi\fP(1) sont installées, la page de manuel qui est visée par
 \fI/usr/share/man/man1/vi.1\fP devrait correspondre à
 \fI/usr/bin/vi\fP. \fBupdate\-alternatives\fP gère ce problème avec les liens
 \fIprincipaux («\ master\ »)\fP et les liens \fIsecondaires («\ slave\ »)\fP. Quand le
@@ -74,7 +91,7 @@ faire. Dans le mode manuel, le système des «\ alternatives\ » ne change pas
 les liens et laisse l'administrateur système prendre toutes les décisions
 (sauf si quelque chose est cassé).
 .PP
-Un groupe de liens est en mode automatique quand il est crée sur un système
+Un groupe de liens est en mode automatique quand il est créé sur un système
 pour la première fois. Quand l'administrateur système modifie le paramétrage
 automatique du système, \fBupdate\-alternatives\fP le remarquera la prochaine
 fois qu'il sera lancé pour ce groupe aux liens modifiés et il fera passer ce
@@ -84,16 +101,16 @@ groupe en mode manuel.
 est en mode automatique, l'alternative visée par les éléments du groupe est
 celle qui possède la priorité la plus élevée.
 .PP
-Quand l'option \fI\-\-config\fP est utilisée, \fBupdate\-alternatives\fP affiche
+Quand l'option \fB\-\-config\fP est utilisée, \fBupdate\-alternatives\fP affiche
 toutes les possibilités du groupe pour lequel \fInom\fP est le lien
 principal. Le choix actuel est noté par un «\ *\ ». Il sera alors demandé quel
 choix doit être fait pour ce groupe. Suivant le choix effectué, le groupe de
 liens peut ne plus être en mode \fIauto\fP. Il vous faudra utiliser l'option
-\fI\-\-auto\fP pour revenir au mode automatique (ou  réutiliser \fI\-\-config\fP et
+\fB\-\-auto\fP pour revenir au mode automatique (ou réutiliser \fB\-\-config\fP et
 choisir l'entrée marquée comme automatique).
 .PP
 Si vous voulez configurer de manière non interactive, vous pouvez utiliser
-l'option \fI\-\-set\fP (voyez ci\-dessous).
+l'option \fB\-\-set\fP (voyez ci\-dessous).
 .PP
 Les différents paquets qui fournissent un même fichier doivent le faire en
 \fBcollaborant\fP. En d'autres termes, l'utilisation de \fBupdate\-alternatives\fP
@@ -115,7 +132,7 @@ Nom d'un lien symbolique dans le répertoire des alternatives.
 .TP 
 alternative (ou chemin alternatif)
 C'est le nom d'un fichier particulier dans l'arborescence\ ; il peut être
-accessible avec un nom génériques grâce au système d'alternatives.
+accessible avec un nom générique grâce au système d'alternatives.
 .TP 
 répertoire des alternatives 
 C'est le répertoire qui contient les liens symboliques\ ; il s'agit par
@@ -155,7 +172,7 @@ lien principal, \fInom\fP est le nom de son lien symbolique, et \fIchemin\fP est
 l'alternative présentée pour le lien principal. Les paramètres qui suivent
 \fB\-\-slave\fP sont le nom générique, le lien symbolique dans le répertoire des
 alternatives et l'alternative pour un lien secondaire. On peut indiquer zéro
-ou plusieurs options \fB\-\-slave\fP chacune suivie par trois
+ou plusieurs options \fB\-\-slave\fP, chacune suivie par trois
 paramètres. L'alternative principale doit exister, sinon la commande
 échouera. Cependant, si une alternative secondaire n'existe pas, le lien
 secondaire ne sera simplement pas installé (mais un avertissement sera
@@ -173,7 +190,7 @@ vers les alternatives nouvellement ajoutées.
 .TP 
 \fB\-\-set\fP \fInom chemin\fP
 Ajoute le programme \fIchemin\fP comme alternative pour \fInom\fP. C'est
-équivalent à \fI\-\-config\fP mais ce n'est pas interactif et on peut donc écrire
+équivalent à \fB\-\-config\fP mais ce n'est pas interactif et on peut donc écrire
 un script.
 .TP 
 \fB\-\-remove\fP \fInom chemin\fP
@@ -232,7 +249,7 @@ la section \fBFORMAT DE REQUÊTE\fP ci\-dessous).
 Affiche toutes les cibles du groupe de liens.
 .TP 
 \fB\-\-config\fP \fInom\fP
-Affiche les alternatives disponibles pour un groupe de liens et permetde
+Affiche les alternatives disponibles pour un groupe de liens et permet de
 choisir interactivement laquelle doit être utilisée. Le groupe de liens est
 mis à jour.
 .TP 
@@ -257,8 +274,8 @@ Indique le fichier journal, pour utiliser un fichier différent du fichier
 par défaut (/var/log/alternatives.log).
 .TP 
 \fB\-\-force\fP
-Autorise \fBupdate\-alternatives\fP à remplacer tout fichier installé à la place
-d'un lien d'alternative qui doit être créé.
+Autorise \fBupdate\-alternatives\fP à remplacer ou supprimer tout fichier
+installé à la place d'un lien d'alternative qui doit être créé ou supprimé.
 .TP 
 \fB\-\-skip\-auto\fP
 Passe l'invite de configuration pour les alternatives qui sont correctement
@@ -271,6 +288,22 @@ produit plus de commentaires sur ce que fait \fBupdate\-alternatives\fP.
 \fB\-\-quiet\fP
 Ne crée pas de commentaire à moins qu'une erreur ne survienne.
 .
+.SH "CODE DE SORTIE"
+.TP 
+\fB0\fP
+L'action demandée s'est correctement déroulée.
+.TP 
+\fB2\fP
+Des problèmes sont survenus lors de l'analyse de la ligne de commande ou
+bien pendant l'exécution de l'action.
+.
+.SH ENVIRONNEMENT
+.TP 
+\fBDPKG_ADMINDIR\fP
+Si cette variable est positionnée et que l'option \fB\-\-admindir\fP n'est pas
+précisée, ce répertoire sera utilisé comme répertoire de base pour
+l'administration.
+.
 .SH FICHIERS
 .TP 
 \fI/etc/alternatives/\fP
@@ -281,81 +314,84 @@ l'option \fB\-\-altdir\fP.
 Le répertoire administratif par défaut. Peut être remplacé avec l'option
 \fB\-\-admindir\fP
 .
-.SH "CODE DE SORTIE"
-.IP 0
-L'action demandée s'est correctement déroulée.
-.IP 2
-Des problèmes sont survenus lors de l'analyse de la ligne de commande ou
-bien pendant l'exécution de l'action.
-.
 .SH "FORMAT DE REQUÊTE"
-Le format d'\fBupdate\-alternatives\fP \fI\-\-query\fP est un format à plat de type
+Le format d'\fBupdate\-alternatives \-\-query\fP est un format à plat de type
 RFC822. Il est constitué de \fIn\fP+1 blocs où \fIn\fP est le nombre
 d'alternatives disponibles dans le groupe de liens interrogé. Le premier
 bloc contient les champs suivants\ :
 .TP 
-\fBLink:\fP <lien>
+\fBName:\fP\fI name\fP
+Nom de l'alternative dans le répertoire des alternatives.
+.TP 
+\fBLink:\fP\fI lien\fP
 Nom générique de l'alternative.
 .TP 
-\fBStatus:\fP <état>
+\fBReplaces:\fP \fI liste\-des\-liens\-secondaires\fP
+Lorsque cet en\-tête est présent, les lignes \fBsuivantes\fP contiennent tous
+les liens secondaires associés au lien principal de cette alternative, à
+raison d'un lien secondaire par ligne. Chaque ligne comporte un espace, le
+nom de l'alternative secondaire, un espace et le chemin vers le lien
+secondaire.
+.TP 
+\fBStatus:\fP\fI état\fP
 État de l'alternative (\fBauto\fP ou \fBmanual\fP).
 .TP 
-\fBBest:\fP <meilleur choix>
+\fBBest:\fP\fI meilleur\-choix\fP
 Chemin de la meilleure alternative pour ce groupe de liens. N'est pas
-présent si aucun alternative n'est disponible.
+présent si aucune alternative n'est disponible.
 .TP 
-\fBValue:\fP <alternative actuellement choisie> 
+\fBValue:\fP \fI alternative\-actuellement\-choisie\fP
 Chemin de l'alternative actuellement choisie. Peut aussi prendre la valeur
 spéciale \fBnone\fP, utilisée si le lien n'existe pas.
 .TP 
 .TP 
 Les autres blocs décrivent les alternatives disponibles dans le groupe de liens interrogé.
 .TP 
-\fBAlternative:\fP <chemin de cette alternative>
+\fBAlternative:\fP \fI chemin\-de\-cette\-alternative\fP
 Chemin vers l'alternative de ce bloc
 .TP 
-\fBPriority:\fP <valeur de la priorité>
+\fBPriority:\fP \fI valeur\-de\-la\-priorité\fP
 Valeur de la priorité alternative.
 .TP 
-\fBReplaces:\fP <liste des liens secondaires>
-Lorsque cet en\-tête est présent, la ligne suivante contient toutes les
-alternatives secondaires associées au lien principal de cette alternative, à
-raison d'une alternative secondaire par ligne. Chaque ligne comporte un
-espace, le nom de l'alternative secondaire, un espace et le chemin vers
-l'alternative secondaire.
+\fBReplaces:\fP \fI liste\-des\-liens\-secondaires\fP
+When this field is present, the \fBnext\fP lines hold all slave alternatives
+associated to the master link of the alternative. There is one slave per
+line. Each line contains one space, the generic name of the slave
+alternative, another space, and the path to the slave alternative.
 .
 .TP 
 \fBExemple\fP
 .nf
 $ update\-alternatives \-\-query editor
-Link: editor
+Name: editor
+Link: /usr/bin/editor
+Slaves:
+ editor.1.gz /usr/share/man/man1/editor.1.gz
+ editor.fr.1.gz /usr/share/man/fr/man1/editor.1.gz
+ editor.it.1.gz /usr/share/man/it/man1/editor.1.gz
+ editor.pl.1.gz /usr/share/man/pl/man1/editor.1.gz
+ editor.ru.1.gz /usr/share/man/ru/man1/editor.1.gz
 Status: auto
-Best: /usr/bin/vim.gtk
-Value: /usr/bin/vim.gtk
+Best: /usr/bin/vim.basic
+Value: /usr/bin/vim.basic
 
 Alternative: /bin/ed
 Priority: \-100
 Slaves:
  editor.1.gz /usr/share/man/man1/ed.1.gz
 
-Alternative: /usr/bin/vim.gtk
+Alternative: /usr/bin/vim.basic
 Priority: 50
 Slaves:
  editor.1.gz /usr/share/man/man1/vim.1.gz
- editor.ru.1.gz /usr/share/man/ru/man1/vim.1.gz
- editor.pl.ISO8859\-2.1.gz /usr/share/man/pl.ISO8859\-2/man1/vim.1.gz
- editor.it.ISO8859\-1.1.gz /usr/share/man/it.ISO8859\-1/man1/vim.1.gz
- editor.pl.UTF\-8.1.gz /usr/share/man/pl.UTF\-8/man1/vim.1.gz
- editor.it.1.gz /usr/share/man/it/man1/vim.1.gz
- editor.fr.UTF\-8.1.gz /usr/share/man/fr.UTF\-8/man1/vim.1.gz
  editor.fr.1.gz /usr/share/man/fr/man1/vim.1.gz
- editor.it.UTF\-8.1.gz /usr/share/man/it.UTF\-8/man1/vim.1.gz
+ editor.it.1.gz /usr/share/man/it/man1/vim.1.gz
  editor.pl.1.gz /usr/share/man/pl/man1/vim.1.gz
- editor.fr.ISO8859\-1.1.gz /usr/share/man/fr.ISO8859\-1/man1/vim.1.gz
+ editor.ru.1.gz /usr/share/man/ru/man1/vim.1.gz
 .fi
 .
 .SH DIAGNOSTICS
-Avec l'option \fI\-\-verbose\fP, \fBupdate\-alternatives\fP affiche de très
+Avec l'option \fB\-\-verbose\fP, \fBupdate\-alternatives\fP affiche de très
 nombreuses informations sur la sortie standard. Quand un problème survient,
 \fBupdate\-alternatives\fP envoie des messages d'erreur sur la sortie d'erreur
 standard et retourne un état de sortie égal à 2. Ces diagnostics devraient
@@ -369,7 +405,7 @@ de liens \fBvi\fP, qui comprend des liens pour le programme lui\-même et sa page
 de manuel.
 .PP
 Pour afficher les paquets disponibles qui fournissent \fBvi\fP et son
-paramétrage actuel, on peut utiliser l'action \fI\-\-display\fP\ :
+paramétrage actuel, on peut utiliser l'action \fB\-\-display\fP\ :
 .RS
 .PP
 \fBupdate\-alternatives \-\-display vi\fP
@@ -388,28 +424,6 @@ commande en tant que super\-utilisateur\ :
 .PP
 \fBupdate\-alternatives \-\-auto vi\fP
 .RE
-.
-.SH BOGUES
-Si vous trouvez un bogue, veuillez le signaler au système de suivi des
-bogues de Debian.
-.PP
-Si vous trouvez une discordance entre l'action de \fBupdate\-alternatives\fP et
-cette page de manuel, c'est qu'il y a un bogue, soit dans l'implémentation
-soit dans la documentation\ ; faites un rapport.
-.
-.SH AUTEURS
-Copyright \(co 1995 Ian Jackson
-.br
-Copyright \(co 2009 Rapha\[:e]l Hertzog
-.sp
-Ce programme est un logiciel libre\ ; voyez la «\ GNU General Public Licence\ »
-version 2 ou supérieure pour le copyright. Il n'y a PAS de garantie.
-.PP
-Cette page de manuel est copyright 1997, 1998 Charles Briscoe\-Smith et
-autres auteurs.
-.sp
-Cette documentation est libre\ ; voyez la «\ GNU General Public Licence\ »
-version 2 ou supérieure pour le copyright. Il n'y a PAS de garantie.
 .
 .SH "VOIR AUSSI"
 \fBln\fP(1), FHS, le standard pour l'organisation du système de fichiers.

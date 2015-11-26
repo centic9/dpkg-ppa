@@ -1,18 +1,31 @@
-.TH dselect 1 "2010-03-07" "Debian Project" "Debian"
+.\" dselect manual page - dselect(1)
+.\"
+.\" Copyright © 1995 Juho Vuori <javuori@cc.helsinki.fi>
+.\" Copyright © 2000 Josip Rodin
+.\" Copyright © 2001 Joost Kooij
+.\" Copyright © 2001 Wichert Akkerman <wakkerma@debian.org>
+.\" Copyright © 2010-2011 Guillem Jover <guillem@debian.org>
+.\"
+.\" This is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <https://www.gnu.org/licenses/>.
+.
+.TH dselect 1 "2012-04-07" "Debian Project" "Debian"
 .SH NAME
 dselect \- Debian package management frontend
 .
 .SH SYNOPSIS
 .B dselect
-.RB [ \-\-admindir
-.IR <directory> ]
-.RB [ \-\-help ]
-.RB [ \-\-version ]
-.RB [ \-\-expert ]
-.RB [ \-\-debug | \-D\fI<file>\fP ]
-.RI [ <action> ]
-.RB [ \-\-colour | \-\-color
-.IR screenpart: [ foreground ],[ background ][ :attr [ +attr+.. ]]]
+.RI [ option "...] [" action ]
 .
 .SH DESCRIPTION
 .B dselect
@@ -38,31 +51,31 @@ package \fBapt\fP.
 Normally \fBdselect\fP is invoked without parameters. An interactive
 menu is presented, offering the user a list of actions. If an action
 is given as argument, then that action is started immediately. Several
-commandline parameters are still available to modify the running behaviour
+command line parameters are still available to modify the running behaviour
 of \fBdselect\fP or show additional information about the program.
 .
 .SH OPTIONS
-All options can be specified both on the commandline and in the \fBdselect\fP
+All options can be specified both on the command line and in the \fBdselect\fP
 configuration file \fI/etc/dpkg/dselect.cfg\fP or the files on the
-configuration directory \fI/etc/dpkg/dpkg.cfg.d/\fP. Each line in the
+configuration directory \fI/etc/dpkg/dselect.cfg.d/\fP. Each line in the
 configuration file is either an option (exactly the same as the
-commandline option but without leading dashes) or a comment (if it starts
+command line option but without leading hyphens) or a comment (if it starts
 with a \fB#\fR).
 .br
 .TP
-.BI \-\-admindir " <directory>"
+.BI \-\-admindir " directory"
 Changes the directory where the dpkg `\fIstatus\fP', `\fIavailable\fP' and
 similar files are located. This defaults to \fI/var/lib/dpkg\fP
 and normally there shouldn't be any need to change it.
 .TP
-.BI \-\-debug " <file> \fR|\fP " \-D <file>
-Turn on debugging. Debugging information is sent to \fI<file>\fP.
+.BI \-\-debug " file \fR|\fP " \-D file
+Turn on debugging. Debugging information is sent to \fIfile\fP.
 .TP
 .B \-\-expert
 Turns on expert mode, i.e. doesn't display possibly annoying help
 messages.
 .TP
-.BR \-\-colour | \-\-color " \fIscreenpart:\fP[\fIforeground\fP],[\fIbackground\fP][\fI:attr\fP[\fI+attr+..\fP]]"
+.BR \-\-colour | \-\-color " \fIscreenpart:\fP[\fIforeground\fP],[\fIbackground\fP][\fI:attr\fP[\fI+attr+...\fP]]"
 Configures screen colors. This works only if your display supports colors.
 This option may be used multiple times (and is best used in
 \fIdselect.cfg\fP). Each use changes the color (and optionally, other
@@ -125,19 +138,20 @@ Print a brief help text and exit successfully.
 .B \-\-version
 Print version information and exit successfully.
 .
-.SH USAGE
+.SH ACTIONS
 When
 .B dselect
-is started interactively, it prompts the user with a menu of available
-actions:
+is started it can perform the following actions, either directly if it
+was specified on the command line or by prompting the user with a menu
+of available actions if running interactively:
 .SS access
 Choose and configure an access method to access package repositories.
 .sp
 By default, \fBdselect\fP provides several methods such
-as \fIfloppy\fP, \fIharddisk\fP or \fIcdrom\fP, but other packages
-may provide additional methods, eg. the \fIapt\fP access method provided
-by the \fBapt\fP package or \fImulti_cd\fP by the \fBdpkg\-multicd\fP
-package.
+as \fIcdrom\fP, \fImulti_cd\fP, \fInfs\fP, \fImulti_nfs\fP, \fIharddisk\fP,
+\fImounted\fP, \fImulti_mount\fP, \fIfloppy\fP or \fIftp\fP, but other
+packages may provide additional methods, eg. the \fIapt\fP access method
+provided by the \fBapt\fP package.
 .sp
 The use of the \fIapt\fP access method is strongly recommended.
 .sp
@@ -209,7 +223,7 @@ Quit \fBdselect\fP
 Exits the program with zero (successful) errorcode.
 .sp
 .
-.SH Package selections management
+.SH PACKAGE SELECTIONS MANAGEMENT
 .sp
 .SS Introduction
 .sp
@@ -454,12 +468,3 @@ broken, it is also much more flexible than the built in access methods.
 .BR apt\-get (8),
 .BR sources.list (5),
 .BR deb (5).
-.
-.SH AUTHORS
-.B dselect
-was written by Ian Jackson (ijackson@gnu.ai.mit.edu). Full list of
-contributors may be found in 'dselect \-\-version'.
-.br
-This manual page was written by Juho Vuori <javuori@cc.helsinki.fi>,
-Josip Rodin and Joost kooij.
-

@@ -1,32 +1,47 @@
-.\" Includes text from the Debian Policy probably by Ian Jackson and others
-.\" The copyright given below is that of the whole policy, but probably
-.\" incomplete.
-.\" Conversion to roff by Frank Lichtenheld
+.\" dpkg manual page - deb-version(5)
+.\"
+.\" Copyright Â© 1996-1998 Ian Jackson and Christian Schwarz
+.\"   for parts of the text reused from the Debian Policy
+.\" Copyright Â© 2007 Frank Lichtenheld <djpig@debian.org>
+.\"
+.\" This is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <https://www.gnu.org/licenses/>.
+.
 .\"*******************************************************************
 .\"
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH deb\-version 5 2008\-08\-18 Debianprojektet Debian
+.TH deb\-version 5 2013\-04\-02 Debianprojektet Debian
 .SH NAMN
 deb\-version \- Format på versionsnummer för Debianpaket
 .
 .SH SYNOPS
-[ \fIepok\fP:] \fIuppströmsversion\fP [\-\fIdebianuppdatering\fP ]
+[\fIepok\fP\fB:\fP]\fIuppströmsversion\fP[\fB\-\fP\fIdebianuppdatering\fP]
 .SH BESKRIVNING
 Versionsnummer som används för Debians binär\- och källkodspaket består av
 tre komponenter. De är:
 .TP 
 \fIepok\fP
 Ett ensamt (vanligtvis litet) heltalsvärde större än noll. Det kan
-uteslutas, i så fall antas det vara noll. Om det utesluts an inte
+uteslutas, i så fall antas det vara noll. Om det utesluts kan inte
 \fIuppströmsversion\fP innehålla kolontecken.
 .IP
 Fältet är till för att rätta till fel i versionsnummer i tidigare versioner
 av paketet, samt attr hantera förändringar i paketets
 versionsnumreringssystem.
 .TP 
-\fBuppströmsversion\fP
+\fIuppströmsversion\fP
 Detta är huvuddelen av versionsnumret. Det är vanligtvis versionsnumret för
 originalpaketet ("uppströmspaketet") som \fI.deb\fP\-filen skapats från, om ett
 sådant finns. Normalt anges det på samma form som används av
@@ -43,7 +58,7 @@ bindestreck, kolon, tilde) och bör inledas med en siffra. Om det inte finns
 någon \fIdebianuppdatering\fP tillåts inte bindestreck och om det inte finns
 någon \fIepok\fP tillåts inte kolontecken.
 .TP 
-\fBdebianuppdatering\fP
+\fIdebianuppdatering\fP
 Denna del av versionsnumret anger versionen för Debianpaketet som baserats
 på uppströmsversionen. Den kan endast innehålla alfanumeriska tecken samt
 tecknen \fB+\fP \fB.\fP \fB~\fP (plus, punkt, tilde) och jämförs på samma sätt som
@@ -63,7 +78,7 @@ sådant finns) för att bestämma \fIuppströmsversion\fP och
 \fIdebianuppdatering\fP. Om \fIdebianuppdatering\fP saknas räknas det som tidigare
 än om fältet existerar (men notera att \fIdebianuppdatering\fP är den minst
 signifikanta delen av versionsnumret).
-.SS Sorteringsalgoritm
+.SS "Sorting algorithm"
 Pakethanteringssystemet använder samma algoritm för att jämföra
 \fIuppströmsversion\fP\- och \fIdebianuppdatering\fP\-delarna:
 .PP
@@ -93,18 +108,11 @@ versionsnumreringsmetoden ändras. Det är \fBinte\fP tänkt att hantera
 versionsnummer som innehåller strängar av bokstäver som
 pakethanteringssystemet inte kan tolka (till exempel "ALPHA" eller "Pre\-"),
 eller dumma sorteringsordningar.
-.SH VARNINGAR
-Tildetecknets och dess speciella sorteringsegenskaper introducerades i dpkg
-version 1.10 och vissa delar av dpkg\-dev fick inte stöd för det förrän
-senare i 1.10.x\-serien.
+.SH ANTECKNINGAR
+The tilde character and its special sorting properties were introduced in
+dpkg 1.10 and some parts of the dpkg build scripts only gained support for
+it later in the 1.10.x series.
 .SH "SE ÄVEN"
 \fBdeb\-control\fP(5), \fBdeb\fP(5), \fBdpkg\fP(1)
-.SH FÖRFATTARE
-Upphovsrättsskyddat © 1996,1997,1998 Ian Jackson och Christian Schwarz
-.br
-Upphovsrättsskyddat © 2007 Frank Lichtenheld
-.sp
-Detta är fri programvara; se GNU General Public License version 2 eller
-senare för kopieringsvillkor. Det finns INGEN GARANTI.
-.SH "ÖVERSÄTTNING"
+.SH ÖVERSÄTTNING
 Peter Krefting och Daniel Nylander.

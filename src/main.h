@@ -15,7 +15,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #ifndef MAIN_H
@@ -33,14 +33,14 @@ struct perpackagestate {
     itb_normal, itb_remove, itb_installnew, itb_deconfigure, itb_preinstall
   } istobe;
 
-  /* Used during cycle detection. */
+  /** Used during cycle detection. */
   enum {
     white,
     gray,
     black,
   } color;
 
-  /*
+  /**
    * filelistvalid  files  Meaning
    * -------------  -----  -------
    * false          NULL   Not read yet, must do so if want them.
@@ -55,7 +55,7 @@ struct perpackagestate {
 
   off_t listfile_phys_offs;
 
-  /* Non-NULL iff in trigproc.c:deferred. */
+  /** Non-NULL iff in trigproc.c:deferred. */
   struct pkg_list *trigprocdeferred;
 };
 
@@ -68,6 +68,7 @@ enum action {
 	act_triggers,
 	act_remove,
 	act_purge,
+	act_verify,
 	act_commandfd,
 
 	act_status,
@@ -75,12 +76,16 @@ enum action {
 	act_listfiles,
 	act_searchfiles,
 	act_controlpath,
+	act_controllist,
+	act_controlshow,
 
 	act_cmpversions,
 
+	act_arch_add,
+	act_arch_remove,
 	act_printarch,
 	act_printinstarch,
-	act_foreignarchs,
+	act_printforeignarches,
 
 	act_assertpredep,
 	act_assertepoch,
@@ -104,24 +109,6 @@ enum action {
 	act_forgetold,
 };
 
-enum conffopt {
-  cfof_prompt        =     001,
-  cfof_keep          =     002,
-  cfof_install       =     004,
-  cfof_backup        =   00100,
-  cfof_newconff      =   00200,
-  cfof_isnew         =   00400,
-  cfof_isold         =   01000,
-  cfof_userrmd       =   02000,
-  cfo_keep           =   cfof_keep,
-  cfo_prompt_keep    =   cfof_keep | cfof_prompt,
-  cfo_prompt         =               cfof_prompt,
-  cfo_prompt_install =               cfof_prompt | cfof_install,
-  cfo_install        =                             cfof_install,
-  cfo_newconff       =                             cfof_install | cfof_newconff,
-  cfo_identical      =   cfof_keep
-};
-
 extern const char *const statusstrings[];
 
 extern int f_pending, f_recursive, f_alsoselect, f_skipsame, f_noact;
@@ -134,6 +121,7 @@ extern int fc_nonroot, fc_overwritedir, fc_conff_new, fc_conff_miss;
 extern int fc_conff_old, fc_conff_def;
 extern int fc_conff_ask;
 extern int fc_badverify;
+extern int fc_badversion;
 extern int fc_unsafe_io;
 
 extern bool abort_processing;
@@ -148,7 +136,7 @@ struct invoke_hook {
 
 /* from archives.c */
 
-void archivefiles(const char *const *argv);
+int archivefiles(const char *const *argv);
 void process_archive(const char *filename);
 bool wanttoinstall(struct pkginfo *pkg);
 struct fileinlist *newconff_append(struct fileinlist ***newconffileslastp_io,
@@ -156,36 +144,41 @@ struct fileinlist *newconff_append(struct fileinlist ***newconffileslastp_io,
 
 /* from update.c */
 
-void forgetold(const char *const *argv);
-void updateavailable(const char *const *argv);
+int forgetold(const char *const *argv);
+int updateavailable(const char *const *argv);
 
 /* from enquiry.c */
 
-void audit(const char *const *argv);
-void unpackchk(const char *const *argv);
-void assertepoch(const char *const *argv);
-void assertpredep(const char *const *argv);
-void assertlongfilenames(const char *const *argv);
-void assertmulticonrep(const char *const *argv);
-void assertmultiarch(const char *const *argv);
-void predeppackage(const char *const *argv);
-void printarch(const char *const *argv);
-void printinstarch(const char *const *argv);
-void print_foreign_archs(const char *const *argv);
-void cmpversions(const char *const *argv) DPKG_ATTR_NORET;
+int audit(const char *const *argv);
+int unpackchk(const char *const *argv);
+int assertepoch(const char *const *argv);
+int assertpredep(const char *const *argv);
+int assertlongfilenames(const char *const *argv);
+int assertmulticonrep(const char *const *argv);
+int assertmultiarch(const char *const *argv);
+int predeppackage(const char *const *argv);
+int printarch(const char *const *argv);
+int printinstarch(const char *const *argv);
+int print_foreign_arches(const char *const *argv);
+int cmpversions(const char *const *argv);
+
+/* from verify.c */
+
+int verify_set_output(const char *name);
+int verify(const char *const *argv);
 
 /* from select.c */
 
-void getselections(const char *const *argv);
-void setselections(const char *const *argv);
-void clearselections(const char *const *argv);
+int getselections(const char *const *argv);
+int setselections(const char *const *argv);
+int clearselections(const char *const *argv);
 
 /* from packages.c, remove.c and configure.c */
 
-void md5hash(struct pkginfo *pkg, char *hashbuf, const char *fn, int fd);
-void add_to_queue(struct pkginfo *pkg);
+void md5hash(struct pkginfo *pkg, char *hashbuf, const char *fn);
+void enqueue_package(struct pkginfo *pkg);
 void process_queue(void);
-void packages(const char *const *argv);
+int packages(const char *const *argv);
 void removal_bulk(struct pkginfo *pkg);
 int conffderef(struct pkginfo *pkg, struct varbuf *result, const char *in);
 
@@ -210,9 +203,10 @@ void cu_prermremove(int argc, void **argv);
 
 /* from errors.c */
 
-void print_error_perpackage(const char *emsg, const char *arg);
+void print_error_perpackage(const char *emsg, const void *data);
+void print_error_perarchive(const char *emsg, const void *data);
 void forcibleerr(int forceflag, const char *format, ...) DPKG_ATTR_PRINTF(2);
-int reportbroken_retexitstatus(void);
+int reportbroken_retexitstatus(int ret);
 bool skip_due_to_hold(struct pkginfo *pkg);
 
 /* from help.c */
@@ -222,41 +216,41 @@ struct stat;
 bool ignore_depends(struct pkginfo *pkg);
 bool force_breaks(struct deppossi *possi);
 bool force_depends(struct deppossi *possi);
-bool force_conff_new(struct deppossi *possi);
-bool force_conff_miss(struct deppossi *possi);
 bool force_conflicts(struct deppossi *possi);
+void conffile_mark_obsolete(struct pkginfo *pkg, struct filenamenode *namenode);
 void oldconffsetflags(const struct conffile *searchconff);
 void ensure_pathname_nonexisting(const char *pathname);
 int secure_unlink(const char *pathname);
 int secure_unlink_statted(const char *pathname, const struct stat *stab);
 void checkpath(void);
 
-struct filenamenode *namenodetouse(struct filenamenode*, struct pkginfo*);
+struct filenamenode *namenodetouse(struct filenamenode *namenode,
+                                   struct pkginfo *pkg, struct pkgbin *pkgbin);
 
-int maintainer_script_installed(struct pkginfo *pkg, const char *scriptname,
-                                const char *desc, ...) DPKG_ATTR_SENTINEL;
-int maintainer_script_new(struct pkginfo *pkg,
-                          const char *scriptname, const char *desc,
-                          const char *cidir, char *cidirrest, ...)
-                          DPKG_ATTR_SENTINEL;
-int maintainer_script_alternative(struct pkginfo *pkg,
-                                  const char *scriptname, const char *desc,
-                                  const char *cidir, char *cidirrest,
-                                  const char *ifok, const char *iffallback);
+int maintscript_installed(struct pkginfo *pkg, const char *scriptname,
+                          const char *desc, ...) DPKG_ATTR_SENTINEL;
+int maintscript_new(struct pkginfo *pkg,
+                    const char *scriptname, const char *desc,
+                    const char *cidir, char *cidirrest, ...)
+	DPKG_ATTR_SENTINEL;
+int maintscript_fallback(struct pkginfo *pkg,
+                         const char *scriptname, const char *desc,
+                         const char *cidir, char *cidirrest,
+                         const char *ifok, const char *iffallback);
 
 /* Callers wanting to run the postinst use these two as they want to postpone
  * trigger incorporation until after updating the package status. The effect
  * is that a package can trigger itself. */
-int maintainer_script_postinst(struct pkginfo *pkg, ...) DPKG_ATTR_SENTINEL;
-void post_postinst_tasks_core(struct pkginfo *pkg);
-
+int maintscript_postinst(struct pkginfo *pkg, ...) DPKG_ATTR_SENTINEL;
 void post_postinst_tasks(struct pkginfo *pkg, enum pkgstatus new_status);
 
 void clear_istobes(void);
-bool isdirectoryinuse(struct filenamenode *namenode, struct pkginfo *pkg);
-bool hasdirectoryconffiles(struct filenamenode *namenode, struct pkginfo *pkg);
+bool dir_is_used_by_others(struct filenamenode *namenode, struct pkginfo *pkg);
+bool dir_is_used_by_pkg(struct filenamenode *namenode, struct pkginfo *pkg,
+                        struct fileinlist *list);
+bool dir_has_conffiles(struct filenamenode *namenode, struct pkginfo *pkg);
 
-void log_action(const char *action, struct pkginfo *pkg);
+void log_action(const char *action, struct pkginfo *pkg, struct pkgbin *pkgbin);
 
 /* from trigproc.c */
 
@@ -270,18 +264,26 @@ void trig_activate_packageprocessing(struct pkginfo *pkg);
 
 /* from depcon.c */
 
-enum what_pkgbin {
+enum which_pkgbin {
   wpb_installed,
   wpb_available,
-  wpb_by_status,
+  wpb_by_istobe,
 };
 
+struct deppossi_pkg_iterator;
+
+struct deppossi_pkg_iterator *
+deppossi_pkg_iter_new(struct deppossi *possi, enum which_pkgbin wpb);
+struct pkginfo *
+deppossi_pkg_iter_next(struct deppossi_pkg_iterator *iter);
+void
+deppossi_pkg_iter_free(struct deppossi_pkg_iterator *iter);
+
 bool depisok(struct dependency *dep, struct varbuf *whynot,
-             struct pkginfo **fixbyrm, bool allowunconfigd);
+             struct pkginfo **fixbyrm, struct pkginfo **fixbytrigaw,
+             bool allowunconfigd);
 struct cyclesofarlink;
 bool findbreakcycle(struct pkginfo *pkg);
 void describedepcon(struct varbuf *addto, struct dependency *dep);
-struct pkginfo *deppossi_get_pkg(struct deppossi *possi, enum what_pkgbin wpb,
-                                 struct pkginfo *startpkg);
 
 #endif /* MAIN_H */

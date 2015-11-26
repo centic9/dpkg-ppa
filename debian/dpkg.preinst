@@ -1,4 +1,4 @@
-#!/bin/sh -e
+#!/bin/sh
 # This script can be called in the following ways:
 #
 # Before the package is installed:
@@ -14,6 +14,8 @@
 # If postrm fails during upgrade or fails on failed upgrade:
 #	<old-preinst> abort-upgrade <new-version>
 
+set -e
+
 # Handle upgrades from pre-conffile dpkg.cfg
 upgrade_dpkg_non_conffile()
 {
@@ -23,6 +25,18 @@ upgrade_dpkg_non_conffile()
 	    echo "Removing non-modified dpkg.cfg to be replaced by a conffile ..."
 	    rm -f /etc/dpkg/dpkg.cfg
 	fi
+    fi
+}
+
+rename_multiarch_conffile()
+{
+    if [ -f /etc/dpkg/dpkg.cfg.d/multiarch ]; then
+        multiarch_md5="e018c53338191b34f943e2b38e160d1a  /etc/dpkg/dpkg.cfg.d/multiarch"
+        if echo "$multiarch_md5" | md5sum -c >/dev/null 2>&1; then
+            mv /etc/dpkg/dpkg.cfg.d/multiarch /etc/dpkg/dpkg.cfg.d/multiarch.dpkg-remove
+        else
+            mv /etc/dpkg/dpkg.cfg.d/multiarch /etc/dpkg/dpkg.cfg.d/multiarch.dpkg-backup
+        fi
     fi
 }
 
@@ -59,29 +73,14 @@ case "$1" in
 	;;
 
     upgrade)
-	if dpkg --compare-versions "$2" lt 1.16.0~ubuntu4 \
-	   && dpkg --compare-versions "$2" ge 1.16.0~ubuntu1; then
-	    # Transitional support for the provisional multiarch db format,
-	    # not supported in the current dpkg.
-	    arch=$(dpkg --print-architecture)
-	    infodir="/var/lib/dpkg/info/"
-	    if [ -d "$infodir/$arch" ] && ! [ -L "$infodir/$arch" ]; then
-		cp -a "$infodir/$arch"/* "$infodir"
-	    fi
-	    if ! [ -L "$infodir/$arch" ]; then
-		if [ -d "$infodir/$arch" ]; then
-		    mv "$infodir/$arch" "$infodir/${arch}.dpkg-bak"
-		fi
-		ln -sf . "$infodir/$arch"
-	    fi
-	    rm -rf "$infodir/${arch}.dpkg-bak"
-	fi
-
-
         # Cleanup bad alternatives that would choke with new
         # update-alternatives (see #530633, #531611, #532739, #521760)
         if dpkg --compare-versions "$2" lt 1.15.3; then
             kill_bad_alternatives
+        fi
+
+        if dpkg --compare-versions "$2" lt 1.16.3; then
+            rename_multiarch_conffile
         fi
 
 	case "$2" in

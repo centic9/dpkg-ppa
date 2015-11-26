@@ -1,4 +1,4 @@
-#!/bin/sh -e
+#!/bin/sh
 # This script can be called in the following ways:
 #
 # After the package was removed:
@@ -26,6 +26,7 @@
 # If preinst fails during upgrade:
 #	<new-postrm> abort-upgrade <old-version>
 
+set -e
 
 # Remove log file when dpkg is purged
 remove_logfile() {
@@ -42,7 +43,21 @@ cleanup_multiarch_infodb()
     ls $pkgadmindir | grep : | while read oldfile; do
         rm "$pkgadmindir/$oldfile"
     done
-    rm -f $admindir/format
+    rm -f $pkgadmindir/format
+}
+
+restore_multiarch_conffile()
+{
+    if [ -f /etc/dpkg/dpkg.cfg.d/multiarch.dpkg-backup ]; then
+        mv /etc/dpkg/dpkg.cfg.d/multiarch.dpkg-backup /etc/dpkg/dpkg.cfg.d/multiarch
+    elif [ -f /etc/dpkg/dpkg.cfg.d/multiarch.dpkg-remove ]; then
+        mv /etc/dpkg/dpkg.cfg.d/multiarch.dpkg-remove /etc/dpkg/dpkg.cfg.d/multiarch
+    fi
+}
+
+remove_multiarch_conffile()
+{
+    rm -f /etc/dpkg/dpkg.cfg.d/multiarch.dpkg-bak
 }
 
 case "$1" in
@@ -51,16 +66,24 @@ case "$1" in
 
     purge)
 	remove_logfile
+	remove_multiarch_conffile
 	;;
 
     upgrade)
 	# Downgrade the multiarch db to a “monoarch” db layout
-	if dpkg --compare-versions "$2" lt 1.16.0~ubuntu4; then
+	if dpkg --compare-versions "$2" lt 1.16.0~; then
 	    cleanup_multiarch_infodb
 	fi
 	;;
 
-    failed-upgrade|disappear|abort-install|abort-upgrade)
+    failed-upgrade|disappear|abort-install)
+	;;
+
+    abort-upgrade)
+	# Restore old multiarch conffile that we moved
+	if dpkg --compare-versions "$2" lt 1.16.3; then
+	    restore_multiarch_conffile
+	fi
 	;;
 
 

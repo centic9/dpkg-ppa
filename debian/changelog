@@ -1,38 +1,2113 @@
-dpkg (1.16.0~ubuntu7.2~ppa1natty1) natty; urgency=low
+dpkg (1.17.5ubuntu5.5) trusty-security; urgency=medium
 
-  * Also build for Natty.
+  * SECURITY UPDATE: multiple security issues
+    - dpkg-deb/extract.c: Fix off-by-one write access on versionbuf
+      variable.
+    - dpkg-deb/extract.c: Fix off-by-one write access on ctrllenbuf
+      variable. (CVE-2015-0860)
+    - lib/dpkg/ar.c: Fix an off-by-one read access in ar member name
+      variable.
+    - Thanks to Guillem Jover and Hanno Böck for the patches!
 
- -- Dominik Stadler (Ubuntu key) <dominik.stadler@gmx.at>  Sat, 29 Oct 2011 16:37:11 +0200
+ -- Marc Deslauriers <marc.deslauriers@ubuntu.com>  Thu, 26 Nov 2015 07:57:34 -0500
 
-dpkg (1.16.0~ubuntu7.2~ppa1maverick1) maverick; urgency=low
+dpkg (1.17.5ubuntu5.4) trusty-security; urgency=medium
 
-  * Also build for Maverick.
+  * SECURITY UPDATE: OpenPGP Armor Header Line parsing issue
+    - scripts/Dpkg/Control/HashCore.pm: adjust whitespace parsing.
+    - scripts/Makefile.*, scripts/t/700_Dpkg_Control.t,
+      scripts/t/700_Dpkg_Control/bogus-armor-formfeed.dsc: added tests.
+    - Patch thanks to Guillem Jover
+    - CVE-2015-0840
 
- -- Dominik Stadler (Ubuntu key) <dominik.stadler@gmx.at>  Sat, 29 Oct 2011 16:34:48 +0200
+ -- Marc Deslauriers <marc.deslauriers@ubuntu.com>  Thu, 09 Apr 2015 08:41:39 -0400
 
-dpkg (1.16.0~ubuntu7.2~ppa1) lucid; urgency=low
+dpkg (1.17.5ubuntu5.3) trusty-security; urgency=medium
 
-  * Upgrade to newer version in order to get libserf in order to get
-    Subversion 1.7.
+  * SECURITY UPDATE: arbitrary file modification via dpkg-source
+    - scripts/Dpkg/Source/Patch.pm: Use a better regex for patch header
+      parsing
+    - 5348cbc981a65c3c9b05bb4d13553bda930c2d78
+    - CVE-2014-3864
+    - CVE-2014-3865
 
- -- Dominik Stadler (Ubuntu key) <dominik.stadler@gmx.at>  Wed, 19 Oct 2011 12:23:03 +0200
+ -- Marc Deslauriers <marc.deslauriers@ubuntu.com>  Mon, 09 Jun 2014 12:34:57 -0400
 
-dpkg (1.16.0~ubuntu7.1) natty-proposed; urgency=low
+dpkg (1.17.5ubuntu5.2) trusty-security; urgency=medium
+
+  * SECURITY UPDATE: directory traversal in dpkg-source
+    - scripts/Dpkg/Source/Patch.pm: outright reject C-style filenames in
+      patches
+    - a12eb58959d0a10584a428f4a3103a49204c410f
+    - CVE-2014-0471
+
+ -- Marc Deslauriers <marc.deslauriers@ubuntu.com>  Thu, 01 May 2014 07:59:19 -0400
+
+dpkg (1.17.5ubuntu5.1) trusty-security; urgency=medium
+
+  * SECURITY UPDATE: directory traversal in dpkg-source
+    - scripts/Dpkg/Source/Patch.pm: correctly parse C-style diff
+      filenames.
+    - Patch thanks to Guillem Jover <guillem@debian.org>
+    - CVE-2014-0471
+
+ -- Marc Deslauriers <marc.deslauriers@ubuntu.com>  Wed, 23 Apr 2014 19:46:35 -0400
+
+dpkg (1.17.5ubuntu5) trusty; urgency=medium
+
+  * Allow -fstack-protector on arm64 now that GCC and glibc support it.
+
+ -- Adam Conrad <adconrad@ubuntu.com>  Fri, 07 Mar 2014 18:47:57 +0800
+
+dpkg (1.17.5ubuntu4) trusty; urgency=medium
+
+  * Update the ppc64 buildflags vendor overrides for ppc64el instead, and
+    make the implementation respect DEB_BUILD_OPTIONS=noopt (LP: #1279128)
+
+ -- Adam Conrad <adconrad@ubuntu.com>  Tue, 11 Feb 2014 18:49:27 -0700
+
+dpkg (1.17.5ubuntu3) trusty; urgency=medium
+
+  * Change native source version/format mismatch errors into warnings until
+    the dust settles on Debian bug 737634 about revert or override options.
+
+ -- Adam Conrad <adconrad@ubuntu.com>  Wed, 05 Feb 2014 07:26:29 -0700
+
+dpkg (1.17.5ubuntu2) trusty; urgency=medium
+
+  * Backport patch from 1.17.6 to fix file descriptor leaks (LP: #1270132)
+
+ -- Adam Conrad <adconrad@ubuntu.com>  Fri, 17 Jan 2014 11:01:47 -0700
+
+dpkg (1.17.5ubuntu1) trusty; urgency=medium
+
+  * Merge from Debian testing.  Remaining changes:
+    - Change the multiarch downgrade version checks in prerm/postrm
+      from 1.16.2 to 1.16.0~ to reflect when multiarch landed in Ubuntu.
+    - Migrate dpkg multiarch conffile (and other multi-arch-related
+      conf settings) to the new DB with dpkg --add-architecture, but
+      keep a copy of the old conffile if it was modified.
+    - Out of paranoia, keep an option handler for foreign-architecture
+      that informs people that they need to scrub their config files
+      and upgrade, on the off chance that the above migration fails
+      for some reason (this mitigates the chances of leaving users with
+      a dpkg that fails to run due to a broken config).
+    - Add DPKG_UNTRANSLATED_MESSAGES environment check so that higher-level
+      tools can get untranslated dpkg terminal log messages while at the
+      same time having translated debconf prompts.  This is useful for tools
+      that hide the dpkg terminal by default and use apport for bug
+      reporting with the untranslated error message.
+    - Apply patch from Steve McIntyre to special-case armhf/armel ELF
+      objects in Shlibs/Objdump.pm, so we don't get incorrect deps.
+    - lib/dpkg/pkg-spec.c: map unqualified package names of multiarch-same
+      packages to the native arch instead of throwing an error, so that we
+      don't break on upgrade when there are unqualified names stored in
+      dpkg's own trigger database.
+    - Add logic to the postinst to `dpkg --add-architecture i386' on new
+      installs on amd64, and to also do so on upgrades from pre-conffile
+      Ubuntu versions, mimicking our previous behaviour with the conffile.
+    - Apply a workaround from mvo to consider RC packages as multiarch,
+      during the dpkg consistency checks. (see LP: 1015567 and 1057367).
+ 
+ -- Adam Conrad <adconrad@ubuntu.com>  Thu, 16 Jan 2014 16:41:23 -0700
+
+dpkg (1.17.5) unstable; urgency=low
+
+  [ Guillem Jover ]
+  * Switch non-tty output to be line buffered by default, and set it to fully
+    buffered only for programs with precious and abundant output, not just
+    progress reporting output (i.e. dpkg-query). This was causing out-of-order
+    error and debug messages in relation to normal progress reporting, which
+    could be very confusing. Regression introduced in dpkg 1.17.2.
+  * Fix segfault in update-alternatives when adding or renaming slaves for
+    an existing alternative. Regression introduced in dpkg 1.17.2.
+    Closes: #731710
+  * Fix dpkg-maintscript-helper symlink_to_dir and dir_to_symlink commands:
+    - Always run postinst code regardless of prior-version, as the package
+      might have been never configured before.
+    - Be more strict when checking the expected state of paths.
+    - Rename subcommand shell code to check-files-ownership.
+    - Change dir_to_symlink switch code to use a staging empty directory,
+      to avoid dpkg removing files from other packages, when removing the
+      package old files during upgrade.
+    - Bump minimal version in man page to 1.17.5.
+    Closes: #731730
+  * Mention gpg2 too as one of the default sign commands in dpkg-buildpackage.
+
+  [ Updated dpkg translations ]
+  * German (Sven Joachim).
+
+  [ Updated scripts translations ]
+  * German (Helge Kreutzmann).
+
+  [ Updated manpages translations ]
+  * German (Helge Kreutzmann).
+
+ -- Guillem Jover <guillem@debian.org>  Thu, 12 Dec 2013 08:29:45 +0100
+
+dpkg (1.17.4) unstable; urgency=low
+
+  * Keep the diversions and statoverride database files open during dpkg
+    runs, to avoid eager inode number reuse by the filesystem if these files
+    get replaced multiple times in maintainer scripts, as we rely on the
+    inode numbers being different when checking if the databases need to
+    be reloaded. Regression introduced in 1.17.2. Closes: #731524
+  * Add debug output to diversions and statoverride database loading code.
+  * Reset the statoverrides information from the in-core database when
+    reloading it from disk, otherwise removals in maintainer scripts will
+    not be seen during the current dpkg run.
+  * Get rid of dpkg-split global partqueue queue variable.
+  * Use warningv() in dpkg instead of ad-hoc printing message when
+    overriding with --force option.
+  * Switch URLs in docs and code comments from http:// to https:// if the
+    latter is available.
+
+ -- Guillem Jover <guillem@debian.org>  Sat, 07 Dec 2013 07:34:54 +0100
+
+dpkg (1.17.3) unstable; urgency=low
+
+  [ Guillem Jover ]
+  * Check availability of warning flags at build time. Fixes a build failure
+    on systems with old g++ compilers not accepting -Wc++11-compat.
+  * Move DPKG_C_C99 call just after AC_PROG_CC, so that subsequent checks
+    can take advantage of the possibly set flags to enable C99 features.
+  * Improve configure C99 compiler check output.
+  * Use C++11 nullptr instead of 0 or NULL, which is way more descriptive
+    and has a better type. Check for C++11 compiler support, and fallback
+    nullptr to 0 if unavailable.
+
+  [ Updated programs translations ]
+  * Vietnamese (Trần Ngọc Quân). Closes: #731409
+
+ -- Guillem Jover <guillem@debian.org>  Thu, 05 Dec 2013 10:19:38 +0100
+
+dpkg (1.17.2) unstable; urgency=low
+
+  [ Guillem Jover ]
+  * Make Dpkg::Arch debwildcard_to_debtriplet() more robust by matching
+    on exact 'any' strings, instead of substrings.
+  * Add manpages-it Replaces to dselect and dpkg-dev. Closes: #717983
+    Reported by Andreas Beckmann <anbe@debian.org>.
+  * Document default dpkg-deb compressor change to xz in man page.
+    Thanks to Salvatore Bonaccorso <carnil@debian.org>. Closes: #718437
+  * Version manpages-it in Replaces with (<< 2.80-4), now that the package
+    does not ship the overlapping paths any more.
+  * Automatically prepend needed spaces for continuation --force-help lines.
+  * Be more precise on deb format errors with data member in dpkg-deb.
+  * Do not allow deb packages with control and data members swapped.
+  * Clarify «dpkg-deb --extract» bad usage error message on missing arguments
+    by printing all required arguments at once. Closes: #718899
+  * Clarify the insertion order of _ members in deb(5) man page.
+  * Fix use after free in alternative_parse_fileset() on update-alternatives.
+    Reported by Pedro Ribeiro <pedrib@gmail.com>.
+  * Fix use after free in dpkg_arch_load_list() on libdpkg.
+    Reported by Pedro Ribeiro <pedrib@gmail.com>.
+  * Fix theoretical stack buffer overflow in w_dependency() on libdpkg, not
+    currently applicable. Reported by Pedro Ribeiro <pedrib@gmail.com>.
+  * Add ppc64el support to cputable. Closes: #718945
+    Thanks to Jeff Bailey <jeffbailey@google.com>.
+  * Use dpkg-gencontrol -c argument as a fallback lock file in case
+    debian/control does not exist. Closes: #667008
+  * Pass the package reference count (i.e. number of present instances) to
+    maintainer scripts via the new variable DPKG_MAINTSCRIPT_PACKAGE_REFCOUNT.
+    Closes: #681370
+  * Fix field names on error messages in libdpkg, by either capitalizing them
+    or by renaming them to match reality.
+  * Do not capitalize error and warning messages.
+  * When ignoring invalid remove requests in dpkg consider that progress,
+    reset the loop detector and avoid the assert. Closes: #143307
+  * Activate all path components for file triggers on removal.
+    Regression introduced in 1.17.0. Closes: #725437
+  * Activate file triggers on disappearance more accurately, only when we know
+    we are inevitably removing things.
+  * Fix «dpkg-query --list» output when using multibyte character strings,
+    to avoid unaligned columns and mojibake. Closes: #257505, #718541
+    Based on a patch by Changwoo Ryu <cwryu@debian.org>.
+  * Use fully buffered output on non-tty stdout.
+    Reported by Shawn Landden <shawnlandden@gmail.com>.
+  * Recognize «start-stop-daemon -C» as documented. Closes: #719746
+    Reported by Brian S. Julin <bri@abrij.org>.
+  * When update-alternatives is told to change slave links, do not warn that
+    the link group is broken, just print a notice that the alternative is
+    being updated due to the changes.
+  * Add a new «dpkg --verify» command to check the integrity of packages
+    installed files. Add a --verify-format option to excplicitly select the
+    output format, currently only rpm compatible output is supported, but
+    the default might change in the future. Closes: #187019
+  * Improve dpkg “Preparing to replace” and “Unpacking” progress messages.
+    Closes: #32427, #71106
+  * Print the package version on main dpkg progress messages.
+  * Do not store timestamps in gzip headers when using the command, to try to
+    mimic the zlib behavior. This does not affect Debian as it's been using
+    zlib for a very long time. Closes: #719844
+  * Reset environment variables affecting compressor commands when not using
+    the shared library implementations. Namely XZ_DEFAULTS, XZ_OPT, BZIP and
+    BZIP2.
+  * Use a simple list to track packages owning a file, instead of using a
+    list of arrays of pointers which waste 10 pointers per non-shared file,
+    instead of 1. This significantly reduces dpkg memory usage.
+  * Honor new DEB_SIGN_KEYID environment variable in dpkg-buildpackage.
+    Suggested by Harald Dunkel <harri@afaics.de>. Closes: #615813, #719418
+  * Always check subprocess exit codes in Dpkg::Source::Package modules.
+    Reported by Ian Jackson <ijackson@chiark.greenend.org.uk>.
+  * Add support for pie and stack-protector options to dpkg-buildflags FFLAGS,
+    and update the man page to mention FFLAGS are a subset of CFLAGS.
+    Closes: #726932
+  * Improve and unify -O option handling in dpkg-genchanges, dpkg-gensymbols
+    and dpkg-shlibdeps, by always taking an optional filename argument and
+    describing in the man page the default output files.
+  * Use “hyphen” instead of “dash” when we mean the ‘-’ character in the
+    documentation and code comments.
+  * Do not NULL-terminate the list in the compat scandir(), as this might
+    cause a segfault in case the function returns 0 entries.
+  * Always return from ensure_statoverrides() if file is NULL, otherwise
+    we might get us to read garbage from memory or segfault.
+  * Add new symlink_to_dir command to dpkg-maintscript-helper. Closes: #720712
+    Based on a patch by Bastien ROUCARIÈS <roucaries.bastien@gmail.com>.
+  * Add new dir_to_symlink command to dpkg-maintscript-helper. Closes: #583585
+  * Distinguish dpkg error reports between errors while processing packages
+    and archives.
+  * Fix crashes in the first call to gettext() after fork() on Mac OS X, by
+    forcing the initialization at program start of the CoreFoundation cached
+    values in libintl.
+  * Set a default gettext domain for libdpkg code, so that other programs
+    using a different domain can still get correct translations, like dselect.
+  * Cleanup libdpkg-perl API:
+    - Dpkg::Compression: Deprecate $default_compression_level,
+      $default_compression and $compression_re_file_ext package variables.
+    - Dpkg::Exit: Deprecate @handlers package variable.
+    - Dpkg::Source::Package: Deprecate $diff_ignore_default_regexp and
+      @tar_ignore_default_pattern package variables.
+    - Dpkg::Changelog::Entry::Debian: Deprecate $regex_header and
+      $regex_trailer package variables.
+  * Add GnuPG 2.x support. Add gnupg2 and gpgv2 as alternative Recommends to
+    gnupg and gpgv (to not pull them by default), but prefer gpgv2 over gpgv,
+    and gpg2 over gpg at run-time if they are available.
+  * Switch dpkg conflictor tracking from a fixed-size array to a queue,
+    fixing several related issues, due to conflictors not being removed from
+    the array after processing them. dpkg could fill it due to additions in
+    previous package processing producing very confusing error messages; and
+    a theoretical problem where a package could get appended to be removed,
+    then reinstalled as a new version, to get removed again when revisiting
+    the array in a subsequent package processing. Closes: #726112
+  * Do not accept empty field names in dpkg.
+  * Do not accept an initial hyphen in field names.
+  * Add experimental build profiles support:
+    - Add support for <!profile.name> build-time restrictions in dependencies.
+    - Add support for DEB_BUILD_PROFILES environment variable.
+    - Add new option -P to dpkg-buildpackage and dpkg-checbuilddeps.
+    - Add new Built-For-Profiles output field in .deb and .changes files.
+    Based on a patch by Patrick "P. J." McDermott <pjm@nac.net>,
+    Wookey <wookey@debian.org> and Johannes Schauer <j.schauer@email.de>.
+    Closes: #661538
+  * Bump Standards-Version to 3.9.5.
+  * Document interactions of dpkg-source --extend-diff-ignore and -i in the
+    man page. Closes: #729874
+
+  [ Updated programs translations ]
+  * German (Sven Joachim).
+  * Vietnamese (Trần Ngọc Quân).
+
+  [ Updated scripts translations ]
+  * German (Helge Kreutzmann).
+
+  [ Updated manpages translations ]
+  * French (Christian Perrier): fix incorrectly translated sentence,
+    thanks to Fabien Givors.
+  * German (Helge Kreutzmann).
+
+ -- Guillem Jover <guillem@debian.org>  Thu, 05 Dec 2013 04:56:31 +0100
+
+dpkg (1.17.1ubuntu1) trusty; urgency=low
+
+  * Merge from Debian unstable.  Remaining changes:
+    - Change the multiarch downgrade version checks in prerm/postrm
+      from 1.16.2 to 1.16.0~ to reflect when multiarch landed in Ubuntu.
+    - Migrate dpkg multiarch conffile (and other multi-arch-related
+      conf settings) to the new DB with dpkg --add-architecture, but
+      keep a copy of the old conffile if it was modified.
+    - Out of paranoia, keep an option handler for foreign-architecture
+      that informs people that they need to scrub their config files
+      and upgrade, on the off chance that the above migration fails
+      for some reason (this mitigates the chances of leaving users with
+      a dpkg that fails to run due to a broken config).
+    - Add DPKG_UNTRANSLATED_MESSAGES environment check so that higher-level
+      tools can get untranslated dpkg terminal log messages while at the
+      same time having translated debconf prompts.  This is useful for tools
+      that hide the dpkg terminal by default and use apport for bug
+      reporting with the untranslated error message.
+    - Apply patch from Steve McIntyre to special-case armhf/armel ELF
+      objects in Shlibs/Objdump.pm, so we don't get incorrect deps.
+    - lib/dpkg/pkg-spec.c: map unqualified package names of multiarch-same
+      packages to the native arch instead of throwing an error, so that we
+      don't break on upgrade when there are unqualified names stored in
+      dpkg's own trigger database.
+    - Add logic to the postinst to `dpkg --add-architecture i386' on new
+      installs on amd64, and to also do so on upgrades from pre-conffile
+      Ubuntu versions, mimicking our previous behaviour with the conffile.
+    - Apply a workaround from mvo to consider RC packages as multiarch,
+      during the dpkg consistency checks. (see LP: 1015567 and 1057367).
+    - Add ppc64el/powerpc64le support to cputable (backported from 1.17.2).
+  * Forward-port manpages-it dpkg/dpkg-dev/dselect Replaces from 1.16.12.
+
+ -- Adam Conrad <adconrad@ubuntu.com>  Sun, 17 Nov 2013 10:42:09 +0000
+
+dpkg (1.17.1) unstable; urgency=low
+
+  * Man pages cleanup:
+    - Make explicit that dpkg-shlibdeps -e can be used multiple times.
+    - Improve documentation on how to update the available database before
+      setting package selections. Suggested by Klaus Ita <koki.eml@gmail.com>.
+  * Add manpages-it Replaces to dpkg due to new translated man pages.
+    Reported by Alessio Gaeta <alga777@gmail.com>. Closes: #717983
+  * Reword libdpkg-perl description and only list public modules.
+  * Remove space before value in dpkg-parsechangelog -S option on pkg-info.mk.
+    Closes: #718014
+  * Make the build system install start-stop-daemon directly under /sbin,
+    instead of moving it around in debian/rules.
+
+ -- Guillem Jover <guillem@debian.org>  Sun, 28 Jul 2013 14:44:50 +0200
+
+dpkg (1.17.0) unstable; urgency=low
+
+  [ Guillem Jover ]
+  * Switch update-alternatives back to a fatal error on out of range priority
+    on --install.
+  * Document dpkg-deb --debug in --help output.
+  * Bump Standards-Version to 3.9.4 (no changes needed).
+  * Use the new canonical dpkg git Vcs URLs.
+  * Remove ancient version from zlibg1-dev Build-Depends.
+  * Add compression development packages to libdpkg-dev Depends.
+  * Man pages cleanup:
+    - Disable justification and hyphenation in SEE ALSO sections.
+    - Remove unneeded double quotes in .SH headings.
+    - Do not use “header” when “format” or “field” is meant.
+    - Move dangers of installing via dpkg-deb from BUGS to a NOTES section.
+    - Remove BUGS sections containing obvious or misplaced information.
+    - Move BUGS sections before EXAMPLES and SEE ALSO sections.
+    - Place ENVIRONMENT and FILES sections contiguously.
+    - Move EXIT STATUS section before ENVIRONMENT.
+    - Rename CAVEATS sections to NOTES.
+    - Fold BACKWARD COMPATIBILITY section into other sections.
+    - Document since when DEB_*_MULTIARCH variables are supported.
+    - Move compiler flags subsection from ENVIRONMENT to NOTES.
+    - Unify WARNING and ERROR sections into DIAGNOSTICS.
+    - Unify command-line options into a single OPTIONS section.
+    - Mark programs, variables, fields and command-line options in bold.
+    - Fold dpkg-architecture(1) DEBIAN/RULES section into EXAMPLES.
+    - Fix dpkg-architecture(1) debian/rules usage documentation.
+    - Move dpkg-buildflags(1) HARDENING into a new FEATURE AREAS subsection.
+    - Improve dpkg-buildflags(1) usage documentation.
+      Thanks to Matthijs Kooijman <matthijs@stdin.nl>. Closes: #657627
+    - Clarify that DPKG_MAINTSCRIPT_PACKAGE is not arch-qualified.
+    - Add triggers to the list of binary control information files.
+      Thanks to Charles Plessy <plessy@debian.org>.
+  * Use colon instead of dot for user:group in dpkg debug output.
+  * Remove support for obsolete DM-Upload-Allowed from Dpkg::Vendor::Debian.
+  * Fix update-alternatives to use the current alternative link as the first
+    best value, to avoid flip-flops of alternatives with equal priority.
+    Closes: #699807
+  * Fix clang warnings due to change of alignment requirements.
+  * Change copyright file to point to GPL-2 instead of GPL.
+  * Do not pass -e in shell script shebangs, set it in the body.
+  * Add new dpkg-parsechangelog --show-field option to print a field value.
+    Closes: #284664
+  * Add new dpkg-buildpackage --force-sign option.
+  * By default do not sign builds for UNRELEASED uploads on dpkg-buildpackage.
+    Closes: #635117
+  * Also check Build-Depends-Arch for minimal versions in dpkg-shlibdeps.
+    Closes: #681470
+  * Document dpkg-buildflags export mode usage in man page. Closes: #691449
+    Thanks to Jonathan Nieder <jrnieder@gmail.com>.
+  * Rename dpkg-buildflags configure exporter to cmdline, but preserve
+    configure as a legacy alias.
+  * Mask fortify hardening option from dpkg-buildflags output on noopt.
+    New glibc 2.16 and later, issue a warning on this condition.
+    Closes: #691745
+  * Refer to path instead of file on dpkg-statoverride.
+  * Always print a descriptive architecture column, even for empty or missing
+    architectures on «dpkg-query --list».
+  * Rework SELinux code on unpack to reload the label database if it has
+    changed, for example while upgrading the SELinux policy package.
+  * Execute maintainer scripts in a new execution context, based on the
+    current one and the specific maintainer script filename, and if it's
+    not different to the current one, use "dpkg_script_t" as a fallback.
+  * Do not unnecessarily create a dpkg update log record on remove or purge.
+  * Always reset want status when removing or purging a package; so this
+    now resets holds among others. Closes: #163763
+  * Always reset want status when installing a package; so this now resets
+    holds among others. Closes: #162541
+  * Defer cleanup of .dpkg-new and .dpkg-tmp paths on removal to the point
+    when we are definitely removing the main path.
+  * Activate file triggers on removal more accurately, only when we know
+    we are inevitably removing things.
+  * Change dir to / before executing maintainer scripts. Closes: #686782
+  * Add new dpkg-deb --deb-format option and base --new and --old on it,
+    as the latter are not future-proof, and neither can be guaranteed to
+    produce a reliable output file format.
+  * Drop archtable. It serves no purpose, it's Debian specific, it's
+    usually outdated, and everyone should be using dpkg-architecture anyway.
+  * Add musl-linux support to ostable and triplettable.
+    Requested-by Kevin Bortis <wermut@gmail.com>.
+  * Remove update-alternatives, dpkg-divert and dpkg-statoverride
+    compatibility symlinks under /usr/sbin/.
+  * Remove install-info wrapper.
+  * Only ignore older packages if the existing version is informative. This
+    allows any program using libdpkg to parse the available file to see again
+    packages with versions lesser than 0-0 (like 0~0-0). Closes: #676664
+  * Fix Dpkg::Control::Hash set_options() to take a hash as argument instead
+    of two scalars.
+  * Add a new Dpkg::Vendor get_vendor_dir() function.
+  * Print correct path to vendor directory on error message in dpkg-vendor.
+  * Do not hardcode the dpkg system configuration directory in perl scripts,
+    respect build time setting.
+  * Deprecate Dpkg perl module lowercase and exported by default variables,
+    replaced by new unified uppercase non-exported by default ones.
+  * Do not set -fstack-protector in the default build flags on arm64 (it's
+    not yet supported). Thanks to Matthias Klose <doko@ubuntu.com>.
+    Closes: #711936
+  * Add GCJFLAGS support to dpkg-buildflags. Closes: #708375
+  * Clarify that dpkg --set-selections needs an up-to-date available db,
+    by documenting it on the dpkg(1) man page, and warning whenever dpkg
+    finds unknown packages while setting the selections. Closes: #703092
+  * Print nicer error messages in perl scripts using Getopt::Long by trapping
+    $SIG{__WARN__} to call usageerr() on option parse errors.
+  * Move the exit call out from usage() in dpkg-scansources so that usageerr()
+    gives a correct exit code. Thanks to Bernhard R. Link <brlink@debian.org>.
+  * Print correct error message on unknown dpkg-name options before --.
+  * Require at least one filename on dpkg-name after --.
+  * Switch program usage errors to not print entire --help output.
+    Closes: #681371
+  * Document that «dpkg-parsechangelog -l-» can be used to read from stdin.
+  * Support parsing compressed changelog files transparently. Closes: #684196
+  * Sort files inside new diffs generated by dpkg-source lexicographically.
+    Closes: #689193
+  * Add support for a build_arch option in Dpkg::Deps deps_parse().
+    Thanks to Colin Watson <cjwatson@ubuntu.com>. Closes: #697297
+  * Move epoch-less or revision-less output logic to Dpkg::Version.
+    Based on a patch by Bernhard R. Link <brlink@debian.org>.
+  * Catch mismatches between version strings and format versions in
+    dpkg-source. Ensure that a 3.0 (quilt) package has a non-native version
+    and that a 3.0 (native) package has a native version. Closes: #700177
+    Thanks to Bernhard R. Link <brlink@debian.org>.
+  * Add support for mipsn32(el) and mips64(el) to arch tables.
+    Thanks to YunQiang Su <wzssyqa@gmail.com>. Closes: #685096, #707323
+  * Document --file and --label parser options in dpkg-parsechangelog(1).
+  * Add a new configure --with-dpkg-deb-compressor option to allow selecting
+    the default dpkg-deb compressor, mainly for downstreams.
+  * Switch dpkg-deb default compressor from gzip to xz. Build dpkg.deb using
+    gzip to make debootstrap life easier on non-Debian based systems.
+  * Add support for gzip compression strategies to dpkg-deb. The new
+    strategies are: filtered, huffman, rle and fixed.
+  * Change dpkg and dpkg-deb help output to recommend apt instead of dselect
+    as a user-friendly frontend.
+  * Remove temporary file on error during «dpkg-divert --rename».
+  * Fix value caching in Dpkg::Arch by not shadowing the variables.
+  * Fix chmod() arguments order in Dpkg::Source::Quilt. Closes: #710265
+    Thanks to Pablo Oliveira <pablo@sifflez.org>.
+  * Add new dpkg-shlibdeps -l option to add private shared library directories.
+    This should be used instead of abusing LD_LIBRARY_PATH to pass the paths,
+    which might be problematic when cross-compiling. Closes: #698881
+  * Only apply empty line and comma cleanups when doing substvar replacements
+    on fields where those are relevant. Closes: #659814
+  * Do not scan control files twice for PGP signature presence.
+
+  [ Raphaël Hertzog ]
+  * Fix dpkg-maintscript-helper rm_conffile and mv_conffile to do nothing
+    when the conffile is no longer owned by the current (or named) package.
+    Thanks to Steve Langasek for the patch. Closes: #716948
+  * Improve dpkg-maintscript-helper behaviour in “Multi-Arch: same” packages
+    by arch-qualifying package names read from the environment. Also add
+    a warning about this potential problem in the manual page.
+  * Fix usage of non-existent _() function in multiple places of the Perl
+    code. Thanks to Lincoln Myers <lincoln@netapp.com> for the patch.
+    Closes: #708607
+
+  [ Updated programs translations ]
+  * Fix typo in Spanish translation of update-alternatives.
+    Thanks to Javier Fernandez-Sanguino <jfs@debian.org>. Closes: #713020
+
+  [ Updated programs translations ]
+  * Vietnamese (Trần Ngọc Quân). Closes: #715334
+
+  [ Added man page translations ]
+  * Italian (Beatrice Torracca). Closes: #711647
+
+  [ Updated man page translations ]
+  * Fix wrong translation of "fortify" in French dpkg-buildflags(1) man page.
+    Thanks to Christian Perrier <bubulle@debian.org>. Closes: #712976
+  * Fix typo in dpkg-source(1) man page French translation.
+    Thanks to Cédric Boutillier <boutil@debian.org>. Closes: #708292
+  * Japanese (TAKAHASHI Motonobu). Closes: #704240
+
+ -- Guillem Jover <guillem@debian.org>  Fri, 26 Jul 2013 23:54:54 +0200
+
+dpkg (1.16.12ubuntu1) saucy; urgency=low
+
+  * Merge with Debian stable-proposed-updates, remaining changes:
+    - Change the multiarch downgrade version checks in prerm/postrm
+      from 1.16.2 to 1.16.0~ to reflect when multiarch landed in Ubuntu.
+    - Migrate dpkg multiarch conffile (and other multi-arch-related
+      conf settings) to the new DB with dpkg --add-architecture, but
+      keep a copy of the old conffile if it was modified.
+    - Out of paranoia, keep an option handler for foreign-architecture
+      that informs people that they need to scrub their config files
+      and upgrade, on the off chance that the above migration fails
+      for some reason (this mitigates the chances of leaving users with
+      a dpkg that fails to run due to a broken config).
+    - Add DPKG_UNTRANSLATED_MESSAGES environment check so that higher-level
+      tools can get untranslated dpkg terminal log messages while at the
+      same time having translated debconf prompts.  This is useful for tools
+      that hide the dpkg terminal by default and use apport for bug
+      reporting with the untranslated error message.
+    - Apply patch from Steve McIntyre to special-case armhf/armel ELF
+      objects in Shlibs/Objdump.pm, so we don't get incorrect deps.
+    - lib/dpkg/pkg-spec.c: map unqualified package names of multiarch-same
+      packages to the native arch instead of throwing an error, so that we
+      don't break on upgrade when there are unqualified names stored in
+      dpkg's own trigger database.
+    - Add logic to the postinst to `dpkg --add-architecture i386' on new
+      installs on amd64, and to also do so on upgrades from pre-conffile
+      Ubuntu versions, mimicking our previous behaviour with the conffile.
+    - Apply a workaround from mvo to consider RC packages as multiarch,
+      during the dpkg consistency checks. (see LP: 1015567 and 1057367).
+    - Don't set unsupported -fstack-protector in dpkg-buildflags on arm64.
+  * Add ppc64el/powerpc64le support to cputable (backported from 1.17.2)
+
+ -- Adam Conrad <adconrad@ubuntu.com>  Fri, 04 Oct 2013 00:26:28 -0600
+
+dpkg (1.16.12) stable; urgency=low
+
+  * Fix value caching in Dpkg::Arch by not shadowing the variables.
+    Closes: #724949
+
+ -- Guillem Jover <guillem@debian.org>  Mon, 30 Sep 2013 16:52:37 +0200
+
+dpkg (1.16.11) stable; urgency=low
+
+  [ Raphaël Hertzog ]
+  * Fix usage of non-existent _() function in multiple places of the Perl
+    code. Thanks to Lincoln Myers <lincoln@netapp.com> for the patch.
+    Closes: #708607
+
+  [ Guillem Jover ]
+  * Fix chmod() arguments order in Dpkg::Source::Quilt. Closes: #710265
+    Thanks to Pablo Oliveira <pablo@sifflez.org>.
+  * Only ignore older packages if the existing version is informative. This
+    allows any program using libdpkg to parse the available file to see again
+    packages with versions lesser than 0-0 (like 0~0-0). Closes: #676664
+  * Fix use after free in dpkg_arch_load_list() on libdpkg.
+    Reported by Pedro Ribeiro <pedrib@gmail.com>.
+
+  [ Updated programs translations ]
+  * Vietnamese (Trần Ngọc Quân). Closes: #715334
+
+  [ Added man page translations ]
+  * Italian (Beatrice Torracca). Closes: #711647
+
+  [ Updated man page translations ]
+  * Japanese (TAKAHASHI Motonobu). Closes: #704240
+
+ -- Guillem Jover <guillem@debian.org>  Mon, 23 Sep 2013 16:51:18 +0200
+
+dpkg (1.16.10ubuntu3) saucy; urgency=low
+
+  * scripts/Dpkg/Shlibs/Objdump.pm: Adjust armel/armhf special-casing
+    in dpkg-shlibdeps to try the new ELF ABI flags before arch tags.
+
+ -- Adam Conrad <adconrad@ubuntu.com>  Mon, 08 Jul 2013 08:05:57 -0600
+
+dpkg (1.16.10ubuntu2) saucy; urgency=low
+
+  * Don't set -fstack-protector in dpkg-buildflags on arm64 (not yet
+    supported).
+
+ -- Matthias Klose <doko@ubuntu.com>  Tue, 11 Jun 2013 09:33:34 +0200
+
+dpkg (1.16.10ubuntu1) raring; urgency=low
+
+  * Merge from Debian unstable.  Remaining changes:
+    - Change the multiarch downgrade version checks in prerm/postrm
+      from 1.16.2 to 1.16.0~ to reflect when multiarch landed in Ubuntu.
+    - Migrate dpkg multiarch conffile (and other multi-arch-related
+      conf settings) to the new DB with dpkg --add-architecture, but
+      keep a copy of the old conffile if it was modified.
+    - Out of paranoia, keep an option handler for foreign-architecture
+      that informs people that they need to scrub their config files
+      and upgrade, on the off chance that the above migration fails
+      for some reason (this mitigates the chances of leaving users with
+      a dpkg that fails to run due to a broken config).
+    - Add DPKG_UNTRANSLATED_MESSAGES environment check so that higher-level
+      tools can get untranslated dpkg terminal log messages while at the
+      same time having translated debconf prompts.  This is useful for tools
+      that hide the dpkg terminal by default and use apport for bug
+      reporting with the untranslated error message.
+    - Apply patch from Steve McIntyre to special-case armhf/armel ELF
+      objects in Shlibs/Objdump.pm, so we don't get incorrect deps.
+    - lib/dpkg/pkg-spec.c: map unqualified package names of multiarch-same
+      packages to the native arch instead of throwing an error, so that we
+      don't break on upgrade when there are unqualified names stored in
+      dpkg's own trigger database.
+    - Add logic to the postinst to `dpkg --add-architecture i386' on new
+      installs on amd64, and to also do so on upgrades from pre-conffile
+      Ubuntu versions, mimicking our previous behaviour with the conffile.
+    - Apply a workaround from mvo to consider RC packages as multiarch,
+      during the dpkg consistency checks. (see LP: 1015567 and 1057367).
+
+ -- Adam Conrad <adconrad@ubuntu.com>  Fri, 22 Mar 2013 12:09:02 -0600
+
+dpkg (1.16.10) unstable; urgency=low
+
+  [ Guillem Jover ]
+  * Fix typos in 1.16.9 changelog entry. Closes: #691954
+    Thanks to Nicolás Alvarez <nicolas.alvarez@gmail.com>.
+  * Add missing @LIBLZMA_LIBS@ to Libs.Private in libdpkg.pc.in.
+  * Do not use an undefined va_list variable in dpkg_put_errno().
+  * Abort installation if we cannot set the security context for a file.
+  * Fix OpenPGP armored signature parsing, to be resilient against doctored
+    input, including source package control files. Closes: #695919
+  * Make sure the OpenGPG armor contains a signature block, even on EOF.
+  * Do not accept Armor Header Lines inside a paragraph.
+  * Do not abort dselect when multiarch is detected, as that only makes
+    users downgrade and hold on an older version w/ worse multiarch support.
+  * Fix warning in Dpkg::Source::Archive with «perl -w» due to redefinition
+    of getcwd() by removing unused POSIX modules usage. Closes: #700978
+
+  [ Updated programs translations ]
+  * Esperanto (Felipe Castro).
+  * Spanish (Javier Fernández-Sanguino).
+  * Vietnamesea (Trần Ngọc Quân). Closes: #692100
+
+  [ Updated scripts translations ]
+  * Fix mistranslation in French translation of scripts.
+    Thanks to Filipus Klutiero. Closes: #698530
+  * Fix typos in French translation of scripts.
+    Thanks to Sylvestre Ledru. Closes: #702627
+  * Fix Russian translation (wrong order of parameters in a string).
+    Thanks to Andrey Rahmatullin for noticing and Yuri Kozlov for fixing
+    the translation. Closes: #698869
+
+ -- Guillem Jover <guillem@debian.org>  Fri, 08 Mar 2013 04:41:26 +0100
+
+dpkg (1.16.9ubuntu2) raring; urgency=low
+
+  * Revert build-dependency from gettext:any to gettext, now that gettext is
+    Multi-Arch: foreign.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Thu, 29 Nov 2012 15:03:29 +0000
+
+dpkg (1.16.9ubuntu1) raring; urgency=low
+
+  * Merge from Debian unstable.  Remaining changes:
+    - Change the multiarch downgrade version checks in prerm/postrm
+      from 1.16.2 to 1.16.0~ to reflect when multiarch landed in Ubuntu.
+    - Migrate dpkg multiarch conffile (and other multi-arch-related
+      conf settings) to the new DB with dpkg --add-architecture, but
+      keep a copy of the old conffile if it was modified.
+    - Out of paranoia, keep an option handler for foreign-architecture
+      that informs people that they need to scrub their config files
+      and upgrade, on the off chance that the above migration fails
+      for some reason (this mitigates the chances of leaving users with
+      a dpkg that fails to run due to a broken config).
+    - Add DPKG_UNTRANSLATED_MESSAGES environment check so that higher-level
+      tools can get untranslated dpkg terminal log messages while at the
+      same time having translated debconf prompts.  This is useful for tools
+      that hide the dpkg terminal by default and use apport for bug
+      reporting with the untranslated error message.
+    - Build-depend on gettext:any for cross-building support.
+    - Apply patch from Steve McIntyre to special-case armhf/armel ELF
+      objects in Shlibs/Objdump.pm, so we don't get incorrect deps.
+    - lib/dpkg/pkg-spec.c: map unqualified package names of multiarch-same
+      packages to the native arch instead of throwing an error, so that we
+      don't break on upgrade when there are unqualified names stored in
+      dpkg's own trigger database.
+    - Add logic to the postinst to `dpkg --add-architecture i386' on new
+      installs on amd64, and to also do so on upgrades from pre-conffile
+      Ubuntu versions, mimicking our previous behaviour with the conffile.
+    - Apply a workaround from mvo to consider RC packages as multiarch,
+      during the dpkg consistency checks. (see LP: 1015567 and 1057367).
+
+ -- Adam Conrad <adconrad@ubuntu.com>  Tue, 23 Oct 2012 16:45:37 +0100
+
+dpkg (1.16.9) unstable; urgency=low
+
+  [ Raphaël Hertzog ]
+  * Fix dpkg-source regression in "3.0 (quilt)" source packages while
+    unapplying patches that remove all files in a directory. Closes: #683547
+  * Fix segfault in field format parsing on empty strings, affecting
+    «dpkg-query -W -f ''» and «dpkg-deb -W --showformat=''». LP: #1035512
+  * Fix dpkg's French usage string which was missing the final “s“ in
+    --print-foreign-architectures. Closes: #685863
+
+  [ Guillem Jover ]
+  * Use “statoverrides” instead of “statusoverrides” in dpkg-statoverride.
+    Closes: #686995
+  * Comment out dpkg(1) documentation about disabled --command-fd option.
+    Closes: #685677
+  * Cleanup dpkg-divert unit-test environment to avoid build failures.
+    Closes: #687656
+  * Fix update-alternatives test suite to behave correctly on non-Debian
+    binary paths. Known to be affecting at least Gentoo and Mac OS X.
+  * Do not leak subcall command arguments in update-alternatives.
+  * Fix segfault on update-alternatives when passing --slave without any
+    action at all. LP: #1037431
+  * Fix memory leak in dpkg filesavespackage().
+  * Do not print garbage (or worse) on dpkg shared conffile debug output.
+  * Use a hash instead of a ref to a hash for keys() in Dpkg::BuildFlags
+    get_feature_areas(). This causes compilation failures with older perl
+    versions, which can be an issue with partial upgrades.
+  * Fix filter subpattern debug output format string to print an actual
+    value instead of just blanks.
+  * Ignore trailing filter subpattern slashes on reinclusion comparison.
+    This makes sure to reinclude directories previously excluded so that
+    contained files marked for inclusion do not fail to unpack due to a
+    missing directory. Closes: #688416
+  * Do not consider obsolete conffiles as actively owned by the package.
+    This ensures conffile entries are not mishandled nor mixed up when
+    configuring packages owning the non-obsolete conffiles. Closes: #689836
+    Based on a patch by Andreas Beckmann <debian@abeckmann.de>.
+  * Properly mark in the database obsolete conffiles on package replaces.
+  * Sync the Conffiles field values for all package instances. Because
+    only the first package instance being configured will have a *.dpkg-new
+    conffile available to be processed, the subsequent ones need to use the
+    hash from the previously processed entries.
+  * Fix logic for previously configured conffiles, so that the shared
+    conffile checks actually work on reinstallation. Closes: #684776
+  * Avoid info database corruption and bogus accesses on unknown format
+    values, by always reading the format file and validating it.
+  * Clarify that the most probable reason for multiarch database
+    inconsistencies is due to upgrades from unofficial dpkg versions.
+  * Only satisfy a dependency on a “Multi-Arch: foreign” if arch-unqualified.
+  * Take architecture into account in virtual packages on remove and
+    configure dpkg actions. Closes: #683411
+  * Update update-alternatives --query format and examples in man page to
+    match the implementation.
+  * Add two missing 3rd person ‘s’ in dpkg-gensymbols(1). Closes: #689863
+    Thanks to Paul Menzel <pm.debian@googlemail.com>.
+  * Fix regression on old-style binNMUs for packages that specify an
+    explicit binary version to dpkg-gencontrol, by always fixing up the
+    source version. Closes: #690823
+
+  [ Updated programs translations ]
+  * Catalan (Guillem Jover).
+  * Czech (Miroslav Kure).
+  * Danish (Joe Dalton). Closes: #690808
+  * French (Christian Perrier).
+  * German (Sven Joachim).
+  * Italian (Milo Casagrande).
+  * Japanese (Kenshi Muto).
+  * Polish (Michał Kułach). Closes: #690449
+  * Portuguese (Miguel Figueiredo). Closes: #682582, #690431
+  * Russian (Yuri Kozlov). Closes: #688050, #690415
+  * Slovak (Ivan Masár). Closes: #690426
+  * Swedish (Peter Krefting).
+  * Thai (Theppitak Karoonboonyanan). Closes: #690678
+  * Traditional Chinese (imacat). Closes: #687002
+
+  [ Updated scripts translations ]
+  * Polish (Michał Kułach). Closes: #683104
+  * Spanish (Omar Campagne). Closes: #685297
+
+  [ Updated dselect translations ]
+  * Basque (Iñaki Larrañaga Murgoitio). Closes: #686421
+  * Czech (Miroslav Kure).
+  * Danish (Joe Dalton). Closes: #689820
+  * Polish (Michał Kułach).
+
+  [ Updated man page translations ]
+  * French (Thomas Vincent, Sylvestre Ledru, Christian Perrier).
+    Closes: #682978, #683221
+  * German (Helge Kreutzmann).
+  * Japanese (Hideki Yamane). Closes: #685103
+  * Polish (Michał Kułach).
+  * Spanish (Omar Campagne, Guillem Jover). Closes: #683514
+  * Swedish (Peter Krefting).
+
+ -- Guillem Jover <guillem@debian.org>  Sat, 20 Oct 2012 05:59:50 +0200
+
+dpkg (1.16.8) unstable; urgency=low
+
+  [ Updated programs translations ]
+  * Esperanto (Felipe Castro).
+  * French (Christian Perrier).
+  * Polish (Michał Kułach). Closes: #680561
+  * Russian (Yuri Kozlov). Closes: #677850, #680411
+  * Slovak (Ivan Masár).
+  * Spanish (Javier Fernández-Sanguino)
+
+  [ Updated man page translations ]
+  * French (Christian Perrier).
+
+  [ Updated scripts translations ]
+  * French (Christian Perrier).
+  * Russian (Yuri Kozlov).
+
+  [ Updated dselect translations ]
+  * Danish (Joe Dalton). Closes: #680108
+  * Russian (Yuri Kozlov).
+  * Traditional Chinese (Asho Yeh - 阿信).
+
+ -- Guillem Jover <guillem@debian.org>  Sat, 21 Jul 2012 02:11:04 +0200
+
+dpkg (1.16.7ubuntu6) quantal; urgency=low
+
+  [ RaphaÃ«l Hertzog ]
+  * Fix dpkg-source regression in "3.0 (quilt)" source packages while
+    unapplying patches that remove all files in a directory. Closes:
+    #683547  (LP: #1057886)
+
+ -- Barry Warsaw <barry@ubuntu.com>  Mon, 01 Oct 2012 14:39:06 -0400
+
+dpkg (1.16.7ubuntu5) quantal; urgency=low
+
+  * Fix scoping issues in dpkg postinst, so we don't end up doing
+    the foreign-architecture migration on every single dpkg upgrade
+
+ -- Adam Conrad <adconrad@ubuntu.com>  Fri, 28 Sep 2012 18:37:28 -0600
+
+dpkg (1.16.7ubuntu4) quantal; urgency=low
+
+  * Apply a workaround from mvo to consider RC packages as multiarch,
+    during the dpkg consistency checks. (LP: #1015567). Opened bug 1057367
+    to upgrade status database.
+
+ -- Dmitrijs Ledkovs <dmitrij.ledkov@ubuntu.com>  Thu, 27 Sep 2012 09:40:47 +0100
+
+dpkg (1.16.7ubuntu3) quantal; urgency=low
+
+  * Restore the :native qualier to the implicit build-essential
+    dep in dpkg-checkbuilddeps, now that build-essential is fixed
+
+ -- Adam Conrad <adconrad@ubuntu.com>  Fri, 13 Jul 2012 21:43:37 -0600
+
+dpkg (1.16.7ubuntu2) quantal; urgency=low
+
+  * Remove the :native qualifier from the automatic build-dep on
+    build-essential in dpkg-checkbuilddeps: this broke everything
+
+ -- Adam Conrad <adconrad@ubuntu.com>  Fri, 06 Jul 2012 04:03:53 -0600
+
+dpkg (1.16.7ubuntu1) quantal; urgency=low
+
+  * Merge from Debian unstable.  Remaining changes:
+    - Change the multiarch downgrade version checks in prerm/postrm
+      from 1.16.2 to 1.16.0~ to reflect when multiarch landed in Ubuntu.
+    - Migrate dpkg multiarch conffile (and other multi-arch-related
+      conf settings) to the new DB with dpkg --add-architecture, but
+      keep a copy of the old conffile if it was modified.
+    - Out of paranoia, keep an option handler for foreign-architecture
+      that informs people that they need to scrub their config files
+      and upgrade, on the off chance that the above migration fails
+      for some reason (this mitigates the chances of leaving users with
+      a dpkg that fails to run due to a broken config).
+    - Add DPKG_UNTRANSLATED_MESSAGES environment check so that higher-level
+      tools can get untranslated dpkg terminal log messages while at the
+      same time having translated debconf prompts.  This is useful for tools
+      that hide the dpkg terminal by default and use apport for bug
+      reporting with the untranslated error message.
+    - Build-depend on gettext:any for cross-building support.
+    - Apply patch from Steve McIntyre to special-case armhf/armel ELF
+      objects in Shlibs/Objdump.pm, so we don't get incorrect deps.
+    - lib/dpkg/pkg-spec.c: map unqualified package names of multiarch-same
+      packages to the native arch instead of throwing an error, so that we
+      don't break on upgrade when there are unqualified names stored in
+      dpkg's own trigger database.
+    - Add logic to the postinst to `dpkg --add-architecture i386' on new
+      installs on amd64, and to also do so on upgrades from pre-conffile
+      Ubuntu versions, mimicking our previous behaviour with the conffile.
+  * Alter the foreign-architecture option handler to output to stderr
+    instead of stdout, for people who prefer their stdout less noisy.
+
+ -- Adam Conrad <adconrad@ubuntu.com>  Fri, 06 Jul 2012 02:17:10 -0600
+
+dpkg (1.16.7) unstable; urgency=low
+
+  [ Guillem Jover ]
+  * Fix bogus dpkg-query --control-show badusage() strings.
+
+  [ Raphaël Hertzog ]
+  * Fix dpkg-gencontrol to correctly compute the source version
+    in the case of "old-style" bin-nmus. Closes: #679959
+
+  [ Updated dselect translations ]
+  * Catalan (Guillem Jover).
+  * French (Christian Perrier).
+  * German (Sven Joachim).
+  * Swedish (Peter Krefting).
+
+  [ Updated programs translations ]
+  * French (Christian Perrier).
+  * German (Sven Joachim).
+  * Italian (Milo Casagrande).
+  * Swedish (Peter Krefting).
+
+  [ Updated man page translations ]
+  * Swedish (Peter Krefting).
+  * French (Christian Perrier).
+
+  [ Updated scripts translations ]
+  * Swedish (Peter Krefting).
+  * French (Christian Perrier).
+
+ -- Raphaël Hertzog <hertzog@debian.org>  Mon, 02 Jul 2012 21:16:12 +0200
+
+dpkg (1.16.6) unstable; urgency=low
+
+  [ Guillem Jover ]
+  * Do not translate SE Linux context to human readable form while unpacking,
+    as that might cause the operation to fail if the mcstransd daemon
+    stopped running during the transaction. Closes: #679641
+    Thanks to Russell Coker <russell@coker.com.au>.
+  * Add --control-list and --control-show to dpkg-query --help output.
+
+  [ Raphaël Hertzog ]
+  * Fix import of error functions in dpkg-buildflags. Regression introduced
+    in 1.16.5.
+
+  [ Updated scripts translations ]
+  * German (Helge Kreutzmann).
+
+  [ Updated man page translations ]
+  * German (Helge Kreutzmann).
+
+ -- Guillem Jover <guillem@debian.org>  Sat, 30 Jun 2012 21:45:10 +0200
+
+dpkg (1.16.5) unstable; urgency=low
+
+  [ Raphaël Hertzog ]
+  * dpkg-source will now clean up after a failed application of a quilt
+    patch. Closes: #652970
+    And it will display a message explaining the most likely cause of
+    failure (patch applying with fuzz).
+  * When dpkg-source regenerates the automatic patch (with formats "2.0"
+    or "3.0 (quilt)") it will keep the current patch header to avoid
+    losing changes made by the maintainer.
+  * Modify dpkg-source --commit to auto-whitelist modified binary files.
+    That way the same command can be used whatever kind of upstream files
+    has been modified.
+  * dpkg-source now supports a new option --no-unapply-patches to force
+    patches to be kept applied after build (used by formats "2.0" and "3.0
+    (quilt)"). Closes: #643043
+
+  [ Guillem Jover ]
+  * Add a dpkg-buildflags --status action to describe the flag settings.
+    Thanks to Bernhard R. Link <brlink@debian.org>. Closes: #664058
+  * Add support for “binary-only” key-value option in changelogs, to allow
+    marking changelog entries as part of a binary only upload, having a
+    different version from the source package. Closes: #440094, #672723
+  * Minimize source architecture list on «dpkg-source -b» by removing
+    architectures already covered by architecture wildcards. Closes: #675333
+  * Do not assume $ENV{'HOME'} is defined in Dpkg::Source::Package.
+    Thanks to Niels Thykier <niels@thykier.net>. Closes: #677631
+  * Document in more detail in deb(5) the supported ar archive format.
+  * Document in deb-src-control(5) the “Private-” field prefix.
+  * Add new start-stop-daemon --no-close option to disable closing file
+    descriptors on --background. Closes: #627333, #646425
+  * Switch source compression to xz.
+  * Detect ar header fields truncation due to too long member names or too
+    large member sizes. Closes: #678933
+  * Add new dpkg-query --control-list and --control-show commands, which
+    replace the now deprecated --control-path.
+  * Print master and slave alternarive link names in update-alternatives
+    --query and always print alternative link in --config. Closes: #679010
+  * Cleanup and clarify buffer I/O error reporting. Closes: #621763
+  * Avoid full stop and double newline at the end of errors and warnings.
+    Thanks to Jonathan Nieder <jnieder@gmail.com>. Closes: #624000
+  * Change all programs to accept -? instead of -h for help output.
+  * Add support for specific arch-qualified dependencies. Closes: #676232
+    Thanks to Thibaut Girka <thib@sitedethib.com>.
+  * Accept “:native” arch-qualified Build-Dependencies. Closes: #558095
+    Thanks to Thibaut Girka <thib@sitedethib.com>.
+  * Do not use undefined values returned form deps_parse() in dpkg-shlibdeps.
+    Closes: #640676
+  * Add an Architecture column to «dpkg-query -l» before the Description
+    column. Suggested by Jonathan Nieder <jnieder@gmail.com>. Closes: #673190
+
+  [ Updated dpkg translations ]
+  * Swedish (Peter Krefting).
+
+  [ Updated dselect translations ]
+  * Swedish (Peter Krefting).
+
+  [ Updated scripts translations ]
+  * German (Helge Kreutzmann).
+
+  [ Updated man page translations ]
+  * German (Helge Kreutzmann).
+  * Swedish (Peter Krefting).
+
+ -- Guillem Jover <guillem@debian.org>  Sat, 30 Jun 2012 04:28:51 +0200
+
+dpkg (1.16.4.3ubuntu1) quantal; urgency=low
+
+  * Merge from Debian unstable.  Remaining changes:
+    - Change the multiarch downgrade version checks in prerm/postrm
+      from 1.16.2 to 1.16.0~ to reflect when multiarch landed in Ubuntu.
+    - Migrate dpkg multiarch conffile (and other multi-arch-related
+      conf settings) to the new DB with dpkg --add-architecture, but
+      keep a copy of the old conffile if it was modified.
+    - Out of paranoia, keep an option handler for foreign-architecture
+      that informs people that they need to scrub their config files
+      and upgrade, on the off chance that the above migration fails
+      for some reason (this mitigates the chances of leaving users with
+      a dpkg that fails to run due to a broken config).
+    - Add DPKG_UNTRANSLATED_MESSAGES environment check so that higher-level
+      tools can get untranslated dpkg terminal log messages while at the
+      same time having translated debconf prompts.  This is useful for tools
+      that hide the dpkg terminal by default and use apport for bug
+      reporting with the untranslated error message.
+    - Build-depend on gettext:any for cross-building support.
+    - Apply patch from Steve McIntyre to special-case armhf/armel ELF
+      objects in Shlibs/Objdump.pm, so we don't get incorrect deps.
+    - lib/dpkg/pkg-spec.c: map unqualified package names of multiarch-same
+      packages to the native arch instead of throwing an error, so that we
+      don't break on upgrade when there are unqualified names stored in
+      dpkg's own trigger database.
+  * Add logic to the postinst to `dpkg --add-architecture i386' on new
+    installs on amd64, and to also do so on upgrades from pre-conffile
+    Ubuntu versions, mimicking our previous behaviour with the conffile.
+
+ -- Adam Conrad <adconrad@ubuntu.com>  Wed, 20 Jun 2012 22:57:24 -0600
+
+dpkg (1.16.4.3) unstable; urgency=low
+
+  * On «update-alternatives --install» only warn for now on out of range
+    priorities and clamp the values, as there seems to be packages using
+    priorities > INT_MAX, which although bogus as they were previously
+    overflowing the int used to store them, that would cause installation
+    failures when upgrading from squeeze. This will be reverted to an
+    error after wheezy. Closes: #676874
+
+ -- Guillem Jover <guillem@debian.org>  Sun, 17 Jun 2012 10:56:15 +0200
+
+dpkg (1.16.4.2) unstable; urgency=low
+
+  * Check correctly for out of range negative field width values in dpkg-query
+    --show format strings. Regression introduced in 1.16.4. Closes: #676796
+
+ -- Guillem Jover <guillem@debian.org>  Sat, 09 Jun 2012 16:16:17 +0200
+
+dpkg (1.16.4.1) unstable; urgency=low
+
+  * Fix explicit file trigger activation. Regression introduced in 1.16.4.
+    Closes: #676684
+
+ -- Guillem Jover <guillem@debian.org>  Fri, 08 Jun 2012 23:17:11 +0200
+
+dpkg (1.16.4) unstable; urgency=low
+
+  [ Guillem Jover ]
+  * Deprecate compressing .deb files with lzma, by making dpkg-deb issue a
+    warning, as the format has several deficiencies that have been addressed
+    by upstream in xz. Although unpacking will be kept being supported to
+    handle existing lzma compressed .deb files.
+  * Add alternative changelog formats documentation from the policy manual
+    to dpkg-parsechangelog(1). Closes: #584141
+  * Add MiNT support to ostable and triplettable.
+    Requested by Thorsten Glaser <tg@mirbsd.de>.
+  * Add new frontend.txt file to dpkg-dev documenting some public interfaces
+    for dpkg frontends. Closes: #670897
+  * Clarify in dpkg(1) when --force-conf* options cause action.
+    Suggested by Sven Joachim <svenjoac@gmx.de>. Closes: #391818
+  * Add “gcc | c-compiler” to libdpkg-perl Suggests, due to Dpkg::Arch usage.
+    Closes: #671198
+  * Do not mask PIE from dpkg-buildflags on m68k, it appears to work now.
+    Requested by Thorsten Glaser <tg@mirbsd.de>.
+  * Remove deprecated support for PGP style signing command interface from
+    dpkg-buildpackage.
+  * Remove obsolete --udeb dpkg-scanpackages option.
+  * Add arm64 support to cputable. Closes: #672408
+    Thanks Wookey <wookey@wookware.org>.
+  * Check parsed integers for invalid or no digit errors in start-stop-daemon
+    and update-alternatives.
+  * Check all parsed integers for out of range errors; i.e. that no negative
+    values are allowed if not appropriate, and that no overflows occur.
+    Closes: #580038
+  * Switch start-stop-daemon(8) man page examples from /var/run to /run.
+  * Do not obscure Dpkg::Source::Package ‘require’ errors with custom
+    error message. Thanks to Thomas Adam <thomas.adam@smoothwall.net> and
+    Jonathan Nieder <jrnieder@gmail.com>.
+  * Add new Dpkg::Substvars::set_as_used() member function.
+  * Rename Dpkg::Substvars no_warn() member function to mark_as_used(), keep
+    the old name aliased to the new one producing a deprecation warning.
+  * Add support for Build-Depends-Arch and Build-Conflicts-Arch fields, and
+    a new -A option to dpkg-checkbuilddeps. Closes: #629480
+    Thanks to Roger Leigh <rleigh@debian.org>.
+  * Add support for “none” as a valid dpkg-deb compression strategy value.
+    Closes: #674711
+  * Clarify in dpkg(1) that the «dpkg -l» example only lists installed
+    packages, and that to list available packages «dpkg-query --load-avail»
+    has to be used instead. Closes: #673305
+  * Clarify also in the dpkg(1) man page (already present in the dpkg.cfg(5)
+    man page) the valid filenames for /etc/dpkg/dpkg.cfg.d/ fragment files.
+    Closes: #674674
+  * Fix start-stop-daemon to not follow symlinks when creating pidfiles.
+    Thanks to Carsten Hey <carsten@debian.org>. Closes: #675918
+  * Refactor the file locking logic into a new Dpkg::File module, and move
+    the libfile-fcntllock-perl dependency from dpkg-dev to libdpkg-perl.
+  * Demote the libfile-fcntllock-perl Depends to a Recommends by falling back
+    to use flock based locking, because it being an XS module makes building
+    a new perl package bumping the perl ABI impossible, as both packages
+    become uninstallable. Thanks to Dominic Hargreaves <dom@earth.li>.
+    Closes: #675947
+  * Put an & before field_capitalize() calls in Dpkg::Control::Fields to
+    fix a usage before declaration warning with perl 5.16. Closes: #676262
+  * Do not warn in dpkg-divert on missing files list file for packages never
+    installed before. Closes: #673518
+  * Add support for liblzma to handle .xz and .lzma compressed files, and
+    switch to it instead of using xz-utils. This removes the xz-utils
+    Pre-Depends from dpkg. Thanks to Jonathan Nieder <jrnieder@gmail.com>.
+  * Always activate all path components for file triggers, this fixes file
+    trigger handling for conffiles and dpkg-trigger invocations.
+    Closes: #675613, #676061, #676062, #676107, #676118, #676122
+  * Do not reset Multi-Arch field in the update log when removing the package.
+    Closes: #676496
+  * Fix dpkg-split to honour the DPKG_ADMINDIR environment variable.
+
+  [ Updated man page translations ]
+  * German (Helge Kreutzmann).
+  * French (Christian Perrier). Fixes a mistranslation and some
+    inconsistencies reported by Vincent Danjean( thanks). Closes: #673158
+
+ -- Guillem Jover <guillem@debian.org>  Thu, 07 Jun 2012 23:43:19 +0200
+
+dpkg (1.16.3ubuntu2) quantal; urgency=low
+
+  * lib/dpkg/pkg-spec.c: map unqualified package names of multiarch-same
+    packages to the native arch instead of throwing an error, so that we
+    don't break on upgrade when there are unqualified names stored in dpkg's
+    own trigger database.  LP: #1015329.
+
+ -- Steve Langasek <steve.langasek@ubuntu.com>  Tue, 19 Jun 2012 18:08:02 -0700
+
+dpkg (1.16.3ubuntu1) quantal; urgency=low
+
+  * Merge with 1.16.3 from unstable:
+    - Change the multiarch downgrade version checks in prerm/postrm
+      from 1.16.2 to 1.16.0~ to reflect when multiarch landed in Ubuntu.
+    - Migrate dpkg multiarch conffile (and other multi-arch-related
+      conf settings) to the new DB with dpkg --add-architecture, but
+      keep a copy of the old conffile if it was modified.
+    - Out of paranoia, keep an option handler for foreign-architecture
+      that informs people that they need to scrub their config files
+      and upgrade, on the off chance that the above migration fails
+      for some reason (this mitigates the chances of leaving users with
+      a dpkg that fails to run due to a broken config).
+  * Changes remaining from previous Ubuntu versions:
+    - Add DPKG_UNTRANSLATED_MESSAGES environment check so that higher-level
+      tools can get untranslated dpkg terminal log messages while at the
+      same time having translated debconf prompts.  This is useful for tools
+      that hide the dpkg terminal by default and use apport for bug
+      reporting with the untranslated error message.
+    - Build-depend on gettext:any for cross-building support.
+    - Apply patch from Steve McIntyre to special-case armhf/armel ELF
+      objects in Shlibs/Objdump.pm, so we don't get incorrect deps.
+
+ -- Adam Conrad <adconrad@ubuntu.com>  Thu, 07 Jun 2012 10:07:38 -0600
+
+dpkg (1.16.3) unstable; urgency=low
+
+  [ Guillem Jover ]
+  * Do not look for newline beyond the read buffer on dpkg-deb extract.
+  * Check update-alternative name and link arguments for all commands.
+    Closes: #665050
+  * Check all dpkg-divert filename arguments to be absolute and to not
+    contain newlines. Closes: #21722
+  * Print errors while reading the file list files on a new line instead
+    of just after the progress percentage. Closes: #552517
+  * Document in dpkg-source(1) that patches for source format “3.0 (quilt)”
+    are expected to apply without any fuzz. Closes: #666752
+    Based on a patch by Luca Capello <luca@pca.it>.
+  * Remove redundant -Wformat-security from default dpkg-buildflags, which
+    is already implied by -Werror=format-security. Closes: #664964
+    Suggested by Peter Eisentraut <petere@debian.org>.
+  * Document in dpkg-query(1) that commands producing multiple paragraphs
+    will preserve the order of the packages specified on the argument list.
+  * Change start-stop-daemon --exec on GNU/Hurd, FreeBSD, NetBSD, OpenBSD
+    and Solaris to check for executables matching device and inode numbers
+    instead of filenames.
+  * Change start-stop-daemon --name on GNU/Hurd to check the process' argv[1]
+    in addition to argv[0], to handle both binaries and interpreted scripts.
+    Reported by Mats Erik Andersson <mats.andersson@gisladisker.se>.
+  * Handle deb format versions as major.minor integers instead of strings or
+    floats, the latter being susceptible to parsing errors depending on the
+    current locale (although this was only affecting the old deb format).
+  * Ignore the minor format version number for deb-split format, unifying
+    the behaviour with the deb format.
+  * Add support for an abitable containing arch attribute overrides.
+  * Add x32 support to abitable, ostable and triplettable. Closes: #667037
+  * Fix start-stop-daemon to work with relative --exec arguments and --chdir.
+    Closes: #669047
+  * Ignore request to rename a file owned by the diverting package on
+    «dpkg-divert --add --rename». Closes: #588077
+  * Clarify dpkg-gensymbols(1) by way of examples that architecture wildcards
+    are supported in symbols files. Closes: #670048
+  * Fix memory leak due to Dpkg::Control objects not being garbage-collected.
+    Thanks to Ben Harris <bjh21@cam.ac.uk>. Closes: #669012
+  * Compute the md5sum hash on unpack for empty files too, so that these
+    can be checked correctly for matching content when installing multiple
+    package instances.
+  * Generate md5sums files automatically at unpack time if missing from the
+    binary package. Closes: #155676, #155799
+  * Add missing list and md5sums database file checks to «dpkg --audit».
+
+  [ Helge Kreutzmann ]
+  * Fix a typo in man/dpkg-buildflags.1.
+
+  [ Updated dpkg translations ]
+  * French (Christian Perrier).
+  * German (Sven Joachim).
+  * Swedish (Peter Krefting).
+
+  [ Updated dselect translations ]
+  * French (Christian Perrier).
+  * German (Sven Joachim).
+  * Swedish (Peter Krefting).
+
+  [ Updated scripts translations ]
+  * French (Christian Perrier).
+  * Swedish (Peter Krefting).
+
+  [ Updated man translations ]
+  * French (Christian Perrier).
+  * German (Helge Kreutzmann).
+  * Swedish (Peter Krefting).
+
+ -- Guillem Jover <guillem@debian.org>  Fri, 27 Apr 2012 10:10:10 +0200
+
+dpkg (1.16.2) unstable; urgency=low
+
+  [ Guillem Jover ]
+  * Move <config.h> and <compat.h> to the top of trigdeferred.l to properly
+    use the configured features and compat code.
+  * Honour --disable-nls when the system lacks obstack support, by updating
+    the obstack compat module from gnulib.
+  * Link the libdpkg unit tests with libcompat and libintl, so that systems
+    needing them will compile correctly.
+  * Check for the presence of the strnlen declaration and correctly provide
+    the compat one in case the systems lacks it.
+  * Do not assume existence of paths on the build system in the test suite.
+  * Do not fail to link dselect on MacOS X when using --disable-nls.
+  * Remove versioned coreutils Pre-Depends from dpkg due to the ancient
+    md5sum transition. Reported by Bill Allombert <ballombe@debian.org>.
+    Closes: #643746
+  * Change dpkg-architecture to only compute the requested variables. This:
+    - Fixes the bootstrapping problem, as the dpkg build system only needs
+      the host architecture, for which dpkg itself is not required.
+    - Reduces the amount of work performed, including loading and parsing
+      unnecessary table files or calling either of gcc or dpkg programs.
+  * Improve error message in dpkg-gencontrol and dpkg-gensymbols when
+    debian/control does not have any package stanza. Closes: #642473
+    Based on a patch by Kyle Willmon <kylewillmon@gmail.com>.
+  * Add Pre-Depends on tar >= 1.23 (satisfied in stable) to dpkg due to it
+    using the ‘--warning=no-timestamp’ option. Closes: #642802
+  * Do not segfault on GNU/Linux when dpkg cannot retrieve the block size
+    for the filesystem containing the info database. LP: #872734
+  * Fix two memory leaks per tar entry in the tar extractor used on unpack.
+  * Mark dpkg and dselect as Multi-Arch foreign.
+    Reported by Steve Langasek <vorlon@debian.org>.
+  * Mark dpkg-dev and libdpkg-perl as Multi-Arch foreign. Closes: #648217
+    Thanks to Colin Watson <cjwatson@ubuntu.com>.
+  * Add new deb-origin.5 man page. Closes: #608884
+    Thanks to Matt Kraai <kraai@ftbfs.org>.
+  * Return correct status on start-stop-daemon --status when using --pidfile.
+  * Treat dpkg-deb compression level independently for each backend. This
+    has the effect of changing the current behaviour for level 0 on all
+    compressors except gzip.
+  * Add new dpkg-deb -S option to specify the compression strategy. The only
+    currently supported value is “extreme” for xz. Closes: #647915
+  * Stop using brace expansion to install man pages by using dh_installman
+    instead of dh_install, the former does not abort on empty glob expansion.
+  * Do not use absolute paths for programs in perl and shell code.
+  * Add missing ‘*’ in asprintf() and vasprintf() compat declarations.
+  * Add support for virtual output binary:Summary and db:Status-Abbrev fields.
+    Closes: #192619, #427945
+  * Add support for virtual output source:Package and source:Version fields.
+    Closes: #653575
+  * Use a different temporary file per process on libcompat's vsnprintf()
+    function to avoid race conditions from children after fork(3).
+    Reported by Daniel Ruoso <daniel@ruoso.com>. Closes: #655411
+  * Fix start-stop-daemon --exec and --name options on FreeBSD, NetBSD and
+    OpenBSD by swapping the process matching implementations.
+  * Fix start-stop-daemon --name option on GNU/Hurd to match the process name.
+  * Document in more detail the implications of start-stop-daemon matching
+    options. Closes: #367608
+  * Improve and clarify dpkg-shlibdeps superfluous linking warning messages.
+    Based on a patch by Peter Eisentraut <petere@debian.org>. Closes: #656496
+  * Relax --merge-avail Packages file parser, to not fail on bogus versions.
+  * When building only arch-indep binaries with «dpkg-buildpackage -A», name
+    the .changes file using ‘all’ as architecture. Closes: #661638
+  * Handle unknown architectures gracefully in dpkg-buildflags.
+    Closes: #663004
+  * Add missing --status-logger to dpkg --help output.
+  * Do not print bogus errno string for invalid package names in dpkg
+    --ignore-depends option.
+  * Change dpkg-query to not load the available file by default for --list
+    and --show, add a new --load-avail option to expose the old behaviour.
+  * Only allow setting selections via «dpkg --set-selections» for known
+    packages (i.e. those present in either the status or available files).
+  * Always ignore older versions when parsing the available file, not only
+    for --update-avail and --merge-avail.
+  * Mark not-installed non-arch-qualified selections for removal.
+  * Add new «dpkg --assert-multi-arch» command to allow checking for
+    multi-arch support availability.
+  * Bump Standards-Version to 3.9.3 (no changes needed).
+  * Add architecture consistency checks to «dpkg --audit».
+  * Add new dpkg --add-architecture and --remove-architecture commands to
+    track supported architectures.
+
+  [ Raphaël Hertzog ]
+  * Update Dpkg::Shlibs to look into multiarch paths when cross-building
+    too. Closes: #595144
+  * Rewrite architecture.mk with explicit loops instead of duplicating many
+    similar lines. Based on a patch by Thorsten Glaser <tg@mirbsd.de>.
+  * Modify dpkg-gencontrol and dpkg-distaddfile to grab a write lock
+    on debian/control before updating debian/files to avoid simultaneous
+    updates. Closes: #642608
+    Add libfile-fcntllock-perl to dpkg-dev's Depends since we use this module
+    to handle the locking.
+  * Update dpkg-gensymbols(1) to clarify that -e accepts shell patterns
+    expansions and not regular expressions. And let dpkg-gensymbols output a
+    warning when a pattern doesn't match any file. Closes: #649248
+  * Add new option "-a <arch>" to dpkg-checkbuilddeps to check build
+    dependencies for another architecture. This is really basic for now since
+    it assumes all build dependencies must be satisfied on the listed
+    architecture. Closes: #648180 Thanks to Colin Watson for the patch.
+  * Error out if a dpkg database .list file is not a regular file. LP: #369898
+  * Fix dpkg-mergechangelogs to not error out on invalid versions.
+    Closes: #651993
+  * Fix dpkg-source --commit on "3.0 (quilt)" when an explicit patch file
+    is given with a relative filename. Closes: #652414
+  * Further clarify in dpkg-source(1) the conditions under which it's possible
+    to pass an explicit patch file to dpkg-source --commit.
+  * Add new --query-features command to dpkg-buildflags. Thanks to Kees Cook
+    for the patch. Closes: #651481
+  * Fix description of Multi-Arch in deb-control(5). Closes: #654453
+    Thanks to Jakub Wilk for spotting the mistake.
+  * Drop misleading spaces in deb-symbols(5) in the format description.
+  * Clean up dpkg-architecture(1) dropping useless information and
+    adding a reference to /usr/share/dpkg/architecture.mk.
+  * Update dpkg-buildpackage to use the "build-arch" (for -B) and
+    "build-indep" (for -A) targets unless "make -qn" says that they do not
+    exist. Closes: #229357
+  * Improve deb-shlibs(5) to mention that the dependency field must
+    use the same syntax as a Depends field. Closes: #658696
+  * Update dpkg-maintscript-helper(1) to recommend usage of the version
+    removing/renaming a conffile with a "~" suffix as "priorversion"
+    parameter. Thanks to Sam Morris <sam@robots.org.uk> for the patch.
+    Closes: #658854
+  * Fix debug output of dpkg-maintscript-helper. LP: #936340
+
+  [ Jonathan Nieder ]
+  * Bump po4a version in Build-Depends to 0.41, since earlier versions do
+    not handle --srcdir correctly. Closes: #644370
+
+  [ Guillem Jover, Steve Langasek, Raphaël Hertzog ]
+  * Add new dpkg --print-foreign-architectures command.
+  * Add support for virtual output binary:Package field.
+  * Implement Multi-Arch support.
+
+  [ Helge Kreutzmann ]
+  * Fix a typo in man/dpkg-deb.1.
+
+  [ Updated dpkg translations ]
+  * German (Sven Joachim).
+  * Italian (Milo Casagrande). Closes: #627832, #657849
+  * Swedish (Peter Krefting).
+  * French (Christian Perrier)
+  * Polish (Michał Kułach). Closes: #658126
+
+  [ Updated scripts translations ]
+  * German (Helge Kreutzmann).
+  * Spanish (Omar Campagne). Closes: #636238
+  * Swedish (Peter Krefting).
+
+  [ Updated man page translations ]
+  * German (Helge Kreutzmann), including typo fix in dpkg-genchanges
+    Closes: #646496, sub optimal translation of package states LP: #368783
+    and an fix by Chris Leick
+  * Japanese (TAKAHASHI Motonobu).
+  * Spanish (Omar Campagne). Closes: #643969
+  * Swedish (Peter Krefting).
+  * Minor errors corrected in French (thanks to David Prévot)
+  * Fix translation of -B and -A options of dpkg-buildpackage.
+    Thanks to Vincent Danjean. Closes: #654626
+
+  [ Updated dselect translations ]
+  * Dutch (Jeroen Schot). Closes: #651813
+
+ -- Guillem Jover <guillem@debian.org>  Mon, 19 Mar 2012 07:27:12 +0100
+
+dpkg (1.16.1.2ubuntu8) quantal; urgency=low
+
+  * Revert hack to export compiler flags in dpkg-buildpackage.  Any package
+    depending on this should be fixed to use dpkg-buildflags instead.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Mon, 30 Apr 2012 12:49:51 +0100
+
+dpkg (1.16.1.2ubuntu7) precise; urgency=low
+
+  * Apply missing patch from upstream to let dselect's resolver deal
+    with multi-arch Provides in the same way as dpkg (LP: #853679)
+
+ -- Adam Conrad <adconrad@ubuntu.com>  Thu, 12 Apr 2012 16:59:09 -0600
+
+dpkg (1.16.1.2ubuntu6) precise; urgency=low
+
+  * Build-depend on gettext:any for cross-building support.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Sun, 08 Apr 2012 23:22:31 +0100
+
+dpkg (1.16.1.2ubuntu5) precise; urgency=low
+
+  * New version of previous patch, many thanks Raphaël Hertzog! (LP: #902603)
+
+ -- Martin Pitt <martin.pitt@ubuntu.com>  Fri, 16 Dec 2011 11:23:51 +0100
+
+dpkg (1.16.1.2ubuntu4) precise; urgency=low
+
+  * dpkg: Do not try to disappear other packages from the same set. Packages
+    within a set can rightfully share files and should not be disappeared in
+    the case where they share all the files. Many thanks to Raphaël Hertzog
+    for the fix! (Closes: #652063, LP: #902603)
+
+ -- Martin Pitt <martin.pitt@ubuntu.com>  Thu, 15 Dec 2011 11:33:28 +0100
+
+dpkg (1.16.1.2ubuntu3) precise; urgency=low
+
+  * Don't perform is_armhf tests in parse_objdump_output() unless
+    we have a file handle defined.  This is an impossible situation
+    at runtime, but trips up the testsuite oprtating on fake data.
+
+ -- Adam Conrad <adconrad@ubuntu.com>  Fri, 02 Dec 2011 15:46:35 -0700
+
+dpkg (1.16.1.2ubuntu2) precise; urgency=low
+
+  * Apply patch from Steve McIntyre to special-case armhf/armel ELF
+    objects in Shlibs/Objdump.pm, so we don't get incorrect deps.
+
+ -- Adam Conrad <adconrad@ubuntu.com>  Fri, 02 Dec 2011 12:24:40 -0700
+
+dpkg (1.16.1.2ubuntu1) precise; urgency=low
+
+  * Resynchronise with Debian.  Remaining changes:
+    - Merge from git://git.debian.org/users/hertzog/dpkg.git
+      pu/multiarch/full for multiarch support.
+    - On upgrade from 1.16.0~ubuntu[1-3], if /var/lib/dpkg/info/$arch is a
+      directory, migrate the contents to var/lib/dpkg/info; and handle the
+      reverse on downgrade.  This does not handle metadata for packages of
+      foreign architectures.
+    - Add DPKG_UNTRANSLATED_MESSAGES environment check so that higher-level
+      tools can get untranslated dpkg terminal log messages while at the
+      same time having translated debconf prompts.  This is useful for tools
+      that hide the dpkg terminal by default and use apport for bug
+      reporting with the untranslated error message.
+    - Add /etc/dpkg/dpkg.cfg.d/multiarch as a conffile on amd64, so that
+      users are guaranteed to always have it after upgrade even if they
+      don't use update-manager for the upgrade itself.
+    - Continue exporting compiler flags in dpkg-buildpackage until after
+      Ubuntu 12.04 LTS.
+    - Add Pre-Depends on tar >= 1.23 (satisfied in stable) to dpkg due to it
+      using the ‘--warning=no-timestamp’ option.
+    - Strip -Werror=format-security from the flags exported to the
+      environment from dpkg-buildpackage.
+    - Don't export build flags for packages using debhelper compat level 9
+      or above.
+    - Mark dpkg-dev and libdpkg-perl as Multi-Arch foreign. Closes: #648217
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Sun, 27 Nov 2011 09:49:08 +0000
+
+dpkg (1.16.1.2) unstable; urgency=medium
+
+  [ Raphaël Hertzog ]
+  * Fix another typo to correctly set DEB_*_ARCH_BITS in architecture.mk.
+  * Set urgency to medium as changes are minor, and it should migrate
+    quickly in case 1.16.2 comes soon.
+
+  [ Jonathan Nieder ]
+  * Update dpkg-buildflags(1) to note that the processor option
+    -D_FORTIFY_SOURCE=2 is set in CPPFLAGS now instead of CFLAGS and
+    CXXFLAGS. Closes: #646073
+
+ -- Raphaël Hertzog <hertzog@debian.org>  Fri, 25 Nov 2011 11:18:30 +0100
+
+dpkg (1.16.1.1ubuntu3) precise; urgency=low
+
+  * Backport from upstream:
+    - Mark dpkg-dev and libdpkg-perl as Multi-Arch foreign. Closes: #648217
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Sat, 12 Nov 2011 14:54:29 +0000
+
+dpkg (1.16.1.1ubuntu2) precise; urgency=low
+
+  * Don't export build flags for packages using debhelper compat level 9 or
+    above.  This is a layering violation which will go away after 12.04 (see
+    https://lists.ubuntu.com/archives/ubuntu-devel/2011-November/034351.html).
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Tue, 01 Nov 2011 15:36:14 -0400
+
+dpkg (1.16.1.1ubuntu1) precise; urgency=low
+
+  * Resynchronise with Debian.  Remaining changes:
+    - Merge from git://git.debian.org/users/hertzog/dpkg.git
+      pu/multiarch/full for multiarch support.
+    - On upgrade from 1.16.0~ubuntu[1-3], if /var/lib/dpkg/info/$arch is a
+      directory, migrate the contents to var/lib/dpkg/info; and handle the
+      reverse on downgrade.  This does not handle metadata for packages of
+      foreign architectures.
+    - Add DPKG_UNTRANSLATED_MESSAGES environment check so that higher-level
+      tools can get untranslated dpkg terminal log messages while at the
+      same time having translated debconf prompts.  This is useful for tools
+      that hide the dpkg terminal by default and use apport for bug
+      reporting with the untranslated error message.
+    - Add /etc/dpkg/dpkg.cfg.d/multiarch as a conffile on amd64, so that
+      users are guaranteed to always have it after upgrade even if they
+      don't use update-manager for the upgrade itself.
+    - Continue exporting compiler flags in dpkg-buildpackage until after
+      Ubuntu 12.04 LTS.
+    - Add Pre-Depends on tar >= 1.23 (satisfied in stable) to dpkg due to it
+      using the ‘--warning=no-timestamp’ option.
+  * Strip -Werror=format-security from the flags exported to the environment
+    from dpkg-buildpackage.  This causes too many failures (including silent
+    failures in configure tests), and removing it is not a regression from
+    any released version of Ubuntu.  It is still included in the normal
+    output of dpkg-buildflags.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Wed, 26 Oct 2011 09:49:56 +0100
+
+dpkg (1.16.1.1) unstable; urgency=low
+
+  [ Raphaël Hertzog ]
+  * Fix dpkg-source to not ignore the automatic patch when checking
+    for unrecorded changes. Closes: #643148
+  * Let dpkg-source --commit create debian/patches when required.
+    Closes: #643037
+  * Fix dpkg-buildflags --dump to return 0 as exit code and not 1.
+  * Update dpkg-buildflags(1) to not include quotes in the examples
+    setting DEB_BUILD_MAINT_OPTIONS.
+  * Stop outputting build flags in dpkg-buildpackage as it confuses
+    maintainers who are overriding them in debian/rules and who
+    are not seeing the expected value in the build log.
+  * Fix trigger setup code to not reset the status of packages
+    when they are in a status different from triggers-awaited,
+    triggers-pending or installed. Closes: #644492
+  * Fix dpkg-source to ignore changes on debian/patches/.dpkg-source-applied
+    when building a "2.0" source package. Closes: #642656
+  * Fix buildflags.mk to re-export the environment variables that
+    the maintainer can use to change the build flags. Closes: #644412
+
+  [ Guillem Jover ]
+  * Change dpkg-buildflags to set preprocessor option -D_FORTIFY_SOURCE=2
+    in CPPFLAGS, instead of CFLAGS and CXXFLAGS. Closes: #642521, #643632
+  * Fix typo to correctly set DEB_*_ARCH_BITS instead of DEB_*_ARCH in
+    architecture.mk. Thanks to Thorsten Glaser <tg@mirbsd.org>.
+  * Make dpkg-buildflags disable full relro (bindnow) if relro is not enabled.
+
+ -- Guillem Jover <guillem@debian.org>  Fri, 14 Oct 2011 07:08:31 +0200
+
+dpkg (1.16.1ubuntu2) precise; urgency=low
+
+  * Cherry-pick from trunk:
+    - Add Pre-Depends on tar >= 1.23 (satisfied in stable) to dpkg due to it
+      using the ‘--warning=no-timestamp’ option. Closes: 642802, LP: #878960
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Thu, 20 Oct 2011 18:56:21 +0100
+
+dpkg (1.16.1ubuntu1) precise; urgency=low
+
+  * Resynchronise with Debian.  Remaining changes:
+    - Merge from git://git.debian.org/users/hertzog/dpkg.git
+      pu/multiarch/full for multiarch support.
+    - On upgrade from 1.16.0~ubuntu[1-3], if /var/lib/dpkg/info/$arch is a
+      directory, migrate the contents to var/lib/dpkg/info; and handle the
+      reverse on downgrade.  This does not handle metadata for packages of
+      foreign architectures.
+    - Add DPKG_UNTRANSLATED_MESSAGES environment check so that higher-level
+      tools can get untranslated dpkg terminal log messages while at the
+      same time having translated debconf prompts.  This is useful for tools
+      that hide the dpkg terminal by default and use apport for bug
+      reporting with the untranslated error message.
+    - Add /etc/dpkg/dpkg.cfg.d/multiarch as a conffile on amd64, so that
+      users are guaranteed to always have it after upgrade even if they
+      don't use update-manager for the upgrade itself.
+  * Continue exporting compiler flags in dpkg-buildpackage, since we do not
+    want to regress hardening support in Ubuntu 12.04 LTS.  We will revisit
+    this for Ubuntu 12.10.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Fri, 14 Oct 2011 15:01:55 +0100
+
+dpkg (1.16.1) unstable; urgency=low
+
+  [ Raphaël Hertzog ]
+  * Dpkg::Deps: Implement new "reset" method and bump module version to 1.01
+    due to this.
+  * Improved description of --search in dpkg-query(1). Closes: #621066
+    Thanks to Lars Buitinck <larsmans@gmail.com> for the patch.
+  * Let update-alternatives fsync() its administrative files before
+    moving them in place to avoid empty files with some filesystems.
+    LP: #344019
+  * Tighten the regexp used by dpkg-source to ignore the .pc directory of
+    quilt. Thanks to Mike Hommey for noticing the problem.
+  * Change behaviour of dpkg-source's --extend-diff-ignore to also
+    extend the current diff-ignore if it has already been set.
+  * Fix dependency checking code to consider a dependency on a virtual
+    package provided by a package in triggers-pending status as satisfied.
+  * Do not fail when encountering a pre-dependency in triggers-awaited state,
+    instead process the awaited triggers. Closes: #526774
+  * "any" no longer hides "all" in the Architecture field of a .dsc.
+  * Fix dpkg --remove to really remove the triggers from the various
+    internal files in /var/lib/dpkg/info/triggers/. Closes: #525160
+  * Avoid a perl warning in dpkg-gensymbols when no symbols file has been
+    generated (because it would have been empty). Closes: #626684
+  * Re-enable the Package-List field but drop the Architecture column since we
+    have no clear use case yet. It can always be added later on.
+    Also drop the source line since it duplicates other fields.
+    Closes: #619131
+  * Add the extraction part of Dpkg::Source::Package to the supported API.
+    Useful to extract source packages without having to depend on dpkg-source
+    (and hence dpkg-dev).
+  * Add the Dpkg::Vendor module to the supported API. Useful for lintian
+    when dpkg-dev is absent.
+  * Check presence of required parameters in dpkg-vendor. Closes: #628726
+    Thanks to Niels Thykier <niels@thykier.net> for the patch.
+  * Avoid a Perl warning in dpkg-buildflags when HOME is not set.
+    Closes: #635467
+  * dpkg-source can now also use debian/source/local-patch-header (that is not
+    included in the generated source package) instead of
+    debian/source/patch-header. Closes: #629582
+  * Changed dpkg-source --after-build to automatically unapply patches that it
+    has applied during --before-build.
+  * Fix two possible causes for the assertion failure "pigp->trigpend_head".
+    LP: #798793, #424358 Closes: #560251
+  * Use "special" instead of "particular" to qualify the "3.0 (custom)" format
+    in dpkg-source(1). Closes: #631435
+  * Add some supplementary checks to ensure debian/control has the required
+    fields. Closes: #631439
+  * dpkg-gensymbols(1): document syntax of comments. Closes: #630996
+  * Allow empty lines in symbols files to better delimit multiple libraries.
+    Thanks to Cyril Brulebois <kibi@debian.org> for the patch.
+  * dpkg: if "prerm upgrade" fails when downgrading, do not try to run
+    "prerm failed-upgrade" with the prerm of the oldest prerm, it can't work
+    around a bug of a newer prerm anyway.
+  * dpkg: support new "interest-noawait" and "activate-noawait" trigger
+    directives.
+  * dpkg-buildflags(1): make it clear that DEB_*_(SET|APPEND) environment
+    variables are meant for users and should not be used by packages.
+  * update-alternatives: do not allow to reuse a slave link in another
+    slave alternative. Closes: #631547
+  * Improve dpkg-source's logic to identify ignored files. Closes: #632168
+  * Fix a small typo in dpkg-source(1). Closes: #632937
+  * Reword the description of dpkg-source --before-build and --after-build
+    to be clearer. Closes: #608260
+  * dpkg-buildpackage no longer exports the compiler flags. Closes: #560070
+    Packages must directly call dpkg-buildflags to retrieve them.
+  * dpkg-buildflags supports a prepend command to modify the build
+    flags. Particularly useful for package maintainers who don't want
+    their supplementary flags to take precedence over user submitted
+    flags.
+  * Add new --dump action to dpkg-buildflags and make it the default action.
+    Closes: #603435
+  * dpkg-mergechangelogs now checks the return value of the close() call.
+    Thanks to Niels Thykier <niels@thykier.net> for the patch. Closes: #633539
+  * Similar changes to dpkg-shlibdeps and dpkg-gencontrol, also by Niels.
+  * Fix update-alternatives to not remove a real file when dropping a
+    symlink for a slave that's not provided by the new current choice.
+    Closes: #633627
+  * Improve dpkg-source's error message complaining about the lack
+    of the upstream tarball. Closes: #634510
+  * Add some common makefile snippets for use in rules files in
+    /usr/share/dpkg/: default.mk, architecture.mk, buildflags.mk, pkg-info.mk,
+    vendor.mk Closes: #606839
+  * Fix the dpkg-divert test-suite to also skip test that would fail if run
+    under root. Closes: #634961
+  * Change merge conflict separators created by dpkg-mergechangelogs to match
+    the usual norm of being composed of 7 characters. LP: #815700
+  * With source format 2.0 and 3.0 (quilt), dpkg-source now fails by default
+    when upstream changes have not been recorded in a quilt patch. The new
+    --commit operation can be used to properly record the changes before-hand.
+    LP: #797839
+    And it fails before installing the automatic patch in debian/patches/
+    Closes: #615899
+  * dpkg-buildflags now supports "--export=configure" to output compilation
+    flags on a single line with double quotes as delimiter of the various
+    values. It also uses DEB_<flag>_MAINT_<op> to let the maintainer
+    extend the build flags to use. Last but not least, it can now also strip
+    options from the returned build flags.
+  * Fix possible segfault of dpkg in findbreakcycle(). LP: #733414
+  * dpkg-source now properly cleans up the temporary tarball generated for
+    native formats in case of unexpected interruption. Closes: #631494
+  * Fix simplification logic of union dependencies. Closes: #637564
+  * Fix dpkg's handling of a hardlink pointing to a conffile. Closes: #638291
+  * Add example of extend-diff-ignore's usage in dpkg-source(1).
+    Closes: #640198
+  * dpkg-buildflags now returns hardening flags by default. Closes: #489771
+    They can be individually enabled/disabled via DEB_BUILD_MAINT_OPTIONS,
+    see dpkg-buildflags(1). Thanks to Kees Cook for his help.
+
+  [ Guillem Jover ]
+  * Install deb-src-control(5) man pages in dpkg-dev. Closes: #620520
+  * Add ‘.gitmodules’ to the default dpkg-source ignore lists. Closes: #620490
+  * Document in dpkg-query(1) man page that on --listfiles each list of
+    files per package name is separated by a blank line. Same goes for
+    --status and --print-avail.
+  * Use execvp(3) unconditionally in command_exec(). Making the call always
+    fallback to use the system shell in case of error, such as with empty
+    maintainer scripts. Thanks to Jonathan Nieder <jrnieder@gmail.com>.
+    Closes: #622094
+  * Improve deb-split(5) format description by splitting debian-split
+    member contents into a list.
+  * Switch to debhelper compatibility level 7.
+    - Use dh_prep instead of deprecated “dh_clean -k”.
+  * Bump Standards-Version to 3.9.2 (no changes needed).
+  * Generate filenames following current conventions on “dpkg-split --join”,
+    by including the architecture in the debian-split member of a split
+    package and using underscores to separate filename parts.
+  * Support conffiles with spaces when diffing them. Closes: #147583
+  * Allow installing packages with bogus versions with new
+    --force-bad-version.
+  * Do not fail when unpacking a diverted hardlink. Closes: #245322
+    Based on a patch by Christopher Baines <cbaines8@gmail.com>.
+  * Document in dpkg-deb(1) that --fsys-tarfile will always process the
+    input archive sequentially. Closes: #616609
+  * Remove long non-functional --new and --old dpkg-deb option handling
+    from dpkg which were being treated as dpkg commands.
+  * Remove reference to --nocheck dpkg-deb option from dpkg man page as
+    the latter does not pass it to the former.
+  * Clarify the current dpkg behaviour when running the dpkg-deb and
+    dpkg-query back-ends, of not passing through back-end specific options
+    when running them from dpkg. Closes: #610940
+  * Use “unselected” as an adjective in dpkg output messages instead of
+    “deselected”. Closes: #231089
+  * Clarify exit status in dpkg-split and start-stop-daemon --help output.
+  * Clarify “EXIT STATUS” section in man pages by using a table.
+  * Add a --status command to start-stop-daemon returning LSB Init Script
+    status action exit codes.
+  * Add start-stop-daemon process name kernel limits for Solaris, NetBSD,
+    OpenBSD, FreeBSD and Darwin.
+  * On package removal, keep only directories actually containing conffiles,
+    and not directories just matching the substring in the conffile or the
+    directory itself. Thanks to Ondřej Surý <ondrej@debian.org>.
+  * On purge correctly remove symlinks acting as directories, when they are
+    not being used by any other package's files.
+  * Do not lose track of parent directories on removal so that they can
+    be properly cleaned up on purge if not used by any other package.
+    Based on a patch by Ondřej Surý <ondrej@debian.org>. Closes: #454694
+  * Add ‘.hgsigs’ to the default dpkg-source ignore lists.
+    Based on a patch by Jakub Wilk <jwilk@debian.org>. Closes: #627462
+  * Do not allow blank lines in field values. Closes: #308082
+  * Do not warn on missing architecture on packages in config-files state,
+    but then make sure the architecture field is usable. Closes: #604241
+  * Run du with --apparent-size when generating the Installed-Size field in
+    dpkg-gencontrol to get consistent results independent of build system.
+    Thanks to Ludovic Brenta <ludovic@ludovic-brenta.org>. Closes: #630533
+  * Do not fail to unpack shared directories missing on the file system
+    from packages being replaced by other packages. Closes: #631808
+  * Do not require programs to define thisname, provide two new functions
+    to handle the program name (dpkg_set_progname and dpkg_get_progname).
+    Closes: #631757
+  * Man pages cleanup:
+    - Rename “USAGE” dselect(1) section to “ACTIONS” and clarify they can
+      be performed interactively or from command line.
+    - Add missing built-in methods to dselect(1).
+    - Add missing escaping to field dashes in deb-control(5).
+    - Use dashes instead of underscores for variable text.
+    - Clarify that several front-end fields are not dselect specific in
+      dpkg-query(1).
+    - Use [option...] instead of [options] and friends.
+    - Use italics or bold instead of surrounding the text with <>.
+    - Correctly format text with bold and italics.
+    - Use minus signs and hyphens consistently in man pages.
+    - Fix reference to /etc/dpkg/dselect.cfg.d instead of dpkg.cfg.d in
+      dselect(1).
+    - Add missing optional group|gid --chuid argument in start-stop-daemon(8).
+  * Refer to Sources and Packages files as part of a repository instead of
+    as being of exclusive use or owned by APT, which has never been the case.
+  * Unify somewhat dpkg-maintscript-helper --help output with other commands.
+  * Add build-indep and build-arch targets as aliases for build in
+    debian/rules.
+  * Use the perl interpreter found by configure to call dpkg-architecture.pl
+    in the m4 DPKG_ARCHITECTURE macro.
+  * Add new --verbose option to dpkg-deb and change --extract to honour it.
+    Closes: #293280
+  * Add new --raw-extract option to dpkg-deb combining --control and
+    --extract. Closes: #552123
+  * Defer hardlink renames so that there's never a point were the new
+    file contents are accessible from the final path before they have
+    been fsync()ed and cannot be executed causing ETXTBSY when trying
+    to open the to be installed paths for writing.
+    Thanks to Jonathan Nieder <jrnieder@gmail.com>. Closes: #635683
+  * Clarify the default dpkg-deb compression-levels on the man page.
+  * Clarify dpkg --update-avail usage error message. Closes: #628055
+  * Change Dpkg::Compression default values depending on the compressor
+    used, and as such dpkg-source inherits this functionality.
+    Prompted by Timo Juhani Lindfors <timo.lindfors@iki.fi>.
+  * Print an actual error or warning message instead of assert()ing on
+    readlink()/stat() size discrepancies. Closes: #639229
+  * Update alternative links only if they change. This allows for a
+    read-only file system and a writable database. Closes: #636700
+    Based on a patch by Salvatore Bonaccorso <carnil@debian.org>.
+  * Fix double “error:” string in dpkg missing PATH error output.
+    Closes: #639997
+  * Do not warn on strange timestamps when unpacking with dpkg-deb.
+    Closes: #640298
+  * Reduce dpkg-trigger binary size by refactoring libdpkg modules so that
+    it does not end up pulling triglib.
+  * Reduce dpkg-deb binary size by refectoring libdpkg modules so that it
+    does not end up pulling triglib.
+  * Do not fail on --compare-version when generating parse warnings.
+    Existing packages with invalid versions should not fail on their
+    maintainer scripts due to that.
+  * Use the user name (instead of the user id) when setting the supplementary
+    groups in start-stop-daemon. Closes: #641834
+  * Use --srcdir and --destdir po4a options, and bump Build-Depends version
+    to 0.36.4.
+
+  [ Updated dpkg translations ]
+  * German (Sven Joachim). Closes: #620312
+  * Swedish (Peter Krefting).
+  * French (Christian Perrier).
+
+  [ Updated man page translations ]
+  * French (Christian Perrier).
+  * German (Helge Kreutzmann) including improvement by "Flo".
+  * Swedish (Peter Krefting).
+
+  [ Updated scripts translations ]
+  * French (Christian Perrier, Sylvestre Ledru). Closes: #637096
+  * German (Helge Kreutzmann).
+  * Swedish (Peter Krefting).
+
+ -- Guillem Jover <guillem@debian.org>  Fri, 23 Sep 2011 06:00:11 +0200
+
+dpkg (1.16.0.3ubuntu5) oneiric; urgency=low
+
+  * Cherry pick b8d4668 and 967a45f from pu/multiarch so that cross-grading a
+    package doesn't result in dpkg believing the package has been disappeared
+    on the next call.  Thanks to Raphaël Hertzog <hertzog@debian.org> for
+    the quick fix!  (LP: #863675)
+
+ -- Steve Langasek <steve.langasek@ubuntu.com>  Thu, 06 Oct 2011 07:29:02 +0000
+
+dpkg (1.16.0.3ubuntu4) oneiric; urgency=low
+
+  * Add /etc/dpkg/dpkg.cfg.d/multiarch as a conffile on amd64, so that users
+    are guaranteed to always have it after upgrade even if they don't use
+    update-manager for the upgrade itself.  Also fixes up the problem of
+    systems installed at 11.10 beta 1 missing the file due to an installer
+    bug.  LP: #846451.
+
+ -- Steve Langasek <steve.langasek@ubuntu.com>  Tue, 27 Sep 2011 16:40:04 -0700
+
+dpkg (1.16.0.3ubuntu3) oneiric; urgency=low
+
+  * add DPKG_UNTRANSLATED_MESSAGES environment check so that the 
+    higher level tools can get untranslated dpkg terminal log
+    messages while at the same time have translated debconf 
+    prompts. This is useful for tools that hide the dpkg terminal
+    by default and use apport for bugreport with the untranslated
+    error message.
+
+ -- Michael Vogt <michael.vogt@ubuntu.com>  Tue, 28 Jun 2011 09:20:11 +0100
+
+dpkg (1.16.0.3ubuntu2) oneiric; urgency=low
+
+  * Properly update trigdeferred.c from trigdeferred.l, fixing a slew of
+    triggers/Unincorp parsing failures.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Fri, 17 Jun 2011 15:27:35 +0100
+
+dpkg (1.16.0.3ubuntu1) oneiric; urgency=low
+
+  * Merge from Debian unstable; remaining changes:
+    - Merge from git://git.debian.org/users/hertzog/dpkg.git
+      pu/multiarch/snapshot/20110314 for multiarch support.
+    - On upgrade from 1.16.0~ubuntu[1-3], if /var/lib/dpkg/info/$arch is a
+      directory, migrate the contents to var/lib/dpkg/info; and handle the
+      reverse on downgrade.  This does not handle metadata for packages of
+      foreign architectures.
+  * Restores support for parsing priority fields with unknown values.
+    LP: #773022.
+
+ -- Steve Langasek <steve.langasek@ubuntu.com>  Fri, 17 Jun 2011 00:04:19 -0700
+
+dpkg (1.16.0.3) unstable; urgency=medium
+
+  * Allow again Priority field values not known to dpkg. Regression
+    introduced in 1.16.0.
+
+ -- Guillem Jover <guillem@debian.org>  Wed, 04 May 2011 10:01:30 +0200
+
+dpkg (1.16.0.2) unstable; urgency=high
+
+  * Fix dpkg-split --auto to not fail when opening the new depot file.
+  * Fix dpkg-split to correctly set the last part split size.
+  * Fix build failure on DEB_BUILD_OPTIONS=noopt due to a missing <locale.h>
+    include in gettext.h needed by the gettext context functions.
+
+ -- Guillem Jover <guillem@debian.org>  Sat, 16 Apr 2011 00:14:15 +0200
+
+dpkg (1.16.0.1) unstable; urgency=low
+
+  [ Raphaël Hertzog ]
+  * Fix regression affecting dpkg -R. Closes: #620636
+  * Don't fail during unpack if the system doesn't support changing timestamps
+    of symlinks. Closes: #620679
+
+ -- Guillem Jover <guillem@debian.org>  Tue, 05 Apr 2011 07:28:20 +0200
+
+dpkg (1.16.0) unstable; urgency=low
+
+  [ Guillem Jover ]
+  * Use DPKG_MAINTSCRIPT_PACKAGE environment variable as package name on
+    dpkg-divert when no --package or --local options have been specified.
+  * Do not allow versions starting with non-digit when doing strict parsing,
+    warn otherwise.
+  * Update dpkg(1) to note that --status-fd output does not contain newlines
+    in error messages anymore (this was fixed in 1.15.0).
+  * Add a new --status-logger option to dpkg, similar to --status-fd but
+    instead invoke the command ourselves and feed the status information
+    to its standard input. Suggested by Raphaël Hertzog.
+  * Add missing space in update-alternative --set-selections output.
+  * Add missing options to update-alternative --help output.
+  * Count “conffile name is duplicated” for dpkg-deb warning count summary.
+  * Improve and clarify strings for translation. Closes: #604914
+  * Prefix all fatal error messages with “error: ”.
+  * Do not check presence of update-rc.d in the PATH in dpkg, as it's not
+    a program needed for dpkg correct operation.
+  * Fix dpkg -GEO options on multiple versions of the same packages.
+    Closes: #31141
+  * Propagate --admindir to programs run from maintainer scritpts.
+    Closes: #97076
+  * Do not fail when trying to remove the root directory. This will only
+    happen either on distributions where dpkg is a foreign package manager,
+    or on artificial dpkg databases.
+  * Always warn when parsing any package control data which does not have
+    an Architecture field except for status and status log files when
+    packages are not-installed or half-installed.
+  * By default reject installing packages w/o an Architecture field. They
+    now need --force-architecture, dpkg will still warn about them though.
+  * Fix build failure when passing --disable-nls to configure.
+  * Do not segfault on “dpkg -i --no-act”.
+  * Add missing semicolon to the vsnprintf() compat declaration.
+    Thanks to Robert Millan. Closes: #612203
+  * On install for Ubuntu adjust the i386 GNU cpu name in cputable.
+    Thanks to Colin Watson <cjwatson@ubuntu.com>. Closes: #611741
+  * Sync the info database directory on unpack instead of the temporary
+    control information directory, and print the correct pathname on error
+    instead of the last file acted on that directory.
+  * Document in dpkg-query --help output and man page that --list and --show
+    arguments are optional.
+  * Do not read and write the available file unnecessarily.
+    Thanks to Michel Lespinasse <walken@zoy.org>. Closes: #397121
+  * Fix typo in «dpkg-name --overwrite» argument parsing so that it actually
+    works at all. Thanks to Ivan Gagis <igagis@gmail.com>. LP: #728708
+  * Add armhf support to ostable and triplettable. Closes: #594179
+  * Set the modification time for unpacked symlinks on supported systems.
+  * Fix undefined value usage in dpkg-genchanges when adding files w/o a
+    matching architecture, because they are not present in debian/control,
+    this is most commonly the case due to dpkg-distaddfile.
+  * Terminate immediately on dpkg-divert rename errors instead of propagating
+    up the error codes, this improves error reporting and avoids triggering
+    leak detectors. Closes: #620380
+  * When moving a diverted file across filesystems in dpkg-divert, remove
+    the source file.
+  * Fix large file support for .deb and split .deb in dpkg-deb, dpkg-split
+    and dpkg on 32-bit architectures.
+
+  [ Raphaël Hertzog ]
+  * Fail properly when debian/source/format is empty. Closes: #600854
+  * Add new deb-src-control(5) manual page documenting the debian/control
+    file contained in source packages.
+    - it documents the X[SBC]- prefix. Closes: #476335
+    - it documents the VCS-* fields too. Closes: #483119
+    Thanks to Oxan van Leeuwen <oxan@oxanvanleeuwen.nl> who wrote it
+    as part of the Google Code In program.
+  * Enhance dpkg-shlibdeps to not fail immediately when a library is not found.
+    Instead continue and fail after all problems have been reported. Thanks
+    to Chris Baines <cbaines8@gmail.com> for the patch. Closes: #596841
+  * Fix dpkg-source to not list Debian packaging files as modified
+    upstream files in Format "1.0" when unpacking to a non-standard
+    directory.
+  * Apply patch from Colin Watson to let dpkg-buildflags return -O3
+    instead of -O2 when building ppc64 packages on Ubuntu. Closes: #612472
+  * Add new function get_control_path() to Dpkg::Path, it wraps dpkg-query
+    --control-path.
+  * Update dpkg-shlibdeps to be multiarch-ready:
+    - use get_control_path() to find symbols/shlibs files
+    - parse correctly the output of dpkg --search
+  * Small fix to support files >2GB in .deb on 64-bit systems. Closes: #616502
+    Thanks to Martin Dorey <mdorey@bluearc.com> for the patch.
+  * dpkg-source now keeps the file ordering in the autogenerated patch when
+    regenerating it. Closes: #606080
+    Thanks to Colin Watson for the patch.
+  * dpkg-source now uses a timestamp retrieved from the filesystem when
+    resetting the timestamp of patched files so that a time skew when using
+    NFS doesn't introduce any inconsistency. Closes: #613023
+    Thanks to Jonathan Nieder <jrnieder@gmail.com> for the patch and the
+    diagnosis.
+  * dpkg-source will now remove quilt's .pc directory when --unapply-patches
+    is in use. Closes: #591858
+  * dpkg-source is now a bit less strict when parsing patches:
+    - it accepts seeing the same file twice; Closes: #608829
+    - it doesn't match on the English text "No newline at end of file" as it
+      might be translated in some cases. Closes: #612465
+  * Improve parser in Dpkg::Control::Hash to not require an empty line
+    before the PGP signature. Closes: #617923
+    Thanks to Roger Leigh for the initial patch.
+  * Fix a regression in dpkg-divert where using --rename led to a failure when
+    the rename implies crossing file systems. Thanks to Durk Strooisma for
+    spotting it.
+  * Use the correct mtime when installing a file with statoverrides.
+    Regression introduced in 1.16.0. LP: #739179
+  * Remove duplicate word in german translation of dpkg(1). Closes: #616096
+  * Strip repeated non-significant spaces before and after newlines
+    in Uploaders. Closes: #598922
+  * Ignore whitespaces after options in headers of changelog entries.
+    Closes: #605719
+  * Fix dpkg-source's regression with empty patches (introduced while fixing
+    #613023). Closes: #619541
+
+  [ Jonathan Nieder ]
+  * Remove support for use of synchronous sync(2), due to its pernicious
+    side-effects and to ease maintenance.
+  * Clarify that an up-to-date dpkg only needs to be unpacked for
+    dpkg-maintscript-helper to work.
+
+  [ Steve Langasek ]
+  * Add new variables to dpkg-architecture, DEB_HOST_MULTIARCH and
+    DEB_BUILD_MULTIARCH, that return the "ideal" GNU triplet for each
+    architecture which should be used as the path component for library
+    installation.
+
+  [ Mark Hymers ]
+  * Add support for Built-Using field. Closes: #619311
+
+  [ Updated programs translations ]
+  * German (Sven Joachim).
+  * Portuguese (Miguel Figueiredo).
+  * Spanish (Javier Fernandez-Sanguino).
+  * Swedish (Peter Krefting).
+
+  [ Updated man page translations ]
+  * German (Helge Kreutzmann).
+  * Swedish (Peter Krefting).
+
+  [ Updated scripts translations ]
+  * German (Helge Kreutzmann).
+  * Swedish (Peter Krefting).
+
+  [ Updated dselect translations ]
+  * Spanish (Javier Fernandez-Sanguino).
+
+ -- Guillem Jover <guillem@debian.org>  Fri, 01 Apr 2011 23:56:54 +0200
+
+dpkg (1.16.0~ubuntu8) oneiric; urgency=low
 
   * src/packages.c: fix use of --force-depends so that it works again for
     foreign arch packages.  Thanks to Raphaël Hertzog for the fix.
     LP: #767634.
-  * regenerate lib/dpkg/trigdeferred.c from lib/dpkg/trigdeferred.l in
-    the source, to ensure we don't end up with breakage from an out-of-date
-    intermediate file as happened in oneiric.
 
-  [ Guillem Jover ]
-  * d84b36a81088721b340e52664aa2c3379fea2a9a: be less strict in the face of
-    unknown Priority: fields in /var/lib/dpkg/status, so dpkg doesn't fail
-    to run on systems whose contents were previously permitted.
-    LP: #773022.
-
- -- Steve Langasek <steve.langasek@ubuntu.com>  Sat, 25 Jun 2011 13:49:46 -0500
+ -- Steve Langasek <steve.langasek@ubuntu.com>  Fri, 29 Apr 2011 19:07:24 -0700
 
 dpkg (1.16.0~ubuntu7) natty; urgency=low
 
@@ -121,126 +2196,6 @@ dpkg (1.16.0~ubuntu1) natty; urgency=low
     - Set Ubuntu ppc64 optimisation to -O3.
 
  -- Steve Langasek <steve.langasek@ubuntu.com>  Mon, 28 Feb 2011 15:00:42 -0800
-
-dpkg (1.16.0) UNRELEASED; urgency=low
-
-  [ Guillem Jover ]
-  * Fix realloc usage on compat scandir() implementation.
-  * Use DPKG_MAINTSCRIPT_PACKAGE environment variable as package name on
-    dpkg-divert when no --package or --local options have been specified.
-  * Do not allow versions starting with non-digit when doing strict parsing,
-    warn otherwise.
-  * Update dpkg(1) to note that --status-fd output does not contain newlines
-    in error messages anymore (this was fixed in 1.15.0).
-  * Add a new --status-logger option to dpkg, similar to --status-fd but
-    instead invoke the command ourselves and feed the status information
-    to its standard input. Suggested by Raphaël Hertzog.
-  * Add missing space in update-alternative --set-selections output.
-  * Add missing options to update-alternative --help output.
-  * Count “conffile name is duplicated” for dpkg-deb warning count summary.
-  * Improve and clarify strings for translation. Closes: #604914
-  * Prefix all fatal error messages with “error: ”.
-  * Do not check presence of update-rc.d in the PATH in dpkg, as it's not
-    a program needed for dpkg correct operation.
-  * Fix dpkg -GEO options on multiple versions of the same packages.
-    Closes: #31141
-  * Propagate --admindir to programs run from maintainer scritpts.
-    Closes: #97076
-  * Do not fail when trying to remove the root directory. This will only
-    happen either on distributions where dpkg is a foreign package manager,
-    or on artificial dpkg databases.
-  * Always warn when parsing any package control data which does not have
-    an Architecture field except for status and status log files when
-    packages are not-installed or half-installed.
-  * By default reject installing packages w/o an Architecture field. They
-    now need --force-architecture, dpkg will still warn about them though.
-  * Fix build failure when passing --disable-nls to configure.
-  * Do not segfault on “dpkg -i --no-act”.
-  * Add missing semicolon to the vsnprintf() compat declaration.
-    Thanks to Robert Millan. Closes: #612203
-  * On install for Ubuntu adjust the i386 GNU cpu name in cputable.
-    Thanks to Colin Watson <cjwatson@ubuntu.com>. Closes: #611741
-  * Sync the info database directory on unpack instead of the temporary
-    control information directory, and print the correct pathname on error
-    instead of the last file acted on that directory.
-  * Document in dpkg-query --help output and man page that --list and --show
-    arguments are optionsl.
-  * Do not read and write the available file unnecessarily.
-    Thanks to Michel Lespinasse <walken@zoy.org>. Closes: #397121
-  * Fix typo in «dpkg-name --overwrite» argument parsing so that it actually
-    works at all. Thanks to Ivan Gagis <igagis@gmail.com>. LP: #728708
-
-  [ Raphaël Hertzog ]
-  * Fail properly when debian/source/format is empty. Closes: #600854
-  * Add new deb-src-control(5) manual page documenting the debian/control
-    file contained in source packages.
-    - it documents the X[SBC]- prefix. Closes: #476335
-    - it documents the VCS-* fields too. Closes: #483119
-    Thanks to Oxan van Leeuwen <oxan@oxanvanleeuwen.nl> who wrote it
-    as part of the Google Code In program.
-  * Enhance dpkg-shlibdeps to not fail immediatly when a library is not found.
-    Instead continue and fail after all problems have been reported. Thanks
-    to Chris Baines <cbaines8@gmail.com> for the patch. Closes: #596841
-  * Fix dpkg-source to not list Debian packaging files as modified
-    upstream files in Format "1.0" when unpacking to a non-standard
-    directory.
-  * Apply patch from Colin Watson to let dpkg-buildflags return -O3
-    instead of -O2 when building ppc64 packages on Ubuntu. Closes: #612472
-  * Add new function get_control_path() to Dpkg::Path, it wraps dpkg-query
-    --control-path.
-  * Update dpkg-shlibdeps to be multiarch-ready:
-    - use get_control_path() to find symbols/shlibs files
-    - parse correctly the output of dpkg --search
-  * Small fix to support files >2GB in .deb on 64-bit systems. Closes: #616502
-    Thanks to Martin Dorey <mdorey@bluearc.com> for the patch.
-  * dpkg-source now keeps the file ordering in the autogenerated patch when
-    regenerating it. Closes: #606080
-    Thanks to Colin Watson for the patch.
-  * dpkg-source now uses a timestamp retrieved from the filesystem when
-    resetting the timestamp of patched files so that a time skew when using
-    NFS doesn't introduce any inconsistency. Closes: #613023
-    Thanks to Jonathan Nieder <jrnieder@gmail.com> for the patch and the
-    diagnosis.
-  * dpkg-source will now remove quilt's .pc directory when --unapply-patches
-    is in use. Closes: #591858
-  * dpkg-source is now a bit less strict when parsing patches:
-    - it accepts seeing the same file twice; Closes: #608829
-    - it doesn't match on the English text "No newline at end of file" as it
-      might be translated in some cases. Closes: #612465
-  * Improve parser in Dpkg::Control::Hash to not require an empty line
-    before the PGP signature. Closes: #617923
-    Thanks to Roger Leigh for the initial patch.
-
-  [ Jonathan Nieder ]
-  * Remove support for use of synchronous sync(2), due to its pernicious
-    side-effects and to ease maintenance.
-  * Clarify that an up-to-date dpkg only needs to be unpacked for
-    dpkg-maintscript-helper to work.
-
-  [ Steve Langasek ]
-  * Add new variables to dpkg-architecture, DEB_HOST_MULTIARCH and
-    DEB_BUILD_MULTIARCH, that return the "ideal" GNU triplet for each
-    architecture which should be used as the path component for library
-    installation.
-
-  [ Updated programs translations ]
-  * German (Sven Joachim).
-  * Portuguese (Miguel Figueiredo).
-  * Spanish (Javier Fernandez-Sanguino).
-  * Swedish (Peter Krefting).
-
-  [ Updated man page translations ]
-  * German (Helge Kreutzmann).
-  * Swedish (Peter Krefting).
-
-  [ Updated scripts translations ]
-  * German (Helge Kreutzmann).
-  * Swedish (Peter Krefting).
-
-  [ Updated dselect translations ]
-  * Spanish (Javier Fernandez-Sanguino).
-
- -- Guillem Jover <guillem@debian.org>  Thu, 29 Jul 2010 11:00:22 +0200
 
 dpkg (1.15.8.10ubuntu1) natty; urgency=low
 
@@ -1618,7 +3573,7 @@ dpkg (1.15.4) unstable; urgency=low
     will be dropped in squeeze+1. dpkg now Breaks: old versions of
     info-browsers that do not depend on the new install-info package
     that provides the real functionality. Closes: #9771, #523980
-    See http://wiki.debian.org/Transitions/DpkgToGnuInstallInfo for details.
+    See https://wiki.debian.org/Transitions/DpkgToGnuInstallInfo for details.
   * Fix dpkg's preinst in case /var/lib/dpkg/alternatives contains unexpected
     sub-directories. Closes: #535138
     And also when one of the file doesn't contain correct alternatives
@@ -2144,7 +4099,7 @@ dpkg (1.15.0) experimental; urgency=low
     - Cleanup and split of header files.
 
   [ Raphaël Hertzog ]
-  * Enhance dpkg-shlibdeps's error message when a library can't be found to
+  * Enhance dpkg-shlibdeps' error message when a library can't be found to
     include the ELF format of the desired library. Closes: #474671
   * dpkg-gensymbols now refuses empty values for the the -v -P and -e
     parameters.
@@ -2599,7 +4554,7 @@ dpkg (1.14.21) unstable; urgency=low
   * Match description of -si option in dpkg-buildpackage to the one in
     dpkg-genchanges. Closes: #493743
   * Close --status-fd file descriptors on exec, so that they are not
-    inherited by the childs. Closes: #471488, #487684
+    inherited by the children. Closes: #471488, #487684
   * State that the preferred front-end is aptitude and replace one instance
     of dselect usage with apt-get. Closes: #483785
 
@@ -2727,7 +4682,7 @@ dpkg (1.14.20) unstable; urgency=low
   * When dpkg-divert does renames do no check the target file if the source
     does not exist and the rename is thus being disabled. This also allows
     to remove bogus diversions. Closes: #476973, #469033
-  * Properly close triggers 'File' file, so it does not get leaked to childs.
+  * Properly close triggers 'File' file, so it does not get leaked to children.
 
   [ Raphaël Hertzog ]
   * Add missing 'use File::Path' in Dpkg::Source::Package::V3::quilt.
@@ -3406,7 +5361,7 @@ dpkg (1.14.16) unstable; urgency=low
     is used. That way we're consistent with the definition of that variable
     in deb-substvars(5). Closes: #433477
   * Add support of Dm-Upload-Allowed field. Closes: #453400
-  * Fix dpkg-shlibdeps's filtering of duplicated dependencies in fields of
+  * Fix dpkg-shlibdeps' filtering of duplicated dependencies in fields of
     lesser priority (when -d is used).
   * Fix behaviour of dpkg-shlibdeps when the same binary was passed multiple
     times for use in different dependency fields (-d option).
@@ -4931,7 +6886,7 @@ dpkg (1.13.17) unstable; urgency=low
     attributes and other embellishments.
   * Add dpkg-query(1) in the SEE ALSO section in dpkg(1). Closes: #354643
   * Don't try to compile in SELinux support on GNU/kFreeBSD amd64.
-  * Add new quiet option to dpkg-source to supress warnings. Closes: #355065
+  * Add new quiet option to dpkg-source to suppress warnings. Closes: #355065
   * Do not expand architecture aliases anymore in .dsc files.
   * Change start-stop-daemon's --exec behaviour again on GNU/Linux to compare
     the referred file pointed by the '/proc/<pid>/exe' symlink, stripping
@@ -5226,7 +7181,7 @@ dpkg (1.13.11.1) unstable; urgency=low
  -- Scott James Remnant <scott@netsplit.com>  Thu, 12 Jan 2006 07:56:49 +0000
 
 dpkg (1.13.11) unstable; urgency=low
-  
+
   The "Good, clean fun" Release.
 
   * Fixed the always broken error handling so that only the intended
@@ -5293,7 +7248,7 @@ dpkg (1.13.11) unstable; urgency=low
  -- Scott James Remnant <scott@netsplit.com>  Wed, 17 Aug 2005 04:44:44 +0100
 
 dpkg (1.13.10) unstable; urgency=low
-  
+
   The "Bully's Special Prize" Release.
 
   * Removed /usr/sbin/start-stop-daemon.  Closes: #313400.
@@ -5329,7 +7284,7 @@ dpkg (1.13.10) unstable; urgency=low
  -- Scott James Remnant <scott@netsplit.com>  Tue, 28 Jun 2005 14:19:06 +0100
 
 dpkg (1.13.9) unstable; urgency=low
-  
+
   The "On like Donkey Kong" Release.
 
   * Only open the log file when we first need to write to it, this avoids
@@ -5343,7 +7298,7 @@ dpkg (1.13.9) unstable; urgency=low
   SELinux support (Manoj Srivastava):
   * On SELinux-enabled systems, try to set the security context when the
     package is unpacked.  Closes: #193653, #249496, #307139.
-  * Added build-dependancy on libselinux1-dev.
+  * Added build-dependency on libselinux1-dev.
 
   Improvements to dpkg-source (Brendan O'Dea):
   * Support unpacking of "Wig And Pen" (Format 2.0) source packages.
@@ -5356,7 +7311,7 @@ dpkg (1.13.9) unstable; urgency=low
  -- Scott James Remnant <scott@netsplit.com>  Sun, 12 Jun 2005 15:52:43 +0100
 
 dpkg (1.13.8) experimental; urgency=low
-  
+
   The "In like Flynn" Release.
 
   * Linux 2.6.12 changed the behaviour of mmap to fail and set EINVAL when
@@ -5366,7 +7321,7 @@ dpkg (1.13.8) experimental; urgency=low
  -- Scott James Remnant <scott@netsplit.com>  Fri, 10 Jun 2005 07:39:44 +0100
 
 dpkg (1.13.7) experimental; urgency=low
-  
+
   The "Maidenhead Creeping Water Plant" Release.
 
   * Reduced inability to open a log file to a warning, suppressed for
@@ -5375,7 +7330,7 @@ dpkg (1.13.7) experimental; urgency=low
  -- Scott James Remnant <scott@netsplit.com>  Thu,  9 Jun 2005 06:12:56 +0100
 
 dpkg (1.13.6) experimental; urgency=low
-  
+
   The "Just kidding about the God part" Release.
 
   * Fixed incorrect installation location of /etc/logrotate.d/dpkg caused
@@ -5384,7 +7339,7 @@ dpkg (1.13.6) experimental; urgency=low
  -- Scott James Remnant <scott@netsplit.com>  Mon,  6 Jun 2005 05:58:36 +0100
 
 dpkg (1.13.5) experimental; urgency=low
-  
+
   The "Flatulent Elm of West Ruislip" Release.
 
   * Actions and package states are now logged by default in the
@@ -5410,7 +7365,7 @@ dpkg (1.13.5) experimental; urgency=low
  -- Scott James Remnant <scott@netsplit.com>  Mon,  6 Jun 2005 05:34:21 +0100
 
 dpkg (1.13.4) experimental; urgency=low
-  
+
   The "Or the Wabbit gets it" Release.
 
   * Add -L option to dpkg-architecture to list architecture strings
@@ -5419,7 +7374,7 @@ dpkg (1.13.4) experimental; urgency=low
  -- Scott James Remnant <scott@netsplit.com>  Tue, 29 Mar 2005 13:31:15 +0100
 
 dpkg (1.13.3) experimental; urgency=low
-  
+
   The "Paying off Karma at a vastly accelerated rate" Release.
 
   * Missing newline added to warning output function.  Closes: #283798.
@@ -5450,7 +7405,7 @@ dpkg (1.13.3) experimental; urgency=low
  -- Scott James Remnant <scott@netsplit.com>  Mon, 21 Mar 2005 03:10:27 +0000
 
 dpkg (1.13.2) experimental; urgency=low
-  
+
   The "Mysteriously Unnamed" Release.
 
   * md5sum has been removed, the coreutils or textutils version will be
@@ -5471,7 +7426,7 @@ dpkg (1.13.2) experimental; urgency=low
     Closes: #287152.
   * Output arguments to maintainer scripts with -D2.  Closes: #237684,
     #296030.
-  
+
   * Architecture Support:
     - Added ppc64.  Closes: #263743.
     - Split archtable into cputable and ostable, archtable is retained
@@ -5490,9 +7445,9 @@ dpkg (1.13.2) experimental; urgency=low
  -- Scott James Remnant <scott@netsplit.com>  Fri, 18 Mar 2005 16:21:32 +0000
 
 dpkg (1.13.1) experimental; urgency=low
-  
+
   The "Livin' like a good boy oughta" Release.
-  
+
   * Removed dpkg --print-gnu-build-architecture option.  Use variables
     defined by dpkg-architecture instead.
   * Soft-deprecated dpkg --print-installation-architecture.  Use
@@ -5527,7 +7482,7 @@ dpkg (1.13.1) experimental; urgency=low
  -- Scott James Remnant <scott@netsplit.com>  Thu,  3 Mar 2005 12:09:07 +0000
 
 dpkg (1.13.0) experimental; urgency=low
-  
+
   The "Three banana strategy" Release.
 
   * Remove the /usr/info or /usr/info/dir symlinks we used to create.
@@ -5544,11 +7499,11 @@ dpkg (1.13.0) experimental; urgency=low
   * The dpkg-doc and dpkg-static packages are no more.
   * dpkg.cfg cleaned up to remove non-useful examples.
     Closes: #169618, #305192.
-  
+
  -- Scott James Remnant <scott@netsplit.com>  Fri, 14 Jan 2005 19:28:00 +0000
 
 dpkg (1.10.28) unstable; urgency=low
-  
+
   The "Awh, yeah?  Ripper!" Release.
 
   * New Translations (Christian Perrier):
@@ -5742,7 +7697,7 @@ dpkg (1.10.22) unstable; urgency=low
       Closes: #120562.
     - Add --force-bad-verify to dpkg manpage.  Closes: #192812.
     - Correct dpkg manpage to refer to --force-remove-reinstreq instead of
-      -non-existant --force-reinstreq option.  Closes: #232831.
+      non-existent --force-reinstreq option.  Closes: #232831.
     - Correct documentation of --compare-versions arguments.  Closes: #232317.
     - Correct usage of "et al" to "et al.".  Closes: #230751.
     - Add dpkg-reconfigure(8) to SEE ALSO section of dpkg(8).  Closes: #233282.
@@ -5812,7 +7767,7 @@ dpkg (1.10.21) unstable; urgency=low
   * Add --dir-file option to install-info for GNU install-info
     compatibility.  Closes: #179192
   * Refer to debian-policy in dpkg-doc's description instead of the
-    non-existant packaging-manual.  Closes: #120970.
+    non-existent packaging-manual.  Closes: #120970.
   * Remove incorrect mention of build-essential from dpkg-checkbuilddeps
     manpage.  Closes: #219210.
   * Add a note about diverting shared libraries to the dpkg-divert
@@ -5985,7 +7940,7 @@ dpkg (1.10.14) unstable; urgency=low
       Some fields may have vars in them, which breaks the validation.
     * dpkg-gencontrol calls substvars after parsing the control file, and
       then validates the substituted depends lines.  Originally,
-      substitution occured only during writing of the final output file.
+      substitution occurred only during writing of the final output file.
     * Andreas Barth <aba@not.so.argh.org>:
       Fix bad regex that didn't allow spaces in dependency field parsing.
       It now directly matches what the c code expects.  It previously was
@@ -6331,7 +8286,7 @@ dpkg (1.10) unstable; urgency=low
   * dselect now accepts regular expressions when searching for packages
     and can search in package descriptions as well.
     Closes: Bug#81009,#83139
-  * Move query commands into a seperate dpkg-query command. For the old options
+  * Move query commands into a separate dpkg-query command. For the old options
     (-L,-l,-s,-S) dpkg will still call it for you.
   * Add configurable package listing support to dpkg-query
   * Handle window resize in dselect main menu. Closes: Bug#98275
@@ -6350,7 +8305,7 @@ dpkg (1.10) unstable; urgency=low
       Closes: #76100.
     * Error messages now include the filename being processed.
       Closes: #66735
-    * /usr/share/info/dir now has it's entries formatted to even widths. 
+    * /usr/share/info/dir now has it's entries formatted to even widths.
       Closes: #11228
     * --calign|--align|--maxwidth are now ignored.
   * strip enoent as well. Closes: Bug#112378
@@ -6361,7 +8316,7 @@ dpkg (1.10) unstable; urgency=low
     Closes: #120924.
   * Make dpkg-checkbuilddeps always check for build-essential.
     Closes: Bug#118420.
-  * Use space seperated output instead of comma seperated in
+  * Use space separated output instead of comma separated in
     dpkg-checkbuilddeps
   * Update default ignore expression in dpkg-source to also match *~ and
     *.swp in subdirs. Closes: Bug#127458
@@ -6490,15 +8445,15 @@ dpkg (1.9.15) unstable; urgency=low
 dpkg (1.9.14) unstable; urgency=low
 
   * Make the Uploaders field in a .dsc file optional.
-  * Disabled sanity checking of source packages.  
- 
+  * Disabled sanity checking of source packages.
+
  -- Adam Heath <doogie@debian.org>  Mon, 25 Jun 2001 02:22:40 -0500
 
 dpkg (1.9.13) unstable; urgency=medium
 
   * Add a -W option to dpkg-source(and the other utils, where it is just
     passed thru), to turn certain errors into warnings(of which, only
-    one is changed, namely, the 'tar doesn't contain preceeding directory'
+    one is changed, namely, the 'tar doesn't contain preceding directory'
     error).  Closes: #101813, and partially 101845.
   * Don't error out if the files in the tar have leading './', for
     dpkg-source.  (another partial close of 101845).
@@ -6627,7 +8582,7 @@ dpkg (1.9.3) unstable; urgency=low
   * Fix compiles on ppc. Closes: Bug#95918.
 
  -- Adam Heath <doogie@debian.org>  Tue,  1 May 2001 00:29:45 -0500
-   
+
 dpkg (1.9.2) unstable; urgency=low
 
   * Recompile, to fix incorrect path 1.9.1/dpkg-divert. Closes: Bug#95845
@@ -6739,7 +8694,7 @@ dpkg (1.9.0) unstable; urgency=low
     segfaults people have been seeing in dpkg.  Closes: Bug#90328.
   * Apply patch from bug#86847, that escapes intl chars in filenames.
     Closes: Bug#83752, #85040, #86847, #89000.
-  * Errors during dpkg -s(and other similiar commands) are now printed
+  * Errors during dpkg -s(and other similar commands) are now printed
     on stderr.  Closes: Bug#88987.
   * Add a --retry option to start-stop-daemon. Closes: Bug#75139
   * Fix regeps to extract Closes magic from a changelog so the #
@@ -6785,7 +8740,7 @@ dpkg (1.8.2) unstable; urgency=low
   * Don't attempt to read from an input source when we only want 0 bytes.
     Also handle buggy systems that return EAGAIN instead of EINTR.  Closes:
     #81881.
- 
+
  -- Adam Heath <doogie@debian.org>  Thu, 11 Jan 2001 00:43:50 -0600
 
 dpkg (1.8.1.1) unstable; urgency=low
@@ -6969,7 +8924,7 @@ dpkg (1.6.12) frozen unstable; urgency=high
 dpkg (1.6.11) frozen unstable; urgency=high
 
   * Oops, missed one case where the libc/ncurses conflict reared its
-    ugly head and broke dselect miserably. 
+    ugly head and broke dselect miserably.
   * fix syntax error in dpkg-divert. Closes: Bug#60050
 
  -- Wichert Akkerman <wakkerma@debian.org>  Fri, 10 Mar 2000 11:52:07 +1100
@@ -7120,7 +9075,7 @@ dpkg (1.4.1.19) unstable; urgency=low
     it was already broken when there was no gcc anyway :)
   * Fixed missing mipseb that was supposed to be in the archtable
   * Better output in update-alternatives --config, now shows the
-    current, and the prefered choices.
+    current, and the preferred choices.
   * dpkg-name: ignore epoch when getting version
   * 50dpkg-dev.el: add it as a conffile for dpkg-dev
   * internals.sgml: Removed references to the versions of build tools,
@@ -7343,7 +9298,7 @@ dpkg (1.4.1.7) unstable; urgency=low
     + Use COPYINGFILE instead of hardcoded GPL-location in showcopyright()
     + varbufprintf (used for some error messages) vsnprintf return value
       assumption changed to correspond to reality rather than glibc-doc.
-    + Don't read available-info when not needed (slightly improved from 
+    + Don't read available-info when not needed (slightly improved from
       dpkg-iwj: don't read for listfiles either :)
     + Cleanup --assert-* code
     + Assume largemem on systems without sysinfo(2).
@@ -7360,7 +9315,7 @@ dpkg (1.4.1.6) unstable; urgency=low
   * Non-maintainer release.
   * scripts/dpkg-architecture.pl: Update to latest version.
   * scripts/dpkg-architecture.1: Likewise.
-  
+
  -- Marcus Brinkmann <brinkmd@debian.org>  Sat, 24 Jul 1999 18:24:21 +0200
 
 dpkg (1.4.1.5) unstable; urgency=low
@@ -7473,7 +9428,7 @@ dpkg (1.4.0.30) unstable; urgency=low
 
   * dpkg-dev isn't allowed to have a Recommends: debian-keyring (as that's
     in contrib), so it's now lowered to a Suggests: . Thanks to James Troup
-    for pointing this out. 
+    for pointing this out.
 
  -- J.H.M. Dassen (Ray) <jdassen@wi.LeidenUniv.nl>  Sat, 26 Sep 1998 13:59:23 +0200
 
@@ -7524,7 +9479,7 @@ dpkg (1.4.0.26) unstable; urgency=low
 dpkg (1.4.0.25) unstable; urgency=low
 
   * Non-maintainer upload.
-  
+
   * Add the requested -nc option to dpkg-buildpackage (Do
     not clean source tree, useful in debugging cycles).
   * controllib.pl: Again by popular acclamation, fix the getlogin() warnings.
@@ -7576,14 +9531,14 @@ dpkg (1.4.0.24) unstable; urgency=low
 
   * aclocal.m4: applied patch from Joel Klecker <jk@espy.org> to handle
     egcs' --print-libgcc-file-name output. [#20353]
-  
+
   * debian/copyright: correct FSF address.
   * debian/rules: add code from lesstif's debian/rules to make libtool
     less of a fool (i.e. not use -rpath and to link shared libraries
     against libraries it depends on).  Code by Richard Braakman
     <dark@xs4all.nl> and Yann Dirson <dirson@debian.org>.
   * debian/rules: remove all reference to the packaging manual as it is
-    now provided by the seperate "packaging-manual" package. [#21581,
+    now provided by the separate "packaging-manual" package. [#21581,
     #21186, #22698, #23342]
   * debian/rules: link dpkg-divert.1.gz to undocumented.7.gz as the lack
     of a real manpage has been reported in #11093.
@@ -7668,16 +9623,16 @@ dpkg (1.4.0.20) unstable; urgency=low
 dpkg (1.4.0.19) unstable; urgency=low
 
   * Changed methods/disk.setup to use output of
-    'dpkg --print-installation-architecture' instead of hard-coded 
+    'dpkg --print-installation-architecture' instead of hard-coded
     '1386' (fixes #10995).
-  * Patched dpkg-source to properly quote metacharacters in strings 
+  * Patched dpkg-source to properly quote metacharacters in strings
     before using them in pattern-matching expressions (fixes #10811).
   * Fixed several documentation typos (fixes #10764).
   * dpkg-source now works around 100-character filename limitation of cpio
     (fixes #10400).
   * dpkg-source now properly handles '\ no newline in source' message from
     patch (fixes #5041).
-  
+
  -- Klee Dienes <klee@debian.org>  Sun, 13 Jul 1997 19:28:22 -0700
 
 dpkg (1.4.0.18) unstable; urgency=low
@@ -7703,9 +9658,9 @@ dpkg (1.4.0.17) unstable; urgency=low
     building on non-Debian systems; minor Makefile fixes.
   * Added 'ppc powerpc powerpc' to archtable.
   * Changed documentation paper size to US/Letter instead of A4 (A4
-    may be better, but it's easier to print US/Letter on A4 than it is 
+    may be better, but it's easier to print US/Letter on A4 than it is
     to print A4 on US/Letter).
-  
+
  -- Klee Dienes <klee@debian.org>  Tue,  13 May 1997 15:24:31 -0400
 
 dpkg (1.4.0.16) experimental; urgency=low
@@ -7724,11 +9679,11 @@ dpkg (1.4.0.15) experimental; urgency=low
   * Provide 50dpkg-dev.el for xemacs as well as emacs.
   * Explicitly provide path for debian-changelog-mode in 50dpkg-dev to use
     .el file as workaround until xemacs can read emacs19 .elc files.
-  * Pass top_distdir explicitly to 'make dist' to accomodate bug in
+  * Pass top_distdir explicitly to 'make dist' to accommodate bug in
     automake_1.1o-1.
   * Fix debian/build to make html documentation without including
     directories in tar archives (fixes #9348).
-  
+
  -- Klee Dienes <klee@debian.org>  Fri,  9 May 1997 13:17:18 -0400
 
 dpkg (1.4.0.14) experimental; urgency=low
@@ -7737,7 +9692,7 @@ dpkg (1.4.0.14) experimental; urgency=low
   * Re-write of update-rc.d.pl, primarily by Miquel van Smoorenburg
     <miquels@cistron.nl> (fixes #9434, #9436).
   * Renamed "dpkg Programmer's Manual" to "dpkg Internals Manual".
-  
+
  -- Klee Dienes <klee@debian.org>  Tue,  6 May 1997 22:01:07 -0400
 
 dpkg (1.4.0.13) experimental; urgency=low
@@ -7819,11 +9774,11 @@ dpkg (1.4.0.9) unstable; urgency=low
   * dpkg-source -b now warns (was previously silent) if maintainer changes
     create new subdirectories.  dpkg-source -x now warns (previously gave
     error) if maintainer changes create new subdirectories (partially
-    fixes #6866, #6671, #5045, #6482).    
-  * Added manual page for start-stop-daemon (8). 
-  * Added C version of start-stop-daemon by 
+    fixes #6866, #6671, #5045, #6482).
+  * Added manual page for start-stop-daemon (8).
+  * Added C version of start-stop-daemon by
     Marek Michalkiewicz <marekm@i17linuxb.ists.pwr.wroc.pl> (fixes #1670).
-  * Converted to use GNU automake for the build process by Tom Lees 
+  * Converted to use GNU automake for the build process by Tom Lees
     <tom@lpsg.demon.co.uk>.<
   * Preliminary support for dpkg functions as a shared library (now
     provides libdpkg.so, but much work needs to be done in better
@@ -7836,17 +9791,17 @@ dpkg (1.4.0.9) unstable; urgency=low
     ldd (fixes #7603, #7926, #8688, #9179, #9134, #8516).
   * Removed policy.sgml (it has been moved to the debian-policy package).
   * Include patch from Darren Stalder <torin@daft.com> for
-    dpkg-buildpackage to choose PGP key based on Maintainer: field of 
-    package being built (or -m<maintainer> option, if present) (fixes 
+    dpkg-buildpackage to choose PGP key based on Maintainer: field of
+    package being built (or -m<maintainer> option, if present) (fixes
     #7898).
   * Changed controllib.pl to use $ENV{LOGNAME}, getlogin(), and $<
-    (in that order) to determine the intended ownership of 
+    (in that order) to determine the intended ownership of
     debian/{files,substvars},  (fixes #7324, #6823, #5659, #5965, #5929,
     #9239, #5366).
   * Don't sign .dsc file in dpkg-buildpackage if building a binary-only
     release (fixes #7260).
   * Updated developer-keys.pgp to latest revision (fixes #6134).
-  
+
  -- Klee Dienes <klee@debian.org>  Mon, 17 Mar 1997 16:11:24 -0500
 
 dpkg (1.4.0.8) unstable; urgency=medium
@@ -7869,13 +9824,13 @@ dpkg (1.4.0.6) stable unstable; urgency=high
   * Patched lib/vercmp.c to hopefully fix dselect epoch processing
     (Bug#6204), (Bug#4590).
   * Patched scripts/dpkg-buildpackage, scripts/dpkg-genchanges,
-    scripts/dpkg-gencontrol for epoch processing, courtesy of Loic Prylli 
+    scripts/dpkg-gencontrol for epoch processing, courtesy of Loic Prylli
     <lprylli@graville.fdn.fr> (Bug#6138, Bug#5225).
   * Patched dpkg-genchanges to actually honor the -u switch to specify
     directory (Bug#5564).
   * Applied patch to main/archive.c to correct problems setting set[gu]id
     binaries, courtesy of Herbert Xu <herbert@greathan.apana.org.au>
-    (Bug#5479). 
+    (Bug#5479).
   * Applied patch to dpkg-source to correct debian-only package names,
     courtesy of Guy Maor <maor@ece.utexas.edu> (Bug#5355).
 
@@ -7905,15 +9860,15 @@ dpkg (1.4.0.3) unstable; urgency=medium
 dpkg (1.4.0.2) unstable; urgency=medium
 
   * dpkg-buildpackage.sh: reverted the quoting change -- (you
-    should use super, sudo, realy, but not su.  Or write a wrapper
+    should use super, sudo, really, but not su.  Or write a wrapper
     around su)
   * dpkg-buildpackge.sh: passing -m, -C, -v options to dpkg-genchanges
     more the way Ian likes ;-)
   * dpkg-source.pl: new function deoctify() as replacement for eval()
     (turn \ddd into the corresponding character) [rem: probably better
-    solution would be to convert cpios output names into complete \ddd 
-    representation as well tars output names] 
-  * dpkg-source.pl: fixed 2 typos in failure message on creating 
+    solution would be to convert cpios output names into complete \ddd
+    representation as well tars output names]
+  * dpkg-source.pl: fixed 2 typos in failure message on creating
     $origtargz.tmp-nest.
   * main/main.c: typo `tread' -> `treat'
   * main/enquiry.c: fixed the ignorance for some relations in --compare-versions
@@ -7928,7 +9883,7 @@ dpkg (1.4.0.1) unstable; urgency=medium
   * dpkg-source: doesn't get screwed up from hardlinks
     in the archive now
   * dpkg-source: doesn't get screwed up from `unprintable' characters
-    in file names (e.g. from the kbd package) 
+    in file names (e.g. from the kbd package)
   * controllib.pl: $varlistvile -> $varlistfile (thanx Karl Sackett)
   * dpkg-buildpackge: quoting for $rootcommand (thanx  Michael Meskes)
     and `eval' as default $rootcommand
@@ -8068,7 +10023,7 @@ dpkg (1.3.7) unstable; urgency=low (medium for source pkg docs)
   * Manpages should be compressed.
   * Copyright file is moved to /usr/doc/<package>/copyright.
   * Changelogs must be installed in /usr/doc/<package>.
-  
+
   * dpkg-deb(8) moved to dpkg-deb(1).
 
   * binary target split into binary-arch and binary-indep in source.
@@ -8846,7 +10801,7 @@ dpkg (0.93.73) BETA; priority=LOW
   * `hold' flag changed to be settable by the user only, and
     made orthogonal to the `reinstallation required' flag.
   * dpkg will install by default any packages with priority of
-    `standard' or better unless they're explictly deselected.
+    `standard' or better unless they're explicitly deselected.
 
   * dselect dependency/conflict resolution will suggest marking absent
     packages for `purge' rather than `deinstall'.
@@ -8868,7 +10823,7 @@ dpkg (0.93.72) BETA; priority=MEDIUM
   * New names for certain control file fields (old names work
     as aliases): Optional -> Suggests, Recommended -> Recommends,
     Class -> Priority.
-     
+
  -- Ian Jackson <iwj10@cus.cam.ac.uk>  Sun, 3 Sep 1995 16:37:41 +0100
 
 dpkg (0.93.71) BETA; priority=LOW

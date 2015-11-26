@@ -9,11 +9,16 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 package Dpkg::Control::Types;
 
-use base qw(Exporter);
+use strict;
+use warnings;
+
+our $VERSION = '0.01';
+
+use Exporter qw(import);
 our @EXPORT = qw(CTRL_UNKNOWN CTRL_INFO_SRC CTRL_INFO_PKG CTRL_INDEX_SRC
                  CTRL_INDEX_PKG CTRL_PKG_SRC CTRL_PKG_DEB CTRL_FILE_CHANGES
                  CTRL_FILE_VENDOR CTRL_FILE_STATUS CTRL_CHANGELOG);
@@ -38,13 +43,13 @@ use constant {
     CTRL_UNKNOWN => 0,
     CTRL_INFO_SRC => 1,      # First control block in debian/control
     CTRL_INFO_PKG => 2,      # Subsequent control blocks in debian/control
-    CTRL_INDEX_SRC => 4,     # Entry in APT's Packages files
-    CTRL_INDEX_PKG => 8,     # Entry in APT's Sources files
+    CTRL_INDEX_SRC => 4,     # Entry in repository's Packages files
+    CTRL_INDEX_PKG => 8,     # Entry in repository's Sources files
     CTRL_PKG_SRC => 16,      # .dsc file of source package
     CTRL_PKG_DEB => 32,      # DEBIAN/control in binary packages
     CTRL_FILE_CHANGES => 64, # .changes file
-    CTRL_FILE_VENDOR => 128, # File in /etc/dpkg/origins
-    CTRL_FILE_STATUS => 256, # /var/lib/dpkg/status
+    CTRL_FILE_VENDOR => 128, # File in $Dpkg::CONFDIR/origins
+    CTRL_FILE_STATUS => 256, # $Dpkg::ADMINDIR/status
     CTRL_CHANGELOG => 512,   # Output of dpkg-parsechangelog
 };
 

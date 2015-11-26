@@ -11,14 +11,16 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 package Dpkg::Compression::Process;
 
 use strict;
 use warnings;
 
-our $VERSION = "1.00";
+our $VERSION = '1.00';
+
+use Carp;
 
 use Dpkg::Compression;
 use Dpkg::ErrorHandling;
@@ -52,8 +54,8 @@ sub new {
     my $class = ref($this) || $this;
     my $self = {};
     bless $self, $class;
-    $self->set_compression($args{"compression"} || compression_get_default());
-    $self->set_compression_level($args{"compression_level"} ||
+    $self->set_compression($args{compression} || compression_get_default());
+    $self->set_compression_level($args{compression_level} ||
 	    compression_get_default_level());
     return $self;
 }
@@ -68,9 +70,9 @@ B<Dpkg::Compression>).
 
 sub set_compression {
     my ($self, $method) = @_;
-    error(_g("%s is not a supported compression method"), $method)
+    error(_g('%s is not a supported compression method'), $method)
 	    unless compression_is_supported($method);
-    $self->{"compression"} = $method;
+    $self->{compression} = $method;
 }
 
 =item $proc->set_compression_level($level)
@@ -83,9 +85,9 @@ B<Dpkg::Compression>).
 
 sub set_compression_level {
     my ($self, $level) = @_;
-    error(_g("%s is not a compression level"), $level)
+    error(_g('%s is not a compression level'), $level)
 	    unless compression_is_valid_level($level);
-    $self->{"compression_level"} = $level;
+    $self->{compression_level} = $level;
 }
 
 =item my @exec = $proc->get_compress_cmdline()
@@ -103,32 +105,32 @@ and its standard output.
 
 sub get_compress_cmdline {
     my ($self) = @_;
-    my @prog = (@{compression_get_property($self->{"compression"}, "comp_prog")});
-    my $level = "-" . $self->{"compression_level"};
-    $level = "--" . $self->{"compression_level"}
-	    if $self->{"compression_level"} !~ m/^[1-9]$/;
+    my @prog = (@{compression_get_property($self->{compression}, 'comp_prog')});
+    my $level = '-' . $self->{compression_level};
+    $level = '--' . $self->{compression_level}
+	    if $self->{compression_level} !~ m/^[1-9]$/;
     push @prog, $level;
     return @prog;
 }
 
 sub get_uncompress_cmdline {
     my ($self) = @_;
-    return (@{compression_get_property($self->{"compression"}, "decomp_prog")});
+    return (@{compression_get_property($self->{compression}, 'decomp_prog')});
 }
 
 sub _sanity_check {
     my ($self, %opts) = @_;
     # Check for proper cleaning before new start
-    error(_g("Dpkg::Compression::Process can only start one subprocess at a time"))
-	    if $self->{"pid"};
+    error(_g('Dpkg::Compression::Process can only start one subprocess at a time'))
+	    if $self->{pid};
     # Check options
     my $to = my $from = 0;
     foreach (qw(file handle string pipe)) {
         $to++ if $opts{"to_$_"};
         $from++ if $opts{"from_$_"};
     }
-    internerr("exactly one to_* parameter is needed") if $to != 1;
-    internerr("exactly one from_* parameter is needed") if $from != 1;
+    croak 'exactly one to_* parameter is needed' if $to != 1;
+    croak 'exactly one from_* parameter is needed' if $from != 1;
     return %opts;
 }
 
@@ -148,10 +150,10 @@ sub compress {
     my $self = shift;
     my %opts = $self->_sanity_check(@_);
     my @prog = $self->get_compress_cmdline();
-    $opts{"exec"} = \@prog;
-    $self->{"cmdline"} = "@prog";
-    $self->{"pid"} = spawn(%opts);
-    delete $self->{"pid"} if $opts{"to_string"}; # wait_child already done
+    $opts{exec} = \@prog;
+    $self->{cmdline} = "@prog";
+    $self->{pid} = spawn(%opts);
+    delete $self->{pid} if $opts{to_string}; # wait_child already done
 }
 
 =item $proc->uncompress(%opts)
@@ -170,10 +172,10 @@ sub uncompress {
     my $self = shift;
     my %opts = $self->_sanity_check(@_);
     my @prog = $self->get_uncompress_cmdline();
-    $opts{"exec"} = \@prog;
-    $self->{"cmdline"} = "@prog";
-    $self->{"pid"} = spawn(%opts);
-    delete $self->{"pid"} if $opts{"to_string"}; # wait_child already done
+    $opts{exec} = \@prog;
+    $self->{cmdline} = "@prog";
+    $self->{pid} = spawn(%opts);
+    delete $self->{pid} if $opts{to_string}; # wait_child already done
 }
 
 =item $proc->wait_end_process(%opts)
@@ -188,10 +190,10 @@ it for you.
 
 sub wait_end_process {
     my ($self, %opts) = @_;
-    $opts{"cmdline"} ||= $self->{"cmdline"};
-    wait_child($self->{"pid"}, %opts) if $self->{'pid'};
-    delete $self->{"pid"};
-    delete $self->{"cmdline"};
+    $opts{cmdline} ||= $self->{cmdline};
+    wait_child($self->{pid}, %opts) if $self->{pid};
+    delete $self->{pid};
+    delete $self->{cmdline};
 }
 
 =back

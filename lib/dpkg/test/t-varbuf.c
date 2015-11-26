@@ -15,7 +15,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
@@ -113,7 +113,7 @@ test_varbuf_trunc(void)
 }
 
 static void
-test_varbuf_addbuf(void)
+test_varbuf_add_buf(void)
 {
 	struct varbuf vb;
 
@@ -133,7 +133,7 @@ test_varbuf_addbuf(void)
 }
 
 static void
-test_varbuf_addc(void)
+test_varbuf_add_char(void)
 {
 	struct varbuf vb;
 
@@ -195,6 +195,29 @@ test_varbuf_map_char(void)
 	test_pass(vb.used == 15);
 	test_pass(vb.size >= vb.used);
 	test_mem(vb.buf, ==, "1234z5678z9012z", 15);
+
+	varbuf_destroy(&vb);
+}
+
+static void
+test_varbuf_end_str(void)
+{
+	struct varbuf vb;
+
+	varbuf_init(&vb, 10);
+
+	varbuf_add_buf(&vb, "1234567890X", 11);
+	test_pass(vb.used == 11);
+	test_pass(vb.size >= vb.used);
+	test_mem(vb.buf, ==, "1234567890X", 11);
+
+	varbuf_trunc(&vb, 10);
+
+	varbuf_end_str(&vb);
+	test_pass(vb.used == 10);
+	test_pass(vb.size >= vb.used + 1);
+	test_pass(vb.buf[10] == '\0');
+	test_str(vb.buf, ==, "1234567890");
 
 	varbuf_destroy(&vb);
 }
@@ -272,10 +295,11 @@ test(void)
 	test_varbuf_prealloc();
 	test_varbuf_grow();
 	test_varbuf_trunc();
-	test_varbuf_addbuf();
-	test_varbuf_addc();
+	test_varbuf_add_buf();
+	test_varbuf_add_char();
 	test_varbuf_dup_char();
 	test_varbuf_map_char();
+	test_varbuf_end_str();
 	test_varbuf_printf();
 	test_varbuf_reset();
 	test_varbuf_detach();

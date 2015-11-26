@@ -1,5 +1,11 @@
+.\" dpkg manual page - dpkg-scanpackages(1)
+.\"
 .\" Copyright Â© 1996 Michael Shields <shields@crosslink.net>
-.\" This is free software; you may redistribute it and/or modify
+.\" Copyright Â© 2006 Frank Lichtenheld <djpig@debian.org>
+.\" Copyright Â© 2007 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2009 RaphaÃ«l Hertzog <hertzog@debian.org>
+.\"
+.\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
 .\" the Free Software Foundation; either version 2 of the License, or
 .\" (at your option) any later version.
@@ -10,18 +16,19 @@
 .\" GNU General Public License for more details.
 .\"
 .\" You should have received a copy of the GNU General Public License
-.\" along with this program.  If not, see <http://www.gnu.org/licenses/>.
+.\" along with this program.  If not, see <https://www.gnu.org/licenses/>.
+.
 .\"*******************************************************************
 .\"
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH dpkg\-scanpackages 1 2009\-10\-01 Debianprojektet dpkg\-verktygen
+.TH dpkg\-scanpackages 1 2012\-05\-07 Debianprojektet dpkg\-verktygen
 .SH NAMN
 dpkg\-scanpackages \- skapar indexfilerna Packages
 .
 .SH SYNOPS
-\fBdpkg\-scanpackages\fP [\fIflaggor\fP] \fIbinärkatalog\fP [\fIöverstyrningsfil\fP
+\fBdpkg\-scanpackages\fP [\fIflagga\fP...] \fIbinärkatalog\fP [\fIöverstyrningsfil\fP
 [\fIsökvägsprefix\fP]] \fB>\fP \fIPackages\fP
 .
 .SH BESKRIVNING
@@ -59,9 +66,6 @@ bara den första som hittas att användas.
 \fB\-t\fP, \fB\-\-test\fP \fItyp\fP
 Sök efter *.\fItyp\fP\-paket, i stället för *.deb.
 .TP 
-\fB\-u\fP, \fB\-\-udeb\fP
-\fBFöråldrat\fP alias till \fB\-tudeb\fP.
-.TP 
 \fB\-e\fP, \fB\-\-extra\-override\fP \fIfil\fP
 Läs \fIfil\fP för att hitta ytterligare överstyrningar (filen kan vara
 komprimerad). Se \fBdeb\-extra\-override\fP(5) för mer information om dess
@@ -79,7 +83,7 @@ Lägg till ett X\-Medium\-fält som innehåller värdet \fIidsträng\fP. Fältet är
 nödvändigt om du vill generera \fBPackages.cd\fP\-filer som kan användas med
 dselect:s multicd\-åtkomstmetod.
 .TP 
-\fB\-h\fP, \fB\-\-help\fP
+\fB\-?\fP, \fB\-\-help\fP
 Visar hjälpskärm och avslutar.
 .TP 
 \fB\-\-version\fP
@@ -92,7 +96,9 @@ Filename\-fält i sin control\-fil, saknas från överstyrningsfilen, eller har
 substitueringar utan effekt skrivna av paketansvariga.
 .
 .SH "SE ÄVEN"
+.ad l
+.nh
 \fBdpkg\fP(1), \fBdselect\fP(1), \fBdeb\-override\fP(5), \fBdeb\-extra\-override\fP(5),
 \fBdpkg\-scansources\fP(1).
-.SH "ÖVERSÄTTNING"
+.SH ÖVERSÄTTNING
 Peter Krefting och Daniel Nylander.

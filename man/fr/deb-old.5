@@ -1,9 +1,28 @@
+.\" dpkg manual page - deb-old(5)
+.\"
+.\" Copyright Â© 1995 Raul Miller
+.\" Copyright Â© 1995-1996 Ian Jackson <ian@chiark.chu.cam.ac.uk>
+.\" Copyright Â© 2000 Wichert Akkerman <wakkerma@debian.org>
+.\"
+.\" This is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <https://www.gnu.org/licenses/>.
+.
 .\"*******************************************************************
 .\"
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH deb\-old 5 28\-02\-2006 "Projet Debian" Debian
+.TH deb\-old 5 14\-08\-2011 "Projet Debian" Debian
 .SH NOM
 deb\-old \- Ancien format des paquets binaires Debian
 .
@@ -18,10 +37,10 @@ format.
 .
 .SH FORMAT
 Le fichier consiste en deux lignes d'information au format texte ASCII,
-suivi par la concaténation de deux fichiers ustar compressé avec gzip.
+suivi par la concaténation de deux fichiers ustar compressés avec gzip.
 .PP
 La première ligne indique la version du format, remplie sur 8 chiffres,
-c'est à dire \fB0.939000\fP pour toutes les archives dans l'ancien format.
+c'est\-à\-dire \fB0.939000\fP pour toutes les archives dans l'ancien format.
 .PP
 La deuxième ligne fournit un nombre décimal (sans zéros en tête), qui
 indique la taille de la première archive tar compressée avec gzip.

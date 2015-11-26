@@ -3,7 +3,7 @@
  * file.c - file handling functions
  *
  * Copyright © 1994, 1995 Ian Jackson <ian@chiark.greenend.org.uk>
- * Copyright © 2008 Guillem Jover <guillem@debian.org>
+ * Copyright © 2008-2012 Guillem Jover <guillem@debian.org>
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
@@ -32,6 +32,8 @@
 
 #include <dpkg/dpkg.h>
 #include <dpkg/i18n.h>
+#include <dpkg/subproc.h>
+#include <dpkg/command.h>
 #include <dpkg/file.h>
 
 /**
@@ -121,7 +123,7 @@ file_is_locked(int lockfd, const char *filename)
  *
  * @param lockfd The pointer to the lock file descriptor. It must be allocated
  *        statically as its addresses is passed to a cleanup handler.
- * @param flags The lock flags specifiying what type of locking to perform.
+ * @param flags The lock flags specifying what type of locking to perform.
  * @param filename The name of the file to lock.
  * @param desc The description of the file to lock.
  */
@@ -149,4 +151,27 @@ file_lock(int *lockfd, enum file_lock_flags flags, const char *filename,
 	}
 
 	push_cleanup(file_unlock_cleanup, ~0, NULL, 0, 2, lockfd, desc);
+}
+
+void
+file_show(const char *filename)
+{
+	pid_t pid;
+
+	if (filename == NULL)
+		internerr("file '%s' does not exist", filename);
+
+	pid = subproc_fork();
+	if (pid == 0) {
+		struct command cmd;
+		const char *pager;
+
+		pager = command_get_pager();
+
+		command_init(&cmd, pager, _("showing file on pager"));
+		command_add_arg(&cmd, pager);
+		command_add_arg(&cmd, filename);
+		command_exec(&cmd);
+	}
+	subproc_wait(pid, _("showing file on pager"));
 }

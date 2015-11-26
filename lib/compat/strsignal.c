@@ -14,7 +14,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
@@ -56,7 +56,6 @@ const char *const sys_siglist[] = {
 extern const char *const sys_siglist[];
 #endif
 
-#ifndef HAVE_STRSIGNAL
 const char *
 strsignal(int s)
 {
@@ -69,4 +68,3 @@ strsignal(int s)
 
 	return buf;
 }
-#endif

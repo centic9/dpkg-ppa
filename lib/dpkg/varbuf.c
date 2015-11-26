@@ -16,7 +16,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
@@ -129,7 +129,7 @@ varbuf_grow(struct varbuf *v, size_t need_size)
 {
   /* Make sure the varbuf is in a sane state. */
   if (v->size < v->used)
-    internerr("inconsistent varbuf: size(%zu) < used(%zu)", v->size, v->used);
+    internerr("varbuf used(%zu) > size(%zu)", v->used, v->size);
 
   /* Check if we already have enough room. */
   if ((v->size - v->used) >= need_size)
@@ -144,7 +144,7 @@ varbuf_trunc(struct varbuf *v, size_t used_size)
 {
   /* Make sure the caller does not claim more than available. */
   if (v->size < used_size)
-    internerr("varbuf: claimed used(%zu) > size(%zu)", v->used, v->size);
+    internerr("varbuf new_used(%zu) > size(%zu)", used_size, v->size);
 
   v->used = used_size;
 }

@@ -1,21 +1,39 @@
-.\" Author: Raphaël Hertzog
-.TH dpkg\-gensymbols 1 "2009-08-07" "Debian Project" "dpkg utilities"
+.\" dpkg manual page - dpkg-gensymbols(1)
+.\"
+.\" Copyright © 2007-2011 Raphaël Hertzog <hertzog@debian.org>
+.\" Copyright © 2009-2010 Modestas Vainius <modestas@vainius.eu>
+.\" Copyright © 2012-2013 Guillem Jover <guillem@debian.org>
+.\"
+.\" This is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <https://www.gnu.org/licenses/>.
+.
+.TH dpkg\-gensymbols 1 "2013-09-06" "Debian Project" "dpkg utilities"
 .SH NAME
 dpkg\-gensymbols \- generate symbols files (shared library dependency information)
 .
 .SH SYNOPSIS
 .B dpkg\-gensymbols
-.RI [ options ]
+.RI [ option ...]
 .
 .SH DESCRIPTION
 .B dpkg\-gensymbols
 scans a temporary build tree (debian/tmp by default) looking for libraries
-and generate a \fIsymbols\fR file describing them. This file, if
+and generates a \fIsymbols\fR file describing them. This file, if
 non-empty, is then installed in the DEBIAN subdirectory of the build tree
 so that it ends up included in the control information of the package.
 .P
 When generating those files, it uses as input some symbols files
-provided by the maintainer. It looks for the following files (and use the
+provided by the maintainer. It looks for the following files (and uses the
 first that is found):
 .IP \(bu 4
 debian/\fIpackage\fR.symbols.\fIarch\fR
@@ -32,7 +50,7 @@ corresponds to the first version of that package that provided the symbol,
 but it can be manually incremented by the maintainer if the ABI of the
 symbol is extended without breaking backwards compatibility. It's the
 responsibility of the maintainer to keep those files up-to-date and
-accurate, but \fBdpkg\-gensymbols\fR helps him.
+accurate, but \fBdpkg\-gensymbols\fR helps with that.
 .P
 When the generated symbols files differ from the maintainer supplied
 one, \fBdpkg\-gensymbols\fR will print a diff between the two versions.
@@ -43,8 +61,8 @@ option).
 The symbols files are really useful only if they reflect the evolution of
 the package through several releases. Thus the maintainer has to update
 them every time that a new symbol is added so that its associated minimal
-version matches reality. To do this properly he can use the diffs contained
-in the build logs. In most cases, the diff applies directly to his
+version matches reality. To do this properly the diffs contained in the
+build logs can be used. In most cases, the diff applies directly to the
 debian/\fIpackage\fR.symbols file. That said, further tweaks are usually
 needed: it's recommended for example to drop the Debian revision
 from the minimal version so that backports with a lower version number
@@ -56,6 +74,11 @@ with "~".
 Before applying any patch to the symbols file, the maintainer should
 double-check that it's sane. Public symbols are not supposed to disappear,
 so the patch should ideally only add new lines.
+.P
+Note that you can put comments in symbols files: any line with '#' as the
+first character is a comment except if it starts with '#include' (see
+section \fBUsing includes\fP). Lines starting with '#MISSING:' are special
+comments documenting symbols that have disappeared.
 .SS Using #PACKAGE# substitution
 .P
 In some rare cases, the name of the library varies between architectures.
@@ -94,15 +117,15 @@ that has no value. The second symbol named \fItagged_unquoted_symbol\fR is
 only tagged with the tag named \fIoptional\fR. The last symbol is an
 example of the normal untagged symbol.
 .P
-Since symbol tags are an extension of the \fIdeb\-symbols(5)\fR format, they
+Since symbol tags are an extension of the \fBdeb\-symbols\fP(5) format, they
 can only be part of the symbols files used in source packages (those files
 should then be seen as templates used to build the symbols files that are
 embedded in binary packages). When
-\fBdpkg\-gensymbols\fR is called without the \fI\-t\fR option, it will
-output symbols files compatible to the \fIdeb\-symbols(5)\fR format:
+\fBdpkg\-gensymbols\fR is called without the \fB\-t\fP option, it will
+output symbols files compatible to the \fBdeb\-symbols\fP(5) format:
 it fully processes symbols according to the requirements of their standard tags
 and strips all tags from the output. On the contrary, in template mode
-(\fI\-t\fR) all symbols and their tags (both standard and unknown ones)
+(\fB\-t\fP) all symbols and their tags (both standard and unknown ones)
 are kept in the output and are written in their original form as they were
 loaded.
 .SS Standard symbol tags
@@ -142,12 +165,14 @@ from foreign arches) are always written to the symbol file when operating
 in template mode.
 
 The format of \fIarchitecture list\fR is the same as the one used in the
-\fIBuild-Depends\fR field of \fIdebian/control\fR (except the enclosing
+\fBBuild\-Depends\fP field of \fIdebian/control\fR (except the enclosing
 square brackets []). For example, the first symbol from the list below
-will be considered only on alpha, amd64, kfreebsd-amd64 and ia64 architectures
-while the second one anywhere except on armel.
+will be considered only on alpha, any\-amd64 and ia64 architectures,
+the second only on linux architectures, while the third one anywhere
+except on armel.
 
- (arch=alpha amd64 kfreebsd-amd64 ia64)a_64bit_specific_symbol@Base 1.0
+ (arch=alpha any\-amd64 ia64)a_64bit_specific_symbol@Base 1.0
+ (arch=linux\-any)linux_specific_symbol@Base 1.0
  (arch=!armel)symbol_armel_does_not_have@Base 1.0
 .TP
 .B ignore\-blacklist
@@ -172,21 +197,21 @@ below.
 .SS Using symbol patterns
 .P
 Unlike a standard symbol specification, a pattern may cover multiple real
-symbols from the library. \fBdpkg-gensymbols\fR will attempt to match each
+symbols from the library. \fBdpkg\-gensymbols\fR will attempt to match each
 pattern against each real symbol that does \fInot\fR have a specific symbol
 counterpart defined in the symbol file. Whenever the first matching pattern is
 found, all its tags and properties will be used as a basis specification of the
 symbol. If none of the patterns matches, the symbol will be considered as new.
 
 A pattern is considered lost if it does not match any symbol in the library. By
-default this will trigger a \fBdpkg-gensymbols\fR failure under \fI-c1\fR or
+default this will trigger a \fBdpkg\-gensymbols\fP failure under \fB\-c1\fP or
 higher level. However, if the failure is undesired, the pattern may be marked
 with the \fIoptional\fR tag. Then if the pattern does not match anything, it
 will only appear in the diff as MISSING. Moreover, like any symbol, the pattern
 may be limited to the specific architectures with the \fIarch\fR tag. Please
 refer to \fBStandard symbol tags\fR subsection above for more information.
 
-Patterns are an extension of the \fIdeb\-symbols(5)\fR format hence they are
+Patterns are an extension of the \fBdeb\-symbols\fP(5) format hence they are
 only valid in symbol file templates. Pattern specification syntax is not any
 different from the one of a specific symbol. However, symbol name part of the
 specification serves as an expression to be matched against \fIname@version\fR
@@ -200,7 +225,7 @@ This pattern is denoted by the \fIc++\fR tag. It matches only C++ symbols by
 their demangled symbol name (as emitted by \fBc++filt\fR(1) utility). This
 pattern is very handy for matching symbols which mangled names might vary
 across different architectures while their demangled names remain the same. One
-group of such symbols is \fInon-virtual thunks\fR which have architecture
+group of such symbols is \fInon\-virtual thunks\fR which have architecture
 specific offsets embedded in their mangled names. A common instance of this
 case is a virtual destructor which under diamond inheritance needs a
 non-virtual thunk symbol. For example, even if _ZThn8_N3NSB6ClassDD1Ev@Base on
@@ -210,7 +235,7 @@ ones, it can be matched with a single \fIc++\fR pattern:
 .PP
 libdummy.so.1 libdummy1 #MINVER#
  [...]
- (c++)"non-virtual thunk to NSB::ClassD::~ClassD()@Base" 1.0
+ (c++)"non\-virtual thunk to NSB::ClassD::~ClassD()@Base" 1.0
  [...]
 .P
 The demangled name above can be obtained by executing the following command:
@@ -296,7 +321,7 @@ When multiple patterns match the same real symbol, aliases (first \fIc++\fR,
 then \fIsymver\fR) are preferred over generic patterns. Generic patterns are
 matched in the order they are found in the symbol file template until the first
 success.  Please note, however, that manual reordering of template file entries
-is not recommended because \fBdpkg-gensymbols\fR generates diffs based on the
+is not recommended because \fBdpkg\-gensymbols\fR generates diffs based on the
 alphanumerical order of their names.
 .SS Using includes
 .P
@@ -312,10 +337,10 @@ using an include directive like this:
 .IP \(bu
 The include directive may also be tagged like any symbol:
 
-(tag|..|tagN)#include "file_to_include"
+(tag|...|tagN)#include "file-to-include"
 
-As a result, all symbols included from \fIfile_to_include\fR will be considered
-to be tagged with \fItag\fR .. \fItagN\fR by default. You can use this feature
+As a result, all symbols included from \fIfile-to-include\fR will be considered
+to be tagged with \fItag\fR ... \fItagN\fR by default. You can use this feature
 to create a common \fIpackage\fR.symbols file which includes architecture
 specific symbol files:
 
@@ -376,31 +401,35 @@ debian/changelog. Required if called outside of a source package tree.
 .TP
 .BI \-e library-file
 Only analyze libraries explicitly listed instead of finding all public
-libraries. You can use a regular expression in \fIlibrary-file\fR to match
-multiple libraries with a single argument (otherwise you need multiple
-\fB\-e\fR).
+libraries. You can use shell patterns used for pathname expansions (see
+the \fBFile::Glob\fP(3perl) manual page for details) in \fIlibrary-file\fR
+to match multiple libraries with a single argument (otherwise you need
+multiple \fB\-e\fR).
 .TP
 .BI \-I filename
 Use \fIfilename\fR as reference file to generate the symbols file
 that is integrated in the package itself.
 .TP
-.B \-O
-Print the generated symbols file to standard output, rather than being
-stored in the package build tree.
-.TP 
-.BI \-O filename
-Store the generated symbols file as \fIfilename\fR. If \fIfilename\fR is
-pre-existing, its content is used as basis for the generated symbols file.
+.BR \-O [\fIfilename\fP]
+Print the generated symbols file to standard output or to \fIfilename\fR
+if specified, rather than to
+.B debian/tmp/DEBIAN/symbols
+(or
+.IB package-build-dir /DEBIAN/symbols
+if
+.B \-P
+was used). If \fIfilename\fR is pre-existing, its contents are used as
+basis for the generated symbols file.
 You can use this feature to update a symbols file so that it matches a
 newer upstream version of your library.
 .TP
 .BI \-t
 Write the symbol file in template mode rather than the format compatible with
-\fIdeb\-symbols(5)\fR. The main difference is that in the template mode symbol
+\fBdeb\-symbols\fP(5). The main difference is that in the template mode symbol
 names and tags are written in their original form contrary to the
 post-processed symbol names with tags stripped in the compatibility mode.
 Moreover, some symbols might be omitted when writing a standard
-\fIdeb\-symbols(5)\fR file (according to the tag processing rules) while all
+\fBdeb\-symbols\fP(5) file (according to the tag processing rules) while all
 symbols are always written to the symbol file template.
 .TP
 .BI \-c [0-4]
@@ -412,13 +441,13 @@ new symbols have been introduced. Level 3 fails if some libraries have
 disappeared. Level 4 fails if some libraries have been introduced.
 
 This value can be overridden by the environment variable
-DPKG_GENSYMBOLS_CHECK_LEVEL.
+.BR DPKG_GENSYMBOLS_CHECK_LEVEL .
 .TP
 .BI \-q
 Keep quiet and never generate a diff between generated symbols file and the
 template file used as starting point or show any warnings about new/lost
 libraries or new/lost symbols. This option only disables informational output
-but not the checks themselves (see \fI\-c\fR option).
+but not the checks themselves (see \fB\-c\fP option).
 .TP
 .BI \-a arch
 Assume \fIarch\fR as host architecture when processing symbol files. Use this
@@ -426,7 +455,7 @@ option to generate a symbol file or diff for any architecture provided its
 binaries are already available.
 .TP
 .BI \-d
-Enable debug mode. Numerous messages are displayed to explain what 
+Enable debug mode. Numerous messages are displayed to explain what
 .B dpkg\-gensymbols
 does.
 .TP
@@ -436,24 +465,18 @@ symbols as comments. Furthermore in template mode, pattern symbols
 are followed by comments listing real symbols that have matched the
 pattern.
 .TP
-.BR \-h ", " \-\-help
+.BR \-? ", " \-\-help
 Show the usage message and exit.
 .TP
 .BR \-\-version
 Show the version and exit.
 .
-.SH "SEE ALSO"
-.BR http://people.redhat.com/drepper/symbol-versioning
+.SH SEE ALSO
+.BR https://people.redhat.com/drepper/symbol\-versioning
 .br
-.BR http://people.redhat.com/drepper/goodpractice.pdf
+.BR https://people.redhat.com/drepper/goodpractice.pdf
 .br
-.BR http://people.redhat.com/drepper/dsohowto.pdf
+.BR https://people.redhat.com/drepper/dsohowto.pdf
 .br
 .BR deb\-symbols (5),
 .BR dpkg\-shlibdeps (1).
-.
-.SH AUTHORS
-Copyright \(co 2007-2009 Rapha\[:e]l Hertzog
-.sp
-This is free software; see the GNU General Public Licence version 2 or later
-for copying conditions. There is NO WARRANTY.

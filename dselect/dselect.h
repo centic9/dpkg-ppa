@@ -1,5 +1,5 @@
-/* -*- c++ -*-
- * dselect - selection of Debian packages
+/*
+ * dselect - Debian package maintenance user interface
  * dselect.h - external definitions for this program
  *
  * Copyright © 1994,1995 Ian Jackson <ian@chiark.greenend.org.uk>
@@ -16,7 +16,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #ifndef DSELECT_H
@@ -45,6 +45,23 @@ struct helpmenuentry {
 
 struct keybindings;
 
+enum screenparts {
+	background,
+	list,
+	listsel,
+	title,
+	thisstate,
+	selstate,
+	selstatesel,
+	colheads,
+	query,
+	info,
+	info_head,
+	whatinfo,
+	helpscreen,
+	numscreenparts,
+};
+
 class baselist {
 protected:
   // Screen dimensions &c.
@@ -52,12 +69,10 @@ protected:
   int title_height, colheads_height, list_height;
   int thisstate_height, info_height, whatinfo_height;
   int colheads_row, thisstate_row, info_row, whatinfo_row, list_row;
-  int list_attr, listsel_attr, title_attr, colheads_attr, info_attr;
-  int info_headattr, whatinfo_attr;
-  int thisstate_attr, query_attr;
-  int selstate_attr, selstatesel_attr;
-  int helpscreen_attr;
 
+  int part_attr[numscreenparts];
+
+  int gap_width;
   int total_width;
 
   // (n)curses stuff
@@ -84,7 +99,7 @@ protected:
   void unsizes();
   void dosearch();
   void displayhelp(const struct helpmenuentry *menu, int key);
-  void displayerror(const char* str);
+  void displayerror(const char *str);
 
   void redrawall();
   void redrawitemsrange(int start /*inclusive*/, int end /*exclusive*/);
@@ -137,7 +152,7 @@ public:
   void startdisplay();
   void enddisplay();
 
-  baselist(keybindings*);
+  baselist(keybindings *);
   virtual ~baselist();
 };
 
@@ -148,24 +163,7 @@ void mywerase(WINDOW *win);
 void curseson();
 void cursesoff();
 
-extern int expertmode;
-
-enum screenparts {
-       background,
-       list,
-       listsel,
-       title,
-       thisstate,
-       selstate,
-       selstatesel,
-       colheads,
-       query,
-       info,
-       info_head,
-       whatinfo,
-       helpscreen,
-       numscreenparts,
-};
+extern bool expertmode;
 
 struct colordata {
        int fore;
@@ -175,7 +173,7 @@ struct colordata {
 extern colordata color[];
 
 /* Evil recommends flag variable. */
-extern int manual_install;
+extern bool manual_install;
 
 enum urqresult { urqr_normal, urqr_fail, urqr_quitmenu };
 enum quitaction { qa_noquit, qa_quitchecksave, qa_quitnochecksave };

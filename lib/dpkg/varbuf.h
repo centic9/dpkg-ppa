@@ -16,7 +16,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #ifndef LIBDPKG_VARBUF_H
@@ -29,7 +29,13 @@
 
 DPKG_BEGIN_DECLS
 
-/*
+/**
+ * @defgroup varbuf Variable length buffers
+ * @ingroup dpkg-public
+ * @{
+ */
+
+/**
  * varbuf_init must be called exactly once before the use of each varbuf
  * (including before any call to varbuf_destroy), or the variable must be
  * initialized with VARBUF_INIT.
@@ -81,6 +87,8 @@ void varbuf_end_str(struct varbuf *v);
 int varbuf_printf(struct varbuf *v, const char *fmt, ...) DPKG_ATTR_PRINTF(2);
 int varbuf_vprintf(struct varbuf *v, const char *fmt, va_list va)
 	DPKG_ATTR_VPRINTF(2);
+
+/** @} */
 
 DPKG_END_DECLS
 

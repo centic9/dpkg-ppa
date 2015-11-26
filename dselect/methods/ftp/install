@@ -1,20 +1,23 @@
 #!/usr/bin/perl
-# -*-perl-*-
 #
 # Copyright © 1996 Andy Guy <awpguy@acs.ucalgary.ca>
 # Copyright © 1998 Martin Schulze <joey@infodrom.north.de>
 # Copyright © 1999, 2009 Raphaël Hertzog <hertzog@debian.org>
 #
-# This program has been distributed under the terms of the GNU GPL.
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; version 2 of the License.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use strict;
 use warnings;
-
-use vars qw(%config $ftp);
-#use diagnostics;
-
-use lib '/usr/lib/perl5/Debian';
-use lib '/usr/share/perl5/Debian';
 
 eval q{
     use Net::FTP;
@@ -24,12 +27,14 @@ eval q{
     use Data::Dumper;
 };
 if ($@) {
-    print STDERR "Please install the 'perl' package if you want to use the\n" .
-                 "FTP access method of dselect.\n\n";
+    warn "Please install the 'perl' package if you want to use the\n" .
+         "FTP access method of dselect.\n\n";
     exit 1;
 }
 
 use Dselect::Ftp;
+
+my $ftp;
 
 # exit value
 my $exit = 0;
@@ -39,7 +44,7 @@ my $vardir = $ARGV[0];
 my $method = $ARGV[1];
 my $option = $ARGV[2];
 
-if ($option eq "manual" ) {
+if ($option eq 'manual') {
   print "manual mode not supported yet\n";
   exit 1;
 }
@@ -51,21 +56,21 @@ my $methdir = "$vardir/methods/ftp";
 read_config("$methdir/vars");
 
 chdir "$methdir";
-mkpath(["$methdir/$config{'dldir'}"], 0, 0755);
+mkpath(["$methdir/$CONFIG{dldir}"], 0, 0755);
 
 
 #Read md5sums already calculated
 my %md5sums;
 if (-f "$methdir/md5sums") {
   local $/;
-  open(MD5SUMS, "$methdir/md5sums") ||
-    die "Couldn't read file $methdir/md5sums";
-  my $code = <MD5SUMS>;
-  close MD5SUMS;
-  use vars qw($VAL1);
+  open(my $md5sums_fh, '<', "$methdir/md5sums")
+    or die "couldn't read file $methdir/md5sums";
+  my $code = <$md5sums_fh>;
+  close $md5sums_fh;
+  my $VAR1; ## no critic (Variables::ProhibitUnusedVariables)
   my $res = eval $code;
   if ($@) {
-    die "Couldn't eval $methdir/md5sums content: $@\n";
+    die "couldn't eval $methdir/md5sums content: $@\n";
   }
   if (ref($res)) { %md5sums = %{$res} }
 }
@@ -96,7 +101,7 @@ sub getblk {
 		    }
 		    return %flds;
 		} else {
-		    die "Expected a start of field line, but got:\n$_";
+		    die "expected a start of field line, but got:\n$_";
 		}
 	    }
 	}
@@ -111,27 +116,28 @@ print "Processing status file...\n";
 my %curpkgs;
 sub procstatus {
     my (%flds, $fld);
-    open (STATUS, "$vardir/status") or die "Could not open status file";
-    while (%flds = getblk(\*STATUS), %flds) {
+    open(my $status_fh, '<', "$vardir/status") or
+        die 'Could not open status file';
+    while (%flds = getblk($status_fh), %flds) {
 	if($flds{'status'} =~ /^install ok/) {
 	    my $cs = (split(/ /, $flds{'status'}))[2];
-	    if(($cs eq "not-installed") ||
-	       ($cs eq "half-installed") ||
-	       ($cs eq "config-files")) {
-		$curpkgs{$flds{'package'}} = "";
+	    if (($cs eq 'not-installed') ||
+	        ($cs eq 'half-installed') ||
+	        ($cs eq 'config-files')) {
+		$curpkgs{$flds{'package'}} = '';
 	    } else {
 		$curpkgs{$flds{'package'}} = $flds{'version'};
 	    }
 	}
     }
-    close(STATUS);
+    close($status_fh);
 }
 procstatus();
 
 sub dcmpvers {
     my($a, $p, $b) = @_;
     my ($r);
-    $r = system("/usr/bin/dpkg", "--compare-versions", "$a", "$p", "$b");
+    $r = system('dpkg', '--compare-versions', "$a", "$p", "$b");
     $r = $r/256;
     if ($r == 0) {
 	return 1;
@@ -151,16 +157,16 @@ sub procpkgfile {
     my $fn = shift;
     my $site = shift;
     my $dist = shift;
-    my(@files,@sizes,@md5sums,$pkg,$ver,$fl,$nfs,$fld);
+    my (@files, @sizes, @md5sums, $pkg, $ver, $nfs, $fld);
     my(%flds);
-    open(PKGFILE, "$fn") or die "Could not open package file $fn";
-    while(%flds = getblk(\*PKGFILE), %flds) {
+    open(my $pkgfile_fh, '<', $fn) or die "could not open package file $fn";
+    while (%flds = getblk($pkgfile_fh), %flds) {
 	$pkg = $flds{'package'};
 	$ver = $curpkgs{$pkg};
 	@files = split(/[\s\n]+/, $flds{'filename'});
 	@sizes = split(/[\s\n]+/, $flds{'size'});
 	@md5sums = split(/[\s\n]+/, $flds{'md5sum'});
-	if ( defined($ver) && ( ($ver eq "") || dcmpvers( $ver, "lt", $flds{'version'} ) )) {
+	if (defined($ver) && (($ver eq '') || dcmpvers($ver, 'lt', $flds{'version'}))) {
 	    $pkgs{$pkg} = [ $flds{'version'}, [ @files ], $site ];
 	    $curpkgs{$pkg} = $flds{'version'};
 	}
@@ -169,20 +175,21 @@ sub procpkgfile {
 	    print "Different number of filenames, sizes and md5sums for $flds{'package'}\n";
 	} else {
 	    my $i = 0;
-	    foreach $fl (@files) {
+	    foreach my $fl (@files) {
 		$pkgfiles{$fl} = [ $md5sums[$i], $sizes[$i], $site, $dist ];
 		$i++;
 	    }
 	}
     }
+    close $pkgfile_fh or die "cannot close package file $fn: $!\n";
 }
 
 print "\nProcessing Package files...\n";
-my ($dist,$site,$fn,$i,$j);
+my ($fn, $i, $j);
 $i = 0;
-foreach $site (@{$config{'site'}}) {
+foreach my $site (@{$CONFIG{site}}) {
   $j = 0;
-  foreach $dist (@{$site->[2]}) {
+  foreach my $dist (@{$site->[2]}) {
     $fn = $dist;
     $fn =~ tr#/#_#;
     $fn = "Packages.$site->[0].$fn";
@@ -197,12 +204,12 @@ foreach $site (@{$config{'site'}}) {
   $i++;
 }
 
-my $dldir = $config{'dldir'};
+my $dldir = $CONFIG{dldir};
 # md5sum
 sub md5sum($) {
     my $fn = shift;
     my $m = `md5sum $fn`;
-    $m = (split(" ", $m))[0];
+    $m = (split(' ', $m))[0];
     $md5sums{"$dldir/$fn"} = $m;
     return $m;
 }
@@ -212,11 +219,11 @@ sub md5sum($) {
 # query user for each paritial file
 print "\nConstructing list of files to get...\n";
 my %downloads;
-my ($pkg, $dir, @info, @files, $csize, $size);
+my ($dir, @info, @files, $csize, $size);
 my $totsize = 0;
-foreach $pkg (keys(%pkgs)) {
+foreach my $pkg (keys(%pkgs)) {
     @files = @{$pkgs{$pkg}[1]};
-    foreach $fn (@files) {
+    foreach my $fn (@files) {
         #Look for a partial file
 	if (-f "$dldir/$fn.partial") {
 	  rename "$dldir/$fn.partial", "$dldir/$fn";
@@ -231,8 +238,8 @@ foreach $pkg (keys(%pkgs)) {
 	    $size = -s "$dldir/$fn";
 	    if($info[1] > $size) {
 		# partial download
-		if(yesno("y", "continue file: $fn (" . nb($size) ."/" .
-		              nb($info[1]). ")")) {
+		if (yesno('y', "continue file: $fn (" . nb($size) . '/' .
+		               nb($info[1]) . ')')) {
 		    $downloads{$fn} = $size;
 		    $totsize += $csize - int($size/1024);
 		} else {
@@ -254,8 +261,8 @@ foreach $pkg (keys(%pkgs)) {
 	} else {
 	    my $ffn = $fn;
 	    $ffn =~ s/binary-[^\/]+/.../;
-	    print "want: " .
-	          $config{'site'}[$pkgfiles{$fn}[2]][0] . " $ffn (${csize}k)\n";
+	    print 'want: ' .
+	          $CONFIG{site}[$pkgfiles{$fn}[2]][0] . " $ffn (${csize}k)\n";
 	    $downloads{$fn} = 0;
 	    $totsize += $csize;
 	}
@@ -272,19 +279,19 @@ print "Available space in $dldir: ${avsp}k\n";
 #chomp $avsp;
 
 if($totsize == 0) {
-    print "Nothing to get.";
+    print 'Nothing to get.';
 } else {
     if($totsize > $avsp) {
 	print "Space required is greater than available space,\n";
 	print "you will need to select which items to get.\n";
     }
 # ask user which files to get
-    if(($totsize > $avsp) || yesno("n", "Do you want to select the files to get")) {
+    if (($totsize > $avsp) ||
+        yesno('n', 'Do you want to select the files to get')) {
 	$totsize = 0;
 	my @files = sort(keys(%downloads));
-	my $fn;
-	my $def = "y";
-	foreach $fn (@files) {
+	my $def = 'y';
+	foreach my $fn (@files) {
 	    my @info = @{$pkgfiles{$fn}};
 	    my $csize = int($info[1] / 1024) + 1;
 	    my $rsize = int(($info[1] - $downloads{$fn}) / 1024) + 1;
@@ -295,10 +302,10 @@ if($totsize == 0) {
 		if(yesno($def, $downloads{$fn}
 			 ? "download: $fn ${rsize}k/${csize}k (total = ${totsize}k)"
 			 : "download: $fn ${rsize}k (total = ${totsize}k)")) {
-		    $def = "y";
+		    $def = 'y';
 		    $totsize += $rsize;
 		} else {
-		    $def = "n";
+		    $def = 'n';
 		    delete $downloads{$fn};
 		}
 	    }
@@ -309,9 +316,8 @@ if($totsize == 0) {
 sub download() {
 
  my $i = 0;
- my ($site, $ftp);
 
- foreach $site (@{$config{'site'}}) {
+ foreach my $site (@{$CONFIG{site}}) {
 
     my @getfiles = grep { $pkgfiles{$_}[2] == $i } keys %downloads;
     my @pre_dist = (); # Directory to add before $fn
@@ -321,10 +327,10 @@ sub download() {
     $cp = -1;
     foreach (@{$site->[2]}) {
       $cp++;
-      $pre_dist[$cp] = "";
-      $n = (s#\.\./#../#g);
+      $pre_dist[$cp] = '';
+      $n = (s{\.\./}{../}g);
       next if (! $n);
-      if (m#^((?:\.\./){$n}(?:[^/]+/){$n})#) {
+      if (m<^((?:\.\./){$n}(?:[^/]+/){$n})>) {
         $pre_dist[$cp] = $1;
       }
     }
@@ -336,20 +342,19 @@ sub download() {
 		       $site->[5], #$::password,
 		       $site->[1], #$::ftpdir,
 		       $site->[3], #$::passive,
-		       $config{'use_auth_proxy'},
-		       $config{'proxyhost'},
-		       $config{'proxylogname'},
-		       $config{'proxypassword'});
+		       $CONFIG{use_auth_proxy},
+		       $CONFIG{proxyhost},
+		       $CONFIG{proxylogname},
+		       $CONFIG{proxypassword});
 
-    $::ftp = $ftp;
-    local $SIG{'INT'} = sub { die "Interrupted !\n"; };
+    local $SIG{INT} = sub { die "Interrupted !\n"; };
 
-    my ($fn,$rsize,$res,$pre);
-    foreach $fn (@getfiles) {
-        $pre = $pre_dist[$pkgfiles{$fn}[3]] || "";
+    my ($rsize, $res, $pre);
+    foreach my $fn (@getfiles) {
+        $pre = $pre_dist[$pkgfiles{$fn}[3]] || '';
 	if ($downloads{$fn}) {
 	    $rsize = ${pkgfiles{$fn}}[1] - $downloads{$fn};
-	    print "getting: $pre$fn (". nb($rsize) . "/" .
+	    print "getting: $pre$fn (" . nb($rsize) . '/' .
 	          nb($pkgfiles{$fn}[1]) . ")\n";
 	} else {
 	    print "getting: $pre$fn (". nb($pkgfiles{$fn}[1]) . ")\n";
@@ -363,7 +368,7 @@ sub download() {
 	    } else {
               #Try to find another file or this package
 	      print "Looking for another version of the package...\n";
-	      my ($dir,$package) = ($fn =~ m#^(.*)/([^/]+)_[^/]+.deb$#);
+	      my ($dir, $package) = ($fn =~ m{^(.*)/([^/]+)_[^/]+.deb$});
 	      my $protected = $package;
 	      $protected =~ s/\+/\\\+/g;
 	      my $list = $ftp->ls("$pre$dir");
@@ -394,33 +399,33 @@ sub download() {
 
 # download stuff (protect from ^C)
 if($totsize != 0) {
-    if(yesno("y", "\nDo you want to download the required files")) {
+    if (yesno('y', "\nDo you want to download the required files")) {
       DOWNLOAD_TRY: while (1) {
 	  print "Downloading files... use ^C to stop\n";
 	  eval {
-	      if ((download() == 1) && yesno("y", "\nDo you want to retry downloading at once")) {
+	      if ((download() == 1) &&
+	          yesno('y', "\nDo you want to retry downloading at once")) {
 		  next DOWNLOAD_TRY;
 	      }
 	  };
 	  if($@ =~ /Interrupted|Timeout/i ) {
 	      # close the FTP connection if needed
-              if ((ref($::ftp) =~ /Net::FTP/) and ($@ =~ /Interrupted/i)) {
-                $::ftp->abort();
-	        $::ftp->quit();
-	        undef $::ftp;
+	      if ((ref($ftp) =~ /Net::FTP/) and ($@ =~ /Interrupted/i)) {
+	        $ftp->abort();
+	        $ftp->quit();
+	        undef $ftp;
 	      }
 	      print "FTP ERROR\n";
-              if (yesno("y", "\nDo you want to retry downloading at once")) {
+              if (yesno('y', "\nDo you want to retry downloading at once")) {
 		  # get the first $fn that foreach would give:
 		  # this is the one that got interrupted.
-		my $ffn;
-		MY_ITER: foreach $ffn (keys(%downloads)) {
+		MY_ITER: foreach my $ffn (keys(%downloads)) {
 		    $fn = $ffn;
 		    last MY_ITER;
 		}
 	        my $size = -s "$dldir/$fn";
 		# partial download
-		if(yesno("y", "continue file: $fn (at $size)")) {
+		if (yesno('y', "continue file: $fn (at $size)")) {
 		    $downloads{$fn} = $size;
 		} else {
 		    $downloads{$fn} = 0;
@@ -431,7 +436,7 @@ if($totsize != 0) {
 		last DOWNLOAD_TRY;
 	      }
 	  } elsif ($@) {
-             print "An error occured ($@) : stopping download\n";
+             print "An error occurred ($@) : stopping download\n";
 	  }
 	  last DOWNLOAD_TRY;
       }
@@ -463,20 +468,22 @@ sub getdebinfo($) {
     my $type = chkdeb($fn);
     my ($pkg, $ver);
     if($type == 1) {
-	open(PKGFILE, "dpkg-deb --field $fn |");
-	my %fields = getblk(\*PKGFILE);
-	close(PKGFILE);
+	open(my $pkgfile_fh, '-|', "dpkg-deb --field $fn")
+	    or die "cannot create pipe for 'dpkg-deb --field $fn'";
+	my %fields = getblk($pkgfile_fh);
+	close($pkgfile_fh);
 	$pkg = $fields{'package'};
 	$ver = $fields{'version'};
 	if($fields{'package_revision'}) { $ver .= '-' . $fields{'package_revision'}; }
 	return $pkg, $ver;
     } elsif ( $type == 2) {
-	open(PKGFILE, "dpkg-split --info $fn|");
-	while(<PKGFILE>) {
+	open(my $pkgfile_fh, '-|', "dpkg-split --info $fn")
+	    or die "cannot create pipe for 'dpkg-split --info $fn'";
+	while (<$pkgfile_fh>) {
 	    /Part of package:\s*(\S+)/ and $pkg = $+;
 	    /\.\.\. version:\s*(\S+)/ and $ver = $+;
 	}
-	close(PKGFILE);
+	close($pkgfile_fh);
 	return $pkg, $ver;
     }
     print "could not figure out type of $fn\n";
@@ -492,14 +499,13 @@ sub prcdeb($$) {
 	return 0;
     }
     if($vers{$pkg}) {
-	if(dcmpvers($vers{$pkg}, "eq", $ver)) {
+	if (dcmpvers($vers{$pkg}, 'eq', $ver)) {
 	    $files{$pkg . $ver} = [ $files{$pkg . $ver }, "$dir/$fn" ];
-	} elsif (dcmpvers($vers{$pkg}, "gt", $ver)) {
+	} elsif (dcmpvers($vers{$pkg}, 'gt', $ver)) {
 	    print "old version\n";
 	    unlink $fn;
 	} else { # else $ver is gt current version
-	    my ($c);
-	    foreach $c (@{$files{$pkg . $vers{$pkg}}}) {
+	    foreach my $c (@{$files{$pkg . $vers{$pkg}}}) {
 		print "replaces: $c\n";
 		unlink "$vardir/methods/ftp/$dldir/$c";
 	    }
@@ -515,7 +521,7 @@ sub prcdeb($$) {
 sub prcfile() {
     my ($fn) = $_;
     if (-f $fn and $fn ne '.') {
-        my $dir = ".";
+        my $dir = '.';
 	if (length($File::Find::dir) > length($dldir)) {
             $dir = substr($File::Find::dir, length($dldir)+1);
 	}
@@ -553,7 +559,7 @@ sub prcfile() {
 find(\&prcfile, "$dldir/");
 
 # install .debs
-if(yesno("y", "\nDo you want to install the files fetched")) {
+if (yesno('y', "\nDo you want to install the files fetched")) {
     print "Installing files...\n";
     #Installing pre-dependent package before !
     my (@flds, $package, @filename, $r);
@@ -569,7 +575,7 @@ if(yesno("y", "\nDo you want to install the files fetched")) {
       if ($r) { print "DPKG ERROR\n"; $exit = 1; }
     }
     #Installing other packages after
-    $r = system("dpkg", "-iGREOB", $dldir);
+    $r = system('dpkg', '-iGREOB', $dldir);
     if($r) {
 	print "DPKG ERROR\n";
 	$exit = 1;
@@ -579,7 +585,7 @@ if(yesno("y", "\nDo you want to install the files fetched")) {
 sub removeinstalled {
     my $fn = $_;
     if (-f $fn and $fn ne '.') {
-        my $dir = ".";
+        my $dir = '.';
 	if (length($File::Find::dir) > length($dldir)) {
             $dir = substr($File::Find::dir, length($dldir)+1);
 	}
@@ -588,7 +594,7 @@ sub removeinstalled {
 	    if(!defined($pkg) || !defined($ver)) {
 		print "Could not get info for: $dir/$fn\n";
 	    } else {
-		if($curpkgs{$pkg} and dcmpvers($ver, "le", $curpkgs{$pkg})) {
+		if ($curpkgs{$pkg} and dcmpvers($ver, 'le', $curpkgs{$pkg})) {
 		    print "deleting: $dir/$fn\n";
 		    unlink $fn;
 		} else {
@@ -603,7 +609,7 @@ sub removeinstalled {
 
 # remove .debs that have been installed (query user)
 # first need to reprocess status file
-if(yesno("y", "\nDo you wish to delete the installed package (.deb) files?")) {
+if (yesno('y', "\nDo you wish to delete the installed package (.deb) files?")) {
     print "Removing installed files...\n";
     %curpkgs = ();
     procstatus();
@@ -611,7 +617,7 @@ if(yesno("y", "\nDo you wish to delete the installed package (.deb) files?")) {
 }
 
 # remove whole ./debian directory if user wants to
-if(yesno("n", "\nDo you want to remove $dldir directory?")) {
+if (yesno('n', "\nDo you want to remove $dldir directory?")) {
     rmtree("$dldir");
 }
 
@@ -620,9 +626,9 @@ foreach (keys %md5sums) {
   next if (-f $_);
   delete $md5sums{$_};
 }
-open(MD5SUMS, ">$methdir/md5sums") ||
-  die "Can't open $methdir/md5sums in write mode : $!\n";
-print MD5SUMS Dumper(\%md5sums);
-close MD5SUMS;
+open(my $md5sums_fh, '>', "$methdir/md5sums")
+  or die "can't open $methdir/md5sums in write mode: $!\n";
+print { $md5sums_fh } Dumper(\%md5sums);
+close $md5sums_fh;
 
 exit $exit;

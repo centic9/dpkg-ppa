@@ -11,20 +11,20 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 package Dpkg::Control::Info;
 
 use strict;
 use warnings;
 
-our $VERSION = "1.00";
+our $VERSION = '1.00';
 
 use Dpkg::Control;
 use Dpkg::ErrorHandling;
 use Dpkg::Gettext;
 
-use base qw(Dpkg::Interface::Storable);
+use parent qw(Dpkg::Interface::Storable);
 
 use overload
     '@{}' => sub { return [ $_[0]->{source}, @{$_[0]->{packages}} ] };
@@ -38,7 +38,7 @@ Dpkg::Control::Info - parse files like debian/control
 =head1 DESCRIPTION
 
 It provides an object to access data of files that follow the same
-syntax than debian/control.
+syntax as F<debian/control>.
 
 =head1 FUNCTIONS
 
@@ -47,7 +47,7 @@ syntax than debian/control.
 =item $c = Dpkg::Control::Info->new($file)
 
 Create a new Dpkg::Control::Info object for $file. If $file is omitted, it
-loads debian/control. If file is "-", it parses the standard input.
+loads F<debian/control>. If file is "-", it parses the standard input.
 
 =cut
 
@@ -55,14 +55,14 @@ sub new {
     my ($this, $arg) = @_;
     my $class = ref($this) || $this;
     my $self = {
-	'source' => undef,
-	'packages' => [],
+	source => undef,
+	packages => [],
     };
     bless $self, $class;
     if ($arg) {
 	$self->load($arg);
     } else {
-	$self->load("debian/control");
+	$self->load('debian/control');
     }
     return $self;
 }
@@ -100,15 +100,21 @@ sub parse {
     return if not $cdata->parse($fh, $desc);
     $self->{source} = $cdata;
     unless (exists $cdata->{Source}) {
-	syntaxerr($desc, _g("first block lacks a source field"));
+	$cdata->parse_error($desc, _g('first block lacks a source field'));
     }
     while (1) {
 	$cdata = Dpkg::Control->new(type => CTRL_INFO_PKG);
         last if not $cdata->parse($fh, $desc);
 	push @{$self->{packages}}, $cdata;
 	unless (exists $cdata->{Package}) {
-	    syntaxerr($desc, _g("block lacks a package field"));
+	    $cdata->parse_error($desc, _g("block lacks the '%s' field"),
+	                        'Package');
 	}
+	unless (exists $cdata->{Architecture}) {
+	    $cdata->parse_error($desc, _g("block lacks the '%s' field"),
+	                        'Architecture');
+	}
+
     }
 }
 
@@ -150,7 +156,7 @@ sub get_pkg_by_name {
     foreach my $pkg (@{$self->{packages}}) {
 	return $pkg if ($pkg->{Package} eq $name);
     }
-    return undef;
+    return;
 }
 
 
@@ -176,7 +182,7 @@ sub output {
     my $str;
     $str .= $self->{source}->output($fh);
     foreach my $pkg (@{$self->{packages}}) {
-	print $fh "\n";
+	print { $fh } "\n";
 	$str .= "\n" . $pkg->output($fh);
     }
     return $str;

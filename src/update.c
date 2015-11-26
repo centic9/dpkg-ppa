@@ -15,7 +15,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
@@ -30,11 +30,13 @@
 #include <dpkg/i18n.h>
 #include <dpkg/dpkg.h>
 #include <dpkg/dpkg-db.h>
-#include <dpkg/myopt.h>
+#include <dpkg/options.h>
 
 #include "main.h"
 
-void updateavailable(const char *const *argv) {
+int
+updateavailable(const char *const *argv)
+{
   const char *sourcefile= argv[0];
   char *availfile;
   int count= 0;
@@ -47,7 +49,8 @@ void updateavailable(const char *const *argv) {
     break;
   case act_avreplace: case act_avmerge:
     if (!sourcefile || argv[1])
-      badusage(_("--%s needs exactly one Packages file argument"),cipaction->olong);
+      badusage(_("--%s needs exactly one Packages-file argument"),
+               cipaction->olong);
     break;
   default:
     internerr("unknown action '%d'", cipaction->arg_int);
@@ -79,16 +82,13 @@ void updateavailable(const char *const *argv) {
   availfile = dpkg_db_get_path(AVAILFILE);
 
   if (cipaction->arg_int == act_avmerge)
-    parsedb(availfile, pdb_recordavailable | pdb_rejectstatus | pdb_lax_parser,
-            NULL);
+    parsedb(availfile, pdb_parse_available, NULL);
 
   if (cipaction->arg_int != act_avclear)
-    count += parsedb(sourcefile,
-		     pdb_recordavailable | pdb_rejectstatus | pdb_ignoreolder,
-                     NULL);
+    count += parsedb(sourcefile, pdb_parse_available | pdb_ignoreolder, NULL);
 
   if (!f_noact) {
-    writedb(availfile, 1, 0);
+    writedb(availfile, wdb_dump_available);
     modstatdb_unlock();
   }
 
@@ -99,12 +99,18 @@ void updateavailable(const char *const *argv) {
               "Information about %d packages was updated.\n", count), count);
 
   modstatdb_done();
+
+  return 0;
 }
 
-void forgetold(const char *const *argv) {
+int
+forgetold(const char *const *argv)
+{
   if (*argv)
     badusage(_("--%s takes no arguments"), cipaction->olong);
 
-  warning(_("obsolete '--%s' option, unavailable packages are automatically cleaned up."),
+  warning(_("obsolete '--%s' option; unavailable packages are automatically cleaned up"),
           cipaction->olong);
+
+  return 0;
 }

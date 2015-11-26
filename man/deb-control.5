@@ -1,6 +1,25 @@
-.\" Author: Raul Miller
-.\" Includes text from the debian Guidelines by Ian Jackson, Ian Murdock
-.TH deb\-control 5 "2010-07-29" "Debian Project" "Debian"
+.\" dpkg manual page - deb-control(5)
+.\"
+.\" Copyright © 1995 Raul Miller, Ian Jackson, Ian Murdock
+.\" Copyright © 1999 Ben Collins <bcollins@debian.org>
+.\" Copyright © 2000 Wichert Akkerman <wakkerma@debian.org>
+.\" Copyright © 2007-2011 Guillem Jover <guillem@debian.org>
+.\" Copyright © 2008-2012 Raphaël Hertzog <hertzog@debian.org>
+.\"
+.\" This is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <https://www.gnu.org/licenses/>.
+.
+.TH deb\-control 5 "2011-08-14" "Debian Project" "Debian"
 .SH NAME
 deb\-control \- Debian packages' master control file format
 .
@@ -24,24 +43,24 @@ field, see below).
 .
 .SH REQUIRED FIELDS
 .TP
-.BR Package: " <package name>"
+.BI Package: " package-name"
 The value of this field determines the package name, and is used to
 generate file names by most installation tools.
 .TP
-.BR Version: " <version string>"
+.BI Version: " version-string"
 Typically, this is the original package's version number in whatever form
 the program's author uses. It may also include a Debian revision number
 (for non-native packages). The exact format and sorting algorithm
 are described in
 .BR deb\-version (5).
 .TP
-.BR Maintainer: " <fullname email>"
+.BI Maintainer: " fullname-email"
 Should be in the format `Joe Bloggs <jbloggs@foo.com>', and is typically
 the person who created the package, as opposed to the author of the
 software that was packaged.
 .TP
-.BR Description: " <short description>"
-.BR " " "<long description>"
+.BI Description: " short-description"
+.BI " " "long-description"
 .br
 The format for the package description is a short brief summary on the
 first line (after the "Description" field). The following lines should be
@@ -51,12 +70,12 @@ contain a single '.' following the preceding space.
 .
 .SH OPTIONAL FIELDS
 .TP
-.BR Section: " <section>"
+.BI Section: " section"
 This is a general field that gives the package a category based on the
 software that it installs. Some common sections are `utils', `net',
 `mail', `text', `x11' etc.
 .TP
-.BR Priority: " <priority>"
+.BI Priority: " priority"
 Sets the importance of this package in relation to the system as a whole.
 Common priorities are `required', `standard', `optional', `extra' etc.
 .LP
@@ -69,14 +88,14 @@ A list of these values can be obtained from the latest version of the
 .B debian\-policy
 package.
 .TP
-.BR Essential: " <yes|no>"
-This field is usually only needed when the answer is `yes'. It denotes
+.BR Essential: " \fByes\fP|\fBno\fP"
+This field is usually only needed when the answer is \fByes\fP. It denotes
 a package that is required for proper operation of the system. Dpkg
 or any other installation tool will not allow an
 .B Essential
 package to be removed (at least not without using one of the force options).
 .TP
-.BR Architecture: " <arch|all>"
+.BR Architecture: " \fIarch\fP|\fBall\fP"
 The architecture specifies which type of hardware this package was compiled
 for. Common architectures are `i386', `m68k', `sparc', `alpha', `powerpc'
 etc. Note that the
@@ -84,51 +103,49 @@ etc. Note that the
 option is meant for packages that are architecture independent. Some examples
 of this are shell and Perl scripts, and documentation.
 .TP
-.BR Origin: " <name>"
+.BI Origin: " name"
 The name of the distribution this package is originating from.
 .TP
-.BR Bugs: " <url>"
-The url of the bug tracking system for this package. The current used format
-is \fB<bts_type>://<bts_address>\fP, like \fBdebbugs://bugs.debian.org\fP.
+.BI Bugs: " url"
+The \fIurl\fP of the bug tracking system for this package. The current
+used format is \fIbts-type\fP\fB://\fP\fIbts-address\fP, like
+\fBdebbugs://bugs.debian.org\fP.
 .TP
-.BR Homepage: " <url>"
-The upstream project home page URL.
+.BI Homepage: " url"
+The upstream project home page \fIurl\fP.
 .TP
-.BR Tag: " <tag list>"
+.BI Tag: " tag-list"
 List of tags describing the qualities of the package. The description and
 list of supported tags can be found in the \fBdebtags\fP package.
 .TP
-.BR Multi\-Arch: " <same|foreign|allowed>"
+.BR Multi\-Arch: " \fBsame\fP|\fBforeign\fP|\fBallowed\fP"
 This field is used to indicate how this package should behave on a multi-arch
-installations. The value `same' means that the package is co-installable with
-itself, but it must not be used to satisfy the dependency of any package of a
-different architecture from itself. The value `foreign' means that the package is
-not co-installable with itself, but should be allowed to satisfy the dependency
-of a package of a different arch from itself. The value `allowed` allows
-reverse-dependencies to indicate in their Depends field that they need a package
-from a foreign architecture, but has no effect otherwise. This field should not
-be present in packages with the Architecture: all field.
+installations. The value \fBsame\fP means that the package is co-installable
+with itself, but it must not be used to satisfy the dependency of any package
+of a different architecture from itself. The value \fBforeign\fP means that
+the package is not co-installable with itself, but should be allowed to
+satisfy the dependency of a package of a different arch from itself. The
+value \fBallowed\fP allows reverse-dependencies to indicate in their
+Depends field that they accept a package from a foreign architecture, but
+has no effect otherwise.
 .TP
-.BR Source: " <source name>"
+.BI Source: " source-name"
 The name of the source package that this binary package came from, if
 different than the name of the package itself.
 
 .TP
-.PD 0
-.BR Subarchitecture: " <value>"
-.TP
-.PD 0
-.BR Kernel\-Version: " <value>"
-.TP
-.PD
-.BR Installer\-Menu\-Item: " <value>"
+.BI Subarchitecture: " value"
+.TQ
+.BI Kernel\-Version: " value"
+.TQ
+.BI Installer\-Menu\-Item: " value"
 These fields are used by the debian\-installer and are usually not needed.
 See /usr/share/doc/debian\-installer/devel/modules.txt from the
 .B debian\-installer
 package for more details about them.
 
 .TP
-.BR Depends: " <package list>"
+.BI Depends: " package-list"
 List of packages that are required for this package to provide a
 non-trivial amount of functionality. The package maintenance software
 will not allow a package to be installed if the packages listed in its
@@ -139,21 +156,21 @@ fields are run before those of the packages which depend on them. On the
 opposite, in a removal, the prerm script of a package is run before
 those of the packages listed in its Depends: field.
 .TP
-.BR Pre\-Depends: " <package list>"
+.BI Pre\-Depends: " package-list"
 List of packages that must be installed
 .B and
 configured before this one can be installed. This is usually used in the
 case where this package requires another package for running its preinst
 script.
 .TP
-.BR Recommends: " <package list>"
+.BI Recommends: " package-list"
 Lists packages that would be found together with this one in all but
 unusual installations. The package maintenance software will warn the
 user if they install a package without those listed in its
 .B Recommends
 field.
 .TP
-.BR Suggests: " <package list>"
+.BI Suggests: " package-list"
 Lists packages that are related to this one and can perhaps enhance
 its usefulness, but without which installing this package is perfectly
 reasonable.
@@ -176,7 +193,7 @@ by a hyphen). Accepted version relationships are ">>" for greater than,
 "<<" for less than, ">=" for greater than or equal to, "<=" for less than
 or equal to, and "=" for equal to.
 .TP
-.BR Breaks: " <package list>"
+.BI Breaks: " package-list"
 Lists packages that this one breaks, for example by exposing bugs
 when the named packages rely on this one. The package maintenance
 software will not allow broken packages to be configured; generally
@@ -184,7 +201,7 @@ the resolution is to upgrade the packages named in a
 .B Breaks
 field.
 .TP
-.BR Conflicts: " <package list>"
+.BI Conflicts: " package-list"
 Lists packages that conflict with this one, for example by containing
 files with the same names. The package maintenance software will not
 allow conflicting packages to be installed at the same time. Two
@@ -192,7 +209,7 @@ conflicting packages should each include a
 .B Conflicts
 line mentioning the other.
 .TP
-.BR Replaces: " <package list>"
+.BI Replaces: " package-list"
 List of packages files from which this one replaces. This is used for
 allowing this package to overwrite the files of another package and
 is usually used with the
@@ -200,7 +217,7 @@ is usually used with the
 field to force removal of the other package, if this one also has the
 same files as the conflicted package.
 .TP
-.BR Provides: " <package list>"
+.BI Provides: " package-list"
 This is a list of virtual packages that this one provides. Usually this is
 used in the case of several packages all providing the same service.
 For example, sendmail and exim can serve as a mail server, so they
@@ -229,6 +246,17 @@ and
 .B Replaces
 fields.
 .
+.TP
+.BI Built\-Using: " package-list"
+This field lists extra source packages that were used during the build of this
+binary package.  This is an indication to the archive maintenance software that
+these extra source packages must be kept whilst this binary package is
+maintained.  This field must be a list of source package names with strict (=)
+version relationships.  Note that the archive maintenance software is likely to
+refuse to accept an upload which declares a
+.B Built\-Using
+relationship which cannot be satisfied within the archive.
+.
 .SH EXAMPLE
 .\" .RS
 .nf
@@ -239,8 +267,8 @@ Priority: required
 Section: base
 Maintainer: Wichert Akkerman <wakkerma@debian.org>
 Architecture: sparc
-Version: 2.4-1
-Pre-Depends: libc6 (>= 2.0.105)
+Version: 2.4\-1
+Pre\-Depends: libc6 (>= 2.0.105)
 Provides: rgrep
 Conflicts: rgrep
 Description: GNU grep, egrep and fgrep.

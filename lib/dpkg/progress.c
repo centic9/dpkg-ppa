@@ -1,5 +1,5 @@
 /*
- * dpkg - main program for package management
+ * libdpkg - Debian packaging suite library routines
  * progress.c - generic progress reporting
  *
  * Copyright © 2009 Romain Francoise <rfrancoise@debian.org>
@@ -16,7 +16,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
@@ -39,7 +39,10 @@ progress_init(struct progress *progress, const char *text, int max)
 
 	progress->on_tty = isatty(1);
 
-	printf("%s", text);
+	if (progress->on_tty)
+		printf("%s\r", text);
+	else
+		printf("%s", text);
 }
 
 void
@@ -60,12 +63,12 @@ progress_step(struct progress *progress)
 
 	progress->last_percent = cur_percent;
 
-	printf("\r%s%d%%", progress->text, cur_percent);
+	printf("%s%d%%\r", progress->text, cur_percent);
 }
 
 void
 progress_done(struct progress *progress)
 {
 	if (progress->on_tty)
-		printf("\r%s", progress->text);
+		printf("%s", progress->text);
 }

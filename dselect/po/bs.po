@@ -5,9 +5,9 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: dpkg 1.13\n"
+"Project-Id-Version: dselect 1.13\n"
 "Report-Msgid-Bugs-To: debian-dpkg@lists.debian.org\n"
-"POT-Creation-Date: 2011-03-06 10:45+0100\n"
+"POT-Creation-Date: 2013-12-12 08:35+0100\n"
 "PO-Revision-Date: 2006-02-17 08:55+0200\n"
 "Last-Translator: Safir Šećerović <sapphire@linux.org.ba>\n"
 "Language-Team: Bosnian <lokal@linux.org.ba>\n"
@@ -20,111 +20,111 @@ msgstr ""
 msgid "Search for ? "
 msgstr ""
 
-#: dselect/basecmds.cc:147
+#: dselect/basecmds.cc:149
 msgid "Error: "
 msgstr "Greška:"
 
-#: dselect/basecmds.cc:176
+#: dselect/basecmds.cc:180
 msgid "Help: "
 msgstr "Pomoć:"
 
-#: dselect/basecmds.cc:182
+#: dselect/basecmds.cc:186
 msgid "Press ? for help menu, . for next topic, <space> to exit help."
 msgstr ""
 
-#: dselect/basecmds.cc:189
+#: dselect/basecmds.cc:193
 msgid "Help information is available under the following topics:"
 msgstr ""
 
-#: dselect/basecmds.cc:197
+#: dselect/basecmds.cc:201
 msgid ""
 "Press a key from the list above, <space> or `q' to exit help,\n"
 "  or `.' (full stop) to read each help page in turn. "
 msgstr ""
 
-#: dselect/basecmds.cc:203
+#: dselect/basecmds.cc:207
 msgid "error reading keyboard in help"
 msgstr ""
 
-#: dselect/baselist.cc:57
+#: dselect/baselist.cc:60
 msgid "ioctl(TIOCGWINSZ) failed"
 msgstr ""
 
-#: dselect/baselist.cc:60
+#: dselect/baselist.cc:63
 msgid "doupdate in SIGWINCH handler failed"
 msgstr ""
 
-#: dselect/baselist.cc:67
+#: dselect/baselist.cc:72
 msgid "failed to restore old SIGWINCH sigact"
 msgstr ""
 
-#: dselect/baselist.cc:69
+#: dselect/baselist.cc:75
 msgid "failed to restore old signal mask"
 msgstr ""
 
-#: dselect/baselist.cc:79
+#: dselect/baselist.cc:86
 msgid "failed to get old signal mask"
 msgstr ""
 
-#: dselect/baselist.cc:80
+#: dselect/baselist.cc:88
 msgid "failed to get old SIGWINCH sigact"
 msgstr ""
 
-#: dselect/baselist.cc:84
+#: dselect/baselist.cc:93
 msgid "failed to block SIGWINCH"
 msgstr ""
 
-#: dselect/baselist.cc:89
+#: dselect/baselist.cc:99
 msgid "failed to set new SIGWINCH sigact"
 msgstr ""
 
-#: dselect/baselist.cc:126
+#: dselect/baselist.cc:136
 msgid "failed to allocate colour pair"
 msgstr ""
 
-#: dselect/baselist.cc:167
+#: dselect/baselist.cc:165
 msgid "failed to create title window"
 msgstr ""
 
-#: dselect/baselist.cc:171
+#: dselect/baselist.cc:169
 msgid "failed to create whatinfo window"
 msgstr ""
 
-#: dselect/baselist.cc:175
+#: dselect/baselist.cc:173
 msgid "failed to create baselist pad"
 msgstr ""
 
-#: dselect/baselist.cc:178
+#: dselect/baselist.cc:176
 msgid "failed to create heading pad"
 msgstr ""
 
-#: dselect/baselist.cc:182
+#: dselect/baselist.cc:180
 msgid "failed to create thisstate pad"
 msgstr ""
 
-#: dselect/baselist.cc:186
+#: dselect/baselist.cc:184
 msgid "failed to create info pad"
 msgstr ""
 
-#: dselect/baselist.cc:191
+#: dselect/baselist.cc:189
 msgid "failed to create query window"
 msgstr ""
 
-#: dselect/baselist.cc:255
+#: dselect/baselist.cc:258
 msgid "Keybindings"
-msgstr ""
-
-#: dselect/baselist.cc:303
-#, c-format
-msgid "  -- %d%%, press "
 msgstr ""
 
 #: dselect/baselist.cc:306
 #, c-format
+msgid "  -- %d%%, press "
+msgstr ""
+
+#: dselect/baselist.cc:309
+#, c-format
 msgid "%s for more"
 msgstr ""
 
-#: dselect/baselist.cc:310
+#: dselect/baselist.cc:313
 #, c-format
 msgid "%s to go back"
 msgstr ""
@@ -138,136 +138,136 @@ msgstr ""
 msgid "[unk: %d]"
 msgstr ""
 
-#: dselect/bindings.cc:139
+#: dselect/bindings.cc:141
 msgid "Scroll onwards through help/information"
 msgstr ""
 
-#: dselect/bindings.cc:140
+#: dselect/bindings.cc:142
 msgid "Scroll backwards through help/information"
 msgstr ""
 
-#: dselect/bindings.cc:141
+#: dselect/bindings.cc:143
 msgid "Move up"
 msgstr "Pomjeri gore"
 
-#: dselect/bindings.cc:142
+#: dselect/bindings.cc:144
 msgid "Move down"
 msgstr "Pomjeri dole"
 
-#: dselect/bindings.cc:143
+#: dselect/bindings.cc:145
 msgid "Go to top of list"
 msgstr "Idi na vrh liste"
 
-#: dselect/bindings.cc:144
+#: dselect/bindings.cc:146
 msgid "Go to end of list"
 msgstr "Idi na kraj liste"
 
-#: dselect/bindings.cc:145
+#: dselect/bindings.cc:147
 msgid "Request help (cycle through help screens)"
 msgstr ""
 
-#: dselect/bindings.cc:146
+#: dselect/bindings.cc:148
 msgid "Cycle through information displays"
 msgstr ""
 
-#: dselect/bindings.cc:147
+#: dselect/bindings.cc:149
 msgid "Redraw display"
 msgstr ""
 
-#: dselect/bindings.cc:148
+#: dselect/bindings.cc:150
 msgid "Scroll onwards through list by 1 line"
 msgstr ""
 
-#: dselect/bindings.cc:149
+#: dselect/bindings.cc:151
 msgid "Scroll backwards through list by 1 line"
 msgstr ""
 
-#: dselect/bindings.cc:150
+#: dselect/bindings.cc:152
 msgid "Scroll onwards through help/information by 1 line"
 msgstr ""
 
-#: dselect/bindings.cc:151
+#: dselect/bindings.cc:153
 msgid "Scroll backwards through help/information by 1 line"
 msgstr ""
 
-#: dselect/bindings.cc:152
+#: dselect/bindings.cc:154
 msgid "Scroll onwards through list"
 msgstr ""
 
-#: dselect/bindings.cc:153
+#: dselect/bindings.cc:155
 msgid "Scroll backwards through list"
 msgstr ""
 
-#: dselect/bindings.cc:156
+#: dselect/bindings.cc:158
 msgid "Mark package(s) for installation"
 msgstr ""
 
-#: dselect/bindings.cc:157
+#: dselect/bindings.cc:159
 msgid "Mark package(s) for deinstallation"
 msgstr ""
 
-#: dselect/bindings.cc:158
+#: dselect/bindings.cc:160
 msgid "Mark package(s) for deinstall and purge"
 msgstr ""
 
-#: dselect/bindings.cc:159
+#: dselect/bindings.cc:161
 msgid "Make highlight more specific"
 msgstr ""
 
-#: dselect/bindings.cc:160
+#: dselect/bindings.cc:162
 msgid "Make highlight less specific"
 msgstr ""
 
-#: dselect/bindings.cc:161
+#: dselect/bindings.cc:163
 msgid "Search for a package whose name contains a string"
 msgstr ""
 
-#: dselect/bindings.cc:162
-msgid "Repeat last search."
-msgstr ""
-
-#: dselect/bindings.cc:163
-msgid "Swap sort order priority/section"
-msgstr ""
-
 #: dselect/bindings.cc:164
-msgid "Quit, confirming, and checking dependencies"
+msgid "Repeat last search"
 msgstr ""
 
 #: dselect/bindings.cc:165
-msgid "Quit, confirming without check"
+msgid "Swap sort order priority/section"
 msgstr ""
 
 #: dselect/bindings.cc:166
-msgid "Quit, rejecting conflict/dependency suggestions"
+msgid "Quit, confirming, and checking dependencies"
 msgstr ""
 
 #: dselect/bindings.cc:167
-msgid "Abort - quit without making changes"
+msgid "Quit, confirming without check"
 msgstr ""
 
 #: dselect/bindings.cc:168
-msgid "Revert to old state for all packages"
+msgid "Quit, rejecting conflict/dependency suggestions"
 msgstr ""
 
 #: dselect/bindings.cc:169
-msgid "Revert to suggested state for all packages"
+msgid "Abort - quit without making changes"
 msgstr ""
 
 #: dselect/bindings.cc:170
-msgid "Revert to directly requested state for all packages"
+msgid "Revert to old state for all packages"
 msgstr ""
 
 #: dselect/bindings.cc:171
+msgid "Revert to suggested state for all packages"
+msgstr ""
+
+#: dselect/bindings.cc:172
+msgid "Revert to directly requested state for all packages"
+msgstr ""
+
+#: dselect/bindings.cc:173
 #, fuzzy
 msgid "Revert to currently installed state for all packages"
 msgstr "Nepravilno instalirani paketi"
 
-#: dselect/bindings.cc:174
+#: dselect/bindings.cc:176
 msgid "Select currently-highlighted access method"
 msgstr ""
 
-#: dselect/bindings.cc:175
+#: dselect/bindings.cc:177
 msgid "Quit without changing selected access method"
 msgstr ""
 
@@ -531,110 +531,104 @@ msgid ""
 "  \\                repeat last search\n"
 msgstr ""
 
-#: dselect/main.cc:61
+#: dselect/main.cc:63
 msgid "Type dselect --help for help."
 msgstr "Ukucajte dselect --help za pomoć."
 
-#: dselect/main.cc:143
+#: dselect/main.cc:145
 msgid "a"
 msgstr "p"
 
-#: dselect/main.cc:143
+#: dselect/main.cc:145
 msgid "[A]ccess"
 msgstr "[P]ristup"
 
-#: dselect/main.cc:143
+#: dselect/main.cc:145
 msgid "Choose the access method to use."
 msgstr "Izaberite metod pristupa koji će se korisiti."
 
-#: dselect/main.cc:144
+#: dselect/main.cc:146
 msgid "u"
 msgstr "a"
 
-#: dselect/main.cc:144
+#: dselect/main.cc:146
 msgid "[U]pdate"
 msgstr "[A]žuriraj"
 
-#: dselect/main.cc:144
+#: dselect/main.cc:146
 msgid "Update list of available packages, if possible."
 msgstr "Ažuriraj listu dostupnih paketa, po mogućnosti."
 
-#: dselect/main.cc:145
+#: dselect/main.cc:147
 msgid "s"
 msgstr "o"
 
-#: dselect/main.cc:145
+#: dselect/main.cc:147
 msgid "[S]elect"
 msgstr "[O]dabir"
 
-#: dselect/main.cc:145
+#: dselect/main.cc:147
 msgid "Request which packages you want on your system."
 msgstr "Odaberite koje pakete želite na vašem sistemu."
 
-#: dselect/main.cc:146
+#: dselect/main.cc:148
 msgid "i"
 msgstr "i"
 
-#: dselect/main.cc:146
+#: dselect/main.cc:148
 msgid "[I]nstall"
 msgstr "[I]nstaliraj"
 
-#: dselect/main.cc:146
+#: dselect/main.cc:148
 msgid "Install and upgrade wanted packages."
 msgstr "Instaliraj i nadogradi željene pakete."
 
-#: dselect/main.cc:147
+#: dselect/main.cc:149
 msgid "c"
 msgstr "d"
 
-#: dselect/main.cc:147
+#: dselect/main.cc:149
 msgid "[C]onfig"
 msgstr "Po[d]esi"
 
-#: dselect/main.cc:147
+#: dselect/main.cc:149
 msgid "Configure any packages that are unconfigured."
 msgstr "Podesi sve pakete koji nisu podešeni."
 
-#: dselect/main.cc:148
+#: dselect/main.cc:150
 msgid "r"
 msgstr "u"
 
-#: dselect/main.cc:148
+#: dselect/main.cc:150
 msgid "[R]emove"
 msgstr "[U]kloni"
 
-#: dselect/main.cc:148
+#: dselect/main.cc:150
 msgid "Remove unwanted software."
 msgstr "Ukloni neželjeni software"
 
-#: dselect/main.cc:149
+#: dselect/main.cc:151
 msgid "q"
 msgstr "z"
 
-#: dselect/main.cc:149
+#: dselect/main.cc:151
 msgid "[Q]uit"
 msgstr "I[z]ađi"
 
-#: dselect/main.cc:149
+#: dselect/main.cc:151
 msgid "Quit dselect."
 msgstr "Izađi iz dselect programa."
 
-#: dselect/main.cc:150
+#: dselect/main.cc:152
 msgid "menu"
 msgstr "meni"
 
-#: dselect/main.cc:155
+#: dselect/main.cc:157
 #, fuzzy, c-format
 msgid "Debian `%s' package handling frontend version %s.\n"
 msgstr "Debianov `%s' program za rukovanje paketima."
 
-#: dselect/main.cc:158
-msgid ""
-"Copyright (C) 1994-1996 Ian Jackson.\n"
-"Copyright (C) 2000,2001 Wichert Akkerman.\n"
-msgstr ""
-
-#: dselect/main.cc:162
+#: dselect/main.cc:160
 #, fuzzy
 msgid ""
 "This is free software; see the GNU General Public License version 2 or\n"
@@ -647,30 +641,30 @@ msgstr ""
 "ili kasniju za uslove kopiranja.  NEMA garancije.  Pogledajte\n"
 "dselect --licence za detalje.\n"
 
-#: dselect/main.cc:172 dselect/main.cc:220
+#: dselect/main.cc:169 dselect/main.cc:217
 msgid "<standard output>"
 msgstr ""
 
-#: dselect/main.cc:183
+#: dselect/main.cc:180
 #, c-format
 msgid ""
 "Usage: %s [<option> ...] [<action> ...]\n"
 "\n"
 msgstr ""
 
-#: dselect/main.cc:187
+#: dselect/main.cc:184
 #, c-format
 msgid ""
 "Options:\n"
 "  --admindir <directory>     Use <directory> instead of %s.\n"
 "  --expert                   Turn on expert mode.\n"
 "  --debug <file> | -D<file>  Turn on debugging, sending output to <file>.\n"
-"  --colour | --color screenpart:[foreground],[background][:attr[+attr+..]]\n"
+"  --colour | --color screenpart:[foreground],[background][:attr[+attr+...]]\n"
 "                             Configure screen colours.\n"
 "\n"
 msgstr ""
 
-#: dselect/main.cc:196
+#: dselect/main.cc:193
 #, c-format
 msgid ""
 "  --help                     Show this help message.\n"
@@ -678,75 +672,73 @@ msgid ""
 "\n"
 msgstr ""
 
-#: dselect/main.cc:201
-#, c-format
-msgid ""
-"Actions:\n"
-"  access update select install config remove quit\n"
-"\n"
-msgstr ""
+#: dselect/main.cc:197
+#, fuzzy, c-format
+#| msgid "Section"
+msgid "Actions:\n"
+msgstr "Sekcija"
 
-#: dselect/main.cc:205
+#: dselect/main.cc:202
 #, c-format
 msgid "Screenparts:\n"
 msgstr ""
 
-#: dselect/main.cc:210
+#: dselect/main.cc:207
 #, c-format
 msgid "Colours:\n"
 msgstr "Boje:\n"
 
-#: dselect/main.cc:215
+#: dselect/main.cc:212
 #, c-format
 msgid "Attributes:\n"
 msgstr ""
 
-#: dselect/main.cc:233
+#: dselect/main.cc:232
 #, c-format
 msgid "couldn't open debug file `%.255s'\n"
 msgstr ""
 
-#: dselect/main.cc:253
+#: dselect/main.cc:254
 #, c-format
-msgid "Invalid %s `%s'\n"
+msgid "invalid %s '%s'"
 msgstr ""
 
-#: dselect/main.cc:270
+#: dselect/main.cc:273
 msgid "screen part"
 msgstr ""
 
-#: dselect/main.cc:276
-msgid "Null colour specification\n"
+#: dselect/main.cc:279
+msgid "null colour specification"
 msgstr ""
 
-#: dselect/main.cc:284 dselect/main.cc:289
+#: dselect/main.cc:287 dselect/main.cc:292
 msgid "colour"
 msgstr "boja"
 
-#: dselect/main.cc:297
+#: dselect/main.cc:300
 msgid "colour attribute"
 msgstr ""
 
-#: dselect/main.cc:329
+#: dselect/main.cc:332
 msgid "Terminal does not appear to support cursor addressing.\n"
 msgstr ""
 
-#: dselect/main.cc:331
+#: dselect/main.cc:334
 msgid "Terminal does not appear to support highlighting.\n"
 msgstr ""
 
-#: dselect/main.cc:333
+#: dselect/main.cc:336
 #, c-format
 msgid ""
 "Set your TERM variable correctly, use a better terminal,\n"
 "or make do with the per-package management tool %s.\n"
 msgstr ""
 
-#: dselect/main.cc:336
+#: dselect/main.cc:339
 msgid "terminal lacks necessary features, giving up"
 msgstr ""
 
-#: dselect/main.cc:418
+#: dselect/main.cc:420
 msgid ""
 "\n"
 "\n"
@@ -755,60 +747,66 @@ msgid ""
 "\n"
 msgstr ""
 
-#: dselect/main.cc:433
+#: dselect/main.cc:425
+msgid ""
+"Copyright (C) 1994-1996 Ian Jackson.\n"
+"Copyright (C) 2000,2001 Wichert Akkerman.\n"
+msgstr ""
+
+#: dselect/main.cc:431
 msgid ""
 "\n"
 "\n"
 "Read-only access: only preview of selections is available!"
 msgstr ""
 
-#: dselect/main.cc:452
+#: dselect/main.cc:450
 msgid "failed to getch in main menu"
 msgstr ""
 
-#: dselect/main.cc:531
+#: dselect/main.cc:533
 #, c-format
 msgid "unknown action string `%.50s'"
 msgstr ""
 
-#: dselect/methlist.cc:77
+#: dselect/methlist.cc:73
 msgid "dselect - list of access methods"
 msgstr ""
 
-#: dselect/methlist.cc:86
+#: dselect/methlist.cc:82
 #, c-format
 msgid "Access method `%s'."
 msgstr "Metod pristupa `%s'."
 
-#: dselect/methlist.cc:120
+#: dselect/methlist.cc:116
 msgid "Abbrev."
 msgstr ""
 
-#: dselect/methlist.cc:121 dselect/pkginfo.cc:105 dselect/pkgtop.cc:291
+#: dselect/methlist.cc:117 dselect/pkginfo.cc:110 dselect/pkgtop.cc:292
 msgid "Description"
 msgstr "Opis"
 
-#: dselect/methlist.cc:164 dselect/pkglist.cc:572
+#: dselect/methlist.cc:160 dselect/pkglist.cc:583
 msgid "doupdate failed"
 msgstr ""
 
-#: dselect/methlist.cc:166 dselect/pkglist.cc:575
+#: dselect/methlist.cc:163 dselect/pkglist.cc:586
 msgid "failed to unblock SIGWINCH"
 msgstr ""
 
-#: dselect/methlist.cc:170 dselect/pkglist.cc:580
+#: dselect/methlist.cc:168 dselect/pkglist.cc:591
 msgid "failed to re-block SIGWINCH"
 msgstr ""
 
-#: dselect/methlist.cc:171 dselect/pkglist.cc:582
+#: dselect/methlist.cc:169 dselect/pkglist.cc:593
 msgid "getch failed"
 msgstr ""
 
-#: dselect/methlist.cc:188
+#: dselect/methlist.cc:186
 msgid "Explanation"
 msgstr ""
 
-#: dselect/methlist.cc:197
+#: dselect/methlist.cc:196
 msgid "No explanation available."
 msgstr ""
 
@@ -826,28 +824,28 @@ msgid ""
 "Press <enter> to continue."
 msgstr ""
 
-#: dselect/method.cc:165
+#: dselect/method.cc:161
 #, c-format
 msgid "Press <enter> to continue.\n"
 msgstr ""
 
-#: dselect/method.cc:166
+#: dselect/method.cc:162
 msgid "<standard error>"
 msgstr ""
 
-#: dselect/method.cc:169
+#: dselect/method.cc:165
 msgid "error reading acknowledgement of program failure message"
 msgstr ""
 
-#: dselect/method.cc:200
+#: dselect/method.cc:196
 msgid "update available list script"
 msgstr ""
 
-#: dselect/method.cc:204
+#: dselect/method.cc:200
 msgid "installation script"
 msgstr ""
 
-#: dselect/method.cc:250
+#: dselect/method.cc:246
 msgid "query/setup script"
 msgstr ""
 
@@ -861,118 +859,103 @@ msgstr ""
 msgid "error reading options file `%.250s'"
 msgstr ""
 
-#: dselect/methparse.cc:90
+#: dselect/methparse.cc:93
 #, c-format
 msgid "unable to read `%.250s' directory for reading methods"
 msgstr ""
 
-#: dselect/methparse.cc:106
+#: dselect/methparse.cc:109
 #, c-format
 msgid "method `%.250s' has name that is too long (%d > %d characters)"
 msgstr ""
 
-#: dselect/methparse.cc:117
+#: dselect/methparse.cc:120
 #, c-format
 msgid "unable to access method script `%.250s'"
 msgstr ""
 
-#: dselect/methparse.cc:123
+#: dselect/methparse.cc:126
 #, c-format
 msgid "unable to read method options file `%.250s'"
 msgstr ""
 
-#: dselect/methparse.cc:147
+#: dselect/methparse.cc:150
 msgid "non-digit where digit wanted"
 msgstr ""
 
-#: dselect/methparse.cc:150
+#: dselect/methparse.cc:153
 msgid "EOF in index string"
 msgstr ""
 
-#: dselect/methparse.cc:153
+#: dselect/methparse.cc:156
 msgid "index string too long"
 msgstr ""
 
-#: dselect/methparse.cc:156
+#: dselect/methparse.cc:159
 msgid "newline before option name start"
 msgstr ""
 
-#: dselect/methparse.cc:158
+#: dselect/methparse.cc:161
 msgid "EOF before option name start"
 msgstr ""
 
-#: dselect/methparse.cc:162
+#: dselect/methparse.cc:165
 msgid "nonalpha where option name start wanted"
 msgstr ""
 
-#: dselect/methparse.cc:164
+#: dselect/methparse.cc:167
 msgid "non-alphanum in option name"
 msgstr ""
 
-#: dselect/methparse.cc:167
+#: dselect/methparse.cc:170
 msgid "EOF in option name"
 msgstr ""
 
-#: dselect/methparse.cc:172
+#: dselect/methparse.cc:175
 msgid "newline before summary"
 msgstr ""
 
-#: dselect/methparse.cc:174
+#: dselect/methparse.cc:177
 msgid "EOF before summary"
 msgstr ""
 
-#: dselect/methparse.cc:180
+#: dselect/methparse.cc:183
 msgid "EOF in summary - missing newline"
 msgstr ""
 
-#: dselect/methparse.cc:190
+#: dselect/methparse.cc:193
 #, c-format
 msgid "unable to open option description file `%.250s'"
 msgstr ""
 
-#: dselect/methparse.cc:194
+#: dselect/methparse.cc:197
 #, c-format
 msgid "unable to stat option description file `%.250s'"
 msgstr ""
 
-#: dselect/methparse.cc:198
+#: dselect/methparse.cc:201
 #, c-format
 msgid "failed to read option description file `%.250s'"
 msgstr ""
 
-#: dselect/methparse.cc:201
+#: dselect/methparse.cc:204
 #, c-format
 msgid "error during read of option description file `%.250s'"
 msgstr ""
 
-#: dselect/methparse.cc:224
+#: dselect/methparse.cc:227
 #, c-format
 msgid "error during read of method options file `%.250s'"
 msgstr ""
 
-#: dselect/methparse.cc:252
+#: dselect/methparse.cc:250
 #, c-format
 msgid "unable to open current option file `%.250s'"
 msgstr ""
 
-#: dselect/methparse.cc:294
-#, c-format
-msgid "unable to open new option file `%.250s'"
-msgstr ""
-
-#: dselect/methparse.cc:297
+#: dselect/methparse.cc:286
 #, c-format
 msgid "unable to write new option to `%.250s'"
-msgstr ""
-
-#: dselect/methparse.cc:300
-#, c-format
-msgid "unable to close new option file `%.250s'"
-msgstr ""
-
-#: dselect/methparse.cc:302
-#, c-format
-msgid "unable to install new option as `%.250s'"
 msgstr ""
 
 #: dselect/pkgdisplay.cc:36
@@ -1207,71 +1190,71 @@ msgstr "Instalirano"
 msgid "Purged"
 msgstr "Očišćeno"
 
-#: dselect/pkgdisplay.cc:198
+#: dselect/pkgdisplay.cc:193
 msgid "dselect - recursive package listing"
 msgstr ""
 
-#: dselect/pkgdisplay.cc:199
+#: dselect/pkgdisplay.cc:195
 msgid "dselect - inspection of package states"
 msgstr ""
 
-#: dselect/pkgdisplay.cc:200
+#: dselect/pkgdisplay.cc:196
 msgid "dselect - main package listing"
 msgstr ""
 
-#: dselect/pkgdisplay.cc:208
+#: dselect/pkgdisplay.cc:204
 msgid " (by section)"
 msgstr ""
 
-#: dselect/pkgdisplay.cc:211
+#: dselect/pkgdisplay.cc:207
 msgid " (avail., section)"
 msgstr ""
 
-#: dselect/pkgdisplay.cc:214
+#: dselect/pkgdisplay.cc:210
 msgid " (status, section)"
 msgstr ""
 
-#: dselect/pkgdisplay.cc:223
+#: dselect/pkgdisplay.cc:219
 msgid " (by priority)"
 msgstr ""
 
-#: dselect/pkgdisplay.cc:226
+#: dselect/pkgdisplay.cc:222
 msgid " (avail., priority)"
 msgstr ""
 
-#: dselect/pkgdisplay.cc:229
+#: dselect/pkgdisplay.cc:225
 msgid " (status, priority)"
 msgstr ""
 
-#: dselect/pkgdisplay.cc:238 dselect/pkgdisplay.cc:250
+#: dselect/pkgdisplay.cc:234
 msgid " (alphabetically)"
 msgstr ""
 
-#: dselect/pkgdisplay.cc:241
+#: dselect/pkgdisplay.cc:237
 msgid " (by availability)"
 msgstr ""
 
-#: dselect/pkgdisplay.cc:244
+#: dselect/pkgdisplay.cc:240
 msgid " (by status)"
 msgstr ""
 
-#: dselect/pkgdisplay.cc:258
+#: dselect/pkgdisplay.cc:255
 msgid " mark:+/=/- terse:v help:?"
 msgstr ""
 
-#: dselect/pkgdisplay.cc:259
+#: dselect/pkgdisplay.cc:256
 msgid " mark:+/=/- verbose:v help:?"
 msgstr ""
 
-#: dselect/pkgdisplay.cc:260
+#: dselect/pkgdisplay.cc:258
 msgid " terse:v help:?"
 msgstr ""
 
-#: dselect/pkgdisplay.cc:261
+#: dselect/pkgdisplay.cc:259
 msgid " verbose:v help:?"
 msgstr ""
 
-#: dselect/pkginfo.cc:80
+#: dselect/pkginfo.cc:85
 msgid ""
 "The line you have highlighted represents many packages; if you ask to "
 "install, remove, hold, etc. it you will affect all the packages which match "
@@ -1283,39 +1266,41 @@ msgid ""
 "opportunity to mark packages in different kinds of groups."
 msgstr ""
 
-#: dselect/pkginfo.cc:93
+#: dselect/pkginfo.cc:98
 msgid "Interrelationships"
 msgstr ""
 
-#: dselect/pkginfo.cc:112
+#: dselect/pkginfo.cc:117
 msgid "No description available."
 msgstr ""
 
-#: dselect/pkginfo.cc:130
+#: dselect/pkginfo.cc:135
 msgid "Installed control file information"
 msgstr ""
 
-#: dselect/pkginfo.cc:146
+#: dselect/pkginfo.cc:151
 msgid "Available control file information"
 msgstr ""
 
-#: dselect/pkglist.cc:416
-msgid "There are no packages."
-msgstr ""
+#: dselect/pkglist.cc:424
+#, fuzzy
+#| msgid "Installed packages"
+msgid "there are no packages"
+msgstr "Instalirani paketi"
 
-#: dselect/pkglist.cc:507
+#: dselect/pkglist.cc:517
 msgid "invalid search option given"
 msgstr ""
 
-#: dselect/pkglist.cc:521
+#: dselect/pkglist.cc:532
 msgid "error in regular expression"
 msgstr ""
 
-#: dselect/pkgsublist.cc:107
+#: dselect/pkgsublist.cc:108
 msgid " does not appear to be available\n"
 msgstr ""
 
-#: dselect/pkgsublist.cc:127
+#: dselect/pkgsublist.cc:128
 msgid " or "
 msgstr ""
 
@@ -1357,42 +1342,42 @@ msgstr ""
 msgid "%-*s %s%s%s;  %s (was: %s).  %s"
 msgstr ""
 
-#: dselect/pkgtop.cc:263
+#: dselect/pkgtop.cc:264
 msgid "Error"
 msgstr "Greška"
 
-#: dselect/pkgtop.cc:267
+#: dselect/pkgtop.cc:268
 msgid "Installed?"
 msgstr ""
 
-#: dselect/pkgtop.cc:271
+#: dselect/pkgtop.cc:272
 msgid "Old mark"
 msgstr ""
 
-#: dselect/pkgtop.cc:275
+#: dselect/pkgtop.cc:276
 msgid "Marked for"
 msgstr ""
 
-#: dselect/pkgtop.cc:278
+#: dselect/pkgtop.cc:279
 msgid "EIOM"
 msgstr ""
 
-#: dselect/pkgtop.cc:280
+#: dselect/pkgtop.cc:281
 msgid "Section"
 msgstr "Sekcija"
 
-#: dselect/pkgtop.cc:281
+#: dselect/pkgtop.cc:282
 msgid "Priority"
 msgstr "Prioritet"
 
-#: dselect/pkgtop.cc:282
+#: dselect/pkgtop.cc:283
 msgid "Package"
 msgstr "Paket"
 
-#: dselect/pkgtop.cc:286
+#: dselect/pkgtop.cc:287
 msgid "Inst.ver"
 msgstr "Inst.ver"
 
-#: dselect/pkgtop.cc:289
+#: dselect/pkgtop.cc:290
 msgid "Avail.ver"
 msgstr "Dostup.ver"

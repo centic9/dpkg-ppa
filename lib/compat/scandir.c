@@ -15,7 +15,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
@@ -26,7 +26,6 @@
 #include <dirent.h>
 #include <stdlib.h>
 
-#ifndef HAVE_SCANDIR
 static int
 cleanup(DIR *dir, struct dirent **dirlist, int used)
 {
@@ -86,7 +85,6 @@ scandir(const char *dir, struct dirent ***namelist,
 		list[used] = m;
 		used++;
 	}
-	list[used] = NULL;
 
 	closedir(d);
 
@@ -97,4 +95,3 @@ scandir(const char *dir, struct dirent ***namelist,
 
 	return used;
 }
-#endif

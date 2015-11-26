@@ -1,9 +1,10 @@
 /*
  * libdpkg - Debian packaging suite library routines
- * t-arch.c - test dpkg_arch_* implementation
+ * t-arch.c - test dpkg_arch implementation
  *
  * Copyright © 2011 Linaro Limited
  * Copyright © 2011 Raphaël Hertzog <hertzog@debian.org>
+ * Copyright © 2011-2012 Guillem Jover <guillem@debian.org>
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,80 +17,20 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
 #include <compat.h>
 
 #include <dpkg/test.h>
-#include <dpkg/dpkg-db.h>
+#include <dpkg/varbuf.h>
 #include <dpkg/arch.h>
-
-static void
-test_dpkg_arch_find(void)
-{
-	struct dpkg_arch *arch;
-
-	/* Ensure the default architectures exist and are properly
-	 * initialized. */
-	arch = dpkg_arch_find("all");
-	test_pass(arch->type == arch_all);
-	arch = dpkg_arch_find(ARCHITECTURE);
-	test_pass(arch->type == arch_native);
-	arch = dpkg_arch_find("any");
-	test_pass(arch->type == arch_wildcard);
-
-	/* Empty architectures are marked none. */
-	arch = dpkg_arch_find(NULL);
-	test_pass(arch->type == arch_none);
-	test_str(arch->name, ==, "");
-	arch = dpkg_arch_find("");
-	test_pass(arch->type == arch_none);
-	test_str(arch->name, ==, "");
-
-	/* New valid architectures are marked unknown. */
-	arch = dpkg_arch_find("foobar");
-	test_pass(arch->type == arch_unknown);
-	test_str(arch->name, ==, "foobar");
-
-	/* New illegal architectures are marked illegal. */
-	arch = dpkg_arch_find("a:b");
-	test_pass(arch->type == arch_illegal);
-	test_str(arch->name, ==, "a:b");
-}
-
-static void
-test_dpkg_arch_get_native(void)
-{
-	struct dpkg_arch *arch;
-
-	arch = dpkg_arch_get_native();
-	test_str(arch->name, ==, ARCHITECTURE);
-	test_pass(arch->type == arch_native);
-}
-
-static void
-test_dpkg_arch_get_list(void)
-{
-	struct dpkg_arch *arch;
-	int count = 1;
-
-	/* Must never return NULL. */
-	arch = dpkg_arch_get_list();
-	test_pass(arch != NULL);
-
-	while ((arch = arch->next))
-		count++;
-
-	/* The default list contains at least 3 architectures. */
-	test_pass(count >= 3);
-}
 
 static void
 test_dpkg_arch_name_is_illegal(void)
 {
-	/* Ensure it refuses invalid architecture names. */
+	/* Test invalid architecture names. */
 	test_fail(dpkg_arch_name_is_illegal("") == NULL);
 	test_fail(dpkg_arch_name_is_illegal("-i386") == NULL);
 	test_fail(dpkg_arch_name_is_illegal(" i386") == NULL);
@@ -100,7 +41,7 @@ test_dpkg_arch_name_is_illegal(void)
 	test_fail(dpkg_arch_name_is_illegal("i386,amd64") == NULL);
 	test_fail(dpkg_arch_name_is_illegal("i386|amd64") == NULL);
 
-	/* Ensure it accepts common architecture names. */
+	/* Test valid architecture names. */
 	test_pass(dpkg_arch_name_is_illegal("i386") == NULL);
 	test_pass(dpkg_arch_name_is_illegal("amd64") == NULL);
 	test_pass(dpkg_arch_name_is_illegal("hurd-i386") == NULL);
@@ -117,13 +58,143 @@ test_dpkg_arch_name_is_illegal(void)
 	test_pass(dpkg_arch_name_is_illegal("sparc") == NULL);
 }
 
+static void
+test_dpkg_arch_get_list(void)
+{
+	struct dpkg_arch *arch;
+	int count = 1;
+
+	/* Must never return NULL. */
+	arch = dpkg_arch_get_list();
+	test_pass(arch != NULL);
+
+	while ((arch = arch->next))
+		count++;
+
+	/* The default list should contain 3 architectures. */
+	test_pass(count == 3);
+}
+
+static void
+test_dpkg_arch_find(void)
+{
+	struct dpkg_arch *arch;
+
+	/* Test existence and initial values of default architectures. */
+	arch = dpkg_arch_find("all");
+	test_pass(arch->type == arch_all);
+	test_pass(dpkg_arch_get(arch_all) == arch);
+	arch = dpkg_arch_find(ARCHITECTURE);
+	test_pass(arch->type == arch_native);
+	test_pass(dpkg_arch_get(arch_native) == arch);
+	arch = dpkg_arch_find("any");
+	test_pass(arch->type == arch_wildcard);
+	test_pass(dpkg_arch_get(arch_wildcard) == arch);
+
+	/* Test missing architecture. */
+	arch = dpkg_arch_find(NULL);
+	test_pass(arch->type == arch_none);
+	test_pass(dpkg_arch_get(arch_none) == arch);
+	test_str(arch->name, ==, "");
+
+	/* Test empty architectures. */
+	arch = dpkg_arch_find("");
+	test_pass(arch->type == arch_empty);
+	test_pass(dpkg_arch_get(arch_empty) == arch);
+	test_str(arch->name, ==, "");
+
+	/* Test for an unknown type. */
+	test_pass(dpkg_arch_get(1000) == NULL);
+
+	/* New valid architectures are marked unknown. */
+	arch = dpkg_arch_find("foobar");
+	test_pass(arch->type == arch_unknown);
+	test_str(arch->name, ==, "foobar");
+
+	/* New illegal architectures are marked illegal. */
+	arch = dpkg_arch_find("a:b");
+	test_pass(arch->type == arch_illegal);
+	test_str(arch->name, ==, "a:b");
+}
+
+static void
+test_dpkg_arch_reset_list(void)
+{
+	dpkg_arch_reset_list();
+
+	test_dpkg_arch_get_list();
+}
+
+static void
+test_dpkg_arch_modify(void)
+{
+	struct dpkg_arch *arch;
+
+	dpkg_arch_reset_list();
+
+	/* Insert a new unknown arch. */
+	arch = dpkg_arch_find("foo");
+	test_pass(arch->type == arch_unknown);
+	test_str(arch->name, ==, "foo");
+
+	/* Check that existing unknown arch gets tagged. */
+	arch = dpkg_arch_add("foo");
+	test_pass(arch->type == arch_foreign);
+	test_str(arch->name, ==, "foo");
+
+	/* Check that new unknown arch gets tagged. */
+	arch = dpkg_arch_add("quux");
+	test_pass(arch->type == arch_foreign);
+	test_str(arch->name, ==, "quux");
+
+	/* Unmark foreign architectures. */
+
+	arch = dpkg_arch_find("foo");
+	dpkg_arch_unmark(arch);
+	test_pass(arch->type == arch_unknown);
+
+	arch = dpkg_arch_find("bar");
+	dpkg_arch_unmark(arch);
+	test_pass(arch->type == arch_unknown);
+
+	arch = dpkg_arch_find("quux");
+	dpkg_arch_unmark(arch);
+	test_pass(arch->type == arch_unknown);
+}
+
+static void
+test_dpkg_arch_varbuf_archqual(void)
+{
+	struct varbuf vb = VARBUF_INIT;
+
+	varbuf_add_archqual(&vb, dpkg_arch_get(arch_none));
+	varbuf_end_str(&vb);
+	test_str(vb.buf, ==, "");
+	varbuf_reset(&vb);
+
+	varbuf_add_archqual(&vb, dpkg_arch_get(arch_empty));
+	varbuf_end_str(&vb);
+	test_str(vb.buf, ==, "");
+	varbuf_reset(&vb);
+
+	varbuf_add_archqual(&vb, dpkg_arch_get(arch_all));
+	varbuf_end_str(&vb);
+	test_str(vb.buf, ==, ":all");
+	varbuf_reset(&vb);
+
+	varbuf_add_archqual(&vb, dpkg_arch_get(arch_wildcard));
+	varbuf_end_str(&vb);
+	test_str(vb.buf, ==, ":any");
+	varbuf_reset(&vb);
+}
+
 void
 test(void)
 {
 	test_dpkg_arch_name_is_illegal();
-	test_dpkg_arch_get_native();
-	test_dpkg_arch_get_list(); /* Call it before _find. */
-	test_dpkg_arch_find();
-	pkg_db_reset(); /* Calls nffreeall() + dpkg_arch_reset() */
 	test_dpkg_arch_get_list();
+	test_dpkg_arch_find();
+	test_dpkg_arch_reset_list();
+	test_dpkg_arch_modify();
+	test_dpkg_arch_varbuf_archqual();
 }

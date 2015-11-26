@@ -53,13 +53,13 @@ CLEANFILES = curkeys.h
 curkeys.$(OBJEXT): curkeys.h
 curkeys.h: $(srcdir)/keyoverride $(srcdir)/mkcurkeys.pl
 	$(AM_V_GEN) cursesfile=`echo '#include "dselect-curses.h"' | \
-		$(CPP) -I$(top_builddir) -I $(srcdir) - | \
+		$(CPP) $(CPPFLAGS) -I$(top_builddir) -I $(srcdir) - | \
 		grep 'curses.h' | head -n 1 | \
 		sed -e 's/^[^"]*"//; s/".*$$//'`; \
 	if [ "$$cursesfile" = "" ]; then \
 		echo "can't find curses file"; exit 1; \
 	fi; \
-	perl $(srcdir)/mkcurkeys.pl $< $$cursesfile >$@
+	$(PERL) $(srcdir)/mkcurkeys.pl $< $$cursesfile >$@
 
 install-data-local:
-	$(mkdir_p) $(DESTDIR)$(pkgconfdir)/dselect.cfg.d
+	$(MKDIR_P) $(DESTDIR)$(pkgconfdir)/dselect.cfg.d

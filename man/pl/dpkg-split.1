@@ -1,15 +1,32 @@
-.\" Authors: Ian Jackson
+.\" dpkg manual page - dpkg-split(1)
+.\"
+.\" Copyright Â© 1995-1996 Ian Jackson <ian@chiark.chu.cam.ac.uk>
+.\" Copyright Â© 2011 Guillem Jover <guillem@debian.org>
+.\"
+.\" This is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <https://www.gnu.org/licenses/>.
+.
 .\"*******************************************************************
 .\"
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH dpkg\-split 1 2009\-06\-26 "Projekt Debiana" "programy pomocnicze dpkg"
+.TH dpkg\-split 1 2011\-07\-04 "Projekt Debian" "programy pomocnicze dpkg"
 .SH NAZWA
 dpkg\-split \- narzêdzie dzielenia/³±czenia pakietów Debiana
 .
 .SH SK£ADNIA
-\fBdpkg\-split\fP [\fIopcje\fP] \fIpolecenie\fP
+\fBdpkg\-split\fP [\fIopcja\fP...] \fIpolecenie\fP
 .
 .SH OPIS
 \fBdpkg\-split\fP dzieli pakiety binarne Debiana na mniejsze czê¶ci oraz scala
@@ -54,7 +71,8 @@ musz± to byæ te same czê¶ci utworzone za pomoc± polecenia \fBdpkg\-split
 
 Nazwy plików czê¶ci nie maj± znaczenia dla procesu odtworzenia pakietu.
 
-Domy¶lnie, odtworzony plik ma nazwê \fIpakiet\fP\fB\-\fP\fIwersja\fP\fB.deb\fP.
+Domy¶lnie, plik wynikowy ma nazwê
+\fIpakiet\fP\fB_\fP\fIwersja\fP\fB_\fP\fIarchitektura\fP\fB.deb\fP.
 
 .TP 
 \fB\-I\fP, \fB\-\-info\fP \fIpart\fP...
@@ -75,8 +93,8 @@ Je¶li jeszcze nie ma wszystkich czê¶ci, podana \fIczê¶æ\fP jest kopiowana do
 kolejki i \fIpe³ne\-archiwum\fP nie jest odtwarzane.
 
 Je¶li plik \fIczê¶æ\fP nie jest czê¶ci± pakietu binarnego, \fBdpkg\-split\fP
-zakoñczy siê i zwróci kod b³êdu 1, albo kod b³êdu 2 w przypadku wyst±pienia
-innych problemów.
+zakoñczy siê i zwróci kod b³êdu \fB1\fP, albo kod b³êdu \fB2\fP w przypadku
+wyst±pienia innych problemów.
 
 Opcja \fB\-\-output\fP lub \fB\-o\fP musi zostaæ podana w przypadku u¿ycia
 \fB\-\-auto\fP. (W przeciwnym razie program nie wiedzia³by, jakiego spodziewaæ
@@ -94,7 +112,7 @@ Usuwa czê¶ci pakietu z kolejki.
 Je¶li nie podano nazwy \fIpakietu\fP, czyszczona jest ca³a kolejka. Gdy nazwa
 jest podana, usuwane s± tylko czê¶ci podanego pakietu.
 .TP 
-\fB\-h\fP, \fB\-\-help\fP
+\fB\-?\fP, \fB\-\-help\fP
 Wy¶wietla informacjê o u¿ytkowaniu i koñczy dzia³anie.
 .TP 
 \fB\-\-version\fP
@@ -134,29 +152,19 @@ Powsta³y przedrostek jest ucinany do niezbêdnego rozmiaru. Powsta³a nazwa ma
 postaæ \fIprzedrostekN\fP\fBof\fP\fIM\fP\fB.deb..\fP
 .
 .SH "KOD WYJ¦CIA"
-Kod b³êdu 0 oznacza, ¿e ¿±dana operacja dzielenia, ³±czenia czy jakakolwiek
-inna, zakoñczy³a siê sukcesem. Polecenie \fB\-\-info\fP koñczy siê sukcesem nawet
-gdy podany plik nie jest czê¶ci± pakietu.
-
-Kod b³êdu 1 oznacza, ¿e opcja \fB\-\-auto\fP zosta³a wykonana na pliku, który nie
-jest \fIczê¶ci±\fP pakietu.
-
-Kod b³êdu 2 pojawia siê przy ró¿nego rodzaju problemach, takich jak b³êdy
-wywo³ania funkcji systemu, uszkodzenie plików czê¶ci pakietu, czy innych
-wypadkach.
-.
-.SH B£ÊDY
-\fBdpkg\-split\fP u¿ywa raczej starej konwencji nazw plików pakietów.
-
-Pobranie pe³nej informacji o pakietach w kolejce jest niemo¿liwe, bez
-przeszukania katalogu kolejki.
-
-Nie ma prostego testu na sprawdzenie, czy dany plik jest na pewno czê¶ci±
-pakietu.
-
-Architektura nie jest okre¶lona w plikach czê¶ci pakietu, jedynie w
-kontrolnych plikach ca³ego pakietu, tak wiêc architektura nie jest czê¶ci±
-generowanej nazwy pliku.
+.TP 
+\fB0\fP
+¯±dana operacja dzielenia, ³±czenia czy jakakolwiek inna, zakoñczy³a siê
+sukcesem. Polecenie \fB\-\-info\fP koñczy siê sukcesem nawet gdy podany plik nie
+jest czê¶ci± pakietu.
+.TP 
+\fB1\fP
+Wystêpuje tylko, je¶li u¿yto \fB\-\-auto\fP i oznacza, ¿e plik \fIczê¶ci\fP nie by³
+czê¶ci± pakietu binarnego.
+.TP 
+\fB2\fP
+Pojawi³ siê jaki¶ problem, np. b³±d wywo³ania systemowego; plik wygl±da³ na
+plik czê¶ci pakietu, lecz by³ uszkodzony; wyst±pi³ b³±d u¿ycia lub inny.
 .
 .SH PLIKI
 .TP 
@@ -167,16 +175,16 @@ odtworzenie.
 Nazwy plików w tym katalogu s± wewnêtrznie utworzone przez \fBdpkg\-split\fP i
 nie s± u¿yteczne dla innych programów.
 .
+.SH B£ÊDY
+Pobranie pe³nej informacji o pakietach w kolejce jest niemo¿liwe, bez
+przeszukania katalogu kolejki.
+
+Nie ma prostego testu na sprawdzenie, czy dany plik jest na pewno czê¶ci±
+pakietu.
+.
 .SH "ZOBACZ TAK¯E"
 \fBdeb\fP(5), \fBdeb\-control\fP(5), \fBdpkg\-deb\fP(1), \fBdpkg\fP(1).
-.
-.SH AUTOR
-Copyright \(co 1995\-1996 Ian Jackson
-.sp
-Niniejszy program jest oprogramowaniem wolnym, sprawd¼ Powszechn± Licencjê
-Publiczn± GNU w wersji drugiej lub pó¼niejszej, by dowiedzieæ siê o
-warunkach dystrybucji. Brak JAKIEJKOLWIEK gwarancji.
-.SH "T£UMACZE"
+.SH T£UMACZE
 Piotr Roszatycki <dexter@debian.org>, 1999
 .br
 Bartosz Feñski <fenio@debian.org>, 2004-2005
@@ -184,3 +192,5 @@ Bartosz Feñski <fenio@debian.org>, 2004-2005
 Robert Luberda <robert@debian.org>, 2006-2008
 .br
 Wiktor Wandachowicz <siryes@gmail.com>, 2008
+.br
+Micha³ Ku³ach <michal.kulach@gmail.com>, 2012

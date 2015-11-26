@@ -1,4 +1,4 @@
-/* -*- c++ -*-
+/*
  * dselect - Debian package maintenance user interface
  * method.h - access method handling declarations
  *
@@ -16,7 +16,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #ifndef METHOD_H
@@ -51,7 +51,7 @@ struct dselect_option {
 
 class methodlist : public baselist {
 protected:
-  int status_width, gap_width, name_width, description_width;
+  int status_width, name_width, description_width;
   int name_column, description_column;
 
   // Table of methods

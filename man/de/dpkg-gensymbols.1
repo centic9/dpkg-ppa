@@ -1,16 +1,34 @@
-.\" Author: RaphaÃ«l Hertzog
+.\" dpkg manual page - dpkg-gensymbols(1)
+.\"
+.\" Copyright Â© 2007-2011 RaphaÃ«l Hertzog <hertzog@debian.org>
+.\" Copyright Â© 2009-2010 Modestas Vainius <modestas@vainius.eu>
+.\" Copyright Â© 2012-2013 Guillem Jover <guillem@debian.org>
+.\"
+.\" This is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <https://www.gnu.org/licenses/>.
+.
 .\"*******************************************************************
 .\"
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH dpkg\-gensymbols 1 2009\-08\-07 Debian\-Projekt dpkg\-Hilfsprogramme
+.TH dpkg\-gensymbols 1 2013\-09\-06 Debian\-Projekt dpkg\-Hilfsprogramme
 .SH NAME
 dpkg\-gensymbols \- erstelle Symboldateien (Abhängigkeitsinformationen für
 Laufzeitbibliotheken)
 .
 .SH ÜBERSICHT
-\fBdpkg\-gensymbols\fP [\fIOptionen\fP]
+\fBdpkg\-gensymbols\fP [\fIOption\fP ?]
 .
 .SH BESCHREIBUNG
 \fBdpkg\-gensymbols\fP durchsucht einen temporären Baubaum (standardmäßig
@@ -37,7 +55,7 @@ verknüpft ist. Normalerweise entspricht dies der ersten Version des Pakets,
 die dieses Symbol bereitgestellt hat, kann aber vom Betreuer erhöht werden,
 falls die ABI des Symbols ohne Brechen der Rückwärtskompatibilität erweitert
 wurde. Es liegt in der Verwantwortung des Betreuers, diese Dateien aktuell
-zu halten, aber \fBdpkg\-gensymbols\fP hilft ihm.
+zu halten, aber \fBdpkg\-gensymbols\fP hilft dabei.
 .P
 Wenn die erstellten Symboldateien sich von denen, die der Betreuer
 bereitgestellt hat, unterscheiden, wird \fBdpkg\-gensymbols\fP ein Diff zwischen
@@ -50,8 +68,8 @@ Die Symboldateien sind nur wirklich nützlich, falls sie die Entwicklung
 eines Paketes über mehrere Veröffentlichungen hinweg wiedergeben. Daher muss
 der Betreuer sie immer aktualisieren, wenn eine neues Symbol hinzugefügt
 wird, so dass die zugeordnete minimale Version der Realität entspricht. Um
-dies vernünftig durchzuführen, kann er Diffs aus den Bauprotokolle
-verwenden. Meistens kann der Diff direkt auf die Datei
+dies vernünftig durchzuführen, können die Diffs aus den Bauprotokollen
+verwandt werden. Meistens kann der Diff direkt auf die Datei
 debian/\fIPaket\fP.symbols angewandt werden. Allerdings werden normalerweise
 weitere Anpassungen notwendig: es wird beispielsweise empfohlen, die
 Debian\-Revision von der minimalen Version zu entfernen, so dass Backports
@@ -65,6 +83,12 @@ Bevor irgendein Patch auf die Symboldatei angewendet wird, sollte der
 Betreuer zweimal prüfen, dass der Patch vernünftig ist. Öffentliche Symbole
 sollten nicht verschwinden, daher sollte der Patch idealerweise nur neue
 Zeilen hinzufügen.
+.P
+Beachten Sie, dass Sie in Symboldateien Kommentare einfügen können: jede
+Zeile, die mit »#« als ersten Zeichen beginnt, ist ein Kommentare, falls sie
+nicht mit »#include« beginnt (siehe Abschnitt \fBIncludes
+verwenden\fP). Zeilen, die mit »#MISSING:« anfangen, sind besondere
+Kommentare, die verschwundene Symbole dokumentieren.
 .SS "Verwendung der #PACKAGE#\-Ersetzung"
 .P
 In einigen seltenen Fällen unterscheidet sich der Name der Bibliothek auf
@@ -108,16 +132,16 @@ Leerraum\fP ohne Wert. Das zweite Symbol heißt
 \fIoptional\fP gekennzeichnet. Das letzte Symbol ist ein Beispiel eines
 normalen, nicht gekennzeichneten Symbols.
 .P
-Da Symbolkennzeichnungen eine Erweiterung des Formats \fIdeb\-symbols(5)\fP
+Da Symbolkennzeichnungen eine Erweiterung des Formats \fBdeb\-symbols(5)\fP
 sind, können sie nur Teil der in Quellpaketen verwandten Symboldateien sein
 (diese Dateien sollten dann als Vorlagen zum Bau der Symboldateien, die in
 Binärpakete eingebettet werden, gesehen werden). Wenn \fBdpkg\-gensymbols\fP
-ohne die Option \fI\-t\fP aufgerufen wird, wird es alle Symbole ausgeben, die
-zum Format \fIdeb\-symbols(5)\fP kompatibel sind: Es verarbeitet die Symbole
+ohne die Option \fB\-t\fP aufgerufen wird, wird es alle Symbole ausgeben, die
+zum Format \fBdeb\-symbols\fP(5) kompatibel sind: Es verarbeitet die Symbole
 entsprechend der Anforderungen ihrer Standardkennzeichnungen und entfernt
 alle Kennzeichnungen aus der Ausgabe. Im Gegensatz dazu werden alle Symbole
 und ihre Kennzeichnungen (sowohl die Standardkennzeichnungen als auch die
-unbekannten) im Vorlagenmodus (\fI\-t\fP) in der Ausgabe beibehalten und in
+unbekannten) im Vorlagenmodus (\fB\-t\fP) in der Ausgabe beibehalten und in
 ihrer Originalform wie sie geladen wurden auch geschrieben.
 .SS Standard\-Symbolkennzeichnungen
 .TP 
@@ -161,13 +185,15 @@ Betrieb im Vorlagenmodus alle architekturspezifischen Symbole (darunter auch
 die von fremden Architekturen) immer in die Symboldatei geschrieben.
 
 Das Format der \fIArchitekturliste\fP ist das gleiche wie das des Feldes
-\fIBuild\-Depends\fP in \fIdebian/control\fP (außer den einschließenden eckigen
+\fBBuild\-Depends\fP in \fIdebian/control\fP (außer den einschließenden eckigen
 Klammern []). Beispielsweise wird das erste Symbol aus der folgenden Liste
-nur auf den Architekturen Alpha, Amd64, kFreebsd\-amd64 und Ia64 betrachtet,
-während das zweite überall außer auf Armel betrachtet wird.
+nur auf den Architekturen Alpha, Any\-amd64 und Ia64 betrachtet, das zweite
+nur Linux\-Architekturen, während das dritte überall außer auf Armel
+betrachtet wird.
 
- (arch=alpha amd64 kfreebsd\-amd64 ia64)ein_64bit_spezifisches_Symbol@Base 1.0
- (arch=!armel)Symbol_hat_Armel_nicht@Base 1.0
+ (arch=alpha any\-amd64 ia64)a_64bit_specific_symbol@Base 1.0
+ (arch=linux\-any)linux_specific_symbol@Base 1.0
+ (arch=!armel)symbol_armel_does_not_have@Base 1.0
 .TP 
 \fBignore\-blacklist\fP
 dpkg\-gensymbols verfügt über eine interne Ausschußliste (»blacklist«) von
@@ -201,7 +227,7 @@ Muster passt, wird das Symbol als neu betrachtet.
 
 Ein Muster wird als verloren betrachtet, falls es auf kein Symbol in der
 Bibliothek passt. Standardmäßig wird dies ein Versagen von
-\fBdpkg\-gensymbols\fP in der Stufe \fI\-c1\fP oder höher auslösen. Falls der
+\fBdpkg\-gensymbols\fP in der Stufe \fB\-c1\fP oder höher auslösen. Falls der
 Fehlschlag allerdings unerwünscht ist, kann das Muster mit der Kennzeichnung
 \fIoptional\fP markiert werden. Falls das Muster dann auf nichts passt wird es
 im Diff nur als MISSING (fehlend) auftauchen. Desweiteren kann das Muster
@@ -209,7 +235,7 @@ wie jedes Symbol auf die spezielle Architektur mit der Kennzeichnung \fIarch\fP
 beschränkt werden. Bitte lesen Sie den Unterabschnitt \fBStandard
 Symbolkennzeichnungen\fP oben für weitere Informationen.
 
-Muster sind eine Erweiterung des Formats \fIdeb\-symbols(5)\fP; sie sind daher
+Muster sind eine Erweiterung des Formats \fBdeb\-symbols\fP(5); sie sind daher
 nur in Symboldatei\-Vorlagen gültig. Die Musterspezifikationssyntax
 unterscheidet sich nicht von der eines spezifischen Symbols. Allerdings
 dient der Symbolnamenteil der Spezifikation als Ausdruck, der gegen
@@ -235,9 +261,9 @@ ist, kann es mit einem einzigen \fIc++\fP\-Muster gepasst werden:
 .RS
 .PP
 libdummy.so.1 libdummy1 #MINVER#
- [...]
+ [?]
  (c++)"non\-virtual thunk to NSB::ClassD::~ClassD()@Base" 1.0
- [...]
+ [?]
 .P
 Der entworrene Name oben kann durch Ausführung folgenden Befehls erhalten
 werden:
@@ -266,7 +292,7 @@ passen. Beispiel:
 .PP
 libc.so.6 libc6 #MINVER#
  (symver)GLIBC_2.0 2.0
- [...]
+ [?]
  (symver)GLIBC_2.7 2.7
  access@GLIBC_2.0 2.2
 .PP
@@ -351,10 +377,10 @@ include\-Direktive wie folgt einbinden:
 .IP \(bu
 Die Include\-Direktive kann auch wie jedes Symbol gekennzeichnet werden:
 
-(Kennzeichen|...|KennzeichenN)#include "einzubindende_Datei"
+(Kennzeichen|?|KennzeichenN)#include "einzubindende\-Datei"
 
-Als Ergebnis werden alle Symbole aus \fIeinzubindende_Datei\fP standardmäßig
-als mit \fIKennzeichen\fP ... \fIKennzeichenN\fP gekennzeichnet betrachtet. Sie
+Als Ergebnis werden alle Symbole aus \fIeinzubindende\-Datei\fP standardmäßig
+als mit \fIKennzeichen\fP ? \fIKennzeichenN\fP gekennzeichnet betrachtet. Sie
 können diese Funktionalität benutzen, um eine gemeinsame Datei
 \fIPaket\fP.symbols zu erstellen, die architekturspezifische Symboldateien
 einbindet:
@@ -420,32 +446,32 @@ Quellpaketbaums erfolgt.
 .TP 
 \fB\-e\fP\fIBibliotheksdatei\fP
 Nur die explizit aufgeführten Bibliotheken untersuchen statt alle
-öffentlichen Bibliotheken zu finden. Sie können einen regulären Ausdruck in
-\fIBibliotheksdatei\fP verwenden, um mehrere Bibliotheken mit einem einzelnen
-Argument zu passen (andernfalls benötigen Sie mehrere \fB\-e\fP).
+öffentlichen Bibliotheken zu finden. Sie können Shell\-Muster, die zur
+Expansion von Pfadnamen verwandt werden (siehe die Handbuchseite
+\fBFile::Glob\fP(3perl) für weitere Details) in \fIBibliotheksdatei\fP verwenden,
+um mehrere Bibliotheken mit einem einzelnen Argument zu passen (andernfalls
+benötigen Sie mehrere \fB\-e\fP).
 .TP 
 \fB\-I\fP\fIDateiname\fP
 Verwende \fIDateiname\fP als Referenzdatei, um die Symboldatei zu erstellen,
 die dann im Paket selbst integriert wird.
 .TP 
-\fB\-O\fP
-Gebe die erstellte Symboldatei in die Standardausgabe aus statt sie im
-Paketbaubaum zu speichern.
-.TP  
-\fB\-O\fP\fIDateiname\fP
-Speichere die erstellte Symboldatei unter \fIDateiname\fP. Falls \fIDateiname\fP
-bereits existiert, wird deren Inhalt als Grundlage für die erstellte
-Symboldatei verwandt. Sie können diese Funktionalität benutzen, um eine
-Symboldatei zu aktualisieren, so dass sie zu einer neueren Version der
+\fB\-O\fP[\fIDateiname\fP]
+Die erstellte Symbols\-Datei auf die Standardausgabe oder nach \fIDateiname\fP,
+falls angegeben, ausgeben statt in \fBdebian/tmp/DEBIAN/symbols\fP (oder
+\fIPaket\-Bauverzeichnis\fP\fB/DEBIAN/symbols\fP falls \fB\-P\fP verwandt wurde). Falls
+\fIDateiname\fP bereits existiert, wird deren Inhalt als Grundlage für die
+erstellte Symboldatei verwandt. Sie können diese Funktionalität benutzen, um
+eine Symboldatei zu aktualisieren, so dass sie zu einer neueren Version der
 Originalautoren Ihrer Bibliothek passt.
 .TP 
 \fB\-t\fP
-Schreibe die Symboldatei im Vorlagenmodus statt im zu \fIdeb\-symbols(5)\fP
+Schreibe die Symboldatei im Vorlagenmodus statt im zu \fBdeb\-symbols\fP(5)
 kompatiblen Format. Der Hauptunterschied besteht darin, dass im
 Vorlagenmodus die Symbolnamen und Kennzeichnungen in ihrer Originalform
 geschrieben werden, im Gegensatz zu den verarbeiteten Symbolnamen mit
 entfernen Kennzeichnungen im Kompatibilitätsmodus. Desweiteren könnten
-einige Symbole beim Schreiben einer Standard \fIdeb\-symbols(5)\fP\-Datei
+einige Symbole beim Schreiben einer Standard \fBdeb\-symbols\fP(5)\-Datei
 entfernt werden (gemäß der Verarbeitungsregeln für Kennzeichen), während in
 der Symboldateivorlage immer alle Symbole geschrieben werden.
 .TP 
@@ -459,7 +485,7 @@ einige neue Symbole eingeführt wurden. Stufe 3 schlägt fehl, falls einige
 Bibliotheken verschwunden sind. Stufe 4 schlägt fehl, falls einige
 Bibliotheken hinzugekommen sind.
 
-Dieser Wert kann von der Umgebungsvariablen DPKG_GENSYMBOLS_CHECK_LEVEL
+Dieser Wert kann von der Umgebungsvariablen \fBDPKG_GENSYMBOLS_CHECK_LEVEL\fP
 überschrieben werden.
 .TP 
 \fB\-q\fP
@@ -467,7 +493,7 @@ Ruhig verhalten und nie einen Diff zwischen der erstellten Symboldatei und
 der als Startpunkt verwandten Vorlagendatei erstellen oder keine Warnungen
 bezüglich neuer/verlorender Bibliotheken oder neuer/verlorender Symbole
 ausgeben. Diese Option deaktiviert nur die informative Ausgabe aber nicht
-die Prüfungen selbst (sehen Sie hierzu die Option \fI\-c\fP).
+die Prüfungen selbst (sehen Sie hierzu die Option \fB\-c\fP).
 .TP 
 \fB\-a\fP\fIArchitektur\fP
 Nehme \fIArch\fP als Host\-Architektur beim Verarbeiten der Symboldateien
@@ -485,30 +511,24 @@ Symbole als Kommentare. Im Vorlagenmodus werden Mustersymbole desweiteren
 von Kommentaren gefolgt, die die echten Symbole aufführen, die auf dieses
 Muster passen.
 .TP 
-\fB\-h\fP, \fB\-\-help\fP
+\fB\-?\fP, \fB\-\-help\fP
 Zeige den Bedienungshinweis und beende.
 .TP 
 \fB\-\-version\fP
 Gebe die Version aus und beende sich.
 .
 .SH ÜBERSETZUNG
-Die deutsche Übersetzung wurde 2004, 2006-2010 von Helge Kreutzmann
+Die deutsche Übersetzung wurde 2004, 2006-2013 von Helge Kreutzmann
 <debian@helgefjell.de>, 2007 von Florian Rehnisch <eixman@gmx.de> und
 2008 von Sven Joachim <svenjoac@gmx.de>
 angefertigt. Diese Übersetzung ist Freie Dokumentation; lesen Sie die
 GNU General Public License Version 2 oder neuer für die Kopierbedingungen.
 Es gibt KEINE HAFTUNG.
 .SH "SIEHE AUCH"
-\fBhttp://people.redhat.com/drepper/symbol\-versioning\fP
+\fBhttps://people.redhat.com/drepper/symbol\-versioning\fP
 .br
-\fBhttp://people.redhat.com/drepper/goodpractice.pdf\fP
+\fBhttps://people.redhat.com/drepper/goodpractice.pdf\fP
 .br
-\fBhttp://people.redhat.com/drepper/dsohowto.pdf\fP
+\fBhttps://people.redhat.com/drepper/dsohowto.pdf\fP
 .br
 \fBdeb\-symbols\fP(5), \fBdpkg\-shlibdeps\fP(1).
-.
-.SH AUTOREN
-Copyright \(co 2007\-2009 Rapha\[:e]l Hertzog
-.sp
-Dies ist Freie Software; lesen Sie die GNU General Public License Version 2
-oder neuer für die Kopierbedingungen. Es gibt KEINE Haftung.

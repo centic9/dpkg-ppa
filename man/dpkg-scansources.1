@@ -1,27 +1,45 @@
-.TH dpkg\-scansources 1 "2009-10-01" "Debian Project" "dpkg utilities"
+.\" dpkg manual page - dpkg-scansources(1)
+.\"
+.\" Copyright © 2005 Roderick Schertler <roderick@argon.org>
+.\" Copyright © 2006 Frank Lichtenheld <djpig@debian.org>
+.\" Copyright © 2009 Raphaël Hertzog <hertzog@debian.org>
+.\"
+.\" This is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <https://www.gnu.org/licenses/>.
+.
+.TH dpkg\-scansources 1 "2011-08-14" "Debian Project" "dpkg utilities"
 .SH NAME
 dpkg\-scansources \- create Sources index files
 .
 .SH SYNOPSIS
 .B dpkg\-scansources
-.RI [ options ]
-.I binary-dir
+.RI [ option "...] " binary-dir
 .RI [ override-file
 .RI [ path-prefix ]]
 .B >
 .I Sources
 .
 .SH DESCRIPTION
-\fBdpkg-scansources\fR scans the given \fIbinary-dir\fR for \fI.dsc\fR files.
+\fBdpkg\-scansources\fR scans the given \fIbinary-dir\fR for \fI.dsc\fR files.
 These are used to create a Debian source index, which is output to
 stdout.
 .PP
 The \fIoverride-file\fR, if given, is used to set priorities in the resulting
 index records and to override the maintainer field given in the \fI.dsc\fR
 files. The file can be compressed. See
-.BR deb-override (5)
-for the format of this file. \s-1NB:\s0  Since
-the override file is indexed by binary, not source, packages, there's a bit
+.BR deb\-override (5)
+for the format of this file. Note: Since
+the override file is indexed by binary, not source packages, there's a bit
 of a problem here. The current implementation uses the highest priority of
 all the binary packages produced by a \fI.dsc\fR file for the priority of the
 source package, and the override entry for the first binary package listed
@@ -69,10 +87,7 @@ Show the usage message and exit.
 .IP "\fB\-\-version\fR" 4
 Show the version and exit.
 .
-.SH "SEE ALSO"
+.SH SEE ALSO
 .BR deb\-override (5),
 .BR deb\-extra\-override (5),
 .BR dpkg\-scanpackages (1).
-.
-.SH AUTHOR
-Roderick Schertler <roderick@argon.org>

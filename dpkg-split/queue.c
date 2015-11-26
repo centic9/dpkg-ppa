@@ -3,6 +3,7 @@
  * queue.c - queue management
  *
  * Copyright © 1995 Ian Jackson <ian@chiark.greenend.org.uk>
+ * Copyright © 2008-2012 Guillem Jover <guillem@debian.org>
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,7 +16,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
@@ -24,6 +25,7 @@
 #include <sys/stat.h>
 
 #include <assert.h>
+#include <errno.h>
 #include <limits.h>
 #include <inttypes.h>
 #include <string.h>
@@ -39,7 +41,7 @@
 #include <dpkg/dpkg-db.h>
 #include <dpkg/dir.h>
 #include <dpkg/buffer.h>
-#include <dpkg/myopt.h>
+#include <dpkg/options.h>
 
 #include "dpkg-split.h"
 
@@ -66,25 +68,28 @@ decompose_filename(const char *filename, struct partqueue *pq)
   q[MD5HASHLEN] = '\0';
   pq->info.md5sum= q;
   p = filename + MD5HASHLEN + 1;
+  errno = 0;
   pq->info.maxpartlen = strtoimax(p, &q, 16);
-  if (q == p || *q++ != '.')
+  if (q == p || *q++ != '.' || errno != 0)
     return false;
   p = q;
   pq->info.thispartn = (int)strtol(p, &q, 16);
-  if (q == p || *q++ != '.')
+  if (q == p || *q++ != '.' || errno != 0)
     return false;
   p = q;
   pq->info.maxpartn = (int)strtol(p, &q, 16);
-  if (q == p || *q)
+  if (q == p || *q || errno != 0)
     return false;
   return true;
 }
 
-void scandepot(void) {
+static struct partqueue *
+scandepot(void)
+{
   DIR *depot;
   struct dirent *de;
+  struct partqueue *queue = NULL;
 
-  assert(!queue);
   depot = opendir(opt_depotdir);
   if (!depot)
     ohshite(_("unable to read depot directory `%.250s'"), opt_depotdir);
@@ -94,12 +99,15 @@ void scandepot(void) {
 
     if (de->d_name[0] == '.') continue;
     pq= nfmalloc(sizeof(struct partqueue));
-    pq->info.fmtversion= pq->info.package= pq->info.version= NULL;
+    pq->info.fmtversion.major = 0;
+    pq->info.fmtversion.minor = 0;
+    pq->info.package = NULL;
+    pq->info.version = NULL;
+    pq->info.arch = NULL;
     pq->info.orglength= pq->info.thispartoffset= pq->info.thispartlen= 0;
     pq->info.headerlen= 0;
-    p = nfmalloc(strlen(opt_depotdir) + strlen(de->d_name) + 1);
-    strcpy(p, opt_depotdir);
-    strcat(p,de->d_name);
+    p = nfmalloc(strlen(opt_depotdir) + 1 + strlen(de->d_name) + 1);
+    sprintf(p, "%s/%s", opt_depotdir, de->d_name);
     pq->info.filename= p;
     if (!decompose_filename(de->d_name,pq)) {
       pq->info.md5sum= NULL;
@@ -109,20 +117,25 @@ void scandepot(void) {
     queue= pq;
   }
   closedir(depot);
+
+  return queue;
 }
 
 static bool
 partmatches(struct partinfo *pi, struct partinfo *refi)
 {
   return (pi->md5sum &&
-          !strcmp(pi->md5sum,refi->md5sum) &&
+          strcmp(pi->md5sum, refi->md5sum) == 0 &&
           pi->maxpartn == refi->maxpartn &&
           pi->maxpartlen == refi->maxpartlen);
 }
 
-void do_auto(const char *const *argv) {
+int
+do_auto(const char *const *argv)
+{
   const char *partfile;
   struct partinfo *refi, **partlist, *otherthispart;
+  struct partqueue *queue;
   struct partqueue *pq;
   unsigned int i;
   int j;
@@ -130,7 +143,8 @@ void do_auto(const char *const *argv) {
 
   if (!opt_outputfile)
     badusage(_("--auto requires the use of the --output option"));
-  if (!(partfile= *argv++) || *argv)
+  partfile = *argv++;
+  if (partfile == NULL || *argv)
     badusage(_("--auto requires exactly one part file argument"));
 
   refi= nfmalloc(sizeof(struct partqueue));
@@ -140,10 +154,11 @@ void do_auto(const char *const *argv) {
     if (!opt_npquiet)
       printf(_("File `%.250s' is not part of a multipart archive.\n"),partfile);
     m_output(stdout, _("<standard output>"));
-    exit(1);
+    return 1;
   }
   fclose(part);
-  scandepot();
+
+  queue = scandepot();
   partlist= nfmalloc(sizeof(struct partinfo*)*refi->maxpartn);
   for (i = 0; i < refi->maxpartn; i++)
     partlist[i] = NULL;
@@ -164,22 +179,25 @@ void do_auto(const char *const *argv) {
   for (j=refi->maxpartn-1; j>=0 && partlist[j]; j--);
 
   if (j>=0) {
+    struct dpkg_error err;
     int fd_src, fd_dst;
     int ap;
     char *p, *q;
 
-    m_asprintf(&p, "%st.%lx", opt_depotdir, (long)getpid());
-    m_asprintf(&q, "%s%s.%jx.%x.%x", opt_depotdir, refi->md5sum,
+    m_asprintf(&p, "%s/t.%lx", opt_depotdir, (long)getpid());
+    m_asprintf(&q, "%s/%s.%jx.%x.%x", opt_depotdir, refi->md5sum,
                (intmax_t)refi->maxpartlen, refi->thispartn, refi->maxpartn);
 
     fd_src = open(partfile, O_RDONLY);
     if (fd_src < 0)
       ohshite(_("unable to reopen part file `%.250s'"), partfile);
     fd_dst = creat(p, 0644);
-    if (fd_dst)
+    if (fd_dst < 0)
       ohshite(_("unable to open new depot file `%.250s'"), p);
 
-    fd_fd_copy(fd_src, fd_dst, refi->filesize, _("extracting split part"));
+    if (fd_fd_copy(fd_src, fd_dst, refi->filesize, &err) < 0)
+      ohshit(_("cannot extract split package part '%s': %s"),
+             partfile, err.str);
 
     if (fsync(fd_dst))
       ohshite(_("unable to sync file '%s'"), p);
@@ -214,9 +232,14 @@ void do_auto(const char *const *argv) {
   }
 
   m_output(stderr, _("<standard error>"));
+
+  return 0;
 }
 
-void do_queue(const char *const *argv) {
+int
+do_queue(const char *const *argv)
+{
+  struct partqueue *queue;
   struct partqueue *pq;
   const char *head;
   struct stat stab;
@@ -224,7 +247,8 @@ void do_queue(const char *const *argv) {
 
   if (*argv)
     badusage(_("--%s takes no arguments"), cipaction->olong);
-  scandepot();
+
+  queue = scandepot();
 
   head= N_("Junk files left around in the depot directory:\n");
   for (pq= queue; pq; pq= pq->nextinqueue) {
@@ -272,11 +296,20 @@ void do_queue(const char *const *argv) {
     printf(_("(total %jd bytes)\n"), (intmax_t)bytes);
   }
   m_output(stdout, _("<standard output>"));
+
+  return 0;
 }
 
-enum discardwhich { ds_junk, ds_package, ds_all };
+enum discard_which {
+  ds_junk,
+  ds_package,
+  ds_all,
+};
 
-static void discardsome(enum discardwhich which, const char *package) {
+static void
+discard_parts(struct partqueue *queue, enum discard_which which,
+              const char *package)
+{
   struct partqueue *pq;
 
   for (pq= queue; pq; pq= pq->nextinqueue) {
@@ -290,7 +323,7 @@ static void discardsome(enum discardwhich which, const char *package) {
     case ds_all:
       break;
     default:
-      internerr("unknown discardwhich '%d'", which);
+      internerr("unknown discard_which '%d'", which);
     }
     if (unlink(pq->info.filename))
       ohshite(_("unable to discard `%.250s'"),pq->info.filename);
@@ -298,18 +331,24 @@ static void discardsome(enum discardwhich which, const char *package) {
   }
 }
 
-void do_discard(const char *const *argv) {
+int
+do_discard(const char *const *argv)
+{
   const char *thisarg;
+  struct partqueue *queue;
   struct partqueue *pq;
 
-  scandepot();
+  queue = scandepot();
   if (*argv) {
     for (pq= queue; pq; pq= pq->nextinqueue)
       if (pq->info.md5sum)
         mustgetpartinfo(pq->info.filename,&pq->info);
-    discardsome(ds_junk,NULL);
-    while ((thisarg= *argv++)) discardsome(ds_package,thisarg);
+    discard_parts(queue, ds_junk, NULL);
+    while ((thisarg = *argv++))
+      discard_parts(queue, ds_package, thisarg);
   } else {
-    discardsome(ds_all,NULL);
+    discard_parts(queue, ds_all, NULL);
   }
+
+  return 0;
 }

@@ -1,3 +1,4 @@
+# Copyright © 2007-2009,2012-2013 Guillem Jover <guillem@debian.org>
 # Copyright © 2007 Raphaël Hertzog <hertzog@debian.org>
 #
 # This program is free software; you can redistribute it and/or modify
@@ -11,42 +12,38 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 package Dpkg::Vars;
 
 use strict;
 use warnings;
 
-our $VERSION = "0.01";
+our $VERSION = '0.03';
 
 use Dpkg::ErrorHandling;
 use Dpkg::Gettext;
+use Dpkg::Package;
 
-use base qw(Exporter);
-our @EXPORT = qw($sourcepackage set_source_package);
+use Exporter qw(import);
+our @EXPORT = qw(get_source_package set_source_package);
 
-our $sourcepackage;
+my $sourcepackage;
 
-sub check_package_name {
-    my $name = shift || '';
-    $name =~ m/[^-+.0-9a-z]/o &&
-        error(_g("source package name `%s' contains illegal character `%s'"),
-              $name, $&);
-    $name =~ m/^[0-9a-z]/o ||
-        error(_g("source package name `%s' starts with non-alphanum"), $name);
+sub get_source_package {
+    return $sourcepackage;
 }
 
 sub set_source_package {
     my $v = shift;
+    my $err = pkg_name_is_illegal($v);
+    error(_g("source package name '%s' is illegal: %s"), $v, $err) if $err;
 
-    check_package_name($v);
-    if (defined($sourcepackage)) {
-        $v eq $sourcepackage ||
-            error(_g("source package has two conflicting values - %s and %s"),
-                  $sourcepackage, $v);
-    } else {
+    if (not defined($sourcepackage)) {
         $sourcepackage = $v;
+    } elsif ($v ne $sourcepackage) {
+        error(_g('source package has two conflicting values - %s and %s'),
+              $sourcepackage, $v);
     }
 }
 

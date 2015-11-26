@@ -1,4 +1,24 @@
-.TH dpkg\-query 1 "2010-03-07" "Debian Project" "dpkg suite"
+.\" dpkg manual page - dpkg-query(1)
+.\"
+.\" Copyright © 2001 Wichert Akkerman <wakkerma@debian.org>
+.\" Copyright © 2006-2007 Frank Lichtenheld <djpig@debian.org>
+.\" Copyright © 2006-2012 Guillem Jover <guillem@debian.org>
+.\" Copyright © 2008-2011 Raphaël Hertzog <hertzog@debian.org>
+.\"
+.\" This is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <https://www.gnu.org/licenses/>.
+.
+.TH dpkg\-query 1 "2012-04-03" "Debian Project" "dpkg suite"
 .SH NAME
 dpkg\-query \- a tool to query the dpkg database
 .
@@ -71,40 +91,54 @@ the given pattern. However the output can be customized using the
 \fB\-\-showformat\fP option.
 The default output format gives one line per matching package, each line
 having the name (extended with the architecture qualifier for
-foreign architecture packages) and installed version of the package,
+\fBMulti\-Arch\fP \fBsame\fP packages) and installed version of the package,
 separated by a tab.
 .TP
 .BR \-s ", " \-\-status " \fIpackage-name\fP..."
 Report status of specified package. This just displays the entry in
-the installed package status database.
+the installed package status database. When multiple \fIpackage-name\fP
+are listed, the requested status entries are separated by an empty line,
+with the same order as specified on the argument list.
 .TP
 .BR \-L ", " \-\-listfiles " \fIpackage-name\fP..."
-List files installed to your system from \fIpackage-name\fP.
-However, note that files created by package-specific
-installation-scripts are not listed.
+List files installed to your system from \fIpackage-name\fP. When multiple
+\fIpackage-name\fP are listed, the requested lists of files are separated
+by an empty line, with the same order as specified on the argument list.
+However, note that files created by package-specific installation-scripts
+are not listed.
+.TP
+.BR \-\-control\-list " \fIpackage-name\fP
+List control files installed to your system from \fIpackage-name\fP.
+These can be used as input arguments to \fB\-\-control\-show\fP.
+.TP
+.BR \-\-control\-show " \fIpackage-name\fP \fIcontrol-file\fP"
+Print the \fIcontrol-file\fP installed to your system from \fIpackage-name\fP
+to the standard output.
 .TP
 .BR \-c ", " \-\-control\-path " \fIpackage-name\fP [\fIcontrol-file\fP]"
 List paths for control files installed to your system from \fIpackage-name\fP.
 If \fIcontrol-file\fP is specified then only list the path for that control
-file if it is present. \fBWarning\fP: this command is semi-public, it should
-be used only as a last resort solution, and if no other interface is
-available. It might get deprecated later on if better interfaces or the
-current architectural deficiencies have been solved.
+file if it is present. \fBWarning\fP: this command is deprecated, please
+switch to use \fB\-\-control\-list\fP and \fB\-\-control\-show\fP instead.
 .TP
 .BR \-S ", " \-\-search " \fIfilename-search-pattern\fP..."
-Search for a filename from installed packages. All standard shell
-wildchars can be used in the pattern. This command will not list
-extra files created by maintainer scripts, nor will it list
-alternatives.
+Search for packages that own files corresponding to the given pattern.
+Standard shell wildchars can be used in the pattern.
+This command will not list extra files created by maintainer scripts,
+nor will it list alternatives.
 .TP
 .BR \-p ", " \-\-print\-avail " \fIpackage-name\fP..."
 Display details about \fIpackage-name\fP, as found in
-\fI/var/lib/dpkg/available\fP. Users of APT-based frontends
+\fI/var/lib/dpkg/available\fP. When multiple \fIpackage-name\fP are
+listed, the requested \fIavailable\fP entries are separated by an empty
+line, with the same order as specified on the argument list.
+
+Users of APT-based frontends
 should use \fBapt\-cache show\fP \fIpackage-name\fP instead
 as the \fIavailable\fP file is only kept up-to-date when
 using \fBdselect\fP.
 .TP
-.BR \-h ", " \-\-help
+.BR \-? ", " \-\-help
 Show the usage message and exit.
 .TP
 .B \-\-version
@@ -115,6 +149,10 @@ Show the version and exit.
 .BI \-\-admindir= dir
 Change the location of the \fBdpkg\fR database. The default location is
 \fI/var/lib/dpkg\fP.
+.TP
+.B \-\-load\-avail
+Also load the available file when using the \fB\-\-show\fP and \fB\-\-list\fP
+commands, which now default to only querying the status file.
 .TP
 .BR \-f ", " \-\-showformat=\fIformat\fR
 This option is used to specify the format of the output \fB\-\-show\fP
@@ -137,7 +175,7 @@ Package information can be included by inserting
 variable references to package fields using the syntax
 \(lq\fB${\fP\fIfield\fR[\fB;\fP\fIwidth\fR]\fB}\fP\(rq. Fields are
 printed right-aligned unless the width is negative in which case left
-alignment will be used. The following \fIfield\fRs are recognised but
+alignment will be used. The following \fIfield\fRs are recognized but
 they are not necessarily available in the status file (only internal
 fields or fields stored in the binary package end up in it):
 
@@ -152,15 +190,14 @@ fields or fields stored in the binary package end up in it):
     \fBDescription\fP
     \fBEnhances\fP
     \fBEssential\fP
-    \fBFilename\fP (internal, dselect related)
+    \fBFilename\fP (internal, front-end related)
     \fBHomepage\fP
     \fBInstalled\-Size\fP
-    \fBMD5sum\fP (internal, dselect related)
-    \fBMSDOS\-Filename\fP (internal, dselect related)
+    \fBMD5sum\fP (internal, front-end related)
+    \fBMSDOS\-Filename\fP (internal, front-end related)
     \fBMaintainer\fP
     \fBOrigin\fP
     \fBPackage\fP
-    \fBPackageSpec\fP (virtual field)
     \fBPre\-Depends\fP
     \fBPriority\fP
     \fBProvides\fP
@@ -168,52 +205,61 @@ fields or fields stored in the binary package end up in it):
     \fBReplaces\fP
     \fBRevision\fP (obsolete)
     \fBSection\fP
-    \fBSize\fP (internal, dselect related)
+    \fBSize\fP (internal, front-end related)
     \fBSource\fP
     \fBStatus\fP (internal)
     \fBSuggests\fP
-    \fBTag\fP (usually not in the .deb but in APT's Packages files)
-    \fBTriggers-Awaited\fP (internal)
-    \fBTriggers-Pending\fP (internal)
+    \fBTag\fP (usually not in .deb but in repository Packages files)
+    \fBTriggers\-Awaited\fP (internal)
+    \fBTriggers\-Pending\fP (internal)
     \fBVersion\fP
 .fi
 
-The default format string is \(lq\fB${PackageSpec}\et${Version}\en\fP\(rq.
-Actually, all other fields found in the status file (i.e. user defined
-fields) can be requested, too. They will be printed as-is, though, no
-conversion nor error checking is done on them. \fBPackageSpec\fP is a
-special field that will print the package name with an architecture
-qualifier (like "libc6:amd64") if the package is of a foreign architecture
-(an architecture that doesn't match dpkg's architecture).
-To get the name of the dpkg maintainer and the installed version, you could
-run:
+The following are virtual fields, generated by \fBdpkg\-query\fP from
+values from other fields (note that these do not use valid names for
+fields in control files):
 
 .nf
-  \fBdpkg\-query \-W \-f=\(aq${PackageSpec} ${Version}\\t${Maintainer}\\n\(aq dpkg\fP
+    \fBbinary:Package\fP
+    \fBbinary:Summary\fP
+    \fBdb:Status\-Abbrev\fP
+    \fBsource:Package\fP
+    \fBsource:Version\fP
+.fi
+
+The default format string is \(lq\fB${binary:Package}\et${Version}\en\fP\(rq.
+Actually, all other fields found in the status file (i.e. user defined
+fields) can be requested, too. They will be printed as-is, though, no
+conversion nor error checking is done on them. \fBbinary:Package\fP is
+a special field that will print the package name with an architecture
+qualifier (like "libc6:amd64") if the package has a \fBMulti\-Arch\fP
+field with a value of \fBsame\fP, and as such its name could be ambiguous.
+To get the name of the \fBdpkg\fP maintainer and the installed version,
+you could run:
+
+.nf
+  \fBdpkg\-query \-W \-f=\(aq${binary:Package} ${Version}\\t${Maintainer}\\n\(aq dpkg\fP
 .fi
 .
-.SH "EXIT STATUS"
-.IP 0
+.SH EXIT STATUS
+.TP
+.B 0
 The requested query was successfully performed.
-.IP 1
+.TP
+.B 1
 Problems were encountered while parsing the command line or performing the
-query, including no file or package being found (except for \-\-control\-path).
+query, including no file or package being found (except for
+\fB\-\-control\-path\fP).
 .
 .SH ENVIRONMENT
 .TP
 .B DPKG_ADMINDIR
 If set and the \fB\-\-admindir\fP option has not been specified, it will
-be used as the dpkg data directory.
+be used as the \fBdpkg\fP data directory.
 .TP
 \fBCOLUMNS\fP
 This setting influences the output of the \fB\-\-list\fP option by changing
 the width of its output.
-.
-.SH AUTHOR
-Copyright \(co 2001 Wichert Akkerman
-.sp
-This is free software; see the GNU General Public Licence version 2 or
-later for copying conditions. There is NO WARRANTY.
 .
 .SH SEE ALSO
 .BR dpkg (1).

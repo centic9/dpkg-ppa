@@ -15,7 +15,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
@@ -33,14 +33,14 @@
 #include "bindings.h"
 
 void packagelist::add(pkginfo *pkg) {
-  debug(dbg_general, "packagelist[%p]::add(pkginfo %s)", this,
-        pkg_describe(pkg, pdo_foreign));
+  debug(dbg_general, "packagelist[%p]::add(pkginfo %s)",
+        this, pkg_name(pkg, pnaw_always));
   if (!recursive ||  // never add things to top level
       !pkg->clientdata ||  // don't add pure virtual packages
       pkg->clientdata->uprec)  // don't add ones already in the recursive list
     return;
   debug(dbg_general, "packagelist[%p]::add(pkginfo %s) adding",
-        this, pkg_describe(pkg, pdo_foreign));
+        this, pkg_name(pkg, pnaw_always));
   perpackagestate *state= &datatable[nitems];
   state->pkg= pkg;
   state->direct= state->original= pkg->clientdata->selected;
@@ -55,21 +55,21 @@ void packagelist::add(pkginfo *pkg) {
 
 void packagelist::add(pkginfo *pkg, pkginfo::pkgwant nw) {
   debug(dbg_general, "packagelist[%p]::add(pkginfo %s, %s)",
-        this, pkg_describe(pkg, pdo_foreign), wantstrings[nw]);
+        this, pkg_name(pkg, pnaw_always), wantstrings[nw]);
   add(pkg);  if (!pkg->clientdata) return;
   pkg->clientdata->direct= nw;
   selpriority np;
   np= would_like_to_install(nw,pkg) ? sp_selecting : sp_deselecting;
   if (pkg->clientdata->spriority > np) return;
   debug(dbg_general, "packagelist[%p]::add(pkginfo %s, %s) setting",
-        this, pkg_describe(pkg, pdo_foreign), wantstrings[nw]);
+        this, pkg_name(pkg, pnaw_always), wantstrings[nw]);
   pkg->clientdata->suggested= pkg->clientdata->selected= nw;
   pkg->clientdata->spriority= np;
 }
 
 void packagelist::add(pkginfo *pkg, const char *extrainfo, showpriority showimp) {
   debug(dbg_general, "packagelist[%p]::add(pkginfo %s, ..., showpriority %d)",
-        this, pkg_describe(pkg, pdo_foreign), showimp);
+        this, pkg_name(pkg, pnaw_always), showimp);
   add(pkg);  if (!pkg->clientdata) return;
   if (pkg->clientdata->dpriority < showimp) pkg->clientdata->dpriority= showimp;
   pkg->clientdata->relations(extrainfo);
@@ -118,7 +118,7 @@ packagelist::add(dependency *depends, showpriority displayimportance)
 
   const char *comma= "";
   varbuf info;
-  info(pkg_describe(depends->up, pdo_foreign));
+  info(depends->up->set->name);
   info(' ');
   info(gettext(relatestrings[depends->type]));
   info(' ');
@@ -128,14 +128,25 @@ packagelist::add(dependency *depends, showpriority displayimportance)
        possi=possi->next, comma=(possi && possi->next ? ", " : _(" or "))) {
     info(comma);
     info(possi->ed->name);
-    if (possi->verrel != dvr_none) {
+    if (possi->verrel != dpkg_relation_none) {
       switch (possi->verrel) {
-      case dvr_earlierequal:  info(" (<= "); break;
-      case dvr_laterequal:    info(" (>= "); break;
-      case dvr_earlierstrict: info(" (<< "); break;
-      case dvr_laterstrict:   info(" (>> "); break;
-      case dvr_exact:         info(" (= "); break;
-      default: internerr("unknown verrel");
+      case dpkg_relation_le:
+        info(" (<= ");
+        break;
+      case dpkg_relation_ge:
+        info(" (>= ");
+        break;
+      case dpkg_relation_lt:
+        info(" (<< ");
+        break;
+      case dpkg_relation_gt:
+        info(" (>> ");
+        break;
+      case dpkg_relation_eq:
+        info(" (= ");
+        break;
+      default:
+        internerr("unknown dpkg_relation %d", possi->verrel);
       }
       info(versiondescribe(&possi->version, vdew_nonambig));
       info(")");
@@ -145,7 +156,7 @@ packagelist::add(dependency *depends, showpriority displayimportance)
   add(depends->up,info.string(),displayimportance);
   for (possi=depends->list; possi; possi=possi->next) {
     add(&possi->ed->pkg, info.string(), displayimportance);
-    if (possi->verrel == dvr_none && depends->type != dep_provides) {
+    if (possi->verrel == dpkg_relation_none && depends->type != dep_provides) {
       // providers aren't relevant if a version was specified, or
       // if we're looking at a provider relationship already
       deppossi *provider;
@@ -172,7 +183,8 @@ void repeatedlydisplay(packagelist *sub,
     debug(dbg_general, "repeatedlydisplay(packagelist[%p]) once", sub);
     if (unredisplay) unredisplay->enddisplay();
     for (;;) {
-      manual_install = 0; /* Remove flag now that resolvesuggest has seen it. */
+      /* Reset manual_install flag now that resolvesuggest() has seen it. */
+      manual_install = false;
       newl= sub->display();
       if (!newl) break;
       debug(dbg_general, "repeatedlydisplay(packagelist[%p]) newl", sub);

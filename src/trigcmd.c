@@ -3,6 +3,7 @@
  *
  * Copyright © 2007 Canonical Ltd.
  * Written by Ian Jackson <ian@davenant.greenend.org.uk>
+ * Copyright © 2008-2012 Guillem Jover <guillem@debian.org>
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,16 +16,13 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
 #include <compat.h>
 
 #include <sys/types.h>
-#include <sys/ioctl.h>
-#include <sys/stat.h>
-#include <sys/termios.h>
 
 #include <fcntl.h>
 #if HAVE_LOCALE_H
@@ -38,21 +36,19 @@
 #include <dpkg/i18n.h>
 #include <dpkg/dpkg.h>
 #include <dpkg/dpkg-db.h>
-#include <dpkg/myopt.h>
+#include <dpkg/options.h>
 #include <dpkg/trigdeferred.h>
 #include <dpkg/triglib.h>
 #include <dpkg/pkg-spec.h>
 
-const char thisname[] = "dpkg-trigger";
-
-const char printforhelp[] = N_(
+static const char printforhelp[] = N_(
 "Type dpkg-trigger --help for help about this utility.");
 
 static void DPKG_ATTR_NORET
 printversion(const struct cmdinfo *ci, const char *value)
 {
 	printf(_("Debian %s package trigger utility version %s.\n"),
-	       thisname, DPKG_VERSION_ARCH);
+	       dpkg_get_progname(), DPKG_VERSION_ARCH);
 
 	printf(_(
 "This is free software; see the GNU General Public License version 2 or\n"
@@ -69,7 +65,7 @@ usage(const struct cmdinfo *ci, const char *value)
 	printf(_(
 "Usage: %s [<options> ...] <trigger-name>\n"
 "       %s [<options> ...] <command>\n"
-"\n"), thisname, thisname);
+"\n"), dpkg_get_progname(), dpkg_get_progname());
 
 	printf(_(
 "Commands:\n"
@@ -77,8 +73,8 @@ usage(const struct cmdinfo *ci, const char *value)
 "\n"));
 
 	printf(_(
-"  -h|--help                        Show this help message.\n"
-"  --version                        Show the version.\n"
+"  -?, --help                       Show this help message.\n"
+"      --version                    Show the version.\n"
 "\n"));
 
 	printf(_(
@@ -113,10 +109,39 @@ yespackage(const char *awname)
 	trigdef_update_printf(" %s", awname);
 }
 
+static const char *
+parse_awaiter_package(void)
+{
+	struct dpkg_error err = DPKG_ERROR_INIT;
+	struct pkginfo *pkg;
+
+	if (bypackage == NULL) {
+		const char *pkgname, *archname;
+
+		pkgname = getenv("DPKG_MAINTSCRIPT_PACKAGE");
+		archname = getenv("DPKG_MAINTSCRIPT_ARCH");
+		if (pkgname == NULL || archname == NULL)
+			ohshit(_("must be called from a maintainer script"
+			         " (or with a --by-package option)"));
+
+		pkg = pkg_spec_find_pkg(pkgname, archname, &err);
+	} else if (strcmp(bypackage, "-") == 0) {
+		pkg = NULL;
+	} else {
+		pkg = pkg_spec_parse_pkg(bypackage, &err);
+	}
+
+	/* Normalize the bypackage name if there was no error. */
+	if (pkg)
+		bypackage = pkg_name(pkg, pnaw_nonambig);
+
+	return err.str;
+}
+
 static void
 tdm_add_trig_begin(const char *trig)
 {
-	ctrig = !strcmp(trig, activate);
+	ctrig = strcmp(trig, activate) == 0;
 	trigdef_update_printf("%s", trig);
 	if (!ctrig || done_trig)
 		return;
@@ -127,7 +152,7 @@ tdm_add_trig_begin(const char *trig)
 static void
 tdm_add_package(const char *awname)
 {
-	if (ctrig && !strcmp(awname, bypackage))
+	if (ctrig && strcmp(awname, bypackage) == 0)
 		return;
 	yespackage(awname);
 }
@@ -152,12 +177,10 @@ do_check(void)
 	uf = trigdef_update_start(tduf_nolockok);
 	switch (uf) {
 	case tdus_error_no_dir:
-		fprintf(stderr, _("%s: triggers data directory not yet created\n"),
-		        thisname);
+		notice(_("triggers data directory not yet created"));
 		exit(1);
 	case tdus_error_no_deferred:
-		fprintf(stderr, _("%s: trigger records not yet in existence\n"),
-		        thisname);
+		notice(_("trigger records not yet in existence"));
 		exit(1);
 	case tdus_ok:
 	case tdus_error_empty_deferred:
@@ -173,7 +196,7 @@ static const struct cmdinfo cmdinfos[] = {
 	{ "no-await",        0,   0, NULL,     &bypackage, noawait },
 	{ "no-act",          0,   0, &f_noact, NULL,       NULL, 1 },
 	{ "check-supported", 0,   0, &f_check, NULL,       NULL, 1 },
-	{ "help",            'h', 0, NULL,     NULL,       usage   },
+	{ "help",            '?', 0, NULL,     NULL,       usage   },
 	{ "version",         0,   0, NULL,     NULL,       printversion  },
 	{  NULL  }
 };
@@ -181,21 +204,15 @@ static const struct cmdinfo cmdinfos[] = {
 int
 main(int argc, const char *const *argv)
 {
-	int uf;
 	const char *badname;
 	enum trigdef_updateflags tduf;
-	struct pkg_spec pkgspec = PKG_SPEC_INIT(psf_def_native | psf_no_check);
+	enum trigdef_update_status tdus;
 
-	setlocale(LC_ALL, "");
-	bindtextdomain(PACKAGE, LOCALEDIR);
-	textdomain(PACKAGE);
-
-	standard_startup();
-	myopt(&argv, cmdinfos);
+	dpkg_locales_init(PACKAGE);
+	dpkg_program_init("dpkg-trigger");
+	dpkg_options_parse(&argv, cmdinfos, printforhelp);
 
 	admindir = dpkg_db_set_dir(admindir);
-
-	setvbuf(stdout, NULL, _IONBF, 0);
 
 	if (f_check) {
 		if (*argv)
@@ -207,26 +224,10 @@ main(int argc, const char *const *argv)
 	if (!*argv || argv[1])
 		badusage(_("takes one argument, the trigger name"));
 
-	if (!bypackage) {
-		struct varbuf vb = VARBUF_INIT;
-		const char *pkg, *arch;
-		pkg = getenv("DPKG_MAINTSCRIPT_PACKAGE");
-		if (!pkg)
-			ohshit(_("must be called from a maintainer script"
-			         " (or with a --by-package option)"));
-		varbuf_add_str(&vb, pkg);
-		arch = getenv("DPKG_MAINTSCRIPT_ARCH");
-		if (arch)
-			varbuf_printf(&vb, ":%s", arch);
-		bypackage = varbuf_detach(&vb);
-	}
-	if (strcmp(bypackage, "-")) {
-		pkg_spec_parse(&pkgspec, bypackage);
-		badname = pkg_spec_is_illegal(&pkgspec);
-		if (badname)
-			ohshit(_("illegal awaited package name '%.250s': %.250s"),
-			       bypackage, badname);
-	}
+	badname = parse_awaiter_package();
+	if (badname)
+		ohshit(_("illegal awaited package name '%.250s': %.250s"),
+		       bypackage, badname);
 
 	activate = argv[0];
 	badname = trig_name_is_illegal(activate);
@@ -239,15 +240,15 @@ main(int argc, const char *const *argv)
 	tduf = tduf_nolockok;
 	if (!f_noact)
 		tduf |= tduf_write | tduf_writeifempty;
-	uf = trigdef_update_start(tduf);
-	if (uf >= 0) {
+	tdus = trigdef_update_start(tduf);
+	if (tdus >= 0) {
 		trigdef_parse();
 		if (!done_trig)
 			trigdef_update_printf("%s %s\n", activate, bypackage);
 		trigdef_process_done();
 	}
 
-	standard_shutdown();
+	dpkg_program_done();
 
 	return 0;
 }

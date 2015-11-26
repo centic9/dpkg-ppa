@@ -1,6 +1,6 @@
 /*
  * dpkg - main program for package management
- * archives.h - functions common to archives.c and processarc.c
+ * archives.h - functions common to archives.c and unpack.c
  *
  * Copyright © 1995 Ian Jackson <ian@chiark.greenend.org.uk>
  *
@@ -15,7 +15,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #ifndef ARCHIVES_H
@@ -23,11 +23,14 @@
 
 #include <stdbool.h>
 
+#include <dpkg/tarfn.h>
+
 struct tarcontext {
   int backendpipe;
   struct pkginfo *pkg;
   struct fileinlist **newfilesp;
-  bool pkg_in_sync; /* Are all Multi-arch: same instances synchronized? */
+  /** Are all “Multi-arch: same” instances about to be in sync? */
+  bool pkgset_getting_in_sync;
 };
 
 struct pkg_deconf_list {
@@ -42,7 +45,9 @@ extern struct varbuf fnametmpvb;
 extern struct varbuf fnamenewvb;
 extern struct pkg_deconf_list *deconfigure;
 
-void push_conflictor(struct pkginfo *pkg, struct pkginfo *pkg_fixbyrm);
+void clear_deconfigure_queue(void);
+void enqueue_deconfigure(struct pkginfo *pkg, struct pkginfo *pkg_removal);
+void enqueue_conflictor(struct pkginfo *pkg);
 
 void cu_pathname(int argc, void **argv);
 void cu_cidir(int argc, void **argv);
@@ -50,7 +55,6 @@ void cu_fileslist(int argc, void **argv);
 void cu_backendpipe(int argc, void **argv);
 
 void cu_installnew(int argc, void **argv);
-void cu_installsharedconf(int argc, void **argv);
 
 void cu_prermupgrade(int argc, void **argv);
 void cu_prerminfavour(int argc, void **argv);

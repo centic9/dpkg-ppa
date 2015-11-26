@@ -1,24 +1,28 @@
 #!/usr/bin/perl
-# -*-perl-*-
 #
 # Copyright © 1996 Andy Guy <awpguy@acs.ucalgary.ca>
 # Copyright © 1998 Martin Schulze <joey@infodrom.north.de>
 # Copyright © 1999, 2009 Raphaël Hertzog <hertzog@debian.org>
 #
-# This program has been distributed under the terms of the GNU GPL.
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; version 2 of the License.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use strict;
 use warnings;
 
-#use diagnostics;
-
-use lib '/usr/lib/perl5/Debian';
-use lib '/usr/share/perl5/Debian';
-
 eval 'use Net::FTP;';
 if ($@) {
-    print STDERR "Please install the 'perl' package if you want to use the\n" .
-                 "FTP access method of dselect.\n\n";
+    warn "Please install the 'perl' package if you want to use the\n" .
+         "FTP access method of dselect.\n\n";
     exit 1;
 }
 
@@ -29,17 +33,17 @@ my $vardir = $ARGV[0];
 my $method = $ARGV[1];
 my $option = $ARGV[2];
 
-if ($option eq "manual") {
+if ($option eq 'manual') {
     print "Enter package file names or a blank line to finish\n";
     while(1) {
-	print "Enter package file name:";
+	print 'Enter package file name:';
 	my $fn = <STDIN>;
 	chomp $fn;
-	if ( $fn == "") {
+	if ($fn eq '') {
 	    exit 0;
 	}
 	if ( -f $fn ) {
-	    system ("dpkg", "--merge-avail", $fn);
+	    system('dpkg', '--merge-avail', $fn);
 	} else {
 	    print "Could not find $fn, try again\n";
 	}
@@ -65,7 +69,7 @@ my $ftp;
 my $packages_modified = 0;
 
 sub download {
-foreach (@{$config{'site'}}) {
+foreach (@{$CONFIG{site}}) {
 
    my $site = $_;
 
@@ -74,15 +78,14 @@ foreach (@{$config{'site'}}) {
                            $_->[5], # password
                            $_->[1], # ftp dir
                            $_->[3], # passive
-                           $config{'use_auth_proxy'},
-                           $config{'proxyhost'},
-                           $config{'proxylogname'},
-                           $config{'proxypassword'});
+                           $CONFIG{use_auth_proxy},
+                           $CONFIG{proxyhost},
+                           $CONFIG{proxylogname},
+                           $CONFIG{proxypassword});
 
     my @dists = @{$_->[2]};
-    my $dist;
     PACKAGE:
-    foreach $dist (@dists) {
+    foreach my $dist (@dists) {
 	my $dir = "$dist/binary-$arch";
 	my $must_get = 0;
 	my $newest_pack_date;
@@ -130,45 +133,45 @@ foreach (@{$config{'site'}}) {
 	}
 
 	if ($must_get) {
-	    -f "Packages.gz" and unlink "Packages.gz";
-	    -f "Packages" and unlink "Packages";
+	    -f 'Packages.gz' and unlink 'Packages.gz';
+	    -f 'Packages' and unlink 'Packages';
 	    my $size = 0;
 
 	  TRY_GET_PACKAGES:
 	    while (1) {
 		if ($size) {
-		    print " Continuing ";
+		    print ' Continuing ';
 		} else {
-		    print " Getting ";
+		    print ' Getting ';
 		}
 		print "Packages file from $dir...\n";
 		eval {
-		    if ($ftp->get("$dir/Packages.gz", "Packages.gz", $size)) {
-			if (system("gunzip", "Packages.gz")) {
+		    if ($ftp->get("$dir/Packages.gz", 'Packages.gz', $size)) {
+			if (system('gunzip', 'Packages.gz')) {
 			    print "  Couldn't gunzip Packages.gz, stopped";
-			    die "error";
+			    die 'error';
 			}
 		    } else {
 			print "  Couldn't get Packages.gz from $dir !!! Stopped.";
-			die "error";
+			die 'error';
 		    }
 		};
 		if ($@) {
-		    $size = -s "Packages.gz";
+		    $size = -s 'Packages.gz';
 		    if (ref($ftp)) {
 		      $ftp->abort();
 		      $ftp->quit();
 		    };
-		    if (yesno ("y", "Transfer failed at $size: retry at once")) {
+		    if (yesno ('y', "Transfer failed at $size: retry at once")) {
                          $ftp = do_connect ($site->[0], # Ftp server
                            $site->[4], # username
                            $site->[5], # password
                            $site->[1], # ftp dir
                            $site->[3], # passive
-                           $config{'use_auth_proxy'},
-                           $config{'proxyhost'},
-                           $config{'proxylogname'},
-                           $config{'proxypassword'});
+                           $CONFIG{use_auth_proxy},
+                           $CONFIG{proxyhost},
+                           $CONFIG{proxylogname},
+                           $CONFIG{proxypassword});
 
 			if ($newest_pack_date != do_mdtm ($ftp, "$dir/Packages.gz")) {
 			    print ("Packages file has changed !\n");
@@ -176,15 +179,15 @@ foreach (@{$config{'site'}}) {
 			}
 			next TRY_GET_PACKAGES;
 		    } else {
-			die "error";
+			die 'error';
 		    }
 		}
 		last TRY_GET_PACKAGES;
 	    }
 
-	    if(!rename "Packages", "Packages.$site->[0].$dist") {
+	    if (!rename 'Packages', "Packages.$site->[0].$dist") {
 		print "  Couldn't rename Packages to Packages.$site->[0].$dist";
-		die "error";
+		die 'error';
 	    } else {
 		# set local Packages file to same date as the one it mirrors
 		# to allow comparison to work.
@@ -200,7 +203,7 @@ foreach (@{$config{'site'}}) {
 
 eval {
     local $SIG{INT} = sub {
-	die "Interrupted!\n";
+	die "interrupted!\n";
     };
     download();
 };
@@ -214,21 +217,20 @@ if($@) {
     $exit = 1;
 };
 
-my $ans;
-
-if ($packages_modified) {	# don't clear if nothing changed
-    print <<EOM;
+# Don't clear if nothing changed.
+if ($packages_modified) {
+    print <<'EOM';
 
 It is a good idea to clear the available list of old packages.
 However if you have only downloaded a Package files from non-main
 distributions you might not want to do this.
 
 EOM
-    if (yesno ("y", "Do you want to clear available list")) {
+    if (yesno ('y', 'Do you want to clear available list')) {
 	print "Clearing...\n";
-	if(system("dpkg", "--clear-avail")) {
-	    print "dpkg --clear-avail failed.";
-	    die "error";
+	if (system('dpkg', '--clear-avail')) {
+	    print 'dpkg --clear-avail failed.';
+	    die 'error';
 	}
     }
 }
@@ -236,10 +238,8 @@ EOM
 if (!$packages_modified) {
     print "No Packages files was updated.\n";
 } else {
-    my $file;
-
-    foreach $file (@pkgfiles) {
-	if(system ("dpkg", "--merge-avail", $file)) {
+    foreach my $file (@pkgfiles) {
+	if (system('dpkg', '--merge-avail', $file)) {
 	    print "Dpkg merge available failed on $file";
 	    $exit = 1;
 	}

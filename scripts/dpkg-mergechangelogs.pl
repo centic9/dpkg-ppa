@@ -1,6 +1,7 @@
 #!/usr/bin/perl
 
 # Copyright © 2009-2010 Raphaël Hertzog <hertzog@debian.org>
+# Copyright © 2012 Guillem Jover <guillem@debian.org>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -13,21 +14,21 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use warnings;
 use strict;
 
-use Dpkg;
+use Dpkg ();
 use Dpkg::Changelog::Debian;
 use Dpkg::ErrorHandling;
 use Dpkg::Gettext;
 use Dpkg::Version;
 
-use Getopt::Long;
+use Getopt::Long qw(:config posix_default bundling no_ignorecase);
 use Scalar::Util qw(blessed);
 
-textdomain("dpkg-dev");
+textdomain('dpkg-dev');
 
 sub merge_entries($$$);
 sub merge_block($$$;&);
@@ -39,55 +40,61 @@ sub join_lines($);
 BEGIN {
     eval 'use Algorithm::Merge qw(merge);';
     if ($@) {
-	eval q{
-	    sub merge {
-		my ($o, $a, $b) = @_;
-		return @$a if join("\n", @$a) eq join("\n", @$b);
-		return get_conflict_block($a, $b);
-	    }
-	};
+        eval q{
+            sub merge {
+                my ($o, $a, $b) = @_;
+                return @$a if join("\n", @$a) eq join("\n", @$b);
+                return get_conflict_block($a, $b);
+            }
+        };
     }
 }
 
 sub version {
-    printf _g("Debian %s version %s.\n"), $progname, $version;
-
-    printf "\n" . _g("Copyright (C) 2009-2010 Raphael Hertzog.");
+    printf _g("Debian %s version %s.\n"), $Dpkg::PROGNAME, $Dpkg::PROGVERSION;
 
     printf "\n" . _g(
-"This is free software; see the GNU General Public License version 2 or
+'This is free software; see the GNU General Public License version 2 or
 later for copying conditions. There is NO warranty.
-");
+');
 }
 
 sub usage {
     printf(_g(
-"Usage: %s [<option> ...] <old> <new-a> <new-b> [<out>]
+"Usage: %s [<option>...] <old> <new-a> <new-b> [<out>]
 
 Options:
-  --merge-prereleases, -m  merge pre-releases together, ignores everything
+  -m, --merge-prereleases  merge pre-releases together, ignores everything
                            after the last '~' in the version.
-  --help, -h, -?           show this help message.
-  --version                show the version.
-"), $progname);
+  -?, --help               show this help message.
+      --version            show the version.
+"), $Dpkg::PROGNAME);
 }
 
 my $merge_prereleases;
-unless (GetOptions('help|?' => sub { usage(); exit(0) },
-		   'merge-prereleases|m' => \$merge_prereleases,
-		   'version' => sub { version(); exit(0) })) {
-    usage();
-    exit(2);
-}
-my ($old, $new_a, $new_b, $out_file) = @ARGV;
-unless (defined $old and defined $new_a and defined $new_b and
-        -e $old and -e $new_a and -e $new_b)
+
+my @options_spec = (
+    'help|?' => sub { usage(); exit(0) },
+    'version' => sub { version(); exit(0) },
+    'merge-prereleases|m' => \$merge_prereleases,
+);
+
 {
-    usage();
-    exit(2);
+    local $SIG{__WARN__} = sub { usageerr($_[0]) };
+    GetOptions(@options_spec);
 }
 
-my ($cho, $cha, $chb, $res);
+my ($old, $new_a, $new_b, $out_file) = @ARGV;
+unless (defined $old and defined $new_a and defined $new_b)
+{
+    usageerr(_g('needs at least three arguments'));
+}
+unless (-e $old and -e $new_a and -e $new_b)
+{
+    usageerr(_g('file arguments need to exist'));
+}
+
+my ($cho, $cha, $chb);
 $cho = Dpkg::Changelog::Debian->new();
 $cho->load($old);
 $cha = Dpkg::Changelog::Debian->new();
@@ -125,10 +132,11 @@ while (1) {
     }
 }
 
-if (defined($out_file) and $out_file ne "-") {
-    open(OUT, ">", $out_file) || syserr(_g("cannot write %s"), $out_file);
-    print OUT ((blessed $_) ? "$_" : "$_\n") foreach @result;
-    close(OUT);
+if (defined($out_file) and $out_file ne '-') {
+    open(my $out_fh, '>', $out_file)
+        or syserr(_g('cannot write %s'), $out_file);
+    print { $out_fh } ((blessed $_) ? "$_" : "$_\n") foreach @result;
+    close($out_fh) or syserr(_g('cannot write %s'), $out_file);
 } else {
     print ((blessed $_) ? "$_" : "$_\n") foreach @result;
 }
@@ -170,8 +178,8 @@ sub compare_versions {
     return 0 if not defined $a and not defined $b;
     return 1 if not defined $b;
     return -1 if not defined $a;
-    $a = $a->get_version() if ref($a) and $a->isa("Dpkg::Changelog::Entry");
-    $b = $b->get_version() if ref($b) and $b->isa("Dpkg::Changelog::Entry");
+    $a = $a->get_version() if ref($a) and $a->isa('Dpkg::Changelog::Entry');
+    $b = $b->get_version() if ref($b) and $b->isa('Dpkg::Changelog::Entry');
     # Backport and volatile are not real prereleases
     $a =~ s/~(bpo|vola)/+$1/;
     $b =~ s/~(bpo|vola)/+$1/;
@@ -179,7 +187,9 @@ sub compare_versions {
 	$a =~ s/~[^~]*$//;
 	$b =~ s/~[^~]*$//;
     }
-    return version_compare($a, $b);
+    $a = Dpkg::Version->new($a);
+    $b = Dpkg::Version->new($b);
+    return $a <=> $b;
 }
 
 # Merge changelog entries smartly by merging individually the different
@@ -189,16 +199,16 @@ sub merge_entries($$$) {
     # NOTE: Only $o can be undef
 
     # Merge the trailer line
-    unless (merge_entry_item("blank_after_trailer", $o, $a, $b)) {
-	unshift @result, "";
+    unless (merge_entry_item('blank_after_trailer', $o, $a, $b)) {
+	unshift @result, '';
     }
-    unless (merge_entry_item("trailer", $o, $a, $b)) {
+    unless (merge_entry_item('trailer', $o, $a, $b)) {
 	merge_conflict($a->get_part('trailer'), $b->get_part('trailer'));
     }
 
     # Merge the changes
-    unless (merge_entry_item("blank_after_changes", $o, $a, $b)) {
-	unshift @result, "";
+    unless (merge_entry_item('blank_after_changes', $o, $a, $b)) {
+	unshift @result, '';
     }
     my @merged = merge(defined $o ? $o->get_part('changes') : [],
 		       $a->get_part('changes'), $b->get_part('changes'),
@@ -211,17 +221,17 @@ sub merge_entries($$$) {
     unshift @result, @merged;
 
     # Merge the header line
-    unless (merge_entry_item("blank_after_header", $o, $a, $b)) {
-	unshift @result, "";
+    unless (merge_entry_item('blank_after_header', $o, $a, $b)) {
+	unshift @result, '';
     }
-    unless (merge_entry_item("header", $o, $a, $b)) {
+    unless (merge_entry_item('header', $o, $a, $b)) {
 	merge_conflict($a->get_part('header'), $b->get_part('header'));
     }
 }
 
 sub join_lines($) {
     my $array = shift;
-    return join("\n", @$array) if ref($array) eq "ARRAY";
+    return join("\n", @$array) if ref($array) eq 'ARRAY';
     return $array;
 }
 
@@ -234,7 +244,7 @@ sub join_lines($) {
 # - a - => a
 sub merge_block($$$;&) {
     my ($o, $a, $b, $preprocess) = @_;
-    $preprocess = \&join_lines unless defined $preprocess;
+    $preprocess //= \&join_lines;
     $o = &$preprocess($o) if defined($o);
     $a = &$preprocess($a) if defined($a);
     $b = &$preprocess($b) if defined($b);
@@ -284,7 +294,7 @@ sub get_conflict_block($$) {
     my (@a, @b);
     push @a, $a if defined $a;
     push @b, $b if defined $b;
-    @a = @{$a} if ref($a) eq "ARRAY";
-    @b = @{$b} if ref($b) eq "ARRAY";
-    return ("<<<<<<", @a, "======", @b, ">>>>>>");
+    @a = @{$a} if ref($a) eq 'ARRAY';
+    @b = @{$b} if ref($b) eq 'ARRAY';
+    return ('<<<<<<<', @a, '=======', @b, '>>>>>>>');
 }

@@ -11,7 +11,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 package Dpkg::Shlibs::Objdump;
 
@@ -24,12 +24,12 @@ use Dpkg::Path qw(find_command);
 use Dpkg::Arch qw(debarch_to_gnutriplet get_build_arch get_host_arch);
 use Dpkg::IPC;
 
-our $VERSION = "0.01";
+our $VERSION = '0.01';
 
 # Decide which objdump to call
-our $OBJDUMP = "objdump";
+our $OBJDUMP = 'objdump';
 if (get_build_arch() ne get_host_arch()) {
-    my $od = debarch_to_gnutriplet(get_host_arch()) . "-objdump";
+    my $od = debarch_to_gnutriplet(get_host_arch()) . '-objdump';
     $OBJDUMP = $od if find_command($od);
 }
 
@@ -37,7 +37,7 @@ if (get_build_arch() ne get_host_arch()) {
 sub new {
     my $this = shift;
     my $class = ref($this) || $this;
-    my $self = { 'objects' => {} };
+    my $self = { objects => {} };
     bless $self, $class;
     return $self;
 }
@@ -66,7 +66,7 @@ sub locate_symbol {
 	    return $sym;
 	}
     }
-    return undef;
+    return;
 }
 
 sub get_object {
@@ -74,7 +74,7 @@ sub get_object {
     if ($self->has_object($objid)) {
 	return $self->{objects}{$objid};
     }
-    return undef;
+    return;
 }
 
 sub has_object {
@@ -82,20 +82,68 @@ sub has_object {
     return exists $self->{objects}{$objid};
 }
 
+sub is_armhf {
+    my ($file) = @_;
+    my ($output, %opts, $pid, $res);
+    my $hf = 0;
+    my $sf = 0;
+    $pid = spawn(exec => [ "readelf", "-h", "--", $file ],
+		 env => { "LC_ALL" => "C" },
+		 to_pipe => \$output, %opts);
+    while (<$output>) {
+	chomp;
+	if (/0x5000402/) {
+	    $hf = 1;
+	    last;
+	}
+	if (/0x5000202/) {
+	    $sf = 1;
+	    last;
+	}
+    }
+    close($output);
+    wait_child($pid, nocheck => 1);
+    if ($?) {
+	subprocerr("readelf");
+    }
+    if(($hf) || ($sf)) {
+	return $hf;
+    }
+    undef $output;
+    $pid = spawn(exec => [ "readelf", "-A", "--", $file ],
+		 env => { "LC_ALL" => "C" },
+		 to_pipe => \$output, %opts);
+    while (<$output>) {
+	chomp;
+	if (/Tag_ABI_VFP_args: VFP registers/) {
+	    $hf = 1;
+	    last;
+	}
+    }
+    close($output);
+    wait_child($pid, nocheck => 1);
+    if ($?) {
+	subprocerr("readelf");
+    }
+    return $hf;
+}
+
 {
     my %format; # Cache of result
     sub get_format {
-	my ($file) = @_;
+	my ($file, $objdump) = @_;
+
+	$objdump //= $OBJDUMP;
 
 	if (exists $format{$file}) {
 	    return $format{$file};
 	} else {
 	    my ($output, %opts, $pid, $res);
-	    if ($OBJDUMP ne "objdump") {
-		$opts{"error_to_file"} = "/dev/null";
+	    if ($objdump ne 'objdump') {
+		$opts{error_to_file} = '/dev/null';
 	    }
-	    $pid = spawn(exec => [ $OBJDUMP, "-a", "--", $file ],
-			 env => { "LC_ALL" => "C" },
+	    $pid = spawn(exec => [ $objdump, '-a', '--', $file ],
+			 env => { LC_ALL => 'C' },
 			 to_pipe => \$output, %opts);
 	    while (<$output>) {
 		chomp;
@@ -108,9 +156,16 @@ sub has_object {
 	    close($output);
 	    wait_child($pid, nocheck => 1);
 	    if ($?) {
-		subprocerr("objdump") if $OBJDUMP eq "objdump";
-		local $OBJDUMP = "objdump";
-		$res = get_format($file);
+		subprocerr('objdump') if $objdump eq 'objdump';
+		$res = get_format($file, 'objdump');
+	    }
+	    if ($res eq "elf32-littlearm") {
+		if (is_armhf($file)) {
+		    $res = "elf32-littlearm-hfabi";
+		} else {
+		    $res = "elf32-littlearm-sfabi";
+		}
+		$format{$file} = $res;
 	    }
 	    return $res;
 	}
@@ -119,12 +174,12 @@ sub has_object {
 
 sub is_elf {
     my ($file) = @_;
-    open(FILE, "<", $file) || syserr(_g("cannot read %s"), $file);
-    my ($header, $result) = ("", 0);
-    if (read(FILE, $header, 4) == 4) {
+    open(my $file_fh, '<', $file) or syserr(_g('cannot read %s'), $file);
+    my ($header, $result) = ('', 0);
+    if (read($file_fh, $header, 4) == 4) {
 	$result = 1 if ($header =~ /^\177ELF$/);
     }
-    close(FILE);
+    close($file_fh);
     return $result;
 }
 
@@ -177,8 +232,8 @@ sub analyze {
     $self->{file} = $file;
 
     local $ENV{LC_ALL} = 'C';
-    open(my $objdump, "-|", $OBJDUMP, "-w", "-f", "-p", "-T", "-R", $file)
-	|| syserr(_g("cannot fork for %s"), $OBJDUMP);
+    open(my $objdump, '-|', $OBJDUMP, '-w', '-f', '-p', '-T', '-R', $file)
+        or syserr(_g('cannot fork for %s'), $OBJDUMP);
     my $ret = $self->parse_objdump_output($objdump);
     close($objdump);
     return $ret;
@@ -187,41 +242,41 @@ sub analyze {
 sub parse_objdump_output {
     my ($self, $fh) = @_;
 
-    my $section = "none";
+    my $section = 'none';
     while (defined($_ = <$fh>)) {
 	chomp;
 	next if /^\s*$/;
 
 	if (/^DYNAMIC SYMBOL TABLE:/) {
-	    $section = "dynsym";
+	    $section = 'dynsym';
 	    next;
 	} elsif (/^DYNAMIC RELOCATION RECORDS/) {
-	    $section = "dynreloc";
+	    $section = 'dynreloc';
 	    $_ = <$fh>; # Skip header
 	    next;
 	} elsif (/^Dynamic Section:/) {
-	    $section = "dyninfo";
+	    $section = 'dyninfo';
 	    next;
 	} elsif (/^Program Header:/) {
-	    $section = "header";
+	    $section = 'header';
 	    next;
 	} elsif (/^Version definitions:/) {
-	    $section = "verdef";
+	    $section = 'verdef';
 	    next;
 	} elsif (/^Version References:/) {
-	    $section = "verref";
+	    $section = 'verref';
 	    next;
 	}
 
-	if ($section eq "dynsym") {
+	if ($section eq 'dynsym') {
 	    $self->parse_dynamic_symbol($_);
-	} elsif ($section eq "dynreloc") {
+	} elsif ($section eq 'dynreloc') {
 	    if (/^\S+\s+(\S+)\s+(\S+)\s*$/) {
 		$self->{dynrelocs}{$2} = $1;
 	    } else {
-		warning(_g("Couldn't parse dynamic relocation record: %s"), $_);
+		warning(_g("couldn't parse dynamic relocation record: %s"), $_);
 	    }
-	} elsif ($section eq "dyninfo") {
+	} elsif ($section eq 'dyninfo') {
 	    if (/^\s*NEEDED\s+(\S+)/) {
 		push @{$self->{NEEDED}}, $1;
 	    } elsif (/^\s*SONAME\s+(\S+)/) {
@@ -240,9 +295,16 @@ sub parse_objdump_output {
                     $self->{RPATH} = [ split (/:/, $1) ];
                 }
 	    }
-	} elsif ($section eq "none") {
+	} elsif ($section eq 'none') {
 	    if (/^\s*.+:\s*file\s+format\s+(\S+)\s*$/) {
 		$self->{format} = $1;
+		if (($self->{format} eq "elf32-littlearm") && $self->{file}) {
+		    if (Dpkg::Shlibs::Objdump::is_armhf($self->{file})) {
+			$self->{format} = "elf32-littlearm-hfabi";
+		    } else {
+			$self->{format} = "elf32-littlearm-sfabi";
+		    }
+		}
 	    } elsif (/^architecture:\s*\S+,\s*flags\s*\S+:\s*$/) {
 		# Parse 2 lines of "-f"
 		# architecture: i386, flags 0x00000112:
@@ -258,7 +320,7 @@ sub parse_objdump_output {
     # been parsed after the symbols...
     $self->apply_relocations();
 
-    return $section ne "none";
+    return $section ne 'none';
 }
 
 # Output format of objdump -w -T
@@ -310,12 +372,12 @@ sub parse_dynamic_symbol {
 		name => $name,
 		version => defined($ver) ? $ver : '',
 		section => $sect,
-		dynamic => substr($flags, 5, 1) eq "D",
-		debug => substr($flags, 5, 1) eq "d",
+		dynamic => substr($flags, 5, 1) eq 'D',
+		debug => substr($flags, 5, 1) eq 'd',
 		type => substr($flags, 6, 1),
-		weak => substr($flags, 1, 1) eq "w",
-		local => substr($flags, 0, 1) eq "l",
-		global => substr($flags, 0, 1) eq "g",
+		weak => substr($flags, 1, 1) eq 'w',
+		local => substr($flags, 0, 1) eq 'l',
+		global => substr($flags, 0, 1) eq 'g',
 		visibility => defined($vis) ? $vis : '',
 		hidden => '',
 		defined => $sect ne '*UND*'
@@ -336,7 +398,7 @@ sub parse_dynamic_symbol {
 	# Ignore some s390-specific output like
 	# REG_G6           g     R *UND*      0000000000000000              #scratch
     } else {
-	warning(_g("Couldn't parse dynamic symbol definition: %s"), $line);
+	warning(_g("couldn't parse dynamic symbol definition: %s"), $line);
     }
 }
 
@@ -345,10 +407,10 @@ sub apply_relocations {
     foreach my $sym (values %{$self->{dynsyms}}) {
 	# We want to mark as undefined symbols those which are currently
 	# defined but that depend on a copy relocation
-	next if not $sym->{'defined'};
+	next if not $sym->{defined};
 	next if not exists $self->{dynrelocs}{$sym->{name}};
 	if ($self->{dynrelocs}{$sym->{name}} =~ /^R_.*_COPY$/) {
-	    $sym->{'defined'} = 0;
+	    $sym->{defined} = 0;
 	}
     }
 }
@@ -379,7 +441,7 @@ sub get_symbol {
             return $self->{dynsyms}{$name . '@Base'};
         }
     }
-    return undef;
+    return;
 }
 
 sub get_exported_dynamic_symbols {

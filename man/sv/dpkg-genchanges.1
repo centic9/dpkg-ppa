@@ -1,14 +1,34 @@
+.\" dpkg manual page - dpkg-genchanges(1)
+.\"
+.\" Copyright Â© 1995-1996 Ian Jackson <ian@chiark.chu.cam.ac.uk>
+.\" Copyright Â© 2000 Wichert Akkerman <wakkerma@debian.org>
+.\" Copyright Â© 2006-2012 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2008-2010 RaphaÃ«l Hertzog <hertzog@debian.org>
+.\"
+.\" This is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <https://www.gnu.org/licenses/>.
+.
 .\"*******************************************************************
 .\"
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH dpkg\-genchanges 1 2008\-08\-18 Debianprojektet dpkg\-verktygen
+.TH dpkg\-genchanges 1 2012\-05\-04 Debianprojektet dpkg\-verktygen
 .SH NAMN
 dpkg\-genchanges \- skapa .changes\-filer för Debian
 .
 .SH SYNOPS
-\fBdpkg\-genchanges\fP [\fIflaggor\fP]
+\fBdpkg\-genchanges\fP [\fIflagga\fP...]
 .br
 .
 .SH BESKRIVNING
@@ -87,14 +107,13 @@ från. Standardvärdet är \fBdebian/control\fP.
 Anger ändringsloggfilen som information skall läsas från. Standardvärdet är
 \fBdebian/changelog\fP.
 .TP 
-\fB\-f\fP\fIfillisfile\fP
+\fB\-f\fP\fIfillistfil\fP
 Läser listan över filer som skall sändas in härifrån, istället för att
 använda \fBdebian/files\fP.
 .TP 
 \fB\-F\fP\fIändringsloggformat\fP
-Anger format på ändringsloggen. Som standard läses formatet från en speciell
-rad nära slutet av ändringsloggen, eller så används Debians standardformat
-om ingen information hittas.
+Anger format på ändringsloggen. Se \fBdpkg\-parsechangelog\fP(1) för information
+om alternativa format.
 .TP 
 \fB\-u\fP\fIinsändningskatalog\fP
 Se efter filer som skall sändas in i \fIinsändningskatalog\fP istället för
@@ -106,7 +125,7 @@ deras storlekar och kontrollsummor i \fB.changes\fP\-filen).
 standard fel, till exempel om hur många pakets källkodsfiler sänds in. \fB\-q\fP
 undertrycker dessa meddelanden.
 .TP 
-\fB\-h\fP, \fB\-\-help\fP
+\fB\-?\fP, \fB\-\-help\fP
 Visar hjälpskärm och avslutar.
 .TP 
 \fB\-\-version\fP
@@ -117,13 +136,5 @@ Visar version och avslutar.
 \fBdebian/files\fP
 Listan över genererade filer som är en del av den insändning som
 förbereds. \fBdpkg\-genchanges\fP läser data här när \fB.changes\fP\-filen skapas.
-.
-.SH FÖRFATTARE
-Upphovsrättsskyddat © 1995\-1996 Ian Jackson
-.br
-Upphovsrättsskyddat © 2000 Wichert Akkerman
-.sp
-Detta är fri programvara; se GNU General Public License version 2 eller
-senare för kopieringsvillkor. Det finns INGEN GARANTI.
-.SH "ÖVERSÄTTNING"
+.SH ÖVERSÄTTNING
 Peter Krefting och Daniel Nylander.

@@ -1,14 +1,33 @@
+.\" dpkg manual page - dpkg-scansources(1)
+.\"
+.\" Copyright Â© 2005 Roderick Schertler <roderick@argon.org>
+.\" Copyright Â© 2006 Frank Lichtenheld <djpig@debian.org>
+.\" Copyright Â© 2009 RaphaÃ«l Hertzog <hertzog@debian.org>
+.\"
+.\" This is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <https://www.gnu.org/licenses/>.
+.
 .\"*******************************************************************
 .\"
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH dpkg\-scansources 1 01\-10\-2009 "Projet Debian" "Utilitaires de dpkg"
+.TH dpkg\-scansources 1 14\-08\-2011 "Projet Debian" "Utilitaires de dpkg"
 .SH NOM
 dpkg\-scansources \- créer des fichiers d'index de sources
 .
 .SH SYNOPSIS
-\fBdpkg\-scansources\fP [\fIoptions\fP] \fIrep\-de\-binaires\fP [\fIfichier\-override\fP
+\fBdpkg\-scansources\fP [\fIoption\fP...] \fIrep\-de\-binaires\fP [\fIfichier\-override\fP
 [\fIchemin\-à\-préfixer\fP]] \fB>\fP \fISources\fP
 .
 .SH DESCRIPTION
@@ -16,15 +35,15 @@ dpkg\-scansources \- créer des fichiers d'index de sources
 \fIrep\-de\-binaires\fP indiqué. Ces fichiers sont utilisés pour créer un index
 de sources Debian, qui est envoyé sur la sortie standard.
 .PP
-Le \fIfichier\-override\fP, s'il est indiqué, est utilisé pour fixer les
-priorités dans l'index créé et pour modifier le responsable donné par les
-fichiers \fI.dsc\fP. Consultez \fBdeb\-override\fP(5) pour plus de détails sur le
-format de ce fichier. \s-1Note\ :\s0 S comme le fichier override est indexé
-par paquet binaire et non pas par paquet source, cela pose un léger
-problème. L'implémentation actuelle utilise la priorité la plus élevée des
-paquets produit par un fichier \fI.dsc\fP comme priorité du paquet source, et
-l'entrée du fichier override du premier paquet binaire listé dans le fichier
-\&\fI.dsc\fP pour modifier l'information sur le responsable. Ceci pourra changer.
+The \fIoverride\-file\fP, if given, is used to set priorities in the resulting
+index records and to override the maintainer field given in the \fI.dsc\fP
+files. The file can be compressed. See \fBdeb\-override\fP(5)  for the format of
+this file. Note: Since the override file is indexed by binary, not source
+packages, there's a bit of a problem here. The current implementation uses
+the highest priority of all the binary packages produced by a \fI.dsc\fP file
+for the priority of the source package, and the override entry for the first
+binary package listed in the \fI.dsc\fP file to modify maintainer
+information. This might change.
 .PP
 Le \fIchemin\-à\-préfixer\fP, s'il est indiqué, est ajouté au début du champ
 Directory («\ répertoire\ ») dans l'index des sources généré. C'est en règle
@@ -66,9 +85,6 @@ Affiche le numéro de version puis quitte.
 .
 .SH "VOIR AUSSI"
 \fBdeb\-override\fP(5), \fBdeb\-extra\-override\fP(5), \fBdpkg\-scanpackages\fP(1).
-.
-.SH AUTEUR
-Roderick Schertler <roderick@argon.org>
 .SH TRADUCTION
 Ariel VARDI <ariel.vardi@freesbee.fr>, 2002.
 Philippe Batailler, 2006.

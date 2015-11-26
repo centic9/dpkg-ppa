@@ -12,17 +12,18 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 package Dpkg::BuildOptions;
 
 use strict;
 use warnings;
 
-our $VERSION = "1.00";
+our $VERSION = '1.01';
 
 use Dpkg::Gettext;
 use Dpkg::ErrorHandling;
+use Dpkg::BuildEnv;
 
 =encoding utf8
 
@@ -33,16 +34,18 @@ Dpkg::BuildOptions - parse and update build options
 =head1 DESCRIPTION
 
 The Dpkg::BuildOptions object can be used to manipulate options stored
-in the DEB_BUILD_OPTIONS environment variable.
+in environment variables like DEB_BUILD_OPTIONS and
+DEB_BUILD_MAINT_OPTIONS.
 
 =head1 FUNCTIONS
 
 =over 4
 
-=item my $bo = Dpkg::BuildOptions->new()
+=item my $bo = Dpkg::BuildOptions->new(%opts)
 
 Create a new Dpkg::BuildOptions object. It will be initialized based
-on the value of the DEB_BUILD_OPTIONS environment variable.
+on the value of the environment variable named $opts{envvar} (or
+DEB_BUILD_OPTIONS if that option is not set).
 
 =cut
 
@@ -53,9 +56,10 @@ sub new {
     my $self = {
         options => {},
 	source => {},
+	envvar => $opts{envvar} // 'DEB_BUILD_OPTIONS',
     };
     bless $self, $class;
-    $self->merge($ENV{DEB_BUILD_OPTIONS}, "DEB_BUILD_OPTIONS");
+    $self->merge(Dpkg::BuildEnv::get($self->{envvar}), $self->{envvar});
     return $self;
 }
 
@@ -67,8 +71,8 @@ Reset the object to not have any option (it's empty).
 
 sub reset {
     my ($self) = @_;
-    $self->{'options'} = {};
-    $self->{'source'} = {};
+    $self->{options} = {};
+    $self->{source} = {};
 }
 
 =item $bo->merge($content, $source)
@@ -88,7 +92,7 @@ sub merge {
     my $count = 0;
     foreach (split(/\s+/, $content)) {
 	unless (/^([a-z][a-z0-9_-]*)(?:=(\S*))?$/) {
-            warning(_g("invalid flag in %s: %s"), $source, $_);
+            warning(_g('invalid flag in %s: %s'), $source, $_);
             next;
         }
 	$count += $self->set($1, $2, $source);
@@ -116,12 +120,12 @@ sub set {
     if ($key =~ /^(noopt|nostrip|nocheck)$/ && defined($value)) {
 	$value = undef;
     } elsif ($key eq 'parallel')  {
-	$value = "" if not defined($value);
+	$value //= '';
 	return 0 if $value !~ /^\d*$/;
     }
 
-    $self->{'options'}{$key} = $value;
-    $self->{'source'}{$key} = $source;
+    $self->{options}{$key} = $value;
+    $self->{source}{$key} = $source;
 
     return 1;
 }
@@ -136,7 +140,7 @@ the option is stored in the object.
 
 sub get {
     my ($self, $key) = @_;
-    return $self->{'options'}{$key};
+    return $self->{options}{$key};
 }
 
 =item $bo->has($option)
@@ -147,7 +151,7 @@ Returns a boolean indicating whether the option is stored in the object.
 
 sub has {
     my ($self, $key) = @_;
-    return exists $self->{'options'}{$key};
+    return exists $self->{options}{$key};
 }
 
 =item $string = $bo->output($fh)
@@ -160,29 +164,36 @@ the given filehandle.
 
 sub output {
     my ($self, $fh) = @_;
-    my $o = $self->{'options'};
-    my $res = join(" ", map { defined($o->{$_}) ? $_ . "=" . $o->{$_} : $_ } sort keys %$o);
-    print $fh $res if defined $fh;
+    my $o = $self->{options};
+    my $res = join(' ', map { defined($o->{$_}) ? $_ . '=' . $o->{$_} : $_ } sort keys %$o);
+    print { $fh } $res if defined $fh;
     return $res;
 }
 
 =item $bo->export([$var])
 
 Export the build options to the given environment variable. If omitted,
-DEB_BUILD_OPTIONS is assumed. The value set to the variable is also
-returned.
+the environment variable defined at creation time is assumed. The value
+set to the variable is also returned.
 
 =cut
 
 sub export {
     my ($self, $var) = @_;
-    $var = "DEB_BUILD_OPTIONS" unless defined $var;
+    $var = $self->{envvar} unless defined $var;
     my $content = $self->output();
-    $ENV{$var} = $content;
+    Dpkg::BuildEnv::set($var, $content);
     return $content;
 }
 
 =back
+
+=head1 CHANGES
+
+=head2 Version 1.01
+
+Enable to use another environment variable instead of DEB_BUILD_OPTIONS.
+Thus add support for the "envvar" option at creation time.
 
 =head1 AUTHOR
 

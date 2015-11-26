@@ -1,14 +1,34 @@
+.\" dpkg manual page - dpkg-divert(8)
+.\"
+.\" Copyright Â© 1995 Ian Jackson <ian@chiark.chu.cam.ac.uk>
+.\" Copyright Â© 1999 Wichert Akkerman <wakkerma@debian.org>
+.\" Copyright Â© 2004 Scott James Remnant <keybuk@debian.org>
+.\" Copyright Â© 2007-2011 Guillem Jover <guillem@debian.org>
+.\"
+.\" This is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <https://www.gnu.org/licenses/>.
+.
 .\"*******************************************************************
 .\"
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH dpkg\-divert 8 2008\-08\-18 Debian\-Projekt dpkg\-Hilfsprogramme
+.TH dpkg\-divert 8 2011\-08\-14 Debian\-Projekt dpkg\-Hilfsprogramme
 .SH NAME
 dpkg\-divert \- Hinwegsetzen über die Paketversion einer Datei
 .
 .SH ÜBERSICHT
-\fBdpkg\-divert\fP [\fIOptionen\fP] \fIBefehl\fP
+\fBdpkg\-divert\fP [\fIOption\fP ?] \fIBefehl\fP
 .
 .SH BESCHREIBUNG
 \fBdpkg\-divert\fP ist ein Hilfswerkzeug, um die Liste der Umleitungen
@@ -20,9 +40,9 @@ zwingen, eine Datei nicht an ihren Standardplatz, sondern an einem
 Debian\-Paketskripte verwendet werden, um eine Datei beiseitezuschieben, wenn
 sie einen Konflikt auslöst. Systemadministratoren können sie auch verwenden,
 um sich über die Konfigurationsdateien einiger Pakete hinwegzusetzen, oder
-wann immer einige Dateien (die nicht als »Conffiles« markiert sind) von Dpkg
-erhalten werden müssen, wenn eine neuere Version eines Paketes, die diese
-Dateien enthält, installiert wird.
+wann immer einige Dateien (die nicht als »Conffiles« markiert sind) von
+\fBdpkg\fP erhalten werden müssen, wenn eine neuere Version eines Paketes, die
+diese Dateien enthält, installiert wird.
 .sp
 .SH BEFEHLE
 .TP 
@@ -46,7 +66,7 @@ Zeige den echten Namen für eine umgeleitete Datei an.
 .SH OPTIONEN
 .TP 
 \fB\-\-admindir\fP\fI Verzeichnis\fP
-Setze das Dpkg\-Datenverzeichnis auf \fIVerzeichnis\fP (Standard:
+Setze das \fBdpkg\fP\-Datenverzeichnis auf \fIVerzeichnis\fP (Standard:
 \fI/var/lib/dpkg\fP).
 .TP 
 \fB\-\-divert\fP\fI Umleitziel\fP
@@ -73,25 +93,45 @@ den Arbeitsvorgang abbrechen, falls die Zieldatei bereits existiert.
 \fB\-\-test\fP
 Testmodus, d.h. führe keine Änderungen durch, sondern zeige sie lediglich.
 .TP 
-\fB\-\-help\fP
+\fB\-?\fP, \fB\-\-help\fP
 Zeige den Bedienungshinweis und beende.
 .TP 
 \fB\-\-version\fP
 Gebe die Version aus und beende sich.
 .
+.SH UMGEBUNG
+.TP 
+\fBDPKG_ADMINDIR\fP
+Falls gesetzt und die Option \fB\-\-admindir\fP nicht verwandt wurde, wird dies
+als Datenverzeichnis von \fBdpkg\fP verwandt.
+.TP 
+\fBDPKG_MAINTSCRIPT_PACKAGE\fP
+Falls gesetzt und die Optionen \fB\-\-local\fP und \fB\-\-package\fP nicht verwandt
+wurden, wird \fBdpkg\-divert\fP dies als Paketnamen verwenden.
+.
+.SH DATEIEN
+.TP 
+\fI/var/lib/dpkg/diversions\fP
+Datei, die die aktuelle Liste von Umleitungen des Systems enthält. Sie
+befindet sich im \fBdpkg\fP\-Administrationsverzeichnis, zusammen mit anderen
+für \fBdpkg\fP wichtigen Dateien, wie \fIstatus\fP oder \fIavailable\fP.
+.br
+Hinweis: \fBdpkg\-divert\fP erhält die alte Kopie dieser Datei, mit der Endung
+\fI\-old\fP, bevor es sie mit der neuen ersetzt.
+.
 .SH BEMERKUNGEN
 Beim Hinzufügen ist die Standardeinstellung \fB\-\-local\fP und \fB\-\-divert\fP
-\fI<Originalname>.distrib\fP. Beim Entfernen müssen, falls angegeben,
+\fIOriginalname\fP.\fBdistrib\fP. Beim Entfernen müssen, falls angegeben,
 \fB\-\-package\fP oder \fB\-\-local\fP und \fB\-\-divert\fP übereinstimmen.
 
 Verzeichnisse können mit \fBdpkg\-divert\fP nicht umgeleitet werden.
 
 Vorsicht sollte beim Umleiten von Laufzeit\-Bibliotheken walten gelassen
 werden, da \fBldconfig\fP(8) einen symbolischen Link, basierend auf dem in der
-Bibliothek eingebetteten DT_SONAME\-Feld, anlegt. Da ldconfig keine
-Umleitungen anerkennt (nur Dpkg tut dies), kann der Symlink am Ende auf die
-umgeleitete Bibliothek zeigen, falls die umgeleitete Bibliothek den gleichen
-SONAME wie die nicht umgeleitete hat.
+Bibliothek eingebetteten DT_SONAME\-Feld, anlegt. Da \fBldconfig\fP keine
+Umleitungen anerkennt (nur \fBdpkg\fP tut dies), kann der Symlink am Ende auf
+die umgeleitete Bibliothek zeigen, falls die umgeleitete Bibliothek den
+gleichen SONAME wie die nicht umgeleitete hat.
 .
 .SH BEISPIELE
 Um alle Kopien von \fI/usr/bin/example\fP auf \fI/usr/bin/example.foo\fP
@@ -117,18 +157,8 @@ Um diese Umleitung zu entfernen:
 .HP
 dpkg\-divert \-\-package wibble \-\-rename \-\-remove /usr/bin/example
 .
-.SH DATEIEN
-.TP 
-\fI/var/lib/dpkg/diversions\fP
-Datei, die die aktuelle Liste von Umleitungen des Systems enthält. Sie
-befindet sich im Dpkg\-Administrationsverzeichnis, zusammen mit anderen für
-Dpkg wichtigen Dateien, wie \fIstatus\fP oder \fIavailable\fP.
-.br
-Hinweis: \fBdpkg\-divert\fP erhält die alte Kopie dieser Datei, mit der Endung
-\fI\-old\fP, bevor es sie mit der neuen ersetzt.
-.
 .SH ÜBERSETZUNG
-Die deutsche Übersetzung wurde 2004, 2006-2010 von Helge Kreutzmann
+Die deutsche Übersetzung wurde 2004, 2006-2013 von Helge Kreutzmann
 <debian@helgefjell.de>, 2007 von Florian Rehnisch <eixman@gmx.de> und
 2008 von Sven Joachim <svenjoac@gmx.de>
 angefertigt. Diese Übersetzung ist Freie Dokumentation; lesen Sie die
@@ -136,9 +166,3 @@ GNU General Public License Version 2 oder neuer für die Kopierbedingungen.
 Es gibt KEINE HAFTUNG.
 .SH "SIEHE AUCH"
 \fBdpkg\fP(1).
-.
-.SH AUTOR
-Copyright \(co 1995 Ian Jackson
-.sp
-Dies ist Freie Software; lesen Sie die GNU General Public License Version 2
-oder neuer für die Kopierbedingungen. Es gibt KEINE Haftung.

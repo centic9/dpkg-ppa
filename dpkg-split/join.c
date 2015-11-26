@@ -15,7 +15,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
@@ -33,11 +33,12 @@
 #include <dpkg/dpkg.h>
 #include <dpkg/dpkg-db.h>
 #include <dpkg/buffer.h>
-#include <dpkg/myopt.h>
+#include <dpkg/options.h>
 
 #include "dpkg-split.h"
 
 void reassemble(struct partinfo **partlist, const char *outputfile) {
+  struct dpkg_error err;
   int fd_out, fd_in;
   unsigned int i;
 
@@ -55,8 +56,12 @@ void reassemble(struct partinfo **partlist, const char *outputfile) {
     fd_in = open(pi->filename, O_RDONLY);
     if (fd_in < 0)
       ohshite(_("unable to (re)open input part file `%.250s'"), pi->filename);
-    fd_null_copy(fd_in, pi->headerlen, _("skipping split package header"));
-    fd_fd_copy(fd_in, fd_out, pi->thispartlen, _("split package part"));
+    if (fd_skip(fd_in, pi->headerlen, &err) < 0)
+      ohshit(_("cannot skip split package header for '%s': %s"), pi->filename,
+             err.str);
+    if (fd_fd_copy(fd_in, fd_out, pi->thispartlen, &err) < 0)
+      ohshit(_("cannot append split package part '%s' to '%s': %s"),
+             pi->filename, outputfile, err.str);
     close(fd_in);
 
     printf("%d ",i+1);
@@ -92,13 +97,15 @@ void addtopartlist(struct partinfo **partlist,
   partlist[i]= pi;
 }
 
-void do_join(const char *const *argv) {
+int
+do_join(const char *const *argv)
+{
   const char *thisarg;
+  struct partqueue *queue = NULL;
   struct partqueue *pq;
   struct partinfo *refi, **partlist;
   unsigned int i;
 
-  assert(!queue);
   if (!*argv)
     badusage(_("--%s requires one or more part file arguments"),
              cipaction->olong);
@@ -130,10 +137,14 @@ void do_join(const char *const *argv) {
 
     p= nfmalloc(strlen(refi->package)+1+strlen(refi->version)+sizeof(DEBEXT));
     strcpy(p,refi->package);
-    strcat(p,"-");
+    strcat(p, "_");
     strcat(p,refi->version);
+    strcat(p, "_");
+    strcat(p, refi->arch ? refi->arch : "unknown");
     strcat(p,DEBEXT);
     opt_outputfile = p;
   }
   reassemble(partlist, opt_outputfile);
+
+  return 0;
 }

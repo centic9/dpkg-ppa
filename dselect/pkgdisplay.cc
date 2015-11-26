@@ -15,7 +15,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
@@ -38,7 +38,7 @@ const char
 			    N_("hold"),
 			    N_("remove"),
 			    N_("purge"),
-			    0 },
+			    nullptr },
 
   /* TRANSLATORS: The space is a trick to work around gettext which uses
    * the empty string to store information about the translation. DO NOT
@@ -46,7 +46,7 @@ const char
    * a single space. */
   *const eflagstrings[]=   { N_(" "),
 			     N_("REINSTALL"),
-			     0 },
+			     nullptr },
 
   *const statusstrings[]= { N_("not installed"),
 			    N_("removed (configs remain)"),
@@ -56,7 +56,7 @@ const char
 			    N_("awaiting trigger processing"),
 			    N_("triggered"),
 			    N_("installed"),
-			    0 },
+			    nullptr },
 
   *const prioritystrings[]=  { N_("Required"),
 			       N_("Important"),
@@ -65,7 +65,7 @@ const char
 			       N_("Extra"),
 			       N_("!Bug!"),
 			       N_("Unclassified"),
-			       0 },
+			       nullptr },
 
   *const relatestrings[]= { N_("suggests"),
 			    N_("recommends"),
@@ -76,7 +76,7 @@ const char
 			    N_("provides"),
 			    N_("replaces"),
 			    N_("enhances"),
-			    0 },
+			    nullptr },
 
   *const priorityabbrevs[]=  { N_("Req"),
 			       N_("Imp"),
@@ -146,8 +146,6 @@ void packagelist::setwidths() {
   }
   section_width= 8;
 
-  gap_width= 1;
-
   if (sortorder == so_section) {
     section_column= status_width + gap_width;
     priority_column= section_column + section_width + gap_width;
@@ -180,23 +178,21 @@ void packagelist::setwidths() {
     description_column= versionavailable_column + versionavailable_width + gap_width;
     break;
   default:
-    internerr("unknown versiondisplayopt in setwidths");
+    internerr("unknown versiondisplayopt %d", versiondisplayopt);
   }
 
-  total_width= TOTAL_LIST_WIDTH;
-  if (total_width < COLS)
-    total_width= COLS;
   description_width= total_width - description_column;
 }
 
 void packagelist::redrawtitle() {
-  int x,y;
+  int x, y DPKG_ATTR_UNUSED;
 
   if (title_height) {
     mywerase(titlewin);
     mvwaddnstr(titlewin,0,0,
                recursive ?  _("dselect - recursive package listing") :
-               !readwrite ? _("dselect - inspection of package states") :
+               modstatdb_get_status() == msdbrw_readonly ?
+                            _("dselect - inspection of package states") :
                             _("dselect - main package listing"),
                xmax);
     getyx(titlewin,y,x);
@@ -214,7 +210,7 @@ void packagelist::redrawtitle() {
           waddnstr(titlewin, _(" (status, section)"), xmax-x);
           break;
         default:
-          internerr("bad statsort in redrawtitle/so_section");
+          internerr("bad statsort %d on so_section", statsortorder);
         }
         break;
       case so_priority:
@@ -229,7 +225,7 @@ void packagelist::redrawtitle() {
           waddnstr(titlewin, _(" (status, priority)"), xmax-x);
           break;
         default:
-          internerr("bad statsort in redrawtitle/so_priority");
+          internerr("bad statsort %d on so_priority", statsortorder);
         }
         break;
       case so_alpha:
@@ -244,21 +240,24 @@ void packagelist::redrawtitle() {
           waddnstr(titlewin, _(" (by status)"), xmax-x);
           break;
         default:
-          internerr("bad statsort in redrawtitle/so_priority");
+          internerr("bad statsort %d on so_priority", statsortorder);
         }
-        break;
-        waddnstr(titlewin, _(" (alphabetically)"), xmax-x);
         break;
       case so_unsorted:
         break;
       default:
-        internerr("bad sort in redrawtitle");
+        internerr("bad sort %d", sortorder);
       }
     }
-    const char *helpstring= readwrite ? (verbose ? _(" mark:+/=/- terse:v help:?")
-                                                 : _(" mark:+/=/- verbose:v help:?"))
-                                      : (verbose ? _(" terse:v help:?")
-                                                 : _(" verbose:v help:?"));
+    const char *helpstring;
+
+    if (modstatdb_get_status() == msdbrw_write)
+      helpstring = (verbose ? _(" mark:+/=/- terse:v help:?")
+                            : _(" mark:+/=/- verbose:v help:?"));
+    else
+      helpstring = (verbose ? _(" terse:v help:?")
+                            : _(" verbose:v help:?"));
+
     int l= strlen(helpstring);
     getyx(titlewin,y,x);
     if (xmax-l > 0) {

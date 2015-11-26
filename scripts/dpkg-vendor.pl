@@ -3,6 +3,7 @@
 # dpkg-vendor
 #
 # Copyright © 2009 Raphaël Hertzog <hertzog@debian.org>
+# Copyright © 2009,2012 Guillem Jover <guillem@debian.org>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,44 +16,41 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use strict;
 use warnings;
 
-use Dpkg;
+use Dpkg ();
 use Dpkg::Gettext;
 use Dpkg::ErrorHandling;
-use Dpkg::Vendor qw(get_vendor_info get_current_vendor);
+use Dpkg::Vendor qw(get_vendor_dir get_vendor_info get_current_vendor);
 
-textdomain("dpkg-dev");
+textdomain('dpkg-dev');
 
 sub version {
-    printf _g("Debian %s version %s.\n"), $progname, $version;
+    printf _g("Debian %s version %s.\n"), $Dpkg::PROGNAME, $Dpkg::PROGVERSION;
 
-    printf _g("
-Copyright (C) 2009 Raphael Hertzog <hertzog\@debian.org>.");
-
-    printf _g("
+    printf _g('
 This is free software; see the GNU General Public License version 2 or
 later for copying conditions. There is NO warranty.
-");
+');
 }
 
 sub usage {
     printf _g(
-"Usage: %s [<option> ...] [<action>]
-
-Options:
-  --vendor <vendor>       assume <vendor> is the current vendor
-
-Actions:
+'Usage: %s [<option>...] [<command>]')
+    . "\n\n" . _g(
+'Options:
+  --vendor <vendor>       assume <vendor> is the current vendor')
+    . "\n\n" . _g(
+'Commands:
   --is <vendor>           returns true if current vendor is <vendor>.
   --derives-from <vendor> returns true if current vendor derives from <vendor>.
   --query <field>         print the content of the vendor-specific field.
   --help                  show this help message.
   --version               show the version.
-"), $progname;
+'), $Dpkg::PROGNAME;
 }
 
 my ($vendor, $param, $action);
@@ -61,12 +59,14 @@ while (@ARGV) {
     $_ = shift(@ARGV);
     if (m/^--vendor$/) {
         $vendor = shift(@ARGV);
+        usageerr(_g('%s needs a parameter'), $_) unless defined $vendor;
     } elsif (m/^--(is|derives-from|query)$/) {
-        usageerr(_g("two commands specified: --%s and --%s"), $1, $action)
+        usageerr(_g('two commands specified: --%s and --%s'), $1, $action)
             if defined($action);
         $action = $1;
         $param = shift(@ARGV);
-    } elsif (m/^-(h|-help)$/) {
+        usageerr(_g('%s needs a parameter'), $_) unless defined $param;
+    } elsif (m/^-(\?|-help)$/) {
         usage();
         exit 0;
     } elsif (m/^--version$/) {
@@ -77,15 +77,15 @@ while (@ARGV) {
     }
 }
 
-usageerr(_g("need an action option")) unless defined($action);
+usageerr(_g('need an action option')) unless defined($action);
 
 # Uses $ENV{DEB_VENDOR} if set
-$vendor = get_current_vendor() unless defined($vendor);
+$vendor //= get_current_vendor();
 
 my $info = get_vendor_info($vendor);
 unless (defined($info)) {
-    error(_g("vendor %s doesn't exist in /etc/dpkg/origins/"),
-          $vendor || "default");
+    error(_g("vendor %s doesn't exist in %s"), $vendor || 'default',
+          get_vendor_dir());
 }
 
 if ($action eq 'is') {

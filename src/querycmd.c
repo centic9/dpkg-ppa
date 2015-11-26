@@ -4,7 +4,7 @@
  *
  * Copyright © 1995,1996 Ian Jackson <ian@chiark.greenend.org.uk>
  * Copyright © 2000,2001 Wichert Akkerman <wakkerma@debian.org>
- * Copyright © 2006-2011 Guillem Jover <guillem@debian.org>
+ * Copyright © 2006-2012 Guillem Jover <guillem@debian.org>
  * Copyright © 2011 Linaro Limited
  * Copyright © 2011 Raphaël Hertzog <hertzog@debian.org>
  *
@@ -19,7 +19,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
@@ -28,7 +28,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
-#include <sys/termios.h>
 
 #if HAVE_LOCALE_H
 #include <locale.h>
@@ -37,6 +36,7 @@
 #include <fcntl.h>
 #include <dirent.h>
 #include <fnmatch.h>
+#include <termios.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -45,32 +45,42 @@
 #include <dpkg/dpkg.h>
 #include <dpkg/dpkg-db.h>
 #include <dpkg/pkg-array.h>
+#include <dpkg/pkg-spec.h>
 #include <dpkg/pkg-format.h>
 #include <dpkg/pkg-show.h>
-#include <dpkg/pkg-spec.h>
+#include <dpkg/string.h>
 #include <dpkg/path.h>
-#include <dpkg/myopt.h>
+#include <dpkg/file.h>
+#include <dpkg/options.h>
 
 #include "filesdb.h"
 #include "infodb.h"
 #include "main.h"
 
-static const char* showformat		= "${PackageSpec}\t${Version}\n";
+static const char *showformat = "${binary:Package}\t${Version}\n";
+
+static int opt_loadavail = 0;
 
 static int getwidth(void) {
   int fd;
   int res;
   struct winsize ws;
-  const char* columns;
+  const char *columns;
 
-  if ((columns=getenv("COLUMNS")) && ((res=atoi(columns))>0))
-    return res;
-  else if (!isatty(1))
+  columns = getenv("COLUMNS");
+  if (columns) {
+    res = atoi(columns);
+    if (res > 0)
+      return res;
+  }
+
+  if (!isatty(1))
     return -1;
   else {
     res = 80;
 
-    if ((fd=open("/dev/tty",O_RDONLY))!=-1) {
+    fd = open("/dev/tty", O_RDONLY);
+    if (fd != -1) {
       if (ioctl(fd, TIOCGWINSZ, &ws) == 0)
         res = ws.ws_col;
       close(fd);
@@ -82,8 +92,10 @@ static int getwidth(void) {
 
 struct list_format {
   bool head;
-  int nw, vw, dw;
-  char format[80];
+  int nw;
+  int vw;
+  int aw;
+  int dw;
 };
 
 static void
@@ -91,7 +103,7 @@ list_format_init(struct list_format *fmt, struct pkg_array *array)
 {
   int w;
 
-  if (fmt->format[0] != '\0')
+  if (fmt->nw != 0)
     return;
 
   w = getwidth();
@@ -99,21 +111,25 @@ list_format_init(struct list_format *fmt, struct pkg_array *array)
     int i;
 
     fmt->nw = 14;
-    fmt->vw = 14;
-    fmt->dw = 44;
+    fmt->vw = 12;
+    fmt->aw = 12;
+    fmt->dw = 33;
 
     for (i = 0; i < array->n_pkgs; i++) {
-      int plen, vlen, dlen;
+      int plen, vlen, alen, dlen;
 
-      plen = strlen(pkg_describe(array->pkgs[i], pdo_foreign));
-      vlen = strlen(versiondescribe(&array->pkgs[i]->installed.version,
-                                    vdew_nonambig));
-      pkg_summary(array->pkgs[i], &dlen);
+      plen = str_width(pkg_name(array->pkgs[i], pnaw_nonambig));
+      vlen = str_width(versiondescribe(&array->pkgs[i]->installed.version,
+                                       vdew_nonambig));
+      alen = str_width(dpkg_arch_describe(array->pkgs[i]->installed.arch));
+      pkg_summary(array->pkgs[i], &array->pkgs[i]->installed, &dlen);
 
       if (plen > fmt->nw)
         fmt->nw = plen;
       if (vlen > fmt->vw)
         fmt->vw = vlen;
+      if (alen > fmt->aw)
+        fmt->aw = alen;
       if (dlen > fmt->dw)
         fmt->dw = dlen;
     }
@@ -123,16 +139,36 @@ list_format_init(struct list_format *fmt, struct pkg_array *array)
     if (w < 0)
       w = 0;
     /* Halve that so we can add it to both the name and description. */
-    w >>= 2;
+    w >>= 1;
     /* Name width. */
-    fmt->nw = (14 + w);
+    fmt->nw = (14 + (w / 2));
     /* Version width. */
-    fmt->vw = (14 + w);
+    fmt->vw = (12 + (w / 4));
+    /* Architecture width. */
+    fmt->aw = (12 + (w / 4));
     /* Description width. */
-    fmt->dw = (44 + (2 * w));
+    fmt->dw = (33 + w);
   }
-  sprintf(fmt->format, "%%c%%c%%c %%-%d.%ds %%-%d.%ds %%.*s\n",
-          fmt->nw, fmt->nw, fmt->vw, fmt->vw);
+}
+
+static void
+list_format_print(struct list_format *fmt,
+                  int c_want, int c_status, int c_eflag,
+                  const char *name, const char *version, const char *arch,
+                  const char *desc, int desc_len)
+{
+  struct str_crop_info ns, vs, as, ds;
+
+  str_gen_crop(name, fmt->nw, &ns);
+  str_gen_crop(version, fmt->vw, &vs);
+  str_gen_crop(arch, fmt->aw, &as);
+  str_gen_crop(desc, desc_len, &ds);
+
+  printf("%c%c%c %-*.*s %-*.*s %-*.*s %.*s\n", c_want, c_status, c_eflag,
+         ns.max_bytes, ns.str_bytes, name,
+         vs.max_bytes, vs.str_bytes, version,
+         as.max_bytes, as.str_bytes, arch,
+         ds.str_bytes, desc);
 }
 
 static void
@@ -153,8 +189,8 @@ list_format_print_header(struct list_format *fmt)
 Desired=Unknown/Install/Remove/Purge/Hold\n\
 | Status=Not/Inst/Conf-files/Unpacked/halF-conf/Half-inst/trig-aWait/Trig-pend\n\
 |/ Err?=(none)/Reinst-required (Status,Err: uppercase=bad)\n"), stdout);
-  printf(fmt->format, '|', '|', '/', _("Name"), _("Version"), 40,
-         _("Description"));
+  list_format_print(fmt, '|', '|', '/', _("Name"), _("Version"),
+                    _("Architecture"), _("Description"), fmt->dw);
 
   /* Status */
   printf("+++-");
@@ -166,6 +202,11 @@ Desired=Unknown/Install/Remove/Purge/Hold\n\
 
   /* Version. */
   for (l = 0; l < fmt->vw; l++)
+    printf("=");
+  printf("-");
+
+  /* Architecture. */
+  for (l = 0; l < fmt->aw; l++)
     printf("=");
   printf("-");
 
@@ -186,16 +227,17 @@ list1package(struct pkginfo *pkg, struct list_format *fmt, struct pkg_array *arr
   list_format_init(fmt, array);
   list_format_print_header(fmt);
 
-  pdesc = pkg_summary(pkg, &l);
+  pdesc = pkg_summary(pkg, &pkg->installed, &l);
   l = min(l, fmt->dw);
 
-  printf(fmt->format,
-         "uihrp"[pkg->want],
-         "ncHUFWti"[pkg->status],
-         " R"[pkg->eflag],
-         pkg_describe(pkg, pdo_foreign),
-         versiondescribe(&pkg->installed.version, vdew_nonambig),
-         l, pdesc);
+  list_format_print(fmt,
+                    pkg_abbrev_want(pkg),
+                    pkg_abbrev_status(pkg),
+                    pkg_abbrev_eflag(pkg),
+                    pkg_name(pkg, pnaw_nonambig),
+                    versiondescribe(&pkg->installed.version, vdew_nonambig),
+                    dpkg_arch_describe(pkg->installed.arch),
+                    pdesc, l);
 }
 
 static int
@@ -206,19 +248,16 @@ listpackages(const char *const *argv)
   int i;
   int failures = 0;
   struct list_format fmt;
-  enum modstatdb_rw msdb_status;
 
-  if (!*argv)
-    msdb_status = modstatdb_open(msdbrw_readonly);
+  if (!opt_loadavail)
+    modstatdb_open(msdbrw_readonly);
   else
-    msdb_status = modstatdb_open(msdbrw_readonly | msdbrw_available_readonly);
-  pkg_infodb_init(msdb_status);
+    modstatdb_open(msdbrw_readonly | msdbrw_available_readonly);
 
   pkg_array_init_from_db(&array);
-  pkg_array_sort(&array, pkg_sorter_by_name);
+  pkg_array_sort(&array, pkg_sorter_by_nonambig_name_arch);
 
-  fmt.head = false;
-  fmt.format[0] = '\0';
+  memset(&fmt, 0, sizeof(fmt));
 
   if (!*argv) {
     for (i = 0; i < array.n_pkgs; i++) {
@@ -231,15 +270,14 @@ listpackages(const char *const *argv)
     struct pkg_spec *ps;
 
     for (argc = 0; argv[argc]; argc++);
-    found = m_malloc(sizeof(int) * argc);
-    memset(found, 0, sizeof(int) * argc);
-    ps = m_malloc(sizeof(*ps) * argc);
-    memset(ps, 0, sizeof(*ps) * argc);
+    found = m_calloc(sizeof(int) * argc);
 
+    ps = m_malloc(sizeof(*ps) * argc);
     for (ip = 0; ip < argc; ip++) {
-      ps[ip].flags = psf_def_native | psf_patterns;
+      pkg_spec_init(&ps[ip], psf_patterns | psf_arch_def_wildcard);
       pkg_spec_parse(&ps[ip], argv[ip]);
     }
+
     for (i = 0; i < array.n_pkgs; i++) {
       pkg = array.pkgs[i];
       for (ip = 0; ip < argc; ip++) {
@@ -255,13 +293,14 @@ listpackages(const char *const *argv)
      * after their super-patterns, due to us skipping on first match. */
     for (ip = 0; ip < argc; ip++) {
       if (!found[ip]) {
-        fprintf(stderr, _("No packages found matching %s.\n"), argv[ip]);
+        notice(_("no packages found matching %s"), argv[ip]);
         failures++;
       }
-      pkg_spec_reset(&ps[ip]);
+      pkg_spec_destroy(&ps[ip]);
     }
-    free(found);
+
     free(ps);
+    free(found);
   }
 
   m_output(stdout, _("<standard output>"));
@@ -300,7 +339,7 @@ static int searchoutput(struct filenamenode *namenode) {
   while ((pkg_owner = filepackages_iter_next(iter))) {
     if (found)
       fputs(", ", stdout);
-    fputs(pkg_describe(pkg_owner, pdo_foreign), stdout);
+    fputs(pkg_name(pkg_owner, pnaw_nonambig), stdout);
     found++;
   }
   filepackages_iter_free(iter);
@@ -313,19 +352,17 @@ static int
 searchfiles(const char *const *argv)
 {
   struct filenamenode *namenode;
-  struct fileiterator *it;
+  struct fileiterator *iter;
   const char *thisarg;
   int found;
   int failures = 0;
   struct varbuf path = VARBUF_INIT;
   static struct varbuf vb;
-  enum modstatdb_rw msdb_status;
 
   if (!*argv)
     badusage(_("--search needs at least one file name pattern argument"));
 
-  msdb_status = modstatdb_open(msdbrw_readonly);
-  pkg_infodb_init(msdb_status);
+  modstatdb_open(msdbrw_readonly);
   ensure_allinstfiles_available_quiet();
   ensure_diversions();
 
@@ -356,16 +393,15 @@ searchfiles(const char *const *argv)
       namenode= findnamenode(thisarg, 0);
       found += searchoutput(namenode);
     } else {
-      it= iterfilestart();
-      while ((namenode = iterfilenext(it)) != NULL) {
+      iter = files_db_iter_new();
+      while ((namenode = files_db_iter_next(iter)) != NULL) {
         if (fnmatch(thisarg,namenode->name,0)) continue;
         found+= searchoutput(namenode);
       }
-      iterfileend(it);
+      files_db_iter_free(iter);
     }
     if (!found) {
-      fprintf(stderr, _("%s: no path found matching pattern %s.\n"), thisname,
-              thisarg);
+      notice(_("no path found matching pattern %s"), thisarg);
       failures++;
       m_output(stderr, _("<standard error>"));
     } else {
@@ -387,31 +423,33 @@ enqperpackage(const char *const *argv)
   struct pkginfo *pkg;
   struct filenamenode *namenode;
   int failures = 0;
-  enum modstatdb_rw msdb_status;
-  struct pkg_spec pkgspec = PKG_SPEC_INIT(psf_def_native);
 
   if (!*argv)
     badusage(_("--%s needs at least one package name argument"), cipaction->olong);
 
   if (cipaction->arg_int == act_printavail)
-    msdb_status = modstatdb_open(msdbrw_readonly | msdbrw_available_readonly);
+    modstatdb_open(msdbrw_readonly | msdbrw_available_readonly);
   else
-    msdb_status = modstatdb_open(msdbrw_readonly);
-  pkg_infodb_init(msdb_status);
+    modstatdb_open(msdbrw_readonly);
 
   while ((thisarg = *argv++) != NULL) {
-    pkg = pkg_spec_find_pkg(&pkgspec, thisarg);
+    struct dpkg_error err;
+
+    pkg = pkg_spec_parse_pkg(thisarg, &err);
+    if (pkg == NULL)
+      badusage(_("--%s needs a valid package name but '%.250s' is not: %s"),
+               cipaction->olong, thisarg, err.str);
 
     switch (cipaction->arg_int) {
     case act_status:
       if (pkg->status == stat_notinstalled &&
           pkg->priority == pri_unknown &&
-          !(pkg->section && *pkg->section) &&
+          str_is_unset(pkg->section) &&
           !pkg->files &&
           pkg->want == want_unknown &&
           !pkg_is_informative(pkg, &pkg->installed)) {
-        fprintf(stderr, _("Package `%s' is not installed and no info is "
-                          "available.\n"), pkg_describe(pkg, pdo_foreign));
+        notice(_("package '%s' is not installed and no information is available"),
+               pkg_name(pkg, pnaw_nonambig));
         failures++;
       } else {
         writerecord(stdout, _("<standard output>"), pkg, &pkg->installed);
@@ -419,8 +457,8 @@ enqperpackage(const char *const *argv)
       break;
     case act_printavail:
       if (!pkg_is_informative(pkg, &pkg->available)) {
-        fprintf(stderr, _("Package `%s' is not available.\n"),
-                pkg_describe(pkg, pdo_foreign));
+        notice(_("package '%s' is not available"),
+               pkgbin_name(pkg, &pkg->available, pnaw_nonambig));
         failures++;
       } else {
         writerecord(stdout, _("<standard output>"), pkg, &pkg->available);
@@ -429,8 +467,8 @@ enqperpackage(const char *const *argv)
     case act_listfiles:
       switch (pkg->status) {
       case stat_notinstalled:
-        fprintf(stderr, _("Package `%s' is not installed.\n"),
-                pkg_describe(pkg, pdo_foreign));
+        notice(_("package '%s' is not installed"),
+               pkg_name(pkg, pnaw_nonambig));
         failures++;
         break;
       default:
@@ -439,7 +477,7 @@ enqperpackage(const char *const *argv)
         file= pkg->clientdata->files;
         if (!file) {
           printf(_("Package `%s' does not contain any files (!)\n"),
-                 pkg_describe(pkg, pdo_foreign));
+                 pkg_name(pkg, pnaw_nonambig));
         } else {
           while (file) {
             namenode= file->namenode;
@@ -485,26 +523,28 @@ enqperpackage(const char *const *argv)
 static int
 showpackages(const char *const *argv)
 {
+  struct dpkg_error err;
   struct pkg_array array;
   struct pkginfo *pkg;
-  struct pkg_format_node *fmt = pkg_format_parse(showformat);
+  struct pkg_format_node *fmt;
   int i;
   int failures = 0;
-  enum modstatdb_rw msdb_status;
 
+  fmt = pkg_format_parse(showformat, &err);
   if (!fmt) {
+    notice(_("error in show format: %s"), err.str);
+    dpkg_error_destroy(&err);
     failures++;
     return failures;
   }
 
-  if (!*argv)
-    msdb_status = modstatdb_open(msdbrw_readonly);
+  if (!opt_loadavail)
+    modstatdb_open(msdbrw_readonly);
   else
-    msdb_status = modstatdb_open(msdbrw_readonly | msdbrw_available_readonly);
-  pkg_infodb_init(msdb_status);
+    modstatdb_open(msdbrw_readonly | msdbrw_available_readonly);
 
   pkg_array_init_from_db(&array);
-  pkg_array_sort(&array, pkg_sorter_by_name);
+  pkg_array_sort(&array, pkg_sorter_by_nonambig_name_arch);
 
   if (!*argv) {
     for (i = 0; i < array.n_pkgs; i++) {
@@ -517,15 +557,14 @@ showpackages(const char *const *argv)
     struct pkg_spec *ps;
 
     for (argc = 0; argv[argc]; argc++);
-    found = m_malloc(sizeof(int) * argc);
-    memset(found, 0, sizeof(int) * argc);
-    ps = m_malloc(sizeof(*ps) * argc);
-    memset(ps, 0, sizeof(*ps) * argc);
+    found = m_calloc(sizeof(int) * argc);
 
+    ps = m_malloc(sizeof(*ps) * argc);
     for (ip = 0; ip < argc; ip++) {
-      ps[ip].flags = psf_def_native | psf_patterns;
+      pkg_spec_init(&ps[ip], psf_patterns | psf_arch_def_wildcard);
       pkg_spec_parse(&ps[ip], argv[ip]);
     }
+
     for (i = 0; i < array.n_pkgs; i++) {
       pkg = array.pkgs[i];
       for (ip = 0; ip < argc; ip++) {
@@ -541,13 +580,14 @@ showpackages(const char *const *argv)
      * after their super-patterns, due to us skipping on first match. */
     for (ip = 0; ip < argc; ip++) {
       if (!found[ip]) {
-        fprintf(stderr, _("No packages found matching %s.\n"), argv[ip]);
+        notice(_("no packages found matching %s"), argv[ip]);
         failures++;
       }
-      pkg_spec_reset(&ps[ip]);
+      pkg_spec_destroy(&ps[ip]);
     }
-    free(found);
+
     free(ps);
+    free(found);
   }
 
   m_output(stdout, _("<standard output>"));
@@ -560,18 +600,47 @@ showpackages(const char *const *argv)
   return failures;
 }
 
-static void
-pkg_infodb_print_filename(const char *filename, const char *filetype)
+static bool
+pkg_infodb_is_internal(const char *filetype)
 {
   /* Do not expose internal database files. */
   if (strcmp(filetype, LISTFILE) == 0 ||
       strcmp(filetype, CONFFILESFILE) == 0)
-    return;
+    return true;
 
   if (strlen(filetype) > MAXCONTROLFILENAME)
+    return true;
+
+  return false;
+}
+
+static void
+pkg_infodb_check_filetype(const char *filetype)
+{
+  const char *c;
+
+  /* Validate control file name for sanity. */
+  for (c = "/."; *c; c++)
+    if (strchr(filetype, *c))
+      badusage(_("control file contains %c"), *c);
+}
+
+static void
+pkg_infodb_print_filename(const char *filename, const char *filetype)
+{
+  if (pkg_infodb_is_internal(filetype))
     return;
 
   printf("%s\n", filename);
+}
+
+static void
+pkg_infodb_print_filetype(const char *filename, const char *filetype)
+{
+  if (pkg_infodb_is_internal(filetype))
+    return;
+
+  printf("%s\n", filetype);
 }
 
 static void
@@ -580,7 +649,7 @@ control_path_file(struct pkginfo *pkg, const char *control_file)
   const char *control_path;
   struct stat st;
 
-  control_path = pkgadminfile(pkg, &pkg->installed, control_file);
+  control_path = pkg_infodb_get_file(pkg, &pkg->installed, control_file);
   if (stat(control_path, &st) < 0)
     return;
   if (!S_ISREG(st.st_mode))
@@ -592,14 +661,13 @@ control_path_file(struct pkginfo *pkg, const char *control_file)
 static int
 control_path(const char *const *argv)
 {
+  struct dpkg_error err;
   struct pkginfo *pkg;
-  const char *pkg_name;
+  const char *pkgname;
   const char *control_file;
-  enum modstatdb_rw msdb_status;
-  struct pkg_spec pkgspec = PKG_SPEC_INIT(psf_def_native);
 
-  pkg_name = *argv++;
-  if (!pkg_name)
+  pkgname = *argv++;
+  if (!pkgname)
     badusage(_("--%s needs at least one package name argument"),
              cipaction->olong);
 
@@ -607,23 +675,19 @@ control_path(const char *const *argv)
   if (control_file && *argv)
     badusage(_("--%s takes at most two arguments"), cipaction->olong);
 
-  /* Validate control file name for sanity. */
-  if (control_file) {
-    const char *c;
+  if (control_file)
+    pkg_infodb_check_filetype(control_file);
 
-    for (c = "/."; *c; c++)
-      if (strchr(control_file, *c))
-        badusage(_("control file contains %c"), *c);
-  }
+  modstatdb_open(msdbrw_readonly);
 
-  msdb_status = modstatdb_open(msdbrw_readonly);
-  pkg_infodb_init(msdb_status);
-
-  pkg = pkg_spec_find_pkg(&pkgspec, pkg_name);
+  pkg = pkg_spec_parse_pkg(pkgname, &err);
+  if (pkg == NULL)
+    badusage(_("--%s needs a valid package name but '%.250s' is not: %s"),
+             cipaction->olong, pkgname, err.str);
 
   if (pkg->status == stat_notinstalled)
-    ohshit(_("Package `%s' is not installed.\n"),
-           pkg_describe(pkg, pdo_foreign));
+    ohshit(_("package '%s' is not installed"),
+           pkg_name(pkg, pnaw_nonambig));
 
   if (control_file)
     control_path_file(pkg, control_file);
@@ -631,6 +695,76 @@ control_path(const char *const *argv)
     pkg_infodb_foreach(pkg, &pkg->installed, pkg_infodb_print_filename);
 
   modstatdb_shutdown();
+
+  return 0;
+}
+
+static int
+control_list(const char *const *argv)
+{
+  struct dpkg_error err;
+  struct pkginfo *pkg;
+  const char *pkgname;
+
+  pkgname = *argv++;
+  if (!pkgname || *argv)
+    badusage(_("--%s takes one package name argument"), cipaction->olong);
+
+  modstatdb_open(msdbrw_readonly);
+
+  pkg = pkg_spec_parse_pkg(pkgname, &err);
+  if (pkg == NULL)
+    badusage(_("--%s needs a valid package name but '%.250s' is not: %s"),
+             cipaction->olong, pkgname, err.str);
+
+  if (pkg->status == stat_notinstalled)
+    ohshit(_("package '%s' is not installed"), pkg_name(pkg, pnaw_nonambig));
+
+  pkg_infodb_foreach(pkg, &pkg->installed, pkg_infodb_print_filetype);
+
+  modstatdb_shutdown();
+
+  return 0;
+}
+
+static int
+control_show(const char *const *argv)
+{
+  struct dpkg_error err;
+  struct pkginfo *pkg;
+  const char *pkgname;
+  const char *filename;
+  const char *control_file;
+
+  pkgname = *argv++;
+  if (!pkgname || !*argv)
+    badusage(_("--%s takes exactly two arguments"),
+             cipaction->olong);
+
+  control_file = *argv++;
+  if (!control_file || *argv)
+    badusage(_("--%s takes exactly two arguments"), cipaction->olong);
+
+  pkg_infodb_check_filetype(control_file);
+
+  modstatdb_open(msdbrw_readonly);
+
+  pkg = pkg_spec_parse_pkg(pkgname, &err);
+  if (pkg == NULL)
+    badusage(_("--%s needs a valid package name but '%.250s' is not: %s"),
+             cipaction->olong, pkgname, err.str);
+
+  if (pkg->status == stat_notinstalled)
+    ohshit(_("package '%s' is not installed"), pkg_name(pkg, pnaw_nonambig));
+
+  if (pkg_infodb_has_file(pkg, &pkg->installed, control_file))
+    filename = pkg_infodb_get_file(pkg, &pkg->installed, control_file);
+  else
+    ohshit(_("control file '%s' does not exist"), control_file);
+
+  modstatdb_shutdown();
+
+  file_show(filename);
 
   return 0;
 }
@@ -664,18 +798,22 @@ usage(const struct cmdinfo *ci, const char *value)
 "  -l|--list [<pattern> ...]        List packages concisely.\n"
 "  -W|--show [<pattern> ...]        Show information on package(s).\n"
 "  -S|--search <pattern> ...        Find package(s) owning file(s).\n"
+"     --control-list <package>      Print the package control file list.\n"
+"     --control-show <package> <file>\n"
+"                                   Show the package control file.\n"
 "  -c|--control-path <package> [<file>]\n"
 "                                   Print path for package control file.\n"
 "\n"));
 
   printf(_(
-"  -h|--help                        Show this help message.\n"
-"  --version                        Show the version.\n"
+"  -?, --help                       Show this help message.\n"
+"      --version                    Show the version.\n"
 "\n"));
 
   printf(_(
 "Options:\n"
 "  --admindir=<directory>           Use <directory> instead of %s.\n"
+"  --load-avail                     Use available file on --show and --list.\n"
 "  -f|--showformat=<format>         Use alternative format for --show.\n"
 "\n"), ADMINDIR);
 
@@ -693,8 +831,8 @@ usage(const struct cmdinfo *ci, const char *value)
   exit(0);
 }
 
-const char thisname[]= "dpkg-query";
-const char printforhelp[]= N_("Use --help for help about querying packages.");
+static const char printforhelp[] = N_(
+"Use --help for help about querying packages.");
 
 static const char *admindir;
 
@@ -709,37 +847,34 @@ static const struct cmdinfo cmdinfos[]= {
   ACTION( "search",                         'S', act_searchfiles,   searchfiles     ),
   ACTION( "show",                           'W', act_listpackages,  showpackages    ),
   ACTION( "control-path",                   'c', act_controlpath,   control_path    ),
+  ACTION( "control-list",                    0,  act_controllist,   control_list    ),
+  ACTION( "control-show",                    0,  act_controlshow,   control_show    ),
 
   { "admindir",   0,   1, NULL, &admindir,   NULL          },
+  { "load-avail", 0,   0, &opt_loadavail, NULL, NULL, 1    },
   { "showformat", 'f', 1, NULL, &showformat, NULL          },
-  { "help",       'h', 0, NULL, NULL,        usage         },
+  { "help",       '?', 0, NULL, NULL,        usage         },
   { "version",    0,   0, NULL, NULL,        printversion  },
   {  NULL,        0,   0, NULL, NULL,        NULL          }
 };
 
 int main(int argc, const char *const *argv) {
-  int (*actionfunction)(const char *const *argv);
   int ret;
 
-  setlocale(LC_ALL, "");
-  bindtextdomain(PACKAGE, LOCALEDIR);
-  textdomain(PACKAGE);
-
-  standard_startup();
-  myopt(&argv, cmdinfos);
+  dpkg_set_report_piped_mode(_IOFBF);
+  dpkg_locales_init(PACKAGE);
+  dpkg_program_init("dpkg-query");
+  dpkg_options_parse(&argv, cmdinfos, printforhelp);
 
   admindir = dpkg_db_set_dir(admindir);
 
   if (!cipaction) badusage(_("need an action option"));
 
-  setvbuf(stdout, NULL, _IONBF, 0);
   filesdbinit();
 
-  actionfunction = (int (*)(const char *const *))cipaction->arg_func;
+  ret = cipaction->action(argv);
 
-  ret = actionfunction(argv);
-
-  standard_shutdown();
+  dpkg_program_done();
 
   return !!ret;
 }

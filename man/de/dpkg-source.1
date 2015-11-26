@@ -1,15 +1,36 @@
-.\" Authors: Ian Jackson, RaphaÃ«l Hertzog
+.\" dpkg manual page - dpkg-source(1)
+.\"
+.\" Copyright Â© 1995-1996 Ian Jackson <ian@chiark.chu.cam.ac.uk>
+.\" Copyright Â© 2000 Wichert Akkerman <wakkerma@debian.org>
+.\" Copyright Â© 2006-2007 Frank Lichtenheld <djpig@debian.org>
+.\" Copyright Â© 2006-2013 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2008-2011 RaphaÃ«l Hertzog <hertzog@debian.org>
+.\" Copyright Â© 2010 Joey Hess <joeyh@debian.org>
+.\"
+.\" This is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <https://www.gnu.org/licenses/>.
+.
 .\"*******************************************************************
 .\"
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH dpkg\-source 1 2009\-11\-11 Debian\-Projekt dpkg\-Hilfsprogramme
+.TH dpkg\-source 1 2013\-12\-05 Debian\-Projekt dpkg\-Hilfsprogramme
 .SH NAME
 dpkg\-source \- Debian Quellpaket\- (.dsc) Manipulations\-Werkzeuge
 .
 .SH ÜBERSICHT
-\fBdpkg\-source\fP [\fIOptionen\fP] \fIBefehl\fP
+\fBdpkg\-source\fP [\fIOption\fP ?] \fIBefehl\fP
 .
 .SH BESCHREIBUNG
 \fBdpkg\-source\fP packt und entpackt Debian Quellarchive.
@@ -71,30 +92,39 @@ Bedingungen und mit den gleichen Parametern).
 
 .TP 
 \fB\-\-before\-build\fP \fIVerzeichnis\fP
-Dieser Befehl sollte vor jedem Bau des Pakets aufgerufen werden
-(\fBdpkg\-buildpackage\fP ruft ihn sehr früh vor \fBdebian/rules clean\fP
-auf). Dieser Befehl sollte idempotent sein und kann mehrfach aufgerufen
-werden. Nicht alle Quellformate implementieren in diesem Hook etwas und wenn
-dies erfolgt, dann gewöhnlich zur Vorbereitung des Quellbaums für den Bau,
-in dem beispielsweise sichergestellt wird, dass alle Debian\-Patches
-angewandt sind.
+Der entsprechende Hook dess Quellpaketformats soll ausgeführt werden. Dieser
+Hook wird vor jedem Bau des Pakets aufgerufen (\fBdpkg\-buildpackage\fP ruft ihn
+sehr früh, sogar vor \fBdebian/rules clean\fP auf). Dieser Befehl ist
+idempotent und kann mehrfach aufgerufen werden. Nicht alle Quellformate
+implementieren in diesem Hook etwas und wenn dies erfolgt, dann gewöhnlich
+zur Vorbereitung des Quellbaums für den Bau, in dem beispielsweise
+sichergestellt wird, dass alle Debian\-Patches angewandt sind.
 
 .TP 
 \fB\-\-after\-build\fP \fIVerzeichnis\fP
-Dieser Befehl sollte nach jedem Bau des Pakets aufgerufen werden
-(\fBdpkg\-buildpackage\fP ruft als letztes auf). Dieser Befehl sollte idempotent
-sein und kann mehrfach aufgerufen werden. Nicht alle Quellformate
-implementieren in diesem Hook etwas und wenn dies erfolgt, dann gewöhnlich
-um rückgängig zu machen, was \fB\-\-before\-build\fP durchgeführt hat.
+Der entsprechende Hook dess Quellpaketformats soll ausgeführt werden. Dieser
+Hook wird nach jedem Bau des Pakets aufgerufen (\fBdpkg\-buildpackage\fP ruft
+als letztes auf). Dieser Befehl ist idempotent und kann mehrfach aufgerufen
+werden. Nicht alle Quellformate implementieren in diesem Hook etwas und wenn
+dies erfolgt, dann gewöhnlich um rückgängig zu machen, was \fB\-\-before\-build\fP
+durchgeführt hat.
 
 .TP 
-\fB\-h\fP, \fB\-\-help\fP
+\fB\-\-commit\fP [\fIVerzeichnis\fP] ?
+Zeichnet Änderungen am in \fIVerzeichnis\fP entpackten Quellbaum auf. Dieser
+Befehl kann zusätzliche Parameter akzeptieren, abhängig vom Quellformat. Er
+wird zu einer Fehlermeldung bei Formaten, für denen dieser Vorgang keine
+Bedeutung hat, führen.
+
+.TP 
+\fB\-?\fP, \fB\-\-help\fP
 Zeige den Bedienungshinweis und beende.
 .TP 
 \fB\-\-version\fP
 Gebe die Version aus und beende sich.
 .
-.SH "GENERISCHE BAUOPTIONEN"
+.SH OPTIONEN
+.SS "Generische Bau\-Optionen"
 .TP 
 \fB\-c\fP\fISteuerdatei\fP
 Bestimmt die Hauptquell\-»control«\-Datei, aus der Informationen ausgelesen
@@ -103,16 +133,14 @@ relativ ist, wird dieser relativ zum obersten Verzeichnis des Quellbaums
 interpretiert.
 .TP 
 \fB\-l\fP\fIChangelog\-Datei\fP
-Bestimmt die »change log«\-Datei, aus der Informationen ausgelesen werden
+Bestimmt die »changelog«\-Datei, aus der Informationen ausgelesen werden
 sollen. Der Standardwert ist \fBdebian/changelog\fP. Falls der Pfadname relativ
 ist, wird dieser relativ zum obersten Verzeichnis des Quellbaums
 interpretiert.
 .TP 
 \fB\-F\fP\fIChangelog\-Format\fP
-Gibt das Format der Änderungsprotokolldatei an. Standardmäßig wird das
-Format aus einer speziellen Zeile in der Nähe des Endes der
-Änderungsprotokolldatei gelesen oder, falls dies fehlschlägt, wird das
-Debian\-Standardformat angenommen.
+Spezifiziert das Format des Changelogs. Lesen Sie \fBdpkg\-parsechangelog\fP(1)
+für Informationen über alternative Formate.
 .TP 
 \fB\-\-format=\fP\fIWert\fP
 Verwende das angegebene Format zum Bau des Quellpakets. Es überschreibt
@@ -122,8 +150,8 @@ jedes in \fBdebian/source/format\fP angegebene Format.
 Setzt eine Ausgabesubstitutionsvariable. Lesen Sie \fBdeb\-substvars\fP(5) für
 eine Besprechung des Ausgabesubstitution.
 .TP 
-\fB\-T\fP\fIsubstvardatei\fP
-Lese Substitutionsvariablen aus \fIsubstvardatei\fP; standardmäßig wird keine
+\fB\-T\fP\fISubstvars\-Datei\fP
+Lese Substitutionsvariablen aus \fISubstvars\-Datei\fP; standardmäßig wird keine
 Datei gelesen. Diese Option kann mehrfach verwandt werden, um
 Substitutionsvariablen aus mehreren Dateien einzulesen.
 .TP 
@@ -138,26 +166,31 @@ Gibt die Komprimierung an, die für die angelegte Dateien (Tarbälle und
 Diffs) verwendet wird. Beachten Sie, dass diese Option nicht dazu führt,
 dass existierende Tarbälle rekomprimiert werden, sie betrifft nur neue
 Dateien. Unterstützte Werte sind \fIgzip\fP, \fIbzip2\fP, \fIlzma\fP und
-\fIxz\fP. \fIgzip\fP ist voreingestellt. \fIxz\fP wird erst seit Dpkg\-dev 1.15.5
+\fIxz\fP. \fIgzip\fP ist voreingestellt. \fIxz\fP wird erst seit Dpkg 1.15.5
 unterstützt.
 .TP 
 \fB\-z\fP\fIStufe\fP, \fB\-\-compression\-level\fP=\fIStufe\fP
 Zu verwendende Komprimierstufe. Wie bei \fB\-Z\fP betrifft dies nur neu
 angelegte Dateien. Unterstützte Werte sind \fI1\fP bis \fI9\fP, \fIbest\fP (am
-besten) und \fIfast\fP (schnell). \fI9\fP ist voreingestellt.
+besten) und \fIfast\fP (schnell). Der Standardwert ist \fI9\fP für Gzip und Bzip2,
+\fI6\fP für Xz und Lzma.
 .TP 
-\fB\-i\fP[\fIregexp\fP], \fB\-\-diff\-ignore\fP[=\fIregexp\fP]
+\fB\-i\fP[\fIregex\fP], \fB\-\-diff\-ignore\fP[=\fIregex\fP]
 Sie können einen regulären Perl\-Ausdruck angeben, der auf Dateien passt, die
 Sie aus der Liste der Dateien für den Diff entfernen möchten; diese Liste
 wird von einem Find\-Befehl generiert. Falls das Quellpaket als Version
 3\-Quellpaket mittels eines VCS gebaut wird, ignoriert dies stattdessen
 Änderungen an bestimmten Dateien, die noch nicht übertragen (»committed«)
-wurden (mit \-i.* werden alle davon ignoriert). \fB\-i\fP aktiviert diese Option
-mit einem voreingestellten regulären Ausdruck, der Steuerdateien und
-\-Verzeichnisse der häufigsten Revisionskontrollsysteme, Backups,
-Swap\-Dateien und Bau\-Ausgabeverzeichnisse von Libtool herausgefiltert. Es
-kann nur einen aktiven regulären Ausdruck geben, von mehrfach angegebenen
-\fB\-i\fP\-Optionen wird nur die letzte berücksichtigt.
+wurden (mit \-i.* werden alle davon ignoriert).
+
+Die Option \fB\-i\fP selbst aktiviert diese Einstellung mit einem
+voreingestellten regulären Ausdruck (der alle Änderungen durch einen
+standardmäßigen regulären Ausdruck erhält, die durch einen früheren Aufruf
+von \fB\-\-extend\-diff\-ignore\fP erfolgten), der Steuerdateien und \-Verzeichnisse
+der häufigsten Revisionskontrollsysteme, Backups, Swap\-Dateien und
+Bau\-Ausgabeverzeichnisse von Libtool herausgefiltert. Es kann nur einen
+aktiven regulären Ausdruck geben, von mehrfach angegebenen \fB\-i\fP\-Optionen
+wird nur die letzte berücksichtigt.
 
 Dies ist sehr hilfreich, um irrelevante Dateien, die im Diff aufgenommen
 werden, zu entfernen. Falls Sie zum Beispiel Ihre Quellen in einem
@@ -170,23 +203,23 @@ standardmäßig auf alle Teile des Pfades passen kann. Falls Sie daher nur den
 Anfang eines Pfades oder komplette Dateinamen vergleichen wollen, müssen Sie
 die notwendigen Anker (z.B. »(^|/)«, »($|/)«) selbst bereitstellen.
 .TP 
-\fB\-\-extend\-diff\-ignore\fP=\fIregexp\fP
-Der angegebene reguläre Ausdruck (Perl\-Format) wird dem standardmäßigen
-regulären Ausdruck, der mit \fB\-i\fP verknüpft ist, erweiteren, indem
-»\fB|\fP\fIregexp\fP« an den standardmäßigen regulären Ausdruck angehängt
-wird. Diese Option ist bequem in \fBdebian/source/options\fP zu nutzen, um
-einige automatisch erstellten Dateien von der automatischen Patch\-Erzeugung
-auszuschließen.
+\fB\-\-extend\-diff\-ignore\fP=\fIregex\fP
+Der angegebene reguläre Ausdruck (Perl\-Format) wird den standardmäßigen von
+\fB\-\-diff\-ignore\fP verwandten Wert und dessen aktuellen Wert (falls gesetzt)
+erweitern. Dies erfolgt, indem »\fB|\fP\fIregex\fP« an den existierenden Wert
+angehängt wird. Diese Option ist bequem in \fBdebian/source/options\fP zu
+nutzen, um einige automatisch erstellten Dateien von der automatischen
+Patch\-Erzeugung auszuschließen.
 .TP 
 \fB\-I\fP[\fIDateimuster\fP], \fB\-\-tar\-ignore\fP[=\fIDateimuster\fP]
-Falls diese Option angegeben wird, wird der Dateiname an die
-\-\-exclude\-Option von \fBtar\fP(1) weitergegeben, wenn es zur Erstellung der
-Datei .orig.tar oder .tar aufgerufen wird. Zum Beispiel führt \-ICVS dazu,
-dass tar über CVS\-Verzeichnisse hinweggeht, wenn es eine .tar\-Datei
+Falls diese Option angegeben wird, wird der Dateiname an die Option
+\fB\-\-exclude\fP von \fBtar\fP(1) weitergegeben, wenn es zur Erstellung der Datei
+\&.orig.tar oder .tar aufgerufen wird. Zum Beispiel führt \fB\-I\fPCVS dazu, dass
+tar über CVS\-Verzeichnisse hinweggeht, wenn es eine .tar\-Datei
 erstellt. Diese Option kann mehrfach wiederholt werden, um mehrere Muster
 aufzuführen, die ausgeschlossen werden sollen.
 
-\fB\-I\fP fügt standardmäßig von selbst \-\-exclude\-Optionen hinzu, die die
+\fB\-I\fP fügt standardmäßig von selbst \fB\-\-exclude\fP\-Optionen hinzu, die die
 Steuerdateien und \-Verzeichnisse der häufigsten Revisionskontrollsysteme,
 Backups, Swap\-Dateien und Bau\-Ausgabeverzeichnisse von Libtool
 herausfiltern.
@@ -197,14 +230,14 @@ werden und nimmt einen regulären Perlausdruck an, der gegen den vollen
 relativen Pfad jeder Datei geprüft wird. \fB\-I\fP kann mehrfach angegeben
 werden und nimmt ein Dateinamen\-Muster mit Shell\-Jokerzeichen an. Das Muster
 wird gegen den vollen relativen Pfad aber auch individuell gegen jeden Teil
-des Pfades angewendet. Die exakte Symantik der Option \-\-exclude ist etwas
+des Pfades angewendet. Die exakte Symantik der Option \fB\-\-exclude\fP ist etwas
 kompliziert, lesen Sie
-http://www.gnu.org/software/tar/manual/tar.html#wildcards für eine komplette
-Dokumentation.
+https://www.gnu.org/software/tar/manual/tar.html#wildcards für eine
+komplette Dokumentation.
 
 Der voreingestellte reguläre Ausdruck und Muster für beide Optionen können
 in der Ausgabe des Befehls \fB\-\-help\fP gesehen werden.
-.SH "GENERISCHE EXTRAHIERUNGSOPTIONEN"
+.SS "Generische Extrahierungs\-Optionen"
 .TP 
 \fB\-\-no\-copy\fP
 Kopiere die Original\-Tarbälle in die Nähe des extrahierten Quellpakets.
@@ -222,7 +255,7 @@ Debian\-Schüsselringe (\fI/usr/share/keyrings/debian\-keyring.gpg\fP und
 .SH QUELLPAKET\-FORMATE
 Falls Sie nicht wissen, welches Quellformat Sie verwenden sollen, verwenden
 Sie wahrscheinlich am besten entweder »3.0 (quilt)« oder »3.0
-(native)«. Lesen Sie http://wiki.debian.org/Projects/DebSrc3.0 für
+(native)«. Lesen Sie https://wiki.debian.org/Projects/DebSrc3.0 für
 Informationen über den Einsatz dieser Formate innerhalb von Debian.
 
 .SS "Format: 1.0"
@@ -250,9 +283,8 @@ das Extrahieren des Original\-Tarballs in ein separates Verzeichnis ».orig«
 und die Neuerstellung des \fB.diff.gz\fP durch Vergleich des
 Quellpaket\-\fIVerzeichnisses\fP mit dem Verzeichnis .orig ein.
 
-.TP 
 \fBBau\-Optionen (mit \-b):\fP
-.PP
+
 Falls ein zweites nicht\-Options\-Argument angegeben ist, sollte es der Namen
 des Originalquellverzeichnisses oder der Tardatei sein. Falls das Paket
 Debian\-spezifisch ist, dann sollte dieses Argument die leere Zeichenkette
@@ -266,6 +298,7 @@ ursprünglichen Quellverzeichnis \fIVerzeichnis\fP\fB.orig\fP, abhängig von den
 Tardateien oder Verzeichnisse überschreiben. Falls dies gewünscht ist,
 sollten stattdessen \fB\-sA\fP, \fB\-sP\fP, \fB\-sK\fP, \fB\-sU\fP und \fB\-sR\fP verwendet
 werden.
+.PP
 .TP 
 \fB\-sk\fP
 Gibt an, dass die Originalquellen als Tardatei erwartet werden sollen,
@@ -287,9 +320,9 @@ Wie \fB\-su\fP, aber das Verzeichnis wird nach der Verwendung entfernt.
 .TP 
 \fB\-ss\fP
 Gibt an, dass die Originalquellen sowohl als Verzeichnis als auch als
-Tardatei verfügbar sind. dpkg\-source wird das Verzeichnis zur Erstellung des
-Diffs verwenden, aber die Tardatei für die \fB.dsc\fP. Diese Option muss mit
-Vorsicht verwendet werden \- falls das Verzeichnis und die Tardatei nicht
+Tardatei verfügbar sind. \fBdpkg\-source\fP wird das Verzeichnis zur Erstellung
+des Diffs verwenden, aber die Tardatei für die \fB.dsc\fP. Diese Option muss
+mit Vorsicht verwendet werden \- falls das Verzeichnis und die Tardatei nicht
 zusammen passen, wird ein fehlerhaftes Quellarchiv erstellt.
 .TP 
 \fB\-sn\fP
@@ -320,9 +353,8 @@ außerhalb des Unterverzeichnisses »debian« enthält. Diese Option ist in
 \fBdebian/source/options\fP nicht erlaubt, kann aber in
 \fBdebian/source/local\-options\fP verwandt werden.
 
-.TP 
 \fBExtrahierungs\-Optionen (mit \-x):\fP
-.PP
+
 In allen Fällen werden die Originalquellbäume entfernt.
 .TP 
 \fB\-sp\fP
@@ -373,8 +405,8 @@ Ein Quellpaket in diesem Format enthält mindestens einen Original\-Tarball
 (\fB.orig.tar.\fP\fIerw\fP, wobei \fIerw\fP \fBgz\fP, \fBbz2\fP, \fBlzma\fP und \fBxz\fP sein
 kann) und einen Debian\-Tarball (\fB.debian.tar.\fP\fIerw\fP). Es kann auch
 zusätzliche Original\-Tarbälle (\fB.orig\-\fP\fIKomponente\fP\fB.tar.\fP\fIerw\fP))
-enthalten. \fIKomponente\fP kann nur alphanumerische Zeichen und
-Gedankenstriche (»\-«) enthalten.
+enthalten. \fIKomponente\fP kann nur alphanumerische Zeichen und Bindestriche
+(»\-«) enthalten.
 .PP
 \fBExtrahieren\fP
 .PP
@@ -392,16 +424,22 @@ Dann werden alle in \fBdebian/patches/debian.series\fP oder
 \fBdebian/patches/series\fP aufgeführten Patches angewandt. Falls die erstere
 Datei verwandt wird und die letztere nicht existiert (oder ein Symlink ist),
 dann wird die letztere mit einem Symlink zu ersterer ersetzt. Dies ist zur
-Vereinfachung der Verwendung von Quilt gedacht, um den Satz an Patches zu
-verwalten. Beachten Sie allerdings, dass \fBdpkg\-source\fP zwar Seriendateien
-auswertet, in denen explizite Optionen für die Anwendung der Patches
-verwandt werden (diese werden auf jede Zeile nach dem Patch\-Dateinamen und
-einem oder mehreren Leerzeichen gespeichert), diese Optionen dann aber
-ignoriert und immer erwartet, dass die Patches mit der Option \fB\-p1\fP von
-\fBpatch\fP angewandt werden können. Es wird daher eine Warnung ausgeben, wenn
-es auf solche Optionen trifft, und der Bau wird wahrscheinlich fehlschlagen.
+Vereinfachung der Verwendung von \fBquilt\fP gedacht, um die Gruppe von Patches
+zu verwalten. Beachten Sie allerdings, dass \fBdpkg\-source\fP zwar
+Seriendateien auswertet, in denen explizite Optionen für die Anwendung der
+Patches verwandt werden (diese werden auf jede Zeile nach dem
+Patch\-Dateinamen und einem oder mehreren Leerzeichen gespeichert), diese
+Optionen dann aber ignoriert und immer erwartet, dass die Patches mit der
+Option \fB\-p1\fP von \fBpatch\fP angewandt werden können. Es wird daher eine
+Warnung ausgeben, wenn es auf solche Optionen trifft, und der Bau wird
+wahrscheinlich fehlschlagen.
 .PP
-Ähnlich wie bei Quilt können Patches auch Dateien entfernen.
+Im Gegensatz zum Standardverhalten bei \fBquilt\fP wird erwartet, dass die
+Patches ohne Unschärfe angewandt werden können. Wenn das nicht der Fall ist,
+sollten Sie die Patches mit \fBquilt\fP erneuern oder \fBdpkg\-source\fP wird mit
+einer Fehlermeldung beim Versuch, sie anzuwenden, abbrechen.
+.PP
+Ähnlich wie bei \fBquilt\fP können Patches auch Dateien entfernen.
 .PP
 Die Datei \fB.pc/applied\-patches\fP wird angelegt, falls einige Patches während
 der Extrahierung angewandt wurden.
@@ -414,10 +452,12 @@ Entpacken verwandt, das debian\-Verzeichnis wird in das temporäre Verzeichnis
 kopiert und alle Patches außer dem automatischen Patch
 (\fBdebian\-changes\-\fP\fIVersion\fP oder \fBdebian\-changes\fP, abhängig von
 \fB\-\-single\-debian\-patch\fP) werden angewandt. Das temporäre Verzeichnis wird
-mit dem Quellpaketverzeichnis verglichen und der Diff (falls nicht\-leer)
-wird im automatischen Patch gespeichert. Falls der automatische Patch
-erzeugt/gelöscht wird, wird er zu der Datei series und den Quilt\-Metadaten
-hinzugefügt bzw. aus diesen gelöscht.
+mit dem Quellpaketverzeichnis verglichen. Wenn der Diff nicht leer ist,
+schlägt der Bau fehl, falls nicht \fB\-\-single\-debian\-patch\fP oder
+\fB\-\-auto\-commit\fP verwandt wurde; in diesem Fall wird der Diff im
+automatischen Patch gespeichert. Falls der automatische Patch
+erzeugt/gelöscht wird, wird er zu der Datei series und den
+\fBquilt\fP\-Metadaten hinzugefügt bzw. aus diesen gelöscht.
 
 Änderungen an Binärdateien können in einem Diff nicht dargestellt werden und
 führen daher zu einem Fehlschlag, es sei denn, der Betreuer hat sich
@@ -433,31 +473,50 @@ wird dann zur Erstellung des Debian\-Tarballs verwandt.
 Der automatisch erstellte Diff enthält keine Änderungen an VCS\-spezifischen
 sowie vielen temporären Dateien (lesen Sie hierzu den zur Option \fB\-i\fP
 zugeordneten Standardwert in der Ausgabe von \fB\-\-help\fP). Insbesondere wird
-das von Quilt verwandte \fB.pc\fP\-Verzeichnis während der Erstellung des
+das von \fBquilt\fP verwandte \fB.pc\fP\-Verzeichnis während der Erstellung des
 automatischen Patches ignoriert.
 
-Hinweis: \fBdpkg\-source\fP erwartet, dass alle Patches aus der Series\-Datei auf
-dem Quellbaum angewandt wurden, wenn Sie das Quellpaket erstellen. Dies ist
-z.B. nicht der Fall, wenn der Quellbaum durch Entpacken eines Quellpakets im
-Format: 1.0 erhalten wurde. Um das Problem zu entschärfen, wird
-\fBdpkg\-source\fP die Patches selbst anwenden, falls es glaubt, dass sie noch
-nicht angewandt wurden. Um diese Situation zu erkennen, verwendet es die
-folgende Heuristik: Es findet die Liste der vermutlich noch nicht
-angewandten Patches (sie sind in der Datei \fBseries\fP, aber nicht in der
-Datei \fB.pc/applied\-patches\fP aufgeführt) und wenn der erste Patch in dem
-Satz ohne Fehler angewandt werden kann, werden sie alle angewandt. Die
-Option \fB\-\-no\-preparation\fP kann zum Abschalten dieses Verhaltens verwandt
-werden. Dieser Ablauf passiert normalerweise als Teil des Befehls
-\fB\-\-prepare\-build\fP.
+Hinweis: \fBdpkg\-source\fP \fB\-\-before\-build\fP (und \fB\-b\fP) stellen sicher, dass
+alle in der Series\-Datei aufgeführten Patches angewendet sind, so dss ein
+Paketbau immer mit allen angewandten Patches durchgeführt wird. Dies
+erfolgt, indem nicht angewandte Patches ermittelt werden (sie sind in der
+Datei \fBseries\fP, aber nicht in der Datei \fB.pc/applied\-patches\fP aufgeführt)
+und wenn der erste Patch in dem Satz ohne Fehler angewandt werden kann,
+werden sie alle angewandt. Die Option \fB\-\-no\-preparation\fP kann zum
+Abschalten dieses Verhaltens verwandt werden.
+
+.PP
+\fBÄnderungen aufzeichnen\fP
+.TP 
+\fB\-\-commit\fP [\fIVerzeichnis\fP] [\fIPatch\-Name\fP] [\fIPatch\-Datei\fP]
+Erstellt einen Patch, der den lokalen Änderungen entspricht, die nicht vom
+\fBquilt\fP\-Patch\-System verwaltet werden und integriert es unter dem Namen
+\fIPatch\-Name\fP in das Patch\-System. Falls der Name fehlt, wird er interaktiv
+erfragt. Falls \fIPatch\-Datei\fP angegeben ist, wird er als Patch, der zu den
+lokalen Änderungen, die integriert werden sollen, gehört, verwandt. Sobald
+die Patch integriert wurde, wird ein Editor gestartet, so dass Sie die
+Metainformationen in den Kopfzeilen des Patches einfügen können.
+
+Die Verwendung von \fIpatch\-file\fP ist primär nach einem Baufehler nützlich,
+der diese Datei vorgenerierte und daher wird die übergebene Datei nach der
+Integration entfernt. Beachten Sie auch, dass die Änderungen, die in der
+Patch\-Datei angegeben sind, bereits im Baum angewandt worden sein müssen und
+dass die Dateien, die von diesem Patch geändert werden, keine zusätzlichen,
+nicht aufgezeichneten Änderungen enthalten dürfen.
+
+Falls die Patch\-Erzeugung veränderte Binärdateien erkennt, werden diese
+automatisch zu \fBdebian/source/include\-binaries\fP hinzugefügt, so dass sie im
+Debian\-Tarball landen (genau wie dies \fBdpkg\-source \-\-include\-binaries \-b\fP
+machen würde).
 .PP
 \fBBau\-Optionen\fP
 .TP 
 \fB\-\-allow\-version\-of\-quilt\-db=\fP\fIVersion\fP
 Erlaubt es \fBdpkg\-source\fP, ein Quellpaket zu bauen, falls die Version der
-Quilt\-Metadaten die angegebene ist, selbst falls \fBdpkg\-source\fP nichts davon
-weiß. Effektiv teilt dies mit, dass die angegebene Version der
-Quilt\-Metadaten zu Version 2, die \fBdpkg\-source\fP derzeit unterstützt,
-kompatibel ist. Die Version der Quilt\-Metadaten wird in \fB.pc/.version\fP
+\fBquilt\fP\-Metadaten die angegebene ist, selbst falls \fBdpkg\-source\fP nichts
+davon weiß. Effektiv teilt dies mit, dass die angegebene Version der
+\fBquilt\fP\-Metadaten zu Version 2, die \fBdpkg\-source\fP derzeit unterstützt,
+kompatibel ist. Die Version der \fBquilt\fP\-Metadaten wird in \fB.pc/.version\fP
 gespeichert.
 .TP 
 \fB\-\-include\-removal\fP
@@ -484,10 +543,10 @@ Baus automatisch generierten Patch. Diese Option ist insbesondere nützlich,
 wenn das Paket in einem VCS betreut wird und ein Patch\-Satz nicht
 zuverlässig erstellt werden kann. Stattdessen sollte der aktuelle Diff zu
 den Quellen der Originalautoren in einem einzelnen Patch gespeichert
-werden. Beim Verwenden dieser Option wird empfohlen, eine Datei
-debian/source/patch\-header zu erstellen, in der erklärt wird, wie die
-Debian\-Änderungen am besten begutachtet werden können, beispielsweise im
-eingesetzten VCS.
+werden. Diese Option sollte in \fBdebian/source/local\-options\fP eingestellt
+werden und würde dann von einer Datei \fBdebian/source/local\-patch\-header\fP
+begleitet, in der erklärt wird, wie die Debian\-Änderungen am besten
+begutachtet werden können, beispielsweise im eingesetzten VCS.
 .TP 
 \fB\-\-create\-empty\-orig\fP
 Erstelle den Hauptoriginal\-Tarball automatisch als leer falls er fehlt und
@@ -495,21 +554,24 @@ falls es ergänzende Original\-Tarbälle gibt. Diese Option ist dafür gedacht,
 wenn das Quellpaket nur eine Sammlung von mehreren Softwaren der
 Originalautoren ist und es keine »Haupt«\-Software gibt.
 .TP 
-\fB\-\-unapply\-patches\fP
-Entfernt die Patches im Hook \fB\-\-after\-build\fP. Dies ist hauptsächlich
-nützlich, wenn Sie Ihr Paket direkt in einem VCS bauen, das die Quellen der
-Originalautoren ohne Patches enthält und in dem Sie den Baum ohne Patches
-behalten wollen, selbst nachdem ein Paket gebaut wurde. Diese Option kommt
-normalerweise in \fBdebian/source/local\-options\fP (sie ist in
-\fBdebian/source/options\fP nicht erlaubt, so dass die erstellten Quellpakete
-standardmäßig das gleiche Verhalten zeigen).
+\fB\-\-no\-unapply\-patches, \-\-unapply\-patches\fP
+Standardmäßig wird \fBdpkg\-source\fP die Patches im \fB\-\-after\-build\fP\-Hook
+entfernen, falls es sie in \fB\-\-before\-build\fP angewandt hat. Diese Optionen
+erlauben es Ihnen, den Patch\-Anwendungs\- oder \-Entfernungs\-Prozess
+zwangsweise zu aktivieren bzw. zu deaktivieren. Diese Optionen sind nur in
+\fBdebian/source/local\-options\fP erlaubt, so dass alle erstellten Quellpakete
+standardmäßig das gleiche Verhalten zeigen.
 .TP 
 \fB\-\-abort\-on\-upstream\-changes\fP
 Dieser Prozess schlägt fehl, falls ein automatischer Patch erstellt
 wurde. Diese Option kann dazu verwandt werden, sicherzustellen, dass alle
-Änderungen korrekt in separaten Quilt\-Patches aufgezeichnet wurden, bevor
+Änderungen korrekt in separaten \fBquilt\fP\-Patches aufgezeichnet wurden, bevor
 das Paket gebaut wurde. Diese Option ist in \fBdebian/source/options\fP nicht
 erlaubt, kann aber in \fBdebian/source/local\-options\fP verwandt werden.
+.TP 
+\fB\-\-auto\-commit\fP
+Der Vorgang schlägt nicht fehl, falls ein automatischer Patch erstellt
+wurde, stattdessen wird dieser sofort in die \fBquilt\fP\-Serie aufgenommen.
 
 .PP
 \fBExtrahierungs\-Optionen\fP
@@ -535,7 +597,7 @@ muss angegeben werden.
 \fB\-\-target\-format=\fP\fIWert\fP
 \fBNotwendig\fP. Definiert das echte Format des generierten Quellpakets. Die
 generierte .dsc\-Datei wird diesen Wert und nicht »3.0 (custom)« in ihrem
-\fIFormat\fP\-Feld enthalten.
+\fBFormat\fP\-Feld enthalten.
 .
 .SS "Format: 3.0 (git)"
 Dieses Format ist experimentell.
@@ -574,10 +636,10 @@ Verwendung deaktiviert das standardmäßige Verhalten, alle Zweige und
 Markierungen aufzunehmen. Kann mehrfach angegeben werden. \fIReferenz\fP kann
 der Name eines Zweiges oder einer Markierung, der/die aufgenommen werden
 soll, sein. Es kann auch ein Parameter sein, der an \fBgit\-rev\-list\fP(1)
-übergeben werden kann. Verwenden Sie beispielsweise »\-\-git\-ref=master«, um
+übergeben werden kann. Verwenden Sie beispielsweise \fB\-\-git\-ref=\fPmaster, um
 nur den Master\-Zweig aufzunehmen. Um alle Markierungen und Zweige außer dem
-Zweig »private« aufzunehmen, verwenden Sie »\-\-git\-ref=\-\-all
-\-\-git\-ref=^private.
+Zweig »private« aufzunehmen, verwenden Sie \fB\-\-git\-ref=\fP\-\-all
+\fB\-\-git\-ref=\fP^private.
 .TP 
 \fB\-\-git\-depth=\fP\fIZahl\fP
 Erstellt einen seichten Klon mit einem Verlauf, der bei der angegebenen
@@ -601,13 +663,13 @@ Dann wird der VCS\-spezifische Teil des Quellpakets in ein temporäres
 Verzeichnis kopiert. Bevor dieses temporäre Verzeichnis in einen Tarball
 gepackt wird, werden verschiedene Bereinigungen durchgeführt, um Platz zu
 sparen.
-.SH "WARNUNGEN UND FEHLER"
+.SH DIAGNOSE
 .SS "kein Quellformat in debian/source/format angegeben"
 Die Datei \fBdebian/source/format\fP sollte immer existieren und das gewünschte
 Quellformat angeben. Für Rückwärtskompatibilität wird das Format »1.0«
 angenommen, wenn die Datei nicht existiert, aber Sie sollten sich nicht
-darauf verlassen: Irgendwann in der Zukunft wird dpkg\-source verändert und
-dann fehlschlagen, wenn diese Datei nicht existiert.
+darauf verlassen: Irgendwann in der Zukunft wird \fBdpkg\-source\fP verändert
+und dann fehlschlagen, wenn diese Datei nicht existiert.
 
 Die Begründung liegt darin, dass »1.0« nicht mehr das empfohlene Format ist,
 Sie sollten normalerweise eines der neueren Formate (»3.0 (quilt)«, »3.0
@@ -635,6 +697,9 @@ Leere Dateien können nicht mit Patchdateien erstellt werden. Daher wird
 diese Änderung nicht im Quellpaket aufgezeichnet und Sie erhalten dazu diese
 Warnung.
 .SS "ausführbarer Modus \fIRechte\fP von \fIDatei\fP wird nicht im Diff dargestellt werden"
+Patch\-Dateien speichern nicht die Rechte von Dateien und daher werden
+ausführbare Rechte nicht im Quellpaket gespeichert. Diese Warnung erinnert
+Sie an diese Tatsache.
 .SS "besonderer Modus \fIRechte\fP von \fIDatei\fP wird nicht im Diff dargestellt werden"
 Patch\-Dateien speichern nicht die Rechte von Dateien und daher werden
 geänderte Rechte nicht im Quellpaket gespeichert. Diese Warnung erinnert Sie
@@ -667,6 +732,8 @@ ist ein Beispiel für so eine Datei:
   compression\-level = 9
   # verwende debian/patches/debian\-changes als automatischen Patch
   single\-debian\-patch
+  # ignoriere Änderungen von config.{sub,guess}
+  extend\-diff\-ignore = "(^|/)(config.sub|config.guess)$"
 .P
 Hinweis: \fB\-\-format\fP\-Optionen werden in dieser Datei nicht akzeptiert, Sie
 sollten stattdessen \fBdebian/source/format\fP verwenden.
@@ -675,9 +742,11 @@ Genau wie \fBdebian/source/options\fP, außer das die Datei nicht in das
 erstellte Quellpaket aufgenommen wird. Dies kann nützlich sein, um
 Voreinstellungen zu speichern, die an einen bestimmten Betreuer oder an ein
 bestimmtes VCS, in dem das Paket gewartet wird, gebunden sind.
-.SS debian/source/patch\-header
+.SS "debian/source/local\-patch\-header und debian/source/patch\-header"
 Formloser Text, der an den Anfang des in den Formaten »2.0« und »3.0
-(quilt)« generierten automatischen Patches gestellt wird.
+(quilt)« generierten automatischen Patches gestellt
+wird. \fBlocal\-patch\-header\fP wird dem erstellen Quellpaket nicht hinzugefügt,
+\fBpatch\-header\fP dagegen schon.
 .SS debian/patches/series
 Diese Datei führt alle Patches auf, die (in der angegebenen Reihenfolge) auf
 das Quellpaket der Originalautoren angewandt werden müssen. Leerzeichen am
@@ -687,12 +756,12 @@ verbleibenen Zeilen beginnen mit dem Dateinamen eines Patches (relativ zum
 Verzeichnis \fBdebian/patches/\fP) bis zum ersten Leerzeichen oder bis zum
 Zeilenende. Bis zum Ende der Zeile oder bis zum ersten »#« gefolgt von einem
 oder mehreren Leerzeichen (dies markiert den Beginn eines Kommentars, der
-bis zum Zeilenende geht) können optionale Quilt\-Befehle folgen.
+bis zum Zeilenende geht) können optionale \fBquilt\fP\-Befehle folgen.
 .SH FEHLER
 Die Stelle, an der das Überschreiben von Feldern passiert, verglichen mit
 bestimmten Standard\-Ausgabe\-Feldeinstellungen, ist eher konfus.
 .SH ÜBERSETZUNG
-Die deutsche Übersetzung wurde 2004, 2006-2010 von Helge Kreutzmann
+Die deutsche Übersetzung wurde 2004, 2006-2013 von Helge Kreutzmann
 <debian@helgefjell.de>, 2007 von Florian Rehnisch <eixman@gmx.de> und
 2008 von Sven Joachim <svenjoac@gmx.de>
 angefertigt. Diese Übersetzung ist Freie Dokumentation; lesen Sie die
@@ -700,13 +769,3 @@ GNU General Public License Version 2 oder neuer für die Kopierbedingungen.
 Es gibt KEINE HAFTUNG.
 .SH "SIEHE AUCH"
 \fBdpkg\-deb\fP(1), \fBdpkg\fP(1), \fBdselect\fP(1).
-.
-.SH AUTOREN
-Copyright \(co 1995\-1996 Ian Jackson
-.br
-Copyright \(co 2000 Wichert Akkerman
-.br
-Copyright \(co 2007\-2010 Rapha\[:e]l Hertzog
-.sp
-Dies ist Freie Software; lesen Sie die GNU General Public License Version 2
-oder neuer für die Kopierbedingungen. Es gibt KEINE Haftung.

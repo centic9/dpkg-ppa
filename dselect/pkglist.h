@@ -1,5 +1,5 @@
-/* -*- c++ -*-
- * dselect - selection of Debian packages
+/*
+ * dselect - Debian package maintenance user interface
  * pkglist.h - external definitions for package list handling
  *
  * Copyright © 1994,1995 Ian Jackson <ian@chiark.greenend.org.uk>
@@ -16,7 +16,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #ifndef PKGLIST_H
@@ -38,7 +38,7 @@ enum selpriority {
   sp_inherit,     // inherited from our parent list
   sp_selecting,   // propagating a selection
   sp_deselecting, // propagating a deselection
-  sp_fixed        // it came from the `status' file and we're not a recursive list
+  sp_fixed        // it came from the ‘status’ file and we're not a recursive list
   // high
 };
 
@@ -63,7 +63,7 @@ enum ssstateval {      // State sorting order, first to last:
 
 struct perpackagestate {
   struct pkginfo *pkg;
-  /* The `heading' entries in the list, for `all packages of type foo',
+  /* The ‘heading’ entries in the list, for “all packages of type foo”,
    * point to a made-up pkginfo, which has pkg->name==0.
    * pkg->priority and pkg->section are set to the values if appropriate, or to
    * pri_unset resp. null if the heading refers to all priorities resp. sections.
@@ -81,17 +81,17 @@ struct perpackagestate {
   ssstateval ssstate;
   varbuf relations;
 
-  void free(int recursive);
+  void free(bool recursive);
 };
 
 class packagelist : public baselist {
 protected:
-  int status_width, gap_width, section_width, priority_width;
+  int status_width, section_width, priority_width;
   int package_width, versioninstalled_width, versionavailable_width, description_width;
   int section_column, priority_column, versioninstalled_column;
   int versionavailable_column, package_column, description_column;
 
-  // Only used when `verbose' is set
+  // Only used when ‘verbose’ is set
   int status_hold_width, status_status_width, status_want_width;
 
   // Table of packages
@@ -99,27 +99,28 @@ protected:
   struct perpackagestate **table;
 
   // Misc.
-  int recursive, nallocated, verbose;
+  int nallocated;
+  bool recursive, verbose;
   enum { so_unsorted, so_section, so_priority, so_alpha } sortorder;
   enum { sso_unsorted, sso_avail, sso_state } statsortorder;
   enum { vdo_none, vdo_available, vdo_both } versiondisplayopt;
-  int calcssadone, calcsssdone;
+  bool calcssadone, calcsssdone;
   struct perpackagestate *headings;
 
   // Package searching flags
-  int searchdescr;
+  bool searchdescr;
   regex_t searchfsm;
 
   // Information displays
   struct infotype {
-    int (packagelist::*relevant)(); // null means always relevant
+    bool (packagelist::*relevant)(); // null means always relevant
     void (packagelist::*display)(); // null means end of table
   };
   const infotype *currentinfo;
   static const infotype infoinfos[];
   static const infotype *const baseinfo;
-  int itr_recursive();
-  int itr_nonrecursive();
+  bool itr_recursive();
+  bool itr_nonrecursive();
   void severalinfoblurb();
   void itd_mainwelcome();
   void itd_explaindisplay();
@@ -214,7 +215,8 @@ protected:
   ~packagelist();
 };
 
-void repeatedlydisplay(packagelist *sub, showpriority, packagelist *unredisplay =0);
+void repeatedlydisplay(packagelist *sub, showpriority,
+                       packagelist *unredisplay = nullptr);
 int would_like_to_install(pkginfo::pkgwant, pkginfo *pkg);
 
 extern const char *const wantstrings[];
@@ -228,7 +230,5 @@ extern const char *const sssstrings[], *const sssabbrevs[];
 extern const char statuschars[];
 extern const char eflagchars[];
 extern const char wantchars[];
-
-extern modstatdb_rw readwrite;
 
 #endif /* PKGLIST_H */

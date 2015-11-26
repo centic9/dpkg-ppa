@@ -1,18 +1,33 @@
-.\" Includes text from the Debian Policy probably by Ian Jackson and others
-.\" The copyright given below is that of the whole policy, but probably
-.\" incomplete.
-.\" Conversion to roff by Frank Lichtenheld
+.\" dpkg manual page - deb-version(5)
+.\"
+.\" Copyright Â© 1996-1998 Ian Jackson and Christian Schwarz
+.\"   for parts of the text reused from the Debian Policy
+.\" Copyright Â© 2007 Frank Lichtenheld <djpig@debian.org>
+.\"
+.\" This is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <https://www.gnu.org/licenses/>.
+.
 .\"*******************************************************************
 .\"
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH deb\-version 5 "18 de Agosto de 2008" "Proyecto Debian" Debian
+.TH deb\-version 5 2013\-04\-02 "Proyecto Debian" Debian
 .SH NOMBRE
 deb\-version \- Formato del número de versión de paquete de Debian
 .
 .SH SINOPSIS
-[ \fIepoch\fP:] \fIversión\-autor\-original\fP [\-\fIrevisión\-debian\fP ]
+[ \fIepoch\fP\fB:\fP] \fIversión\-autor\-original\fP [\fB\-\fP\fIrevisión\-debian\fP ]
 .SH DESCRIPCIÓN
 Los números de versión usados en los paquetes fuente y binarios de Debian,
 consisten de tres componentes. Estos son:
@@ -60,12 +75,12 @@ revisión.
 Por lo general la \fIrevisón\-debian\fP se reinicia con «1» cada vez que crece
 la \fIversión\-autor\-original\fP.
 .IP
-Dpkg separará el número de versión en el último guión en la cadena (si hay
+dpkg separará el número de versión en el último guión en la cadena (si hay
 alguno) para determinar la \fIversión\-autor\-original\fP y la
 \fIrevisión\-debian\fP. La ausencia de \fIrevisión\-debian\fP se verifica antes que
 la presencia de la misma (pero tenga en cuenta que \fIrevisión\-debian\fP es la
 parte menos significativa del número de versión).
-.SS "Algoritmo de ordenación"
+.SS "Sorting algorithm"
 Las partes \fIrevisión\-autor\-original\fP y \fIrevisión\-debian\fP se comparan con
 el sistema de gestión de paquetes usando el mismo algoritmo:
 .PP
@@ -96,20 +111,13 @@ esquema de numeración de versiones. \fBNo\fP está diseñado para situaciones
 donde los números de versión tienen cadenas o letras que el gestor de
 paquetes no puede interpretar (como «ALPHA» o ,«pre\-») o con ordenamientos
 confusos.
-.SH ADVERTENCIAS
-El carácter de virgulilla (~) y sus propiedades especiales de búsqueda se
-introdujeron en la versión 1.10 de dpkg, y algunas partes de dpkg\-dev sólo
-añadieron la compatibilidad con esto más tarde, con la serie 1.10.x
+.SH NOTAS
+The tilde character and its special sorting properties were introduced in
+dpkg 1.10 and some parts of the dpkg build scripts only gained support for
+it later in the 1.10.x series.
 .SH "VÉASE TAMBIÉN"
 \fBdeb\-control\fP(5), \fBdeb\fP(5), \fBdpkg\fP(1)
-.SH AUTORES
-Copyright \(co 1996,1997,1998 Ian Jackson y Christian Schwarz
-.br
-Copyright \(co 2007 Frank Lichtenheld
-.sp
-Esto es software libre; vea la versión 2 o posterior de la Licencia Pública
-General GNU para condiciones de copia. NO hay ninguna garantía.
-.SH "TRADUCTOR"
+.SH TRADUCTOR
 Rudy Godoy <rudy@kernel\-panik.org>,
 Rubén Porras <nahoo@inicia.es>,
 Bruno Barrera C. <bruno.barrera@igloo.cl>,

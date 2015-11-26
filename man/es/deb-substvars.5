@@ -1,10 +1,28 @@
-.\" Authors: Ian Jackson
+.\" dpkg manual page - deb-substvars(5)
+.\"
+.\" Copyright Â© 1995-1996 Ian Jackson <ian@chiark.chu.cam.ac.uk>
+.\" Copyright Â© 2000 Wichert Akkerman <wakkerma@debian.org>
+.\" Copyright Â© 2009-2010 RaphaÃ«l Hertzog <hertzog@debian.org>
+.\"
+.\" This is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <https://www.gnu.org/licenses/>.
+.
 .\"*******************************************************************
 .\"
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH deb\-substvars 5 "15 de Julio de 2009" "Proyecto Debian" "Herramientas de dpkg"
+.TH deb\-substvars 5 "15 de julio del 2009" "Proyecto Debian" "Herramientas de dpkg"
 .SH NOMBRE
 deb\-substvars \- Sustitución de variables de fuentes de Debian
 .
@@ -32,7 +50,8 @@ la cadena \fB${}\fP (que no es una sustitución legal) se reemplaza por un signo
 A pesar de que la sustitución de variables se realiza sobre todos los
 campos, algunos de estos campos se usan obligatoriamente durante la
 construcción, cuando la sustitución aún no se ha ejecutado. Por ello, no
-puede usar variables en los campos \fBPackage\fP, \fBSource\fP y \fBArchitecture\fP.
+puede utilizar variables en los campos \fBPackage\fP, \fBSource\fP y
+\fBArchitecture\fP.
 
 La sustitución de variables se ejecuta sobre el contenido de los campos
 después de su análisis, y por ello no necesita incluir un espacio después de
@@ -128,22 +147,12 @@ se asume un valor vacío.
 \fBdebian/substvars\fP
 Lista de variables a sustituir y valores.
 .
-.SH FALLOS
-No está claro el punto en el cual se produce la sustitución de campos,
-comparado con ciertas opciones de los campos de salida estándar.
-
 .SH "VÉASE TAMBIÉN"
+.ad l
+.nh
 \fBdpkg\fP(1), \fBdpkg\-genchanges\fP(1), \fBdpkg\-gencontrol\fP(1),
 \fBdpkg\-shlibdeps\fP(1), \fBdpkg\-source\fP(1).
-.
-.SH AUTOR
-Copyright \(co 1995\-1996 Ian Jackson
-.br
-Copyright \(co 2000 Wichert Akkerman
-.sp
-Esto es software libre; vea la versión 2 o posterior de la Licencia Pública
-General GNU para condiciones de copia. NO hay ninguna garantía.
-.SH "TRADUCTOR"
+.SH TRADUCTOR
 Rudy Godoy <rudy@kernel\-panik.org>,
 Rubén Porras <nahoo@inicia.es>,
 Bruno Barrera C. <bruno.barrera@igloo.cl>,

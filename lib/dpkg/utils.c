@@ -1,6 +1,6 @@
 /*
  * libdpkg - Debian packaging suite library routines
- * utils.c - Helper functions for dpkg
+ * utils.c - helper functions for dpkg
  *
  * Copyright © 2001 Wichert Akkerman <wakkerma@debian.org>
  *
@@ -14,7 +14,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <config.h>

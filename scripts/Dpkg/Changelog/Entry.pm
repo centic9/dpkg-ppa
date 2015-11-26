@@ -11,14 +11,16 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 package Dpkg::Changelog::Entry;
 
 use strict;
 use warnings;
 
-our $VERSION = "1.00";
+our $VERSION = '1.00';
+
+use Carp;
 
 use Dpkg::Gettext;
 use Dpkg::ErrorHandling;
@@ -57,12 +59,12 @@ sub new {
     my $class = ref($this) || $this;
 
     my $self = {
-	'header' => undef,
-	'changes' => [],
-	'trailer' => undef,
-	'blank_after_header' => [],
-	'blank_after_changes' => [],
-	'blank_after_trailer' => [],
+	header => undef,
+	changes => [],
+	trailer => undef,
+	blank_after_header => [],
+	blank_after_changes => [],
+	blank_after_trailer => [],
     };
     bless $self, $class;
     return $self;
@@ -81,20 +83,21 @@ filehandle.
 
 =cut
 
+sub _format_output_block {
+    my $lines = shift;
+    return join('', map { $_ . "\n" } @{$lines});
+}
+
 sub output {
     my ($self, $fh) = @_;
     my $str = '';
-    sub _block {
-	my $lines = shift;
-	return join('', map { $_ . "\n" } @{$lines});
-    }
     $str .= $self->{header} . "\n" if defined($self->{header});
-    $str .= _block($self->{blank_after_header});
-    $str .= _block($self->{changes});
-    $str .= _block($self->{blank_after_changes});
+    $str .= _format_output_block($self->{blank_after_header});
+    $str .= _format_output_block($self->{changes});
+    $str .= _format_output_block($self->{blank_after_changes});
     $str .= $self->{trailer} . "\n" if defined($self->{trailer});
-    $str .= _block($self->{blank_after_trailer});
-    print $fh $str if defined $fh;
+    $str .= _format_output_block($self->{blank_after_trailer});
+    print { $fh } $str if defined $fh;
     return $str;
 }
 
@@ -109,7 +112,7 @@ lines) corresponding to the requested part. $part can be
 
 sub get_part {
     my ($self, $part) = @_;
-    internerr("invalid part of changelog entry: %s") unless exists $self->{$part};
+    croak "invalid part of changelog entry: $part" unless exists $self->{$part};
     return $self->{$part};
 }
 
@@ -122,7 +125,7 @@ or an array ref.
 
 sub set_part {
     my ($self, $part, $value) = @_;
-    internerr("invalid part of changelog entry: %s") unless exists $self->{$part};
+    croak "invalid part of changelog entry: $part" unless exists $self->{$part};
     if (ref($self->{$part})) {
 	if (ref($value)) {
 	    $self->{$part} = $value;
@@ -144,7 +147,7 @@ concatenated at the end of the current line.
 
 sub extend_part {
     my ($self, $part, $value, @rest) = @_;
-    internerr("invalid part of changelog entry: %s") unless exists $self->{$part};
+    croak "invalid part of changelog entry: $part" unless exists $self->{$part};
     if (ref($self->{$part})) {
 	if (ref($value)) {
 	    push @{$self->{$part}}, @$value;
@@ -214,7 +217,7 @@ Return the name of the source package associated to the changelog entry.
 =cut
 
 sub get_source {
-    return undef;
+    return;
 }
 
 =item my $ver = $entry->get_version()
@@ -224,7 +227,7 @@ Return the version associated to the changelog entry.
 =cut
 
 sub get_version {
-    return undef;
+    return;
 }
 
 =item my @dists = $entry->get_distributions()
@@ -234,8 +237,7 @@ Return a list of target distributions for this version.
 =cut
 
 sub get_distributions {
-    return () if wantarray;
-    return undef;
+    return;
 }
 
 =item $fields = $entry->get_optional_fields()
@@ -256,7 +258,7 @@ Return the urgency of the associated upload.
 =cut
 
 sub get_urgency {
-    return undef;
+    return;
 }
 
 =item my $maint = $entry->get_maintainer()
@@ -266,7 +268,7 @@ Return the string identifying the person who signed this changelog entry.
 =cut
 
 sub get_maintainer {
-    return undef;
+    return;
 }
 
 =item my $time = $entry->get_timestamp()
@@ -276,7 +278,7 @@ Return the timestamp of the changelog entry.
 =cut
 
 sub get_timestamp {
-    return undef;
+    return;
 }
 
 =item my $str = $entry->get_dpkg_changes()
@@ -288,9 +290,9 @@ in the output format of C<dpkg-parsechangelog>.
 
 sub get_dpkg_changes {
     my ($self) = @_;
-    my $header = $self->get_part("header") || "";
+    my $header = $self->get_part('header') || '';
     $header =~ s/\s+$//;
-    return "\n$header\n\n" . join("\n", @{$self->get_part("changes")});
+    return "\n$header\n\n" . join("\n", @{$self->get_part('changes')});
 }
 
 =back

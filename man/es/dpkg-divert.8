@@ -1,27 +1,46 @@
+.\" dpkg manual page - dpkg-divert(8)
+.\"
+.\" Copyright Â© 1995 Ian Jackson <ian@chiark.chu.cam.ac.uk>
+.\" Copyright Â© 1999 Wichert Akkerman <wakkerma@debian.org>
+.\" Copyright Â© 2004 Scott James Remnant <keybuk@debian.org>
+.\" Copyright Â© 2007-2011 Guillem Jover <guillem@debian.org>
+.\"
+.\" This is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <https://www.gnu.org/licenses/>.
+.
 .\"*******************************************************************
 .\"
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH dpkg\-divert 8 "18 de Agosto de 2008" "Proyecto Debian" "Herramientas de dpkg"
+.TH dpkg\-divert 8 "14 de agosto del 2011" "Proyecto Debian" "Herramientas de dpkg"
 .SH NOMBRE
 dpkg\-divert \- Redefine la versión de un fichero del paquete
 .
 .SH SINOPSIS
-\fBdpkg\-divert\fP [\fIopciones\fP] \fIorden\fP
+\fBdpkg\-divert\fP [\fIopción\fP...] \fIorden\fP
 .
 .SH DESCRIPCIÓN
 \fBdpkg\-divert\fP es una herramienta para configurar y actualizar la lista de
 redirecciones.
 .PP
-La \fIredirección\fP («diversion») de ficheros es una forma de evitar que dpkg
-instale un fichero en su ubicación, sino que lo instale en una ubicación
-\fIredirigida\fP. Las redirecciones se pueden usar a través de los scripts en
-los paquetes Debian para mover un fichero cuando causa un conflicto. Los
-administradores de sistema pueden usarlo también para redefinir el fichero
-de configuración de algún paquete, o cuando algunos ficheros (que no están
-marcados como «conffiles») deben ser preservados por dpkg si se instala una
-versión nueva del paquete que contiene estos ficheros.
+File \fIdiversions\fP are a way of forcing \fBdpkg\fP(1)  not to install a file
+into its location, but to a \fIdiverted\fP location. Diversions can be used
+through the Debian package scripts to move a file away when it causes a
+conflict. System administrators can also use it to override some package's
+configuration file, or whenever some files (which aren't marked as
+\&'conffiles') need to be preserved by \fBdpkg\fP, when installing a newer
+version of a package which contains those files.
 .sp
 .SH ÓRDENES
 .TP 
@@ -45,8 +64,7 @@ Muestra el nombre real del fichero redirigido.
 .SH OPCIONES
 .TP 
 \fB\-\-admindir\fP\fI directorio\fP
-Define el directorio de datos de dpkg como \fIdirectorio\fP (por omisión:
-\fI/var/lib/dpkg\fP).
+Set the \fBdpkg\fP data directory to \fIdirectory\fP (default: \fI/var/lib/dpkg\fP).
 .TP 
 \fB\-\-divert\fP\fI redirigir\-a\fP
 \fIredirigir\-a\fP es la ubicación donde las versiones del \fIfichero\fP, tal y
@@ -55,11 +73,11 @@ como otros paquetes lo ofrecen, se redirigirá.
 \fB\-\-local\fP
 Especifica que todas las versiones de los paquetes de este fichero se
 redirigirán. Esto es, sin excepciones, y sin importar qué paquete está
-instalado, el fichero se redirigirá. El administrador del sistema puede usar
-esto para instalar una versión modificada localmente.
+instalado, el fichero se redirigirá. El administrador del sistema puede
+utilizar esto para instalar una versión modificada localmente.
 .TP 
 \fB\-\-package\fP\fI paquete\fP
-<paquete> es el nombre de un paquete cuya copia del \fIfichero\fP no se
+\fIpaquete\fP es el nombre de un paquete cuya copia del \fIfichero\fP no se
 redirigirá. Por ejemplo, el \fIfichero\fP se redirigirá para todos los paquetes
 a excepción de \fIpaquete\fP.
 .TP 
@@ -74,25 +92,44 @@ operación en caso de que el fichero destino ya exista.
 Modo de prueba, esto es, no realiza ningún cambio, sólo muestra su
 ejecución.
 .TP 
-\fB\-\-help\fP
+\fB\-?\fP, \fB\-\-help\fP
 Muestra el modo de uso y termina.
 .TP 
 \fB\-\-version\fP
 Muestra la versión y termina.
 .
+.SH ENTORNO
+.TP 
+\fBDPKG_ADMINDIR\fP
+If set and the \fB\-\-admindir\fP option has not been specified, it will be used
+as the \fBdpkg\fP data directory.
+.TP 
+\fBDPKG_MAINTSCRIPT_PACKAGE\fP
+Si se define, y las opciones \fB\-\-local\fP y \fB\-\-package\fP no se definen,
+\fBdpkg\-divert\fP lo utiliza como el nombre de paquete.
+.
+.SH FICHEROS
+.TP 
+\fI/var/lib/dpkg/diversions\fP
+File which contains the current list of diversions of the system. It is
+located in the \fBdpkg\fP administration directory, along with other files
+important to \fBdpkg\fP, such as \fIstatus\fP or \fIavailable\fP.
+.br
+Nota: \fBdpkg\-divert\fP preserva la copia antigua de este archivo, insertando
+la extensión \fI\-old\fP antes de reemplazarlo con uno nuevo.
+.
 .SH NOTAS
-Al añadir redirecciones por omisión se usa \fB\-\-local\fP y \fB\-\-divert\fP
-\fI<original>.distrib\fP. Al eliminar, \fB\-\-package\fP o \fB\-\-local\fP y
-\fB\-\-divert\fP deben coincidir en caso de definirse.
+Al añadir redirecciones se usa \fB\-\-local\fP y \fB\-\-divert\fP
+\fIoriginal\fP\fB.distrib\fP de forma predefinida. Al eliminar, \fB\-\-package\fP o
+\fB\-\-local\fP deben coincidir con \fB\-\-divert\fP si se definen.
 
 Los directorios no se pueden redirigir con \fBdpkg\-divert\fP.
 
-Debe tener cuidado al redireccionar bibliotecas compartidas, \fBldconfig\fP (8)
-crea un enlace simbólico basado en el campo «DT_SONAME» integrado en la
-biblioteca. Ya que ldconfig no respeta las redirecciones (sólo dpkg lo
-hace), si una biblioteca redirigida tiene el mismo «SONAME» que la que no
-está redirigida, es posible que el enlace simbólico acabe apuntando a la
-biblioteca redirigida.
+Care should be taken when diverting shared libraries, \fBldconfig\fP(8)
+creates a symbolic link based on the DT_SONAME field embedded in the
+library.  Because \fBldconfig\fP doesn't honour diverts (only \fBdpkg\fP does),
+the symlink may end up pointing at the diverted library, if a diverted
+library has the same SONAME as the undiverted one.
 .
 .SH EJEMPLOS
 Para redireccionar todas las copias de \fI/usr/bin/ejemplo\fP a
@@ -108,7 +145,7 @@ dpkg\-divert \-\-rename \-\-remove /usr/bin/ejemplo
 
 .PP
 Para redireccionar cualquier paquete que instale \fI/usr/bin/ejemplo\fP como
-\fI/usr/bin/ejemplo.foo\fP, a excepción de su propio paquete \fIwibble\fP.
+\fI/usr/bin/ejemplo.foo\fP, a excepción de su propio paquete \fIwibble\fP:
 .HP
 dpkg\-divert \-\-package wibble \-\-divert /usr/bin/ejemplo.foo \-\-rename
 /usr/bin/ejemplo
@@ -117,25 +154,9 @@ Para eliminar esa redirección:
 .HP
 dpkg\-divert \-\-package wibble \-\-rename \-\-remove /usr/bin/ejemplo
 .
-.SH FICHEROS
-.TP 
-\fI/var/lib/dpkg/diversions\fP
-El fichero que contiene la lista actual de redirecciones en el sistema. Está
-ubicado en el directorio de administración de dpkg, así como otros ficheros
-importantes para dpkg, como \fIstatus\fP o \fIavailable\fP.
-.br
-Nota: \fBdpkg\-divert\fP preserva la copia antigua de este archivo, insertando
-la extensión \fI\-old\fP antes de reemplazarlo con uno nuevo.
-.
 .SH "VÉASE TAMBIÉN"
 \fBdpkg\fP(1).
-.
-.SH AUTOR
-Copyright \(co 1995 Ian Jackson
-.sp
-Esto es software libre; vea la versión 2 o posterior de la Licencia Pública
-General GNU para condiciones de copia. NO hay ninguna garantía.
-.SH "TRADUCTOR"
+.SH TRADUCTOR
 Rudy Godoy <rudy@kernel\-panik.org>,
 Rubén Porras <nahoo@inicia.es>,
 Bruno Barrera C. <bruno.barrera@igloo.cl>,

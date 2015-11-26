@@ -3,6 +3,7 @@
  * help.c - various helper routines
  *
  * Copyright © 1995 Ian Jackson <ian@chiark.greenend.org.uk>
+ * Copyright © 2007-2012 Guillem Jover <guillem@debian.org>
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,7 +16,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
@@ -23,13 +24,10 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/wait.h>
 
 #include <assert.h>
 #include <errno.h>
 #include <string.h>
-#include <time.h>
-#include <dirent.h>
 #include <unistd.h>
 #include <stdlib.h>
 
@@ -38,8 +36,6 @@
 #include <dpkg/dpkg-db.h>
 #include <dpkg/path.h>
 #include <dpkg/subproc.h>
-#include <dpkg/command.h>
-#include <dpkg/triglib.h>
 
 #include "filesdb.h"
 #include "main.h"
@@ -55,7 +51,10 @@ const char *const statusstrings[]= {
   [stat_installed]       = N_("installed")
 };
 
-struct filenamenode *namenodetouse(struct filenamenode *namenode, struct pkginfo *pkg) {
+struct filenamenode *
+namenodetouse(struct filenamenode *namenode, struct pkginfo *pkg,
+              struct pkgbin *pkgbin)
+{
   struct filenamenode *r;
 
   if (!namenode->divert) {
@@ -63,8 +62,8 @@ struct filenamenode *namenodetouse(struct filenamenode *namenode, struct pkginfo
     return r;
   }
 
-  debug(dbg_eachfile,"namenodetouse namenode=`%s' pkg=%s",
-        namenode->name, pkg_describe(pkg, pdo_foreign));
+  debug(dbg_eachfile, "namenodetouse namenode='%s' pkg=%s",
+        namenode->name, pkgbin_name(pkg, pkgbin, pnaw_always));
 
   r=
     (namenode->divert->useinstead && namenode->divert->pkgset != pkg->set)
@@ -90,8 +89,14 @@ void checkpath(void) {
     TAR,
     FIND,
     BACKEND,
+    /* Mac OS X uses dyld (Mach-O) instead of ld.so (ELF), and does not have
+     * an ldconfig. */
+#if defined(__APPLE__) && defined(__MACH__)
+    "update_dyld_shared_cache",
+#else
     "ldconfig",
-#if WITH_START_STOP_DAEMON
+#endif
+#if BUILD_START_STOP_DAEMON
     "start-stop-daemon",
 #endif
     NULL
@@ -104,7 +109,7 @@ void checkpath(void) {
 
   path_list = getenv("PATH");
   if (!path_list)
-    ohshit(_("error: PATH is not set."));
+    ohshit(_("PATH is not set"));
 
   for (prog = prog_list; *prog; prog++) {
     struct stat stab;
@@ -126,7 +131,7 @@ void checkpath(void) {
         break;
     }
     if (!path) {
-      warning(_("'%s' not found in PATH or not executable."), *prog);
+      warning(_("'%s' not found in PATH or not executable"), *prog);
       warned++;
     }
   }
@@ -135,11 +140,11 @@ void checkpath(void) {
 
   if (warned)
     forcibleerr(fc_badpath,
-                P_("%d expected program not found in PATH or not executable.\n%s",
-                   "%d expected programs not found in PATH or not executable.\n%s",
+                P_("%d expected program not found in PATH or not executable\n%s",
+                   "%d expected programs not found in PATH or not executable\n%s",
                    warned),
                 warned, _("Note: root's PATH should usually contain "
-                          "/usr/local/sbin, /usr/sbin and /sbin."));
+                          "/usr/local/sbin, /usr/sbin and /sbin"));
 }
 
 bool
@@ -155,11 +160,18 @@ ignore_depends(struct pkginfo *pkg)
 static bool
 ignore_depends_possi(struct deppossi *possi)
 {
-  struct pkginfo *pkg = NULL;
-  while ((pkg = deppossi_get_pkg(possi, wpb_by_status, pkg))) {
-    if (ignore_depends(pkg))
+  struct deppossi_pkg_iterator *possi_iter;
+  struct pkginfo *pkg;
+
+  possi_iter = deppossi_pkg_iter_new(possi, wpb_installed);
+  while ((pkg = deppossi_pkg_iter_next(possi_iter))) {
+    if (ignore_depends(pkg)) {
+      deppossi_pkg_iter_free(possi_iter);
       return true;
+    }
   }
+  deppossi_pkg_iter_free(possi_iter);
+
   return false;
 }
 
@@ -185,279 +197,6 @@ force_conflicts(struct deppossi *possi)
   return fc_conflicts;
 }
 
-/**
- * Returns the path to the script inside the chroot.
- */
-static const char *
-preexecscript(struct command *cmd)
-{
-  const char *admindir = dpkg_db_get_dir();
-  size_t instdirl = strlen(instdir);
-
-  if (*instdir) {
-    if (strncmp(admindir, instdir, instdirl) != 0)
-      ohshit(_("admindir must be inside instdir for dpkg to work properly"));
-    if (setenv("DPKG_ADMINDIR", admindir + instdirl, 1) < 0)
-      ohshite(_("unable to setenv for subprocesses"));
-
-    if (chroot(instdir)) ohshite(_("failed to chroot to `%.250s'"),instdir);
-    if (chdir("/"))
-      ohshite(_("failed to chdir to `%.255s'"), "/");
-  }
-  if (debug_has_flag(dbg_scripts)) {
-    struct varbuf args = VARBUF_INIT;
-    const char **argv = cmd->argv;
-
-    while (*++argv) {
-      varbuf_add_char(&args, ' ');
-      varbuf_add_str(&args, *argv);
-    }
-    varbuf_end_str(&args);
-    debug(dbg_scripts, "fork/exec %s (%s )", cmd->filename, args.buf);
-    varbuf_destroy(&args);
-  }
-  if (!instdirl)
-    return cmd->filename;
-  assert(strlen(cmd->filename) >= instdirl);
-  return cmd->filename + instdirl;
-}
-
-void
-post_postinst_tasks(struct pkginfo *pkg, enum pkgstatus new_status)
-{
-  pkg->trigpend_head = NULL;
-  pkg->status = pkg->trigaw.head ? stat_triggersawaited : new_status;
-
-  post_postinst_tasks_core(pkg);
-}
-
-void
-post_postinst_tasks_core(struct pkginfo *pkg)
-{
-  modstatdb_note(pkg);
-
-  if (!f_noact) {
-    debug(dbg_triggersdetail, "post_postinst_tasks_core - trig_incorporate");
-    trig_incorporate(msdbrw_write);
-  }
-}
-
-static void
-post_script_tasks(void)
-{
-  ensure_diversions();
-
-  debug(dbg_triggersdetail,
-        "post_script_tasks - ensure_diversions; trig_incorporate");
-  trig_incorporate(msdbrw_write);
-}
-
-static void
-cu_post_script_tasks(int argc, void **argv)
-{
-  post_script_tasks();
-}
-
-static void setexecute(const char *path, struct stat *stab) {
-  if ((stab->st_mode & 0555) == 0555) return;
-  if (!chmod(path,0755)) return;
-  ohshite(_("unable to set execute permissions on `%.250s'"),path);
-}
-
-static int
-do_script(struct pkginfo *pkg, struct pkgbin *pif,
-          struct command *cmd, struct stat *stab, int warn)
-{
-  pid_t pid;
-  int r;
-
-  setexecute(cmd->filename, stab);
-
-  push_cleanup(cu_post_script_tasks, ehflag_bombout, NULL, 0, 0);
-
-  pid = subproc_fork();
-  if (pid == 0) {
-    if (setenv("DPKG_MAINTSCRIPT_PACKAGE", pkg->set->name, 1) ||
-        setenv("DPKG_MAINTSCRIPT_ARCH", pif->arch->name, 1) ||
-        setenv("DPKG_MAINTSCRIPT_NAME", cmd->argv[0], 1) ||
-        setenv("DPKG_RUNNING_VERSION", PACKAGE_VERSION, 1))
-      ohshite(_("unable to setenv for maintainer script"));
-
-    cmd->filename = cmd->argv[0] = preexecscript(cmd);
-    command_exec(cmd);
-  }
-  subproc_signals_setup(cmd->name); /* This does a push_cleanup(). */
-  r = subproc_wait_check(pid, cmd->name, warn);
-  pop_cleanup(ehflag_normaltidy);
-
-  pop_cleanup(ehflag_normaltidy);
-
-  return r;
-}
-
-static int
-vmaintainer_script_installed(struct pkginfo *pkg, const char *scriptname,
-                             const char *desc, va_list args)
-{
-  struct command cmd;
-  const char *scriptpath;
-  struct stat stab;
-  char buf[100];
-
-  scriptpath = pkgadminfile(pkg, &pkg->installed, scriptname);
-  sprintf(buf, _("installed %s script"), desc);
-
-  command_init(&cmd, scriptpath, buf);
-  command_add_arg(&cmd, scriptname);
-  command_add_argv(&cmd, args);
-
-  if (stat(scriptpath,&stab)) {
-    command_destroy(&cmd);
-    if (errno == ENOENT) {
-      debug(dbg_scripts, "vmaintainer_script_installed nonexistent %s",
-            scriptname);
-      return 0;
-    }
-    ohshite(_("unable to stat %s `%.250s'"), buf, scriptpath);
-  }
-  do_script(pkg, &pkg->installed, &cmd, &stab, 0);
-
-  command_destroy(&cmd);
-
-  return 1;
-}
-
-/*
- * All ...'s in maintainer_script_* are const char *'s.
- */
-
-int
-maintainer_script_installed(struct pkginfo *pkg, const char *scriptname,
-                            const char *desc, ...)
-{
-  int r;
-  va_list args;
-
-  va_start(args, desc);
-  r = vmaintainer_script_installed(pkg, scriptname, desc, args);
-  va_end(args);
-  if (r)
-    post_script_tasks();
-
-  return r;
-}
-
-int
-maintainer_script_postinst(struct pkginfo *pkg, ...)
-{
-  int r;
-  va_list args;
-
-  va_start(args, pkg);
-  r = vmaintainer_script_installed(pkg, POSTINSTFILE, "post-installation", args);
-  va_end(args);
-  if (r)
-    ensure_diversions();
-
-  return r;
-}
-
-int
-maintainer_script_new(struct pkginfo *pkg,
-                      const char *scriptname, const char *desc,
-                      const char *cidir, char *cidirrest, ...)
-{
-  struct command cmd;
-  struct stat stab;
-  va_list args;
-  char buf[100];
-
-  strcpy(cidirrest, scriptname);
-  sprintf(buf, _("new %s script"), desc);
-
-  va_start(args, cidirrest);
-  command_init(&cmd, cidir, buf);
-  command_add_arg(&cmd, scriptname);
-  command_add_argv(&cmd, args);
-  va_end(args);
-
-  if (stat(cidir,&stab)) {
-    command_destroy(&cmd);
-    if (errno == ENOENT) {
-      debug(dbg_scripts,"maintainer_script_new nonexistent %s `%s'",scriptname,cidir);
-      return 0;
-    }
-    ohshite(_("unable to stat %s `%.250s'"), buf, cidir);
-  }
-  do_script(pkg, &pkg->available, &cmd, &stab, 0);
-
-  command_destroy(&cmd);
-  post_script_tasks();
-
-  return 1;
-}
-
-int maintainer_script_alternative(struct pkginfo *pkg,
-                                  const char *scriptname, const char *desc,
-                                  const char *cidir, char *cidirrest,
-                                  const char *ifok, const char *iffallback) {
-  struct command cmd;
-  const char *oldscriptpath;
-  struct stat stab;
-  char buf[100];
-
-  oldscriptpath = pkgadminfile(pkg, &pkg->installed, scriptname);
-  sprintf(buf, _("old %s script"), desc);
-
-  command_init(&cmd, oldscriptpath, buf);
-  command_add_args(&cmd, scriptname, ifok,
-                   versiondescribe(&pkg->available.version, vdew_nonambig),
-                   NULL);
-
-  if (stat(oldscriptpath,&stab)) {
-    if (errno == ENOENT) {
-      debug(dbg_scripts,"maintainer_script_alternative nonexistent %s `%s'",
-            scriptname,oldscriptpath);
-      command_destroy(&cmd);
-      return 0;
-    }
-    warning(_("unable to stat %s '%.250s': %s"),
-            cmd.name, oldscriptpath, strerror(errno));
-  } else {
-    if (!do_script(pkg, &pkg->installed, &cmd, &stab, PROCWARN)) {
-      command_destroy(&cmd);
-      post_script_tasks();
-      return 1;
-    }
-  }
-  fprintf(stderr, _("dpkg - trying script from the new package instead ...\n"));
-
-  strcpy(cidirrest,scriptname);
-  sprintf(buf, _("new %s script"), desc);
-
-  command_destroy(&cmd);
-  command_init(&cmd, cidir, buf);
-  command_add_args(&cmd, scriptname, iffallback,
-                   versiondescribe(&pkg->installed.version, vdew_nonambig),
-                   NULL);
-
-  if (stat(cidir,&stab)) {
-    command_destroy(&cmd);
-    if (errno == ENOENT)
-      ohshit(_("there is no script in the new version of the package - giving up"));
-    else
-      ohshite(_("unable to stat %s `%.250s'"),buf,cidir);
-  }
-
-  do_script(pkg, &pkg->available, &cmd, &stab, 0);
-  fprintf(stderr, _("dpkg: ... it looks like that went OK.\n"));
-
-  command_destroy(&cmd);
-  post_script_tasks();
-
-  return 1;
-}
-
 void clear_istobes(void) {
   struct pkgiterator *it;
   struct pkginfo *pkg;
@@ -476,22 +215,25 @@ void clear_istobes(void) {
  * false otherwise.
  */
 bool
-hasdirectoryconffiles(struct filenamenode *file, struct pkginfo *pkg)
+dir_has_conffiles(struct filenamenode *file, struct pkginfo *pkg)
 {
   struct conffile *conff;
   size_t namelen;
 
-  debug(dbg_veryverbose, "hasdirectoryconffiles `%s' (from %s)", file->name,
-        pkg_describe(pkg, pdo_foreign));
+  debug(dbg_veryverbose, "dir_has_conffiles '%s' (from %s)", file->name,
+        pkg_name(pkg, pnaw_always));
   namelen = strlen(file->name);
   for (conff= pkg->installed.conffiles; conff; conff= conff->next) {
-      if (!strncmp(file->name,conff->name,namelen)) {
+      if (conff->obsolete)
+        continue;
+      if (strncmp(file->name, conff->name, namelen) == 0 &&
+          conff->name[namelen] == '/') {
 	debug(dbg_veryverbose, "directory %s has conffile %s from %s",
-	      file->name, conff->name, pkg_describe(pkg, pdo_foreign));
+	      file->name, conff->name, pkg_name(pkg, pnaw_always));
 	return true;
       }
   }
-  debug(dbg_veryverbose, "hasdirectoryconffiles no");
+  debug(dbg_veryverbose, "dir_has_conffiles no");
   return false;
 }
 
@@ -500,26 +242,80 @@ hasdirectoryconffiles(struct filenamenode *file, struct pkginfo *pkg)
  * false otherwise.
  */
 bool
-isdirectoryinuse(struct filenamenode *file, struct pkginfo *pkg)
+dir_is_used_by_others(struct filenamenode *file, struct pkginfo *pkg)
 {
   struct filepackages_iterator *iter;
   struct pkginfo *other_pkg;
 
-  debug(dbg_veryverbose, "isdirectoryinuse `%s' (except %s)", file->name,
-        pkg ? pkg_describe(pkg, pdo_foreign) : "<none>");
+  debug(dbg_veryverbose, "dir_is_used_by_others '%s' (except %s)", file->name,
+        pkg ? pkg_name(pkg, pnaw_always) : "<none>");
 
   iter = filepackages_iter_new(file);
   while ((other_pkg = filepackages_iter_next(iter))) {
-    debug(dbg_veryverbose, "isdirectoryinuse considering %s ...",
-          pkg_describe(other_pkg, pdo_foreign));
+    debug(dbg_veryverbose, "dir_is_used_by_others considering %s ...",
+          pkg_name(other_pkg, pnaw_always));
     if (other_pkg == pkg)
       continue;
+
+    debug(dbg_veryverbose, "dir_is_used_by_others yes");
     return true;
   }
   filepackages_iter_free(iter);
 
-  debug(dbg_veryverbose, "isdirectoryinuse no");
+  debug(dbg_veryverbose, "dir_is_used_by_others no");
   return false;
+}
+
+/*
+ * Returns true if the file is used by pkg, false otherwise.
+ */
+bool
+dir_is_used_by_pkg(struct filenamenode *file, struct pkginfo *pkg,
+                   struct fileinlist *list)
+{
+  struct fileinlist *node;
+  size_t namelen;
+
+  debug(dbg_veryverbose, "dir_is_used_by_pkg '%s' (by %s)",
+        file->name, pkg ? pkg_name(pkg, pnaw_always) : "<none>");
+
+  namelen = strlen(file->name);
+
+  for (node = list; node; node = node->next) {
+    debug(dbg_veryverbose, "dir_is_used_by_pkg considering %s ...",
+          node->namenode->name);
+
+    if (strncmp(file->name, node->namenode->name, namelen) == 0 &&
+        node->namenode->name[namelen] == '/') {
+      debug(dbg_veryverbose, "dir_is_used_by_pkg yes");
+      return true;
+    }
+  }
+
+  debug(dbg_veryverbose, "dir_is_used_by_pkg no");
+
+  return false;
+}
+
+/**
+ * Mark a conffile as obsolete.
+ *
+ * @param pkg		The package owning the conffile.
+ * @param namenode	The namenode for the obsolete conffile.
+ */
+void
+conffile_mark_obsolete(struct pkginfo *pkg, struct filenamenode *namenode)
+{
+  struct conffile *conff;
+
+  for (conff = pkg->installed.conffiles; conff; conff = conff->next) {
+    if (strcmp(conff->name, namenode->name) == 0) {
+      debug(dbg_conff, "marking %s conffile %s as obsolete",
+            pkg_name(pkg, pnaw_always), conff->name);
+      conff->obsolete = true;
+      return;
+    }
+  }
 }
 
 void oldconffsetflags(const struct conffile *searchconff) {
@@ -530,7 +326,7 @@ void oldconffsetflags(const struct conffile *searchconff) {
     namenode->flags |= fnnf_old_conff;
     if (!namenode->oldhash)
       namenode->oldhash= searchconff->hash;
-    debug(dbg_conffdetail, "oldconffsetflags `%s' namenode %p flags %o",
+    debug(dbg_conffdetail, "oldconffsetflags '%s' namenode %p flags %o",
           searchconff->name, namenode, namenode->flags);
     searchconff= searchconff->next;
   }
@@ -575,7 +371,7 @@ void ensure_pathname_nonexisting(const char *pathname) {
   u = path_skip_slash_dotslash(pathname);
   assert(*u);
 
-  debug(dbg_eachfile,"ensure_pathname_nonexisting `%s'",pathname);
+  debug(dbg_eachfile, "ensure_pathname_nonexisting '%s'", pathname);
   if (!rmdir(pathname))
     return; /* Deleted it OK, it was a directory. */
   if (errno == ENOENT || errno == ELOOP) return;
@@ -594,15 +390,17 @@ void ensure_pathname_nonexisting(const char *pathname) {
     execlp(RM, "rm", "-rf", "--", pathname, NULL);
     ohshite(_("unable to execute %s (%s)"), _("rm command for cleanup"), RM);
   }
-  debug(dbg_eachfile,"ensure_pathname_nonexisting running rm -rf");
+  debug(dbg_eachfile, "ensure_pathname_nonexisting running rm -rf '%s'",
+        pathname);
   subproc_wait_check(pid, "rm cleanup", 0);
 }
 
-void log_action(const char *action, struct pkginfo *pkg) {
-  const char *pkgname = pkg_describe(pkg, pdo_foreign);
-
-  log_message("%s %s %s %s", action, pkgname,
+void
+log_action(const char *action, struct pkginfo *pkg, struct pkgbin *pkgbin)
+{
+  log_message("%s %s %s %s", action, pkgbin_name(pkg, pkgbin, pnaw_always),
 	      versiondescribe(&pkg->installed.version, vdew_nonambig),
 	      versiondescribe(&pkg->available.version, vdew_nonambig));
-  statusfd_send("processing: %s: %s", action, pkgname);
+  statusfd_send("processing: %s: %s", action,
+                pkgbin_name(pkg, pkgbin, pnaw_nonambig));
 }

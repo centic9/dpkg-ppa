@@ -1,17 +1,35 @@
+.\" dselect manual page - dselect(1)
+.\"
+.\" Copyright Â© 1995 Juho Vuori <javuori@cc.helsinki.fi>
+.\" Copyright Â© 2000 Josip Rodin
+.\" Copyright Â© 2001 Joost Kooij
+.\" Copyright Â© 2001 Wichert Akkerman <wakkerma@debian.org>
+.\" Copyright Â© 2010-2011 Guillem Jover <guillem@debian.org>
+.\"
+.\" This is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <https://www.gnu.org/licenses/>.
+.
 .\"*******************************************************************
 .\"
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH dselect 1 2010\-03\-07 Debianprojektet Debian
+.TH dselect 1 2012\-04\-07 Debianprojektet Debian
 .SH NAMN
 dselect \- Debians pakethanteringsskal
 .
 .SH SYNOPS
-\fBdselect\fP [\fB\-\-admindir\fP \fI<katalog>\fP] [\fB\-\-help\fP] [\fB\-\-version\fP]
-[\fB\-\-expert\fP] [\fB\-\-debug\fP|\fB\-D\fP\fI<fil>\fP] [\fI<handling>\fP]
-[\fB\-\-colour\fP|\fB\-\-color\fP
-\fIskärmdel\fP:[\fIförgrund\fP],[\fIbakgrund\fP][\fI:attr\fP[\fI+attr+..\fP]]]
+\fBdselect\fP [\fIflagga\fP...] [\fIåtgärd\fP]
 .
 .SH BESKRIVNING
 \fBdselect\fP
@@ -40,27 +58,26 @@ finns ändå att tillgå för att förändra hur \fBdselect\fP arbetar eller för att
 visa ytterligare information om programmet.
 .
 .SH FLAGGOR
-Alla flaggorna kan ges både på kommandoraden och i \fBdselect\fPs
-konfigurationsfil \fI/etc/dpkg/dselect.cfg\fP eller filerna i
-konfigurationskatalogen \fI/etc/dpkg/dpkg.cfg.d/\fP. En rad i
-konfigurationsfilen är antingen en flagga (precis samma som på
-kommandoraden, men utan inledande bindestreck) eller en kommentar (om den
-börjar med ett \fB#\fP).
+All options can be specified both on the command line and in the \fBdselect\fP
+configuration file \fI/etc/dpkg/dselect.cfg\fP or the files on the
+configuration directory \fI/etc/dpkg/dselect.cfg.d/\fP. Each line in the
+configuration file is either an option (exactly the same as the command line
+option but without leading hyphens) or a comment (if it starts with a \fB#\fP).
 .br
 .TP 
-\fB\-\-admindir\fP\fI <katalog>\fP
+\fB\-\-admindir\fP\fI katalog\fP
 Ändrar namnet på katalogen där dpkg letar efter filerna "status",
 "available" m.fl. Förval är \fI/var/lib/dpkg\fP och du bör normalt sett inte
 behöva ändra det.
 .TP 
-\fB\-\-debug\fP\fI <fil> \fP|\fI \fP\fB\-D\fP\fI<fil>\fP
-Slå på felsökningsläge. Felsökningsinformation lagras i \fI<fil>\fP.
+\fB\-\-debug\fP\fI fil \fP|\fI \fP\fB\-D\fP\fIfil\fP
+Slå på felsökningsläge. Felsökningsinformation lagras i \fIfil\fP.
 .TP 
 \fB\-\-expert\fP
 Slår på expertläge, dvs. visar inte hjälpmeddelanden som kanske kan vara
 irriterande.
 .TP 
-\fB\-\-colour\fP|\fB\-\-color\fP \fIskärmdel\fP:[\fIförgrund\fP],[\fIbakgrund\fP][\fI:attr\fP[\fI+attr+..\fP]]
+\fB\-\-colour\fP|\fB\-\-color\fP \fIskärmdel:\fP[\fIförgrund\fP],[\fIbakgrund\fP][\fI:attr\fP[\fI+attr+...\fP]]
 Ställer in skärmfärger. Detta fungerar bara om din skärm kan visa
 färger. Flaggan kan användas flera gånger (och fungerar bäst i
 \fIdselect.cfg\fP). Varje användning ändrar färgen (och kanske andra attribut)
@@ -123,16 +140,17 @@ Visar en kort hjälptext och ger lyckat avslut.
 \fB\-\-version\fP
 Visar versionsinformation och ger lyckat avslut.
 .
-.SH ANVÄNDNING
-När \fBdselect\fP startas interaktivt visas en meny för användaren med
-tillgängliga handlingar:
+.SH ÅTGÄRDER
+När \fBdselect\fP startas kan det utföra följande åtgärder, antingen direkt om
+de anges på kommandoraden eller genom att fråga användaren med en meny om
+det körs interaktivt:
 .SS "Access (Åtkomst)"
 Väljer och konfigurerar en "åtkomstmetod" för att komma åt paketsamlingen.
 .sp
-Som standard ger \fBdselect\fP flera olika metoder, såsom \fIfloppy\fP (diskett),
-\fIharddisk\fP (hårddisk) och \fIcdrom\fP, men andra paket du installerar kan
-tillhandahålla ytterligare metoder, t.ex ges åtkomstmetoden \fIapt\fP av
-paketet \fBapt\fP och \fImulti_cd\fP av \fBdpkg\-multicd\fP.
+Som standard ger \fBdselect\fP flera olika metoder, såsom \fIcdrom\fP,
+\fImulti_cd\fP, \fInfs\fP, \fImulti_nfs\fP, \fIharddisk\fP, \fImounted\fP, \fImulti_mount\fP,
+\fIfloppy\fP och \fIftp\fP, men andra paket du installerar kan tillhandahålla
+ytterligare metoder, t.ex ges åtkomstmetoden \fIapt\fP av paketet \fBapt\fP.
 .sp
 Åtkomstmetoden \fIapt\fP rekommenderas starkt.
 .sp
@@ -208,7 +226,7 @@ Avslutar \fBdselect\fP
 Avslutar dselect med felkod noll (lyckat).
 .sp
 .
-.SH Paketvalshantering
+.SH "PACKAGE SELECTIONS MANAGEMENT"
 .sp
 .SS Introduktion
 .sp
@@ -432,13 +450,5 @@ inte trasig, utan även mycket flexiblare än de inbyggda åtkomstmetoderna.
 .
 .SH "SE ÄVEN"
 \fBdpkg\fP(1), \fBapt\-get\fP(8), \fBsources.list\fP(5), \fBdeb\fP(5).
-.
-.SH FÖRFATTARE
-\fBdselect\fP skrevs av Ian Jackson (ijackson@gnu.ai.mit.edu). En komplett
-lista över bidragslämnare får du med "dselect \-\-version".
-.br
-Manualsidan skrevs av Juho Vuori <javuori@cc.helsinki.fi>, Josip
-Rodin och Joost Kooij.
-
-.SH "ÖVERSÄTTNING"
+.SH ÖVERSÄTTNING
 Peter Krefting och Daniel Nylander.

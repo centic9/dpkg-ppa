@@ -1,18 +1,33 @@
-.\" Includes text from the Debian Policy probably by Ian Jackson and others
-.\" The copyright given below is that of the whole policy, but probably
-.\" incomplete.
-.\" Conversion to roff by Frank Lichtenheld
+.\" dpkg manual page - deb-version(5)
+.\"
+.\" Copyright Â© 1996-1998 Ian Jackson and Christian Schwarz
+.\"   for parts of the text reused from the Debian Policy
+.\" Copyright Â© 2007 Frank Lichtenheld <djpig@debian.org>
+.\"
+.\" This is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <https://www.gnu.org/licenses/>.
+.
 .\"*******************************************************************
 .\"
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH deb\-version 5 18\-08\-2008 "Projet Debian" Debian
+.TH deb\-version 5 2013\-04\-02 "Projet Debian" Debian
 .SH NOM
 deb\-version \- Format du numéro de version des paquets Debian
 .
 .SH SYNOPSIS
-[ \fIepoch\fP:] \fIversion_amont\fP [\-\fIrévision_debian\fP ]
+[\fIepoch\fP\fB:\fP]\fIversion_amont\fP[\fB\-\fP\fIrévision_debian\fP]
 .SH DESCRIPTION
 Les numéros de version utilisés pour les paquets sources et binaires se
 composent de trois parties. Celles\-ci sont\ :
@@ -20,13 +35,13 @@ composent de trois parties. Celles\-ci sont\ :
 \fIepoch\fP
 Ce nombre est un entier positif (usuellement petit). Il peut être omis (dans
 ce cas, la valeur nulle est implicite). S'il est omis, la \fIversion_amont\fP
-ne doit pas contenir de caractère deux\-points.
+peut ne pas contenir de caractère deux\-points.
 .IP
 Cette valeur est destinée à permettre de gérer des erreurs dans les anciens
 numéros de version d'un paquet ou un changement dans la méthode de
 numérotation des versions amont.
 .TP 
-\fIupstream_version\fP
+\fIversion_amont\fP
 Ceci est la partie principale du numéro de version. Cela correspond
 normalement au numéro de version du paquet d'origine qui a servi à créer le
 fichier \fI.deb\fP. Le format d'origine spécifié par l'auteur est généralement
@@ -34,38 +49,39 @@ conservé\ ; cependant, il arrive qu'il soit nécessaire d'adapter ce numéro
 pour qu'il se conforme au format du système de gestion de paquet et du
 procédé de comparaison des numéros de version.
 .IP
-Le principe de comparaison du système de gestion de paquet en ce qui
-concerne la \fIversion_amont\fP est décrite ci\-dessous. La partie
-\fIversion_amont\fP du numéro est obligatoire.
+Le principe de comparaison du système de gestion de paquets en ce qui
+concerne la \fIversion_amont\fP est décrit ci\-dessous. La partie
+\fIversion_amont\fP du numéro de version est obligatoire.
 .IP
 La \fIversion_amont\fP ne doit contenir que des caractères alphanumériques
-("A\-Za\-z0\-9") et les caratères suivants (".+\-:~"). Et devrait commencer par
-un chiffre. S'il n'y a pas de partie \fIrevision_Debian\fP alors le caractère
-tilde ("~") n'est pas autorisé\ ; si il n'y a pas de \fIepoch\fP, alors c'est le
-caractère ("deux points,\ :") qui n'est pas autorisés.
+("A\-Za\-z0\-9") et les caractères \fB.\fP \fB+\fP \fB\-\fP \fB:\fP \fB~\fP" (point, plus,
+tiret, deux\-points, tilde) et devrait commencer par un chiffre. S'il n'y a
+pas de partie \fIrevision_Debian\fP alors le tiret n'est pas autorisé\ ; s'il
+n'y a pas d'\fIepoch\fP, alors c'est le caractère deux\-points qui n'est pas
+autorisé.
 .TP 
-\fIdebian_revision\fP
+\fIrévision_Debian\fP
 Cette partie du numéro de version indique la version du paquet Debian à
 partir du numéro de la version amont. Elle ne doit contenir que des symboles
-alphanumériques ("A\-Za\-z0\-9") et les trois caractères (".+~"). Elle est
-analysée de la même façon que la \fIversion_amont\fP.
+alphanumériques et les caractères \fB+\fP \fB.\fP \fB~\fP (plus, point, tilde). Elle
+est analysée de la même façon que la \fIversion_amont\fP.
 .IP
-Cette partie est facultative\ ; si elle n'est pas présent alors c'est que la
-\fIversion_amont\fP ne doit pas contenir de signe moins ("\-"). Ce format est
-pour le cas où un logiciel a été directement conçu comme paquet Debian, il y
-a donc qu'une seule «\ debianisation\ » et donc par suite pas besoin
-d'indication de révision.
+Cette partie est facultative\ ; si elle n'est pas présente, la
+\fIversion_amont\fP ne doit pas contenir de tiret. Ce format est prévu pour le
+cas où un logiciel a été directement conçu comme paquet Debian, il y a donc
+qu'une seule «\ debianisation\ » et donc par la suite pas besoin d'indication
+de révision.
 .IP
-Il est convenu de repartir à '1' pour la \fIrévision_debian\fP à chaque fois
-que la \fIversion_amont\fP est incrémentée.
+Il est convenu de repartir à 1 pour la \fIrévision_debian\fP à chaque fois que
+la \fIversion_amont\fP est incrémentée.
 .IP
-Dpkg s'arrêtera au dernier signe moins ("\-") du numéro de version (s'il y en
-a un) pour déterminer la partie \fIversion_amont\fP et la
-\fIversion_Debian\fP. L'absence de \fIrevision_Debian\fP est comparée avant sa
-présence, mais notez que la \fIrevision_Debian\fP est partie la moins
-significative du numéro de version.
-.SS "Algorithme de classement"
-Les parties \fIversion_amont\fP et \fIrevision_Debian\fP sont comparées par le
+Dpkg s'arrêtera au dernier tiret du numéro de version (s'il y en a un) pour
+déterminer la partie \fIversion_amont\fP et la \fIrévision_Debian\fP. L'absence de
+\fIrévision_Debian\fP est comparée avant sa présence, mais il faut noter que la
+\fIrévision_Debian\fP est la partie la moins significative du numéro de
+version.
+.SS "Sorting algorithm"
+Les parties \fIversion_amont\fP et \fIrévision_Debian\fP sont comparées par le
 système de gestion de paquet en utilisant le même algorithme\ :
 .PP
 Les chaînes sont comparées de la gauche vers la droite.
@@ -75,8 +91,8 @@ caractères non numériques est déterminée. Puis ces deux parties (l'une peut
 être vide) sont comparées lexicalement. Si une différence est trouvée, elle
 est retournée. La comparaison lexicale est effectuée sur une version
 modifiée des valeurs ASCII afin que les lettres passent avant les autres
-caractères et que les tildes ("~") passent avant tout tous les caractères,
-même la fin d'une partie. Par exemple, les éléments suivants sont ordonnés
+caractères et que les tildes ("~") passent avant tous les caractères, même
+la fin d'une partie. Par exemple, les éléments suivants sont ordonnés
 ainsi\ : «\ ~~\ », «\ ~~a\ », «\ ~\ », partie vide, «\ a\ ».
 .PP
 Puis, le début de ce qui reste des chaînes de caractères qui ne doivent plus
@@ -96,20 +112,12 @@ logique de numérotation. Cela n'est \fBpas\fP destiné à faire face à des
 numéros de version qui contiennent des chaînes de lettres que le système de
 gestion de paquet ne sait pas interpréter (comme «\ ALPHA\ », «\ pre\-\ »)ou
 d'autres choses stupides.
-.SH CAVEATS
-Le caractère tilde («\ ~\ ») et sa propriété spéciale pour les comparaisons
-ont été introduites dans la version 1.10 de dpkg. Ce n'est qu'a partir des
-versions supérieures (1.10.x) que certaines parties de dpkg\-dev ont commencé
-à gérer ce système.
+.SH NOTES
+The tilde character and its special sorting properties were introduced in
+dpkg 1.10 and some parts of the dpkg build scripts only gained support for
+it later in the 1.10.x series.
 .SH "VOIR AUSSI"
 \fBdeb\-control\fP(5), \fBdeb\fP(5), \fBdpkg\fP(1).
-.SH AUTEURS
-Copyright \(co 1996,1997,1998 Ian Jackson et Christian Schwarz
-.br
-Copyright \(co 2007 Frank Lichtenheld
-.sp
-Ce programme est un logiciel libre\ ; voyez la «\ GNU General Public Licence\ »
-version 2 ou supérieure pour le copyright. Il n'y a PAS de garantie.
 .SH TRADUCTION
 Ariel VARDI <ariel.vardi@freesbee.fr>, 2002.
 Philippe Batailler, 2006.

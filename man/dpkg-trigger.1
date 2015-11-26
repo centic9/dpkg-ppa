@@ -1,4 +1,21 @@
-.TH dpkg\-trigger 1 "2009-03-15" "Debian Project" "dpkg suite"
+.\" dpkg manual page - dpkg-trigger(1)
+.\"
+.\" Copyright © 2008-2011 Guillem Jover <guillem@debian.org>
+.\"
+.\" This is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <https://www.gnu.org/licenses/>.
+.
+.TH dpkg\-trigger 1 "2011-08-14" "Debian Project" "dpkg suite"
 .SH NAME
 dpkg\-trigger \- a package trigger utility
 .
@@ -19,17 +36,17 @@ triggers control file directive, are insufficiently rich. It can also
 be used for testing and by system administrators (but note that the
 triggers won't actually be run by \fBdpkg\-trigger\fP).
 .PP
-Unrecognised trigger name syntaxes are an error for \fBdpkg\-trigger\fP.
+Unrecognized trigger name syntaxes are an error for \fBdpkg\-trigger\fP.
 .
 .SH COMMANDS
 .TP
 .BR \-\-check\-supported
 Check if the running \fBdpkg\fP supports triggers (usually called from a
-postinst). Will exit 0 if a triggers-capable \fBdpkg\fP has run, or 1 with
-an error message to stderr if not. Normally, however, it is better just to
-activate the desired trigger with \fBdpkg\-trigger\fP.
+postinst). Will exit \fB0\fP if a triggers-capable \fBdpkg\fP has run,
+or \fB1\fP with an error message to stderr if not. Normally, however,
+it is better just to activate the desired trigger with \fBdpkg\-trigger\fP.
 .TP
-.BR \-h ", " \-\-help
+.BR \-? ", " \-\-help
 Show the usage message and exit.
 .TP
 .B \-\-version
@@ -43,7 +60,7 @@ Change the location of the \fBdpkg\fR database. The default location is
 .TP
 .BR \-\-by\-package=\fIpackage\fR
 Override trigger awaiter (normally set by \fBdpkg\fP through the
-DPKG_MAINTSCRIPT_PACKAGE environment variable of the maintainer scripts,
+\fBDPKG_MAINTSCRIPT_PACKAGE\fP environment variable of the maintainer scripts,
 naming the package to which the script belongs, and this will be used
 by default).
 .TP
@@ -61,8 +78,9 @@ Just test, do not actually change anything.
 .TP
 .B DPKG_ADMINDIR
 If set and the \fB\-\-admindir\fP option has not been specified, it will
-be used as the dpkg data directory.
+be used as the \fBdpkg\fP data directory.
 .
 .SH SEE ALSO
-.BR dpkg "(1), " deb-triggers "(5), " /usr/share/doc/dpkg-dev/triggers.txt.gz .
-
+.BR dpkg (1),
+.BR deb\-triggers (5),
+.BR /usr/share/doc/dpkg\-dev/triggers.txt.gz .

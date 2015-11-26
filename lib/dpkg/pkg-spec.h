@@ -1,9 +1,10 @@
 /*
  * libdpkg - Debian packaging suite library routines
- * pkg-spec.h - definitions for package specifiers handling
+ * pkg-spec.h - primitives for pkg specifier handling
  *
  * Copyright © 2011 Linaro Limited
  * Copyright © 2011 Raphaël Hertzog <hertzog@debian.org>
+ * Copyright © 2011-2012 Guillem Jover <guillem@debian.org>
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,61 +17,72 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef DPKG_PKGSPEC_H
-#define DPKG_PKGSPEC_H
+#ifndef LIBDPKG_PKG_SPEC_H
+#define LIBDPKG_PKG_SPEC_H
 
 #include <stdbool.h>
 
 #include <dpkg/macros.h>
 #include <dpkg/dpkg-db.h>
-#include <dpkg/varbuf.h>
+#include <dpkg/error.h>
 #include <dpkg/arch.h>
 
 DPKG_BEGIN_DECLS
+
+/**
+ * @defgroup pkg-spec Package specifiers
+ * @ingroup dpkg-public
+ * @{
+ */
 
 struct pkg_spec {
 	char *name;
 	const struct dpkg_arch *arch;
 
 	enum pkg_spec_flags {
-		psf_no_copy            = 00001, /* No need to strdup name */
-		psf_no_check           = 00002, /* Don't fail on illegal pkg/arch names */
-		psf_patterns           = 00004, /* Detect patterns */
-		psf_skip_not_installed = 00010, /* Skip stat_notinstalled */
-		psf_skip_config_files  = 00020, /* Skip stat_configfiles */
+		/** Recognize glob patterns. */
+		psf_patterns		= DPKG_BIT(0),
 
-		/* How to consider the lack of an arch qualifier */
-		psf_def_native         = 00100,
-		psf_def_wildcard       = 00200,
-		psf_def_mask           = 00300,
+		/* How to consider the lack of an arch qualifier. */
+		psf_arch_def_single	= DPKG_BIT(8),
+		psf_arch_def_wildcard	= DPKG_BIT(9),
+		psf_arch_def_mask	= 0xff00,
 	} flags;
 
-	/* Members below are private */
+	/* Members below are private state. */
+
 	bool name_is_pattern;
 	bool arch_is_pattern;
 
-	/* Used for the iterator */
+	/** Used for the pkg_db iterator. */
 	struct pkgiterator *pkg_iter;
+	/** Used for the pkgset iterator. */
 	struct pkginfo *pkg_next;
 };
 
-#define PKG_SPEC_INIT(flags) { NULL, NULL, flags, false, false, NULL, NULL }
+void pkg_spec_init(struct pkg_spec *ps, enum pkg_spec_flags flags);
+void pkg_spec_destroy(struct pkg_spec *ps);
 
-void pkg_spec_reset(struct pkg_spec *ps);
-bool pkg_spec_parse(struct pkg_spec *ps, const char *string);
-
-struct pkginfo *pkg_spec_find_pkg(struct pkg_spec *ps, const char* string);
-bool pkg_spec_match_pkg(struct pkg_spec *ps, struct pkginfo *pkg,
-                        struct pkgbin *pbin);
-
-bool pkg_spec_is_pattern(struct pkg_spec *ps);
 const char *pkg_spec_is_illegal(struct pkg_spec *ps);
 
-void pkg_spec_iter_start(struct pkg_spec *ps);
+const char *pkg_spec_set(struct pkg_spec *ps,
+                         const char *pkgname, const char *archname);
+const char *pkg_spec_parse(struct pkg_spec *ps, const char *str);
+bool pkg_spec_match_pkg(struct pkg_spec *ps,
+                        struct pkginfo *pkg, struct pkgbin *pkgbin);
+
+struct pkginfo *pkg_spec_parse_pkg(const char *str, struct dpkg_error *err);
+struct pkginfo *pkg_spec_find_pkg(const char *pkgname, const char *archname,
+                                  struct dpkg_error *err);
+
+void pkg_spec_iter_init(struct pkg_spec *ps);
 struct pkginfo *pkg_spec_iter_next_pkg(struct pkg_spec *ps);
+void pkg_spec_iter_destroy(struct pkg_spec *ps);
+
+/** @} */
 
 DPKG_END_DECLS
 

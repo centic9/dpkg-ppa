@@ -3,6 +3,7 @@
  * dpkg-deb.h - external definitions for this program
  *
  * Copyright © 1994,1995 Ian Jackson <ian@chiark.greenend.org.uk>
+ * Copyright © 2006-2012 Guillem Jover <guillem@debian.org>
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,35 +16,53 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #ifndef DPKG_DEB_H
 #define DPKG_DEB_H
 
-typedef void dofunction(const char *const *argv);
-dofunction do_build DPKG_ATTR_NORET;
-dofunction do_contents, do_control, do_showinfo;
-dofunction do_info, do_field, do_extract, do_vextract, do_fsystarfile;
+#include <dpkg/deb-version.h>
 
-extern int debugflag, nocheckflag, oldformatflag;
+action_func do_build;
+action_func do_contents;
+action_func do_control;
+action_func do_showinfo;
+action_func do_info;
+action_func do_field;
+action_func do_extract;
+action_func do_vextract;
+action_func do_raw_extract;
+action_func do_fsystarfile;
+
+extern int opt_verbose;
+extern int debugflag, nocheckflag;
+
+extern struct deb_version deb_format;
+
+enum dpkg_tar_options {
+	/** Output the tar file directly, without any processing. */
+	DPKG_TAR_PASSTHROUGH = 0,
+	/** List tar files. */
+	DPKG_TAR_LIST = DPKG_BIT(0),
+	/** Extract tar files. */
+	DPKG_TAR_EXTRACT = DPKG_BIT(1),
+	/** Preserve tar permissions on extract. */
+	DPKG_TAR_PERMS = DPKG_BIT(2),
+	/** Do not set tar mtime on extract. */
+	DPKG_TAR_NOMTIME = DPKG_BIT(3),
+};
 
 void extracthalf(const char *debar, const char *dir,
-                 const char *taroption, int admininfo);
+                 enum dpkg_tar_options taroption, int admininfo);
 
-extern const char* showformat;
-extern struct compressor *compressor;
-extern int compress_level;
+extern const char *showformat;
+extern struct compress_params compress_params;
 
 #define ARCHIVEVERSION		"2.0"
 
 #define BUILDCONTROLDIR		"DEBIAN"
 #define EXTRACTCONTROLDIR	BUILDCONTROLDIR
-
-/* Set BUILDOLDPKGFORMAT to 1 to build old-format archives by default. */
-#ifndef BUILDOLDPKGFORMAT
-#define BUILDOLDPKGFORMAT 0
-#endif
 
 #define OLDARCHIVEVERSION	"0.939000"
 

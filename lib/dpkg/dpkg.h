@@ -4,6 +4,7 @@
  *
  * Copyright © 1994,1995 Ian Jackson <ian@chiark.greenend.org.uk>
  * Copyright © 2000,2001 Wichert Akkerman <wichert@debian.org>
+ * Copyright © 2006-2012 Guillem Jover <guillem@debian.org>
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,7 +17,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #ifndef LIBDPKG_DPKG_H
@@ -31,12 +32,27 @@
 
 DPKG_BEGIN_DECLS
 
+/**
+ * @mainpage libdpkg C API
+ *
+ * This is the documentation for the libdpkg C API. It is divided in an
+ * @ref dpkg-internal "internal API" and a @ref dpkg-public "public API".
+ * Applications closely tied to dpkg can make use of the internal API, the
+ * rest should only assume the availability of the public API.
+ *
+ * Applications need to define the LIBDPKG_VOLATILE_API macro to acknowledge
+ * that the API is to be considered volatile, please read doc/README.api for
+ * more information.
+ *
+ * @defgroup dpkg-internal Internal libdpkg C API
+ *
+ * @defgroup dpkg-public Public libdpkg C API
+ */
+
 #define MAXCONFFILENAME     1000
 #define MAXDIVERTFILENAME   1024
 #define MAXCONTROLFILENAME  100
 #define DEBEXT             ".deb"
-#define OLDDBEXT           "-old"
-#define NEWDBEXT           "-new"
 #define REMOVECONFFEXTS    "~", ".bak", "%", \
                            DPKGTEMPEXT, DPKGNEWEXT, DPKGOLDEXT, DPKGDISTEXT
 
@@ -44,6 +60,7 @@ DPKG_BEGIN_DECLS
 
 #define NEWCONFFILEFLAG    "newconffile"
 #define NONEXISTENTFLAG    "nonexistent"
+#define EMPTYHASHFLAG      "-"
 
 #define DPKGTEMPEXT        ".dpkg-tmp"
 #define DPKGNEWEXT         ".dpkg-new"
@@ -64,12 +81,12 @@ DPKG_BEGIN_DECLS
 #define DIVERSIONSFILE    "diversions"
 #define STATOVERRIDEFILE  "statoverride"
 #define UPDATESDIR        "updates/"
-#define INFODIR           "info/"
-#define TRIGGERSDIR       "triggers/"
+#define INFODIR           "info"
+#define TRIGGERSDIR       "triggers"
 #define TRIGGERSFILEFILE  "File"
 #define TRIGGERSDEFERREDFILE "Unincorp"
 #define TRIGGERSLOCKFILE  "Lock"
-#define CONTROLDIRTMP     "tmp.ci/"
+#define CONTROLDIRTMP     "tmp.ci"
 #define IMPORTANTTMP      "tmp.i"
 #define REASSEMBLETMP     "reassemble" DEBEXT
 #define IMPORTANTMAXLEN    10
@@ -83,31 +100,26 @@ DPKG_BEGIN_DECLS
 #define MAXTRIGDIRECTIVE     256
 
 #define BACKEND		"dpkg-deb"
-#define DPKGQUERY	"dpkg-query"
 #define SPLITTER	"dpkg-split"
+#define DPKGQUERY	"dpkg-query"
+#define DPKGDIVERT	"dpkg-divert"
+#define DPKGSTAT	"dpkg-statoverride"
+#define DPKGTRIGGER	"dpkg-trigger"
 #define DPKG		"dpkg"
 #define DEBSIGVERIFY	"/usr/bin/debsig-verify"
 
 #define TAR		"tar"
 #define RM		"rm"
+#define CAT		"cat"
 #define FIND		"find"
 #define DIFF		"diff"
 
 #define FIND_EXPRSTARTCHARS "-(),!"
 
+#include <dpkg/progname.h>
 #include <dpkg/ehandle.h>
-
-/*** from startup.c ***/
-
-#define standard_startup() do { \
-  push_error_context(); \
-  /* Make sure all our status databases are readable. */ \
-  umask(022); \
-} while (0)
-
-#define standard_shutdown() do { \
-  pop_error_context(ehflag_normaltidy); \
-} while (0)
+#include <dpkg/report.h>
+#include <dpkg/program.h>
 
 /*** log.c ***/
 
@@ -119,17 +131,20 @@ void statusfd_send(const char *fmt, ...) DPKG_ATTR_PRINTF(1);
 
 /*** cleanup.c ***/
 
-void cu_closefile(int argc, void **argv);
+void cu_closestream(int argc, void **argv);
 void cu_closepipe(int argc, void **argv);
 void cu_closedir(int argc, void **argv);
 void cu_closefd(int argc, void **argv);
+void cu_filename(int argc, void **argv);
 
 /*** from mlib.c ***/
 
-void setcloexec(int fd, const char* fn);
+void setcloexec(int fd, const char *fn);
 void *m_malloc(size_t);
-void *m_realloc(void*, size_t);
+void *m_calloc(size_t);
+void *m_realloc(void *, size_t);
 char *m_strdup(const char *str);
+char *m_strndup(const char *str, size_t n);
 int m_asprintf(char **strp, const char *fmt, ...) DPKG_ATTR_PRINTF(2);
 void m_dup2(int oldfd, int newfd);
 void m_pipe(int fds[2]);

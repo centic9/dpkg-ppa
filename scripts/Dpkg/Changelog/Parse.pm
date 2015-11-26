@@ -12,7 +12,7 @@
 #    GNU General Public License for more details.
 #
 #    You should have received a copy of the GNU General Public License
-#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 =encoding utf8
 
@@ -25,7 +25,7 @@ Dpkg::Changelog::Parse - generic changelog parser for dpkg-parsechangelog
 This module provides a single function changelog_parse() which reproduces
 all the features of dpkg-parsechangelog.
 
-=head2 Functions
+=head2 FUNCTIONS
 
 =cut
 
@@ -34,17 +34,19 @@ package Dpkg::Changelog::Parse;
 use strict;
 use warnings;
 
-our $VERSION = "1.00";
+our $VERSION = '1.00';
 
-use Dpkg; # for $dpkglibdir
+use Dpkg ();
 use Dpkg::Gettext;
 use Dpkg::ErrorHandling;
 use Dpkg::Control::Changelog;
 
-use base qw(Exporter);
+use Exporter qw(import);
 our @EXPORT = qw(changelog_parse);
 
-=head3 my $fields = changelog_parse(%opt)
+=over 4
+
+=item my $fields = changelog_parse(%opt)
 
 This function will parse a changelog. In list context, it return as many
 Dpkg::Control object as the parser did output. In scalar context, it will
@@ -54,7 +56,7 @@ failed, it will die.
 
 The parsing itself is done by an external program (searched in the
 following list of directories: $opt{libdir},
-/usr/local/lib/dpkg/parsechangelog, /usr/lib/dpkg/parsechangelog) That
+F</usr/local/lib/dpkg/parsechangelog>, F</usr/lib/dpkg/parsechangelog>) That
 program is named according to the format that it's able to parse. By
 default it's either "debian" or the format name lookep up in the 40 last
 lines of the changelog itself (extracted with this perl regular expression
@@ -62,7 +64,7 @@ lines of the changelog itself (extracted with this perl regular expression
 with $opt{changelogformat}. The program expects the content of the
 changelog file on its standard input.
 
-The changelog file that is parsed is debian/changelog by default but it
+The changelog file that is parsed is F<debian/changelog> by default but it
 can be overridden with $opt{file}.
 
 All the other keys in %opt are forwarded as parameter to the external
@@ -74,36 +76,38 @@ it's passed as the parameter that follows.
 
 sub changelog_parse {
     my (%options) = @_;
-    my @parserpath = ("/usr/local/lib/dpkg/parsechangelog",
-                      "$dpkglibdir/parsechangelog",
-                      "/usr/lib/dpkg/parsechangelog");
-    my $format = "debian";
-    my $changelogfile = "debian/changelog";
+    my @parserpath = ('/usr/local/lib/dpkg/parsechangelog',
+                      "$Dpkg::LIBDIR/parsechangelog",
+                      '/usr/lib/dpkg/parsechangelog');
+    my $format = 'debian';
     my $force = 0;
 
     # Extract and remove options that do not concern the changelog parser
     # itself (and that we shouldn't forward)
-    if (exists $options{"libdir"}) {
-	unshift @parserpath, $options{"libdir"};
-	delete $options{"libdir"};
+    if (exists $options{libdir}) {
+	unshift @parserpath, $options{libdir};
+	delete $options{libdir};
     }
-    if (exists $options{"file"}) {
-	$changelogfile = $options{"file"};
-	delete $options{"file"};
-    }
-    if (exists $options{"changelogformat"}) {
-	$format = $options{"changelogformat"};
-	delete $options{"changelogformat"};
+    if (exists $options{changelogformat}) {
+	$format = $options{changelogformat};
+	delete $options{changelogformat};
 	$force = 1;
     }
 
+    # Set a default filename
+    if (not exists $options{file}) {
+	$options{file} = 'debian/changelog';
+    }
+    my $changelogfile = $options{file};
+
     # Extract the format from the changelog file if possible
-    unless($force or ($changelogfile eq "-")) {
-	open(P, "-|", "tail", "-n", "40", $changelogfile);
-	while(<P>) {
+    unless($force or ($changelogfile eq '-')) {
+	open(my $format_fh, '-|', 'tail', '-n', '40', $changelogfile)
+	    or syserr(_g('cannot create pipe for %s'), 'tail');
+	while (<$format_fh>) {
 	    $format = $1 if m/\schangelog-format:\s+([0-9a-z]+)\W/;
 	}
-	close(P) or subprocerr(_g("tail of %s"), $changelogfile);
+	close($format_fh) or subprocerr(_g('tail of %s'), $changelogfile);
     }
 
     # Find the right changelog parser
@@ -115,10 +119,10 @@ sub changelog_parse {
 	    $parser = $candidate;
 	    last;
 	} else {
-	    warning(_g("format parser %s not executable"), $candidate);
+	    warning(_g('format parser %s not executable'), $candidate);
 	}
     }
-    error(_g("changelog format %s is unknown"), $format) if not defined $parser;
+    error(_g('changelog format %s is unknown'), $format) if not defined $parser;
 
     # Create the arguments for the changelog parser
     my @exec = ($parser, "-l$changelogfile");
@@ -134,30 +138,30 @@ sub changelog_parse {
     }
 
     # Fork and call the parser
-    my $pid = open(P, "-|");
-    syserr(_g("cannot fork for %s"), $parser) unless defined $pid;
+    my $pid = open(my $parser_fh, '-|');
+    syserr(_g('cannot fork for %s'), $parser) unless defined $pid;
     if (not $pid) {
-	if ($changelogfile ne "-") {
-	    open(STDIN, "<", $changelogfile) or
-		syserr(_g("cannot open %s"), $changelogfile);
-	}
-	exec(@exec) || syserr(_g("cannot exec format parser: %s"), $parser);
+	exec(@exec) or syserr(_g('cannot exec format parser: %s'), $parser);
     }
 
     # Get the output into several Dpkg::Control objects
     my (@res, $fields);
     while (1) {
         $fields = Dpkg::Control::Changelog->new();
-        last unless $fields->parse(\*P, _g("output of changelog parser"));
+        last unless $fields->parse($parser_fh, _g('output of changelog parser'));
 	push @res, $fields;
     }
-    close(P) or subprocerr(_g("changelog parser %s"), $parser);
+    close($parser_fh) or subprocerr(_g('changelog parser %s'), $parser);
     if (wantarray) {
 	return @res;
     } else {
 	return $res[0] if (@res);
-	return undef;
+	return;
     }
 }
+
+=back
+
+=cut
 
 1;

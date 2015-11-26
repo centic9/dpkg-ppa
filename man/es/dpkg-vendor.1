@@ -1,11 +1,28 @@
+.\" dpkg manual page - dpkg-vendor(1)
+.\"
+.\" Copyright Â© 2009 RaphaÃ«l Hertzog <hertzog@debian.org>
+.\"
+.\" This is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <https://www.gnu.org/licenses/>.
+.
 .\"*******************************************************************
 .\"
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH dpkg\-vendor 1 "10 de Abril de 2009" "Proyecto Debian" "Herramientas de dpkg"
+.TH dpkg\-vendor 1 "10 de noviembre del 2011" "Proyecto Debian" "Herramientas de dpkg"
 .SH NOMBRE
-dpkg\-vendor \- Consulta información relativa al proveedor de la publicación
+dpkg\-vendor \- Consulta información relativa a proveedores de la distribución
 .
 .SH SINOPSIS
 \fBdpkg\-vendor\fP [\fIopción\fP...] \fIorden\fP
@@ -18,13 +35,13 @@ contiene información acerca del proveedor actual.
 .SH ÓRDENES
 .TP 
 \fB\-\-is\fP\fI proveedor\fP
-Finaliza con 0 si \fIproveedor\fP es el proveedor actual. De no ser así,
+Finaliza con \fB0\fP si el \fIproveedor\fP es el proveedor actual. De no ser así,
 finaliza con un valor distinto de 0.
 .TP 
 \fB\-\-derives\-from\fP\fI proveedor\fP
-Finaliza con 0 si el proveedor de la distribución actual deriva de
-\fIproveedor\fP. De no ser así, finaliza con un valor distinto de 0. Use el
-campo «Parent» para explorar los proveedores anteriores al actual.
+Exits with \fB0\fP if the current vendor distribution is a derivative of
+\fIvendor\fP, otherwise exits with non\-zero. It uses the \fBParent\fP field to
+browse all ancestors of the current vendor.
 .TP 
 \fB\-\-query\fP\fI campo\fP
 Muestra por la salida estándar el valor específico de proveedor \fIcampo\fP en
@@ -40,21 +57,17 @@ Muestra la versión y termina.
 .TP 
 \fB\-\-vendor\fP\fI proveedor\fP
 Supone que el proveedor actual es \fIproveedor\fP, en lugar de definirlo con la
-variable de entorno «DEB_VENDOR» o \fB/etc/dpkg/origins/default\fP.
+variable de entorno \fBDEB_VENDOR\fP o \fB/etc/dpkg/origins/default\fP.
 .
 .SH ENTORNO
 .TP 
 \fBDEB_VENDOR\fP
-Esta opción define el proveedor actual. De estar vacío, el proveedor actual
-se definirá leyendo \fB/etc/dpkg/origins/default\fP.
+Esta opción define el proveedor actual. Si esta vacío, el proveedor actual
+se define leyendo \fB/etc/dpkg/origins/default\fP.
 .
-.SH AUTOR
-Copyright \(co 2009 Rapha\[:e]l Hertzog
-.sp
-Esto es software libre; vea la versión 2 o posterior de la Licencia Pública
-General GNU para condiciones de copia. NO hay ninguna garantía.
-
-.SH "TRADUCTOR"
+.SH "VÉASE TAMBIÉN"
+\fBdeb\-origin\fP(5).
+.SH TRADUCTOR
 Rudy Godoy <rudy@kernel\-panik.org>,
 Rubén Porras <nahoo@inicia.es>,
 Bruno Barrera C. <bruno.barrera@igloo.cl>,

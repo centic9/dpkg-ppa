@@ -1,10 +1,26 @@
-.\" Author: RaphaÃ«l Hertzog
+.\" dpkg manual page - deb-symbols(5)
+.\"
+.\" Copyright Â© 2007-2012 RaphaÃ«l Hertzog <hertzog@debian.org>
+.\"
+.\" This is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <https://www.gnu.org/licenses/>.
+.
 .\"*******************************************************************
 .\"
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH deb\-symbols 5 16\-07\-2007 "Projet Debian" "Utilitaires de dpkg"
+.TH deb\-symbols 5 14\-08\-2011 "Projet Debian" "Utilitaires de dpkg"
 .SH NOM
 deb\-symbols \- Fichier d'information sur les bibliothèques partagées Debian
 .
@@ -15,20 +31,20 @@ symboles
 Le format pour une entrée d'information sur les dépendances étendues avec
 bibliothèques partagées dans ces fichiers est le suivant\ :
 .PP
-<bibliothèque soname> <modèle principal de dépendance>
+\fImodèle principal de dépendance de bibliothèque soname\fP
 .br
-[ | <modèle alternatif de dépendance> ]
+[| \fImodèle\-alternatif\-de\-dépendance\fP]
 .br
-[ ... ]
+[...]
 .br
-[ * <nom\-du\-champ>: <valeur du champ> ]
+[* \fInom\-du\-champ\fP: \fIvaleur\-du\-champ\fP]
 .br
-[ ... ]
- <symbole> <version minimum>[ <id du modèle de dépendance> ]
+[...]
+ \fIsymbole\fP \fIversion minimum\fP[\fIid du modèle de dépendance\fP]
 .P
 La variable \fIsoname de la bibliothèque\fP est exactement la valeur du champ
-SONAME tel que exporté par \fBobjdump\fP(1). La varible \fImodèle de dépendance\fP
-est une dépendance où \fI#MINVER#\fP est dynamiquement remplacé soit par une
+SONAME telle que exportée par \fBobjdump\fP(1). Un \fImodèle de dépendance\fP est
+une dépendance où \fI#MINVER#\fP est dynamiquement remplacé soit par une
 version comme "(>= \fIversion minimum\fP)" soit par rien (si une dépendance
 quelle que soit sa version est reconnue suffisante).
 .P
@@ -36,14 +52,14 @@ Chaque \fIsymbole\fP exporté (noté \fInom\fP@\fIversion\fP, avec \fIversion\fP q
 commence par "Base" si la bibliothèque n'a pas de version) est associé à une
 \fIversion minimale\fP dans son modèle de dépendance (le modèle principal de
 dépendance est utilisé si l'\fIid du modèle de dépendance\fP n'est pas
-présent). La première alternative au modéle de dépendance est numérotée 1,
+présent). La première alternative au modèle de dépendance est numérotée 1,
 la seconde 2, etc.
 .P
 Chaque entrée pour une bibliothèque peut aussi avoir des champs de
 méta\-information. Ces champs sont enregistrés via des lignes qui débutent
-par une astérisque («\ *\ »). Actuellement, le seul champ valide est
-\fIBuild\-Depends\-Package\fP, il indique le nom du paquet «\ \-dev\ » associé à la
-bibliothèque et est utilisé par dpkg\-shlibdeps pour s'assurer que la
+par une astérisque («\ *\ »). Actuellement, le seul champ valable est
+\fIBuild\-Depends\-Package\fP ; il indique le nom du paquet «\ \-dev\ » associé à la
+bibliothèque et est utilisé par \fBdpkg\-shlibdeps\fP pour s'assurer que la
 dépendance produite est au moins aussi stricte que la dépendance de
 construction correspondante.
 .SH EXEMPLES
@@ -65,7 +81,7 @@ libGL.so.1 libgl1
  implementationSpecificSymbol@Base 6.5.2\-7 1
  [...]
 .SH "VOIR AUSSI"
-\fBhttp://wiki.debian.org/Projects/ImprovedDpkgShlibdeps\fP
+\fBhttps://wiki.debian.org/Projects/ImprovedDpkgShlibdeps\fP
 .br
 \fBdpkg\-shlibdeps\fP(1), \fBdpkg\-gensymbols\fP(1).
 .SH TRADUCTION

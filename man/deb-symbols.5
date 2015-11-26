@@ -1,5 +1,21 @@
-.\" Author: Raphaël Hertzog
-.TH deb\-symbols 5 "2007-07-16" "Debian Project" "dpkg utilities"
+.\" dpkg manual page - deb-symbols(5)
+.\"
+.\" Copyright © 2007-2012 Raphaël Hertzog <hertzog@debian.org>
+.\"
+.\" This is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <https://www.gnu.org/licenses/>.
+.
+.TH deb\-symbols 5 "2011-08-14" "Debian Project" "dpkg utilities"
 .SH NAME
 deb\-symbols \- Debian's extended shared library information file
 .
@@ -10,56 +26,56 @@ symbols
 The format for an extended shared library dependency information entry
 in these files is:
 .PP
-<library soname> <main dependency template>
+.I library-soname main-dependency-template
 .br
-[ | <alternative dependency template> ]
+[| \fIalternative-dependency-template\fP]
 .br
-[ ... ]
+[...]
 .br
-[ * <field-name>: <field value> ]
+[* \fIfield-name\fP: \fIfield-value\fP]
 .br
-[ ... ]
- <symbol> <minimal version>[ <id of dependency template> ]
+[...]
+ \fIsymbol\fP \fIminimal-version\fP [\fIid-of-dependency-template\fP]
 .P
-The \fIlibrary soname\fR is exactly the value of the SONAME field
-as exported by \fBobjdump\fR(1). A \fIdependency template\fR is a
+The \fIlibrary-soname\fR is exactly the value of the SONAME field
+as exported by \fBobjdump\fR(1). A \fIdependency-template\fR is a
 dependency where \fI#MINVER#\fR is dynamically replaced either by
-a version check like "(>= \fIminimal version\fR)" or by nothing (if
-an unversioned dependency is deemed sufficient). 
+a version check like "(>= \fIminimal-version\fR)" or by nothing (if
+an unversioned dependency is deemed sufficient).
 .P
 Each exported \fIsymbol\fR (listed as \fIname\fR@\fIversion\fR, with
 \fIversion\fR being "Base" if the library is not versioned) is associated
-to a \fIminimal version\fR of its dependency template (the main dependency
-template is used if \fIid of dependency template\fR is not present). The
+to a \fIminimal-version\fR of its dependency template (the main dependency
+template is used if \fIid-of-dependency-template\fR is not present). The
 first alternative dependency template is numbered 1, the second one 2,
 etc.
 .P
 Each entry for a library can also have some fields of meta-information.
 Those fields are stored on lines starting with an asterisk. Currently,
-the only valid field is \fIBuild-Depends-Package\fR, it indicates the name
+the only valid field is \fIBuild\-Depends\-Package\fR, it indicates the name
 of the "\-dev" package associated to the library and is used by
-dpkg-shlibdeps to make sure that the dependency generated is at least as
+\fBdpkg\-shlibdeps\fP to make sure that the dependency generated is at least as
 strict as the corresponding build dependency.
 .SH EXAMPLES
 .SS Simple symbols file
-.PP 
+.PP
 libftp.so.3 libftp3 #MINVER#
  DefaultNetbuf@Base 3.1-1-6
  FtpAccess@Base 3.1-1-6
  [...]
 .SS Advanced symbols file
-.PP 
+.PP
 libGL.so.1 libgl1
 .br
-| libgl1-mesa-glx #MINVER#
+| libgl1\-mesa\-glx #MINVER#
 .br
-* Build-Depends-Package: libgl1-mesa-dev
+* Build\-Depends\-Package: libgl1\-mesa\-dev
  publicGlSymbol@Base 6.3-1
  [...]
  implementationSpecificSymbol@Base 6.5.2-7 1
  [...]
 .SH SEE ALSO
-.BR http://wiki.debian.org/Projects/ImprovedDpkgShlibdeps
+.BR https://wiki.debian.org/Projects/ImprovedDpkgShlibdeps
 .br
 .BR dpkg\-shlibdeps (1),
 .BR dpkg\-gensymbols (1).

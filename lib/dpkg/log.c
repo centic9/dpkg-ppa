@@ -1,5 +1,5 @@
 /*
- * dpkg - main program for package management
+ * libdpkg - Debian packaging suite library routines
  * log.c - logging related functions
  *
  * Copyright © 2005 Scott James Remnant <scott@netsplit.com>
@@ -15,7 +15,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
@@ -50,8 +50,8 @@ log_message(const char *fmt, ...)
 	if (!logfd) {
 		logfd = fopen(log_file, "a");
 		if (!logfd) {
-			fprintf(stderr, _("couldn't open log `%s': %s\n"),
-			        log_file, strerror(errno));
+			notice(_("could not open log '%s': %s"),
+			       log_file, strerror(errno));
 			log_file = NULL;
 			return;
 		}

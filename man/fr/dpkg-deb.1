@@ -1,14 +1,34 @@
+.\" dpkg manual page - dpkg-deb(1)
+.\"
+.\" Copyright Â© 1995-1996 Ian Jackson <ian@chiark.chu.cam.ac.uk>
+.\" Copyright Â© 1999 Wichert Akkerman <wakkerma@debian.org>
+.\" Copyright Â© 2006 Frank Lichtenheld <djpig@debian.org>
+.\" Copyright Â© 2007-2012 Guillem Jover <guillem@debian.org>
+.\"
+.\" This is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <https://www.gnu.org/licenses/>.
+.
 .\"*******************************************************************
 .\"
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH dpkg\-deb 1 07\-03\-2010 "Projet Debian" "suite dpkg"
+.TH dpkg\-deb 1 2013\-03\-27 "Projet Debian" "suite dpkg"
 .SH NOM
 dpkg\-deb \- outil pour la manipulation des archives (.deb) des paquets Debian
 .
 .SH SYNOPSIS
-\fBdpkg\-deb\fP [\fIoptions\fP] \fIcommande\fP
+\fBdpkg\-deb\fP [\fIoptions\fP...] \fIcommande\fP
 .
 .SH DESCRIPTION
 \fBdpkg\-deb\fP crée un paquet, dépaquette une archive ou donne des
@@ -24,7 +44,7 @@ de \fBdpkg\-deb\fP. \fBdpkg\fP comprend que \fBdpkg\-deb\fP est appelé et le lan
 \fB\-b\fP, \fB\-\-build\fP \fIrépertoire\fP [\fIarchive\fP|\fIrépertoire\fP]
 Crée une archive Debian avec l'arborescence contenue dans
 \fIrépertoire\fP. \fIrépertoire\fP doit posséder un sous\-répertoire \fBDEBIAN\fP qui
-contient les fichiers de contrôle tel que le fichier «\ control\ »
+contient les fichiers de contrôle tels que le fichier «\ control\ »
 lui\-même. Ce répertoire \fIn'apparaît pas\fP dans l'archive de l'arborescence
 du paquet binaire\ ; mais les fichiers qu'il contient sont mis dans la zone
 de contrôle du paquet binaire.
@@ -42,8 +62,8 @@ Quand aucune \fIarchive\fP n'est donnée, \fBdpkg\-deb\fP appelle le paquet
 Si l'archive qui doit être créée existe déjà, elle est remplacée.
 
 Quand le second argument est un répertoire, \fBdpkg\-deb\fP appelle le paquet
-\fIpaquet\fP\fB_\fP\fIversion\fP\fB_\fP\fIarch\fP\fB.deb\fP,\fB ou bien
-\fP\fIpaquet\fP\fB_\fP\fIversion\fP\fB.deb\fP si aucun champ \fBArchitecture\fP n'est présent
+\fIpaquet\fP\fB_\fP\fIversion\fP\fB_\fP\fIarch\fP\fB.deb\fP, ou bien
+\fIpaquet\fP\fB_\fP\fIversion\fP\fB.deb\fP si aucun champ \fBArchitecture\fP n'est présent
 dans le fichier de contrôle du paquet. Quand un répertoire cible est précisé
 à la place d'un fichier, l'option \fB\-\-nocheck\fP ne doit pas être utilisée
 (puisque \fBdpkg\-deb\fP a besoin de lire et d'analyser le fichier de contrôle
@@ -94,17 +114,26 @@ produit pas\fP une installation correcte\ ! Utilisez \fBdpkg\fP pour
 l'installation des paquets.
 
 \fIrépertoire\fP est créé si nécessaire (mais pas ses répertoires parents) et
-ses permissions sont modifiées pour correspondre au cnotenu du paquet.
+ses permissions sont modifiées pour correspondre au contenu du paquet.
 .TP 
 \fB\-X\fP, \fB\-\-vextract\fP \fIarchive répertoire\fP
-Comme \fB\-\-extract\fP (\fB\-x\fP), mais affiche la liste des fichiers au fur et à
-mesure qu'ils sont extraits.
+Comme \fB\-\-extract\fP (\fB\-x\fP) avec \fB\-\-verbose\fP (\fB\-v\fP), ce qui affiche la
+liste des fichiers au fur et à mesure qu'ils sont extraits.
+.TP 
+\fB\-R\fP, \fB\-\-raw\-extract\fP \fIarchive répertoire\fP
+Extrait l'arborescence des fichiers d'un paquet archive dans le répertoire
+spécifié et les fichiers d'information de contrôle dans un sous\-répertoire
+nommé DEBIAN de ce répertoire.
+
+Le répertoire cible est créé si nécessaire (mais pas ses répertoires
+parents).
 .TP 
 \fB\-\-fsys\-tarfile\fP \fIarchive\fP
 Extrait les données de l'arborescence d'un paquet binaire et les envoie sur
 la sortie standard dans le format propre à la commande \fBtar\fP. En combinant
 cette option avec la commande \fBtar\fP(1), on peut ainsi extraire un fichier
-précis d'une archive de paquet.
+précis d'une archive de paquet. L'archive d'entrée sera toujours traitée
+séquentiellement.
 .TP 
 \fB\-e\fP, \fB\-\-control\fP \fIarchive\fP [\fIrépertoire\fP]
 Extrait les fichiers de contrôle d'une archive de paquet dans le répertoire
@@ -116,7 +145,7 @@ Quand aucun répertoire n'est précisé, on utilise un sous\-répertoire
 Le répertoire cible est créé si nécessaire (mais pas ses répertoires
 parents).
 .TP 
-\fB\-h\fP, \fB\-\-help\fP
+\fB\-?\fP, \fB\-\-help\fP
 Affiche un message d'aide puis quitte.
 .TP 
 \fB\-\-version\fP
@@ -139,28 +168,47 @@ Par défaut, la valeur de ce champ est ${Package}\et${Version}\en.
 .TP 
 \fB\-z\fP\fIniveau_compression\fP
 Indique le niveau de compression à fournir au logiciel de compression appelé
-en sous\-main lors de la compression du paquet.
+en sous\-main lors de la compression du paquet. La valeur par défaut est 9
+pour gzip et bzip, 6 pour xz et lzma. Les valeurs possibles sont les entiers
+compris entre 0 et 9\ :\ 0 correspond à aucune compression pour gzip et au
+niveau 1 pour bzip2. Avant la version 1.16.2, la valeur 0 correspondait à
+«\ aucune compression\ » pour tous les logiciels de compression.
+.TP 
+\fB\-S\fP\fIstratégie\-compression\fP
+Specify which compression strategy to use on the compressor backend, when
+building a package (since dpkg 1.16.2). Allowed values are \fInone\fP (since
+dpkg 1.16.4), \fIfiltered\fP, \fIhuffman\fP, \fIrle\fP and \fIfixed\fP for gzip (since
+dpkg 1.17.0) and \fIextreme\fP for xz.
 .TP 
 \fB\-Z\fP\fItype_compression\fP
-Indique le type de compression à utiliser lors de la construction d'un
-paquet. Les valeurs autorisées sont \fIgzip\fP (la valeur par défaut), \fIxz\fP,
-\fIbzip2\fP, \fIlzma\fP et \fInone\fP (aucune compression).
+Specify which compression type to use when building a package. Allowed
+values are \fIgzip\fP, \fIxz\fP, \fIbzip2\fP, \fIlzma\fP, and \fInone\fP (default is
+\fIxz\fP).
+.TP 
+\fB\-\-deb\-format=\fP\fIformat\fP
+Set the archive format version used when building (since dpkg 1.17.0).
+Allowed values are \fI2.0\fP for the new format, and \fI0.939000\fP for the old
+one (default is \fI2.0\fP).
+
+The old archive format is less easily parsed by non\-Debian tools and is now
+obsolete; its only use is when building packages to be parsed by versions of
+dpkg older than 0.93.76 (September 1995), which was released as i386 a.out
+only.
 .TP 
 \fB\-\-new\fP
-S'assure que \fBdpkg\-deb\fP construit une archive avec le «\ nouveau\ »
-format. C'est le comportement par défaut.
+This is a legacy alias for \fB\-\-deb\-format=2.0\fP.
 .TP 
 \fB\-\-old\fP
-Oblige \fBdpkg\-deb\fP à construire une archive avec l'«\ ancien\ » format. Ce
-format, moins facilement compris par les outils non\-Debian, est maintenant
-dépassé. On l'utilise seulement quand on construit des paquets qui doivent
-être analysés par des versions de dpkg plus anciennes que la version 0.93.76
-(septembre 1995), qui fut produite uniquement pour le format «\ i386 a.out\ ».
+This is a legacy alias for \fB\-\-deb\-format=0.939000\fP.
 .TP 
 \fB\-\-nocheck\fP
 Empêche les vérifications normales de \fBdpkg\-deb \-\-build\fP quant au contenu
 proposé d'une archive. De cette façon, on peut construire n'importe quelle
 archive, aussi défectueuse soit\-elle.
+.TP 
+\fB\-v\fP, \fB\-\-verbose\fP
+Active l'affichage verbeux. Cela n'affecte actuellement que \fB\-\-extract\fP et
+le rend analogue à \fB\-\-vextract\fP.
 .TP 
 \fB\-D\fP, \fB\-\-debug\fP
 Permet les messages de débogage. Ce n'est pas très intéressant.
@@ -171,29 +219,24 @@ Permet les messages de débogage. Ce n'est pas très intéressant.
 Si cette option est utilisée, \fBdpkg\fP l'utilisera comme répertoire pour
 créer les fichiers et répertoire temporaires.
 .
+.SH NOTES
+N'essayez pas d'installer un logiciel avec \fBdpkg\-deb\ !\fP Vous devez utiliser
+\fBdpkg\fP pour être sûr que tous ses fichiers sont correctement mis en place,
+que les scripts du paquet sont exécutés et que son contenu et son état sont
+enregistrés.
+.
 .SH BOGUES
 \fBdpkg\-deb \-I\fP \fIpaquet1\fP\fB.deb\fP \fIpaquet2\fP\fB.deb\fP se trompe.
 
 Il n'existe pas d'authentification des fichiers \fB.deb\fP. Il n'existe même
 pas de système de somme de contrôle immédiat. Les outils de haut niveau
 comme APT gèrent l'authentification des paquets \fB.deb\fP récupérés depuis un
-dépôt donné et la plupart des paquets fournissent désormais une comme de
+dépôt donné et la plupart des paquets fournissent désormais une somme de
 contrôle MD5 créée par debian/rules. Cependant, ceci n'est pas directement
 géré par les outils de plus bas niveau.
-
-N'essayez pas d'installer un logiciel avec \fBdpkg\-deb\ !\fP Vous devez utiliser
-\fBdpkg\fP pour être sûr que tous ses fichiers sont correctement mis en place,
-que les scripts du paquet sont exécutés et que son contenu et son état sont
-enregistrés.
 .
 .SH "VOIR AUSSI"
 \fBdeb\fP(5), \fBdeb\-control\fP(5), \fBdpkg\fP(1), \fBdselect\fP(1).
-.
-.SH AUTEUR
-Copyright \(co 1995\-1996 Ian Jackson
-.sp
-Ce programme est un logiciel libre\ ; voyez la «\ GNU General Public Licence\ »
-version 2 ou supérieure pour le copyright. Il n'y a PAS de garantie.
 .SH TRADUCTION
 Ariel VARDI <ariel.vardi@freesbee.fr>, 2002.
 Philippe Batailler, 2006.

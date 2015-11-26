@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-SUBDIRS = po
+SUBDIRS = mk po
 
 bin_SCRIPTS = \
 	dpkg-architecture \
@@ -49,13 +49,16 @@ EXTRA_DIST = \
 
 
 CLEANFILES = \
+	$(test_data_objects) \
 	$(bin_SCRIPTS) $(changelog_SCRIPTS)
 
 perllibdir = $(PERL_LIBDIR)
 nobase_dist_perllib_DATA = \
 	Dpkg/Arch.pm \
+	Dpkg/BuildEnv.pm \
 	Dpkg/BuildFlags.pm \
 	Dpkg/BuildOptions.pm \
+	Dpkg/BuildProfiles.pm \
 	Dpkg/Changelog.pm \
 	Dpkg/Changelog/Debian.pm \
 	Dpkg/Changelog/Entry.pm \
@@ -68,17 +71,21 @@ nobase_dist_perllib_DATA = \
 	Dpkg/Conf.pm \
 	Dpkg/Control.pm \
 	Dpkg/Control/Changelog.pm \
+	Dpkg/Control/FieldsCore.pm \
 	Dpkg/Control/Fields.pm \
 	Dpkg/Control/Info.pm \
+	Dpkg/Control/HashCore.pm \
 	Dpkg/Control/Hash.pm \
 	Dpkg/Control/Types.pm \
 	Dpkg/Deps.pm \
 	Dpkg/ErrorHandling.pm \
 	Dpkg/Exit.pm \
+	Dpkg/File.pm \
 	Dpkg/Gettext.pm \
 	Dpkg/Index.pm \
 	Dpkg/Interface/Storable.pm \
 	Dpkg/IPC.pm \
+	Dpkg/Package.pm \
 	Dpkg/Path.pm \
 	Dpkg/Shlibs.pm \
 	Dpkg/Shlibs/Objdump.pm \
@@ -90,13 +97,15 @@ nobase_dist_perllib_DATA = \
 	Dpkg/Source/Package.pm \
 	Dpkg/Source/Package/V1.pm \
 	Dpkg/Source/Package/V2.pm \
-	Dpkg/Source/Package/V3/bzr.pm \
-	Dpkg/Source/Package/V3/custom.pm \
-	Dpkg/Source/Package/V3/native.pm \
-	Dpkg/Source/Package/V3/git.pm \
-	Dpkg/Source/Package/V3/quilt.pm \
+	Dpkg/Source/Package/V3/Bzr.pm \
+	Dpkg/Source/Package/V3/Custom.pm \
+	Dpkg/Source/Package/V3/Native.pm \
+	Dpkg/Source/Package/V3/Git.pm \
+	Dpkg/Source/Package/V3/Quilt.pm \
 	Dpkg/Source/Patch.pm \
+	Dpkg/Source/Quilt.pm \
 	Dpkg/Substvars.pm \
+	Dpkg/Util.pm \
 	Dpkg/Vars.pm \
 	Dpkg/Vendor.pm \
 	Dpkg/Vendor/Debian.pm \
@@ -109,22 +118,23 @@ nobase_dist_perllib_DATA = \
 man3_MANS =
 
 do_perl_subst = $(AM_V_GEN) \
-		sed -e "s:^\#![:space:]*/usr/bin/perl:\#!$(PERL):" \
-		    -e "s:\$$dpkglibdir[[:space:]]*=[[:space:]]*['\"][^'\"]*['\"]:\$$dpkglibdir=\"$(pkglibdir)\":" \
-		    -e "s:\$$pkgdatadir[[:space:]]*=[[:space:]]*['\"][^'\"]*['\"]:\$$pkgdatadir=\"$(pkgdatadir)\":" \
-		    -e "s:\$$admindir[[:space:]]*=[[:space:]]*['\"][^'\"]*['\"]:\$$admindir=\"$(admindir)\":" \
-		    -e "s:\$$version[[:space:]]*=[[:space:]]*['\"][^'\"]*[\"']:\$$version=\"$(PACKAGE_VERSION)\":"
+		sed -e "s:^\#![[:space:]]*/usr/bin/perl:\#!$(PERL):" \
+		    -e "s:\$$CONFDIR[[:space:]]*=[[:space:]]*['\"][^'\"]*['\"]:\$$CONFDIR='$(pkgconfdir)':" \
+		    -e "s:\$$ADMINDIR[[:space:]]*=[[:space:]]*['\"][^'\"]*['\"]:\$$ADMINDIR='$(admindir)':" \
+		    -e "s:\$$LIBDIR[[:space:]]*=[[:space:]]*['\"][^'\"]*['\"]:\$$LIBDIR='$(pkglibdir)':" \
+		    -e "s:\$$DATADIR[[:space:]]*=[[:space:]]*['\"][^'\"]*['\"]:\$$DATADIR='$(pkgdatadir)':" \
+		    -e "s:\$$PROGVERSION[[:space:]]*=[[:space:]]*['\"][^'\"]*[\"']:\$$PROGVERSION='$(PACKAGE_VERSION)':"
 
 do_shell_subst = $(AM_V_GEN) \
 		 sed -e "s:^version[[:space:]]*=[[:space:]]*['\"][^'\"]*[\"']:version=\"$(PACKAGE_VERSION)\":"
 
 %: %.pl Makefile
-	@test -d `dirname $@` || $(mkdir_p) `dirname $@`
+	@test -d `dirname $@` || $(MKDIR_P) `dirname $@`
 	$(do_perl_subst) <$< >$@
 	$(AM_V_at) chmod +x $@
 
 %: %.sh Makefile
-	@test -d `dirname $@` || $(mkdir_p) `dirname $@`
+	@test -d `dirname $@` || $(MKDIR_P) `dirname $@`
 	$(do_shell_subst) <$< >$@
 	$(AM_V_at) chmod +x $@
 
@@ -133,10 +143,10 @@ if BUILD_POD_DOC
 # Install manual pages for perl modules manually as make can't deal
 # properly with filenames containing colons
 # Remove empty manual pages (perl modules not documented)
-	$(mkdir_p) $(DESTDIR)$(man3dir)
+	$(MKDIR_P) $(DESTDIR)$(man3dir)
 	for module in $(nobase_dist_perllib_DATA); do \
 	    name=`echo $$module | sed -e 's|/|::|g' -e 's/\.pm$$//'`; \
-	    pod2man --utf8 --center=libdpkg-perl --release=$(VERSION) \
+	    $(POD2MAN) --utf8 --center=libdpkg-perl --release=$(VERSION) \
 		--name="$$name"	--section=3 $(srcdir)/$$module \
 		>$(DESTDIR)$(man3dir)/$$name.3; \
 	    test -s $(DESTDIR)$(man3dir)/$$name.3 || \
@@ -160,12 +170,13 @@ if BUILD_POD_DOC
 endif
 
 coverage: check
-	$(PERL_COVER) -silent -outputdir $(top_builddir)/doc/coverage/scripts
+	$(PERL_COVER) -silent \
+	  -ignore_re '^t/.*\.t' \
+	  -outputdir $(top_builddir)/doc/coverage/scripts
 
 coverage-clean:
 	rm -rf cover_db
 
-TEST_VERBOSE= 0
 TEST_ENV_VARS = \
 	DPKG_DATADIR=$(srcdir)/.. \
 	DPKG_ORIGINS_DIR=$(srcdir)/t/origins
@@ -174,13 +185,15 @@ TEST_COVERAGE = $(PERL_COVERAGE)
 test_tmpdir = t.tmp
 
 test_cases = \
-	t/000_pod.t \
 	t/100_Dpkg_Version.t \
+	t/110_Dpkg_Arch.t \
+	t/150_Dpkg_Package.t \
 	t/190_Dpkg_Shlibs_Cppfilt.t \
 	t/200_Dpkg_Shlibs.t \
 	t/300_Dpkg_BuildOptions.t \
 	t/400_Dpkg_Deps.t \
 	t/500_Dpkg_Path.t \
+	t/550_Dpkg_Util.t \
 	t/600_Dpkg_Changelog.t \
 	t/600_Dpkg_Changelog_Ubuntu.t \
 	t/700_Dpkg_Control.t \
@@ -188,11 +201,6 @@ test_cases = \
 	t/800_Dpkg_IPC.t \
 	t/850_Dpkg_Compression.t \
 	t/910_merge_changelogs.t
-
-check_DATA = \
-	$(test_tmpdir)/200_Dpkg_Shlibs/objdump.basictags-amd64 \
-	$(test_tmpdir)/200_Dpkg_Shlibs/objdump.basictags-i386 \
-	$(test_tmpdir)/200_Dpkg_Shlibs/objdump.patterns
 
 test_data = \
 	t/200_Dpkg_Shlibs/symbols.fake-1 \
@@ -211,6 +219,10 @@ test_data = \
 	t/200_Dpkg_Shlibs/ld.so.conf.d/normal.conf \
 	t/200_Dpkg_Shlibs/ld.so.conf.d/inf_recurse.conf \
 	t/200_Dpkg_Shlibs/ld.so.conf.d/recursive.conf \
+	t/200_Dpkg_Shlibs/objdump.space \
+	t/200_Dpkg_Shlibs/objdump.basictags-amd64 \
+	t/200_Dpkg_Shlibs/objdump.basictags-i386 \
+	t/200_Dpkg_Shlibs/objdump.patterns \
 	t/200_Dpkg_Shlibs/objdump.glib-ia64 \
 	t/200_Dpkg_Shlibs/objdump.libc6-2.3 \
 	t/200_Dpkg_Shlibs/objdump.libc6-2.6 \
@@ -222,10 +234,22 @@ test_data = \
 	t/600_Dpkg_Changelog/regressions \
 	t/600_Dpkg_Changelog/shadow \
 	t/700_Dpkg_Control/control-1 \
+	t/700_Dpkg_Control/bogus-unsigned.dsc \
+	t/700_Dpkg_Control/bogus-armor-double.dsc \
+	t/700_Dpkg_Control/bogus-armor-formfeed.dsc \
+	t/700_Dpkg_Control/bogus-armor-no-sig.dsc \
+	t/700_Dpkg_Control/bogus-armor-trail.dsc \
+	t/700_Dpkg_Control/bogus-armor-inline.dsc \
+	t/700_Dpkg_Control/bogus-armor-nested.dsc \
+	t/700_Dpkg_Control/bogus-armor-spaces.dsc \
 	t/750_Dpkg_Substvars/substvars1 \
 	t/910_merge_changelogs/ch-old \
 	t/910_merge_changelogs/ch-a \
 	t/910_merge_changelogs/ch-b \
+	t/910_merge_changelogs/ch-badver-a \
+	t/910_merge_changelogs/ch-badver-b \
+	t/910_merge_changelogs/ch-badver-merged \
+	t/910_merge_changelogs/ch-badver-old \
 	t/910_merge_changelogs/ch-merged \
 	t/910_merge_changelogs/ch-merged-basic \
 	t/910_merge_changelogs/ch-merged-pr \
@@ -234,23 +258,36 @@ test_data = \
 	t/origins/default \
 	t/origins/ubuntu
 
-objdump_lib_name = lib`basename $@`.so
-$(test_tmpdir)/200_Dpkg_Shlibs/objdump.basictags-amd64 $(test_tmpdir)/200_Dpkg_Shlibs/objdump.basictags-i386: $(srcdir)/t/200_Dpkg_Shlibs/basictags.c
-	$(mkdir_p) $(test_tmpdir)/200_Dpkg_Shlibs
-	$(CC) $(CFLAGS) -shared -fPIC -Wl,-soname -Wl,libbasictags.so.1 $< \
-	  $(if $(findstring amd64,$@),-DAMD64,) -o $(objdump_lib_name)
-	objdump -w -f -p -T -R $(objdump_lib_name) | \
-	  sed "s/$(objdump_lib_name)/libbasictags.so.1/g" > $@
-	rm -f $(objdump_lib_name)
+test_data_objects = \
+	t/200_Dpkg_Shlibs/libobjdump.basictags-amd64.so \
+	t/200_Dpkg_Shlibs/libobjdump.basictags-i386.so \
+	t/200_Dpkg_Shlibs/libobjdump.patterns.so
 
-$(test_tmpdir)/200_Dpkg_Shlibs/objdump.patterns: $(srcdir)/t/200_Dpkg_Shlibs/patterns.cpp $(srcdir)/t/200_Dpkg_Shlibs/patterns.map
-	$(mkdir_p) $(test_tmpdir)/200_Dpkg_Shlibs
+$(srcdir)/t/200_Dpkg_Shlibs/libobjdump.basictags-amd64.so: $(srcdir)/t/200_Dpkg_Shlibs/basictags.c
+	$(CC) $(CFLAGS) -shared -fPIC -Wl,-soname -Wl,libbasictags.so.1 $< \
+	  -DAMD64 -o $@
+
+$(srcdir)/t/200_Dpkg_Shlibs/libobjdump.basictags-i386.so: $(srcdir)/t/200_Dpkg_Shlibs/basictags.c
+	$(CC) $(CFLAGS) -shared -fPIC -Wl,-soname -Wl,libbasictags.so.1 $< \
+	  -o $@
+
+$(srcdir)/t/200_Dpkg_Shlibs/libobjdump.patterns.so: $(srcdir)/t/200_Dpkg_Shlibs/patterns.cpp $(srcdir)/t/200_Dpkg_Shlibs/patterns.map
 	$(CXX) $(CXXFLAGS) -shared -fPIC -Wl,-soname -Wl,libpatterns.so.1 \
 	    -Wl,--version-script=$(srcdir)/t/200_Dpkg_Shlibs/patterns.map $< \
-	    -o $(objdump_lib_name)
-	objdump -w -f -p -T -R $(objdump_lib_name) | \
-	  sed "s/$(objdump_lib_name)/libpatterns.so.1/g" > $@
-	rm -f $(objdump_lib_name)
+	    -o $@
+
+.PHONY: refresh-test-data
+
+OBJDUMP = objdump -w -f -p -T -R
+
+refresh-test-data: $(test_data_objects)
+	$(OBJDUMP) $(srcdir)/t/200_Dpkg_Shlibs/libobjdump.basictags-amd64.so \
+	  >$(srcdir)/t/200_Dpkg_Shlibs/objdump.basictags-amd64
+	$(OBJDUMP) $(srcdir)/t/200_Dpkg_Shlibs/libobjdump.basictags-i386.so \
+	  >$(srcdir)/t/200_Dpkg_Shlibs/objdump.basictags-i386
+	$(OBJDUMP) $(srcdir)/t/200_Dpkg_Shlibs/libobjdump.patterns.so \
+	  >$(srcdir)/t/200_Dpkg_Shlibs/objdump.patterns
+	$(OBJDUMP) `which ls` >$(srcdir)/t/200_Dpkg_Shlibs/objdump.ls
 
 include $(top_srcdir)/Makecheck.am
 

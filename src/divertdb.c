@@ -16,7 +16,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
@@ -41,20 +41,20 @@
 #include "main.h"
 
 static struct diversion *diversions = NULL;
-static FILE *diversionsfile = NULL;
 static char *diversionsname;
 
 void
 ensure_diversions(void)
 {
-	struct stat stab1, stab2;
+	static struct stat sb_prev;
+	struct stat sb_next;
 	char linebuf[MAXDIVERTFILENAME];
+	static FILE *file_prev;
 	FILE *file;
 	struct diversion *ov, *oicontest, *oialtname;
 
-	if (diversionsname != NULL)
-		free(diversionsname);
-	diversionsname = dpkg_db_get_path(DIVERSIONSFILE);
+	if (diversionsname == NULL)
+		diversionsname = dpkg_db_get_path(DIVERSIONSFILE);
 
 	onerr_abort++;
 
@@ -62,26 +62,32 @@ ensure_diversions(void)
 	if (!file) {
 		if (errno != ENOENT)
 			ohshite(_("failed to open diversions file"));
-		if (!diversionsfile) {
-			onerr_abort--;
-			return;
-		}
-	} else if (diversionsfile) {
-		if (fstat(fileno(diversionsfile), &stab1))
-			ohshite(_("failed to fstat previous diversions file"));
-		if (fstat(fileno(file), &stab2))
+	} else {
+		setcloexec(fileno(file), diversionsname);
+
+		if (fstat(fileno(file), &sb_next))
 			ohshite(_("failed to fstat diversions file"));
-		if (stab1.st_dev == stab2.st_dev &&
-		    stab1.st_ino == stab2.st_ino) {
+
+		/*
+		 * We need to keep the database file open so that the
+		 * filesystem cannot reuse the inode number (f.ex. during
+		 * multiple dpkg-divert invocations in a maintainer script),
+		 * otherwise the following check might turn true, and we
+		 * would skip reloading a modified database.
+		 */
+		if (file_prev &&
+		    sb_prev.st_dev == sb_next.st_dev &&
+		    sb_prev.st_ino == sb_next.st_ino) {
 			fclose(file);
 			onerr_abort--;
+			debug(dbg_general, "%s: same, skipping", __func__);
 			return;
 		}
+		sb_prev = sb_next;
 	}
-	if (diversionsfile)
-		fclose(diversionsfile);
-	diversionsfile = file;
-	setcloexec(fileno(diversionsfile), diversionsname);
+	if (file_prev)
+		fclose(file_prev);
+	file_prev = file;
 
 	for (ov = diversions; ov; ov = ov->next) {
 		ov->useinstead->divert->camefrom->divert = NULL;
@@ -90,8 +96,10 @@ ensure_diversions(void)
 	diversions = NULL;
 	if (!file) {
 		onerr_abort--;
+		debug(dbg_general, "%s: none, reseting", __func__);
 		return;
 	}
+	debug(dbg_general, "%s: new, (re)loading", __func__);
 
 	while (fgets_checked(linebuf, sizeof(linebuf), file, diversionsname) >= 0) {
 		oicontest = nfmalloc(sizeof(struct diversion));

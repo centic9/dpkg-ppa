@@ -1,17 +1,35 @@
+.\" dselect manual page - dselect(1)
+.\"
+.\" Copyright Â© 1995 Juho Vuori <javuori@cc.helsinki.fi>
+.\" Copyright Â© 2000 Josip Rodin
+.\" Copyright Â© 2001 Joost Kooij
+.\" Copyright Â© 2001 Wichert Akkerman <wakkerma@debian.org>
+.\" Copyright Â© 2010-2011 Guillem Jover <guillem@debian.org>
+.\"
+.\" This is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <https://www.gnu.org/licenses/>.
+.
 .\"*******************************************************************
 .\"
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH dselect 1 2010\-03\-07 Debian\-Projekt Debian
+.TH dselect 1 2012\-04\-07 Debian\-Projekt Debian
 .SH NAME
 dselect \- Debian\-Paketverwaltungsoberfläche
 .
 .SH ÜBERSICHT
-\fBdselect\fP [\fB\-\-admindir\fP \fI<Verzeichnis>\fP] [\fB\-\-help\fP]
-[\fB\-\-version\fP] [\fB\-\-expert\fP] [\fB\-\-debug\fP|\fB\-D\fP\fI<Datei>\fP]
-[\fI<Aktion>\fP] [\fB\-\-colour\fP|\fB\-\-color\fP
-\fIBildschirmteil:\fP[\fIVordergrund\fP],[\fIHintergrund\fP][\fI:Attr\fP[\fI+Attr+..\fP]]]
+\fBdselect\fP [\fIOption\fP ?] \fIAktion\fP
 .
 .SH BESCHREIBUNG
 \fBdselect\fP
@@ -43,26 +61,25 @@ Informationen über das Programm anzuzeigen.
 .SH OPTIONEN
 Alle Optionen können sowohl auf der Kommandozeile als auch in der
 Konfigurationsdatei \fI/etc/dpkg/dselect.cfg\fP oder in den Dateien im
-Konfigurationsverzeichnis \fI/etc/dpkg/dpkg.cfg.d/\fP von \fBdselect\fP angegeben
-werden. Jede Zeile in der Konfigurationsdatei ist entweder eine Option
-(exakt identisch mit der Kommandozeilenoption, nur ohne einleitende
-Gedankenstriche) oder ein Kommentar (falls sie mit \fB#\fP beginnt).
+Konfigurationsverzeichnis \fI/etc/dpkg/dselect.cfg.d/\fP von \fBdselect\fP
+angegeben werden. Jede Zeile in der Konfigurationsdatei ist entweder eine
+Option (exakt identisch mit der Kommandozeilenoption, nur ohne einleitende
+Bindestriche) oder ein Kommentar (falls sie mit \fB#\fP beginnt).
 .br
 .TP 
-\fB\-\-admindir\fP\fI <Verzeichnis>\fP
+\fB\-\-admindir\fP\fI Verzeichnis\fP
 Ändert das Verzeichnis, in dem die Dateien »\fIstatus\fP«, »\fIavailable\fP« und
 ähnliche Dateien von Dpkg liegen. Standardmäßig ist dies \fI/var/lib/dpkg\fP
 und normalerweise sollte es keinen Grund geben, dieses zu ändern.
 .TP 
-\fB\-\-debug\fP\fI <Datei> \fP|\fI \fP\fB\-D\fP\fI<Datei>\fP
-Aktiviere Debugging. Debug\-Informationen werden nach \fI<Datei>\fP
-gesendet.
+\fB\-\-debug\fP\fI Datei\fP|\fI \fP\fB\-D\fP\fIDatei\fP
+Aktiviere Debugging. Debug\-Informationen werden nach \fIDatei\fP gesendet.
 .TP 
 \fB\-\-expert\fP
 Aktiviert den Expertenmodus, d.h. zeigt keine möglicherweise nervenden
 Hilfeinformationen an.
 .TP 
-[\fB\-\-colour\fP|\fB\-\-color\fP \fIBildschirmteil:\fP[\fIVordergrund\fP],[\fIHintergrund\fP][\fI:Attr\fP[\fI+Attr+..\fP]]]
+[\fB\-\-colour\fP|\fB\-\-color\fP \fIBildschirmteil:\fP[\fIVordergrund\fP],[\fIHintergrund\fP][\fI:Attr\fP[\fI+Attr+?\fP]]]
 Konfiguriert die Bildschirmfarben. Dies funktioniert nur, falls Ihr
 Bildschirm Farben unterstützt. Diese Option kann mehrfach verwendet werden
 (und wird am besten in \fIdselect.cfg\fP verwendet). Jede Verwendung ändert die
@@ -88,7 +105,7 @@ anzeigt.
 .TP 
 \fBpkgstatesel\fP
 In der Liste der Pakete, der Text, der den aktuellen Zustand des aktuell
-ausgewählten Paketes anzeigt
+ausgewählten Paketes anzeigt.
 .TP 
 \fBinfohead\fP
 Die Kopfzeile, die den Zustand des aktuell ausgewählten Paketes anzeigt.
@@ -126,16 +143,19 @@ Gib einen kurzen Hilfetext aus und beende sich erfolgreich.
 \fB\-\-version\fP
 Gebe Versionsinformationen aus und beende sich erfolgreich.
 .
-.SH VERWENDUNG
-Wenn \fBDselect\fP interaktiv gestartet wird, bietet es dem Benutzer ein Menü
-von verfügbaren Aktionen:
+.SH AKTIONEN
+Wenn \fBDselect\fP gestartet wird, kann es die folgenden Aktionen durchführen,
+entweder direkt, falls sie auf der Kommandozeile angegeben wurde oder indem
+dem Benutzer ein Menü der verfügbaren Aktionen bei interkativen Betrieb
+angezeigt wird:
 .SS Zugriff
 Wähle und konfiguriere eine Zugriffsmethode für Paketdepots.
 .sp
-Standardmäßig stellt \fBdselect\fP mehrere Methoden wie \fIfloppy\fP, \fIharddisk\fP
-oder \fIcdrom\fP zur Verfügung, aber andere Pakete können zusätzliche Methoden
-bereitstellen, z.B. das \fBapt\fP\-Paket stellt die \fIapt\fP\-Zugriffsmethode oder
-das \fBdpkg\-multicd\fP\-Paket \fImulti_cd\fP bereit.
+Standardmäßig stellt \fBdselect\fP mehrere Methoden wie \fIcdrom\fP, \fImulti_cd\fP,
+\fInfs\fP, \fImulti_nfs\fP, \fIharddisk\fP, \fImounted\fP, \fImulti_mount\fP, \fIfloppy\fP
+oder \fIftp\fP zur Verfügung, aber andere Pakete können zusätzliche Methoden
+bereitstellen, z.B. stellt das \fBapt\fP\-Paket die \fIapt\fP\-Zugriffsmethode
+bereit.
 .sp
 Die Verwendung der \fIapt\fP\-Zugriffsmethode wird nachdrücklich empfohlen.
 .sp
@@ -216,7 +236,7 @@ markiert sind.
 Beendet das Programm mit dem Fehlercode Null (erfolgreich).
 .sp
 .
-.SH Paketauswahlverwaltung
+.SH PAKETAUSWAHLVERWALTUNG
 .sp
 .SS Einführung
 .sp
@@ -370,7 +390,7 @@ detaillierter beschrieben.
 Es ist auch möglich, die Befehle auf Gruppen von Paketauswahlen anzuwenden,
 indem mit dem Cursor\-Balken die Gruppen\-Überschrift ausgewählt wird. Die
 genaue Gruppierung der Pakete hängt von den Einstellungen der aktuellen
-Listen\-Sortierung ab.
+Listensortierung ab.
 .sp
 Veränderungen von großen Gruppen von Auswahlen sollten vorsichtig
 durchgeführt werden, da dies sofort zu einer großen Anzahl an
@@ -461,7 +481,7 @@ Zugriffsmethode, sie funktioniert nicht nur, sondern ist sogar flexibler als
 die eingebauten Zugriffsmethoden.
 .
 .SH ÜBERSETZUNG
-Die deutsche Übersetzung wurde 2004, 2006-2010 von Helge Kreutzmann
+Die deutsche Übersetzung wurde 2004, 2006-2013 von Helge Kreutzmann
 <debian@helgefjell.de>, 2007 von Florian Rehnisch <eixman@gmx.de> und
 2008 von Sven Joachim <svenjoac@gmx.de>
 angefertigt. Diese Übersetzung ist Freie Dokumentation; lesen Sie die
@@ -469,12 +489,3 @@ GNU General Public License Version 2 oder neuer für die Kopierbedingungen.
 Es gibt KEINE HAFTUNG.
 .SH "SIEHE AUCH"
 \fBdpkg\fP(1), \fBapt\-get\fP(8), \fBsources.list\fP(5), \fBdeb\fP(5).
-.
-.SH AUTOREN
-\fBDselect\fP wurde von Ian Jackson (ijackson@gnu.ai.mit.edu) geschrieben. Die
-komplette Liste der Beitragenden kann mittels »dselect \-\-version«
-herausgefunden werden.
-.br
-Diese Handbuchseite wurde von Juho Vuori <javuori@cc.helsinki.fi>,
-Josip Rodin und Joost kooij geschrieben.
-

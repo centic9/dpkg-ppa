@@ -1,5 +1,5 @@
 /*
- * dpkg - main program for package management
+ * libdpkg - Debian packaging suite library routines
  * pkg-queue.h - primitives for pkg queue handling
  *
  * Copyright © 2010 Guillem Jover <guillem@debian.org>
@@ -15,7 +15,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #ifndef DPKG_PKG_QUEUE_H
@@ -25,6 +25,12 @@
 #include <dpkg/pkg-list.h>
 
 DPKG_BEGIN_DECLS
+
+/**
+ * @defgroup pkg-queue Package queues
+ * @ingroup dpkg-public
+ * @{
+ */
 
 struct pkg_queue {
 	struct pkg_list *head, *tail;
@@ -44,6 +50,8 @@ int pkg_queue_is_empty(struct pkg_queue *queue);
 
 struct pkg_list *pkg_queue_push(struct pkg_queue *queue, struct pkginfo *pkg);
 struct pkginfo *pkg_queue_pop(struct pkg_queue *queue);
+
+/** @} */
 
 DPKG_END_DECLS
 

@@ -11,16 +11,16 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 package Dpkg::Shlibs::Cppfilt;
 
 use strict;
 use warnings;
 
-our $VERSION = "0.01";
+our $VERSION = '0.01';
 
-use base 'Exporter';
+use Exporter qw(import);
 
 use Dpkg::ErrorHandling;
 use Dpkg::IPC;
@@ -34,7 +34,7 @@ our @EXPORT_OK = qw(cppfilt_demangle);
 my %cppfilts;
 
 sub get_cppfilt {
-    my $type = shift || "auto";
+    my $type = shift || 'auto';
 
     # Fork c++filt process for demangling $type unless it is forked already.
     # Keeping c++filt running improves performance a lot.
@@ -43,11 +43,11 @@ sub get_cppfilt {
 	$filt = $cppfilts{$type};
     } else {
 	$filt = { from => undef, to => undef,
-	            last_symbol => "", last_result => "" };
+	            last_symbol => '', last_result => '' };
 	$filt->{pid} = spawn(exec => [ 'c++filt', "--format=$type" ],
 	                     from_pipe => \$filt->{from},
 	                     to_pipe => \$filt->{to});
-	internerr(_g("unable to execute %s"), "c++filt")
+	syserr(_g('unable to execute %s'), 'c++filt')
 	    unless defined $filt->{from};
 	$filt->{from}->autoflush(1);
 
@@ -95,9 +95,9 @@ sub terminate_cppfilts {
 	next if not defined $cppfilts{$_}{pid};
 	close $cppfilts{$_}{from};
 	close $cppfilts{$_}{to};
-	wait_child($cppfilts{$_}{pid}, "cmdline" => "c++filt",
-	                               "nocheck" => 1,
-	                               "timeout" => 5);
+	wait_child($cppfilts{$_}{pid}, cmdline => 'c++filt',
+	                               nocheck => 1,
+	                               timeout => 5);
 	delete $cppfilts{$_};
     }
 }

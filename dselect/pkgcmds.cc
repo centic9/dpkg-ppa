@@ -15,7 +15,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
@@ -44,7 +44,7 @@ packagelist::affectedmatches(struct pkginfo *pkg, struct pkginfo *comparewith) {
   case sso_unsorted:
     break;
   default:
-    internerr("unknown statsortorder in affectedmatches");
+    internerr("unknown statsortorder %d", statsortorder);
   }
   if (comparewith->priority != pkginfo::pri_unset &&
       (comparewith->priority != pkg->priority ||
@@ -100,7 +100,10 @@ void packagelist::setwant(pkginfo::pkgwant nwarg) {
   int index, top, bot;
   pkginfo::pkgwant nw;
 
-  if (!readwrite) { beep(); return; }
+  if (modstatdb_get_status() == msdbrw_readonly) {
+    beep();
+    return;
+  }
 
   if (recursive) {
     redrawitemsrange(cursorline,cursorline+1);
@@ -109,7 +112,7 @@ void packagelist::setwant(pkginfo::pkgwant nwarg) {
     top= cursorline;
     bot= cursorline+1;
   } else {
-    packagelist *sub= new packagelist(bindings,0);
+    packagelist *sub = new packagelist(bindings, nullptr);
 
     affectedrange(&top,&bot);
     for (index= top; index < bot; index++) {
@@ -130,12 +133,12 @@ void packagelist::setwant(pkginfo::pkgwant nwarg) {
   movecursorafter(bot);
 }
 
-int manual_install = 0;
+bool manual_install = false;
 
 void packagelist::kd_select()   {
-	manual_install = 1;
+	manual_install = true;
 	setwant(pkginfo::want_install);
-	manual_install = 0;
+	manual_install = false;
 }
 void packagelist::kd_hold()     { setwant(pkginfo::want_hold);      }
 void packagelist::kd_deselect() { setwant(pkginfo::want_deinstall); }
@@ -145,7 +148,7 @@ void packagelist::kd_purge()    { setwant(pkginfo::want_purge);     }
 int would_like_to_install(pkginfo::pkgwant wantvalue, pkginfo *pkg) {
   /* Returns: 1 for yes, 0 for no, -1 for if they want to preserve an error condition. */
   debug(dbg_general, "would_like_to_install(%d, %s) status %d",
-        wantvalue, pkg_describe(pkg, pdo_foreign), pkg->status);
+        wantvalue, pkg_name(pkg, pnaw_always), pkg->status);
 
   if (wantvalue == pkginfo::want_install) return 1;
   if (wantvalue != pkginfo::want_hold) return 0;
@@ -156,9 +159,6 @@ int would_like_to_install(pkginfo::pkgwant wantvalue, pkginfo *pkg) {
 }
 
 const char *packagelist::itemname(int index) {
-  /* Ok, because output of itemname is never stored */
-  if (table[index]->pkg->set->name)
-    return pkg_describe(table[index]->pkg, pdo_foreign);
   return table[index]->pkg->set->name;
 }
 
@@ -168,7 +168,8 @@ void packagelist::kd_swapstatorder() {
   case sso_avail:     statsortorder= sso_state;     break;
   case sso_state:     statsortorder= sso_unsorted;  break;
   case sso_unsorted:  statsortorder= sso_avail;     break;
-  default: internerr("unknown statsort in kd_swapstatorder");
+  default:
+    internerr("unknown statsort %d", statsortorder);
   }
   resortredisplay();
 }
@@ -179,7 +180,8 @@ void packagelist::kd_swaporder() {
   case so_section:   sortorder= so_alpha;     break;
   case so_alpha:     sortorder= so_priority;  break;
   case so_unsorted:                           return;
-  default: internerr("unknown sort in kd_swaporder");
+  default:
+    internerr("unknown sort %d", sortorder);
   }
   resortredisplay();
 }
@@ -193,7 +195,7 @@ void packagelist::resortredisplay() {
     int index;
     for (index=0; index<nitems; index++) {
       if (table[index]->pkg->set->name &&
-          !strcasecmp(oldname, table[index]->pkg->set->name)) {
+          strcasecmp(oldname, table[index]->pkg->set->name) == 0) {
         newcursor= index;
         break;
       }
@@ -216,7 +218,8 @@ void packagelist::kd_versiondisplay() {
   case vdo_both:       versiondisplayopt= vdo_none;       break;
   case vdo_none:       versiondisplayopt= vdo_available;  break;
   case vdo_available:  versiondisplayopt= vdo_both;       break;
-  default: internerr("unknown versiondisplayopt in kd_versiondisplay");
+  default:
+    internerr("unknown versiondisplayopt %d", versiondisplayopt);
   }
   setwidths();
   leftofscreen= 0;

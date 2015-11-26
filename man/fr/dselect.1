@@ -1,17 +1,35 @@
+.\" dselect manual page - dselect(1)
+.\"
+.\" Copyright Â© 1995 Juho Vuori <javuori@cc.helsinki.fi>
+.\" Copyright Â© 2000 Josip Rodin
+.\" Copyright Â© 2001 Joost Kooij
+.\" Copyright Â© 2001 Wichert Akkerman <wakkerma@debian.org>
+.\" Copyright Â© 2010-2011 Guillem Jover <guillem@debian.org>
+.\"
+.\" This is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <https://www.gnu.org/licenses/>.
+.
 .\"*******************************************************************
 .\"
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH dselect 1 07\-03\-2010 "Projet Debian" Debian
+.TH dselect 1 07\-04\-2012 "Projet Debian" Debian
 .SH NOM
 dselect \- Interface de gestion de paquets Debian.
 .
 .SH SYNOPSIS
-\fBdselect\fP [\fB\-\-admindir\fP \fI<répertoire>\fP] [\fB\-\-help\fP]
-[\fB\-\-version\fP] [\fB\-\-expert\fP] [\fB\-\-debug\fP|\fB\-D\fP\fI<fichier>\fP]
-[\fI<action>\fP] [\fB\-\-colour\fP|\fB\-\-color\fP
-\fIpartie\-écran:\fP[\fIavant\-plan\fP],[\fIarrière\-plan\fP][\fI:attr\fP[\fI+attr+..\fP]]]
+\fBdselect\fP [\fIoption\fP...] [\fIaction\fP]
 .
 .SH DESCRIPTION
 \fBdselect\fP est une des principales interfaces de gestion des paquets sur un système Debian. À partir du menu principal de \fBdselect\fP, l'administrateur système peut\ :
@@ -24,7 +42,7 @@ dselect \- Interface de gestion de paquets Debian.
 gestion des paquets Debian. Il propose à l'écran un gestionnaire de
 sélections de paquets avec la possibilité de résoudre les conflits et
 dépendances. Exécuté avec les droits administrateur, il permet d'installer
-des paquets, les mettre à jour ou les retirer. Plusieurs méthode d'accès
+des paquets, les mettre à jour ou les retirer. Plusieurs méthodes d'accès
 peuvent être configurées pour récupérer les informations sur les versions
 des paquets disponibles et les paquets eux\-mêmes dans les dépôts de
 paquets. Suivant la méthode d'accès utilisée, ces dépôts peuvent être des
@@ -40,27 +58,27 @@ pour modifier le comportement de \fBdselect\fP ou pour montrer des informations
 supplémentaires sur le programme.
 .
 .SH OPTIONS
-On peut spécifier une option à la fois sur la ligne de commande, dans le
-fichier de configuration de dselect, \fI/etc/dpkg/dselect.cfg\fP ou dans les
-fichiers du répertoire de configuration \fI/etc/dpkg/dpkg.cfg.d/\fP. Chaque
-ligne de ce fichier est soit une option (identique à une option en ligne de
-commande mais sans tiret), soit un commentaire, commençant par \fB#\fP.
+All options can be specified both on the command line and in the \fBdselect\fP
+configuration file \fI/etc/dpkg/dselect.cfg\fP or the files on the
+configuration directory \fI/etc/dpkg/dselect.cfg.d/\fP. Each line in the
+configuration file is either an option (exactly the same as the command line
+option but without leading hyphens) or a comment (if it starts with a \fB#\fP).
 .br
 .TP 
-\fB\-\-admindir\fP\fI <répertoire>\fP
+\fB\-\-admindir\fP\fI répertoire\fP
 Change le répertoire où les fichiers «\ \fIstatus\fP\ », «\ \fIavailable\fP\ » et
 autres sont situés. Le répertoire par défaut est \fI/var/lib/dpkg\fP et il ne
-devrait pas avoir besoin de le modifier.
+devrait pas y avoir besoin de le modifier.
 .TP 
-\fB\-\-debug\fP\fI <fichier> \fP|\fI \fP\fB\-D\fP\fI<fichier>\fP
-Activer le débogage. Les informations de débogage sont envoyées dans le
-\fI<fichier>\fP.
+\fB\-\-debug\fP\fI fichier \fP|\fI \fP\fB\-D\fP\fIfichier\fP
+Activer le débogage. Les informations de débogage sont envoyées dans
+\fIfichier\fP.
 .TP 
 \fB\-\-expert\fP
 Activer le mode expert, c'est\-à\-dire ne pas afficher les messages d'aide
 ennuyeux.
 .TP 
-\fB\-\-colour\fP|\fB\-\-color\fP \fIpartie_écran:\fP[\fIpremier_plan\fP],[\fIarrière_plan\fP][\fI:attr\fP[\fI+attr+..\fP]]
+\fB\-\-colour\fP|\fB\-\-color\fP \fIpartie_écran:\fP[\fIpremier_plan\fP],[\fIarrière_plan\fP][\fI:attr\fP[\fI+attr+...\fP]]
 Configure les couleurs des écrans. Ceci ne fonctionne que si votre terminal
 gère les couleurs. Cette option peut\-être utilisée plusieurs fois (et il est
 préférable de l'utiliser dans \fIdselect.cfg\fP). Chaque utilisation change la
@@ -125,17 +143,18 @@ Affiche une aide rapide et se termine normalement.
 \fB\-\-version\fP
 Affiche la version et se termine normalement.
 .
-.SH UTILISATION
-Quand \fBdselect\fP est démarré en mode interactif, un menu propose à
-l'utilisateur une liste d'actions\ :
+.SH ACTIONS
+Quand \fBdselect\fP est démarré, il peut effectuer les actions suivantes, soit
+directement si elles sont indiquées dans la ligne de commande, soit
+interactivement avec un menu d'actions possibles\ :
 .SS "Accéder (access)"
 Choisir et configurer une méthode d'accès aux dépôts de paquets.
 .sp
-Par défaut, \fBdselect\fP fournit plusieurs méthodes telles que \fIfloppy\fP
-(disquette), \fIharddisk\fP (disque dur) ou \fIcdrom\fP, mais d'autres paquets
-peuvent fournir des méthodes supplémentaires, comme la méthode d'accès
-\fIapt\fP fournie par le paquet \fBapt\fP ou \fImulti_cd\fP fournie par le paquet
-\fBdpkg\-multicd\fP.
+Par défaut, \fBdselect\fP fournit plusieurs méthodes telles que \fIcdrom\fP,
+\fImulti_cd\fP, \fInfs\fP, \fImulti_nfs\fP, \fIharddisk\fP, \fImounted\fP, \fImulti_mount\fP,
+\fIfloppy\fP ou \fIftp\fP, mais d'autres paquets peuvent fournir des méthodes
+supplémentaires, comme la méthode d'accès \fIapt\fP fournie par le paquet
+\fBapt\fP.
 .sp
 L'utilisation de la méthode d'accès \fIapt\fP est fortement conseillée.
 .sp
@@ -145,7 +164,7 @@ Rafraîchir la liste des paquets disponibles.
 Récupère une liste de versions de paquets disponibles depuis un dépôt de
 paquets, qui a été configuré pour la méthode d'accès actuelle, puis met à
 jour la base de données de dpkg. Les listes de paquets sont d'habitude
-fournis par les dépôts sous la forme de fichiers \fIPackages\fP ou
+fournies par les dépôts sous la forme de fichiers \fIPackages\fP ou
 \fIPackages.gz\fP. Ces fichiers peuvent être générés par les responsables des
 dépôts grâce au programme \fBdpkg\-scanpackages\fP(1).
 .sp
@@ -194,7 +213,7 @@ trouvent sur http://bugs.debian.org/ ou dans la page de manuel de
 .sp
 Les détails de l'action d'installation dépendent de l'implémentation de la
 méthode d'accès. L'attention et la contribution de l'utilisateur peuvent
-être nécessaire lors de l'installation ou du retrait des paquets. Ceci
+être nécessaires lors de l'installation ou du retrait des paquets. Ceci
 dépend des scripts des responsables des paquets. Certains paquets utilisent
 la bibliothèque \fBdebconf\fP(1), ce qui permet la mise en place
 d'installations plus flexibles ou même automatisées.
@@ -213,7 +232,7 @@ Quitter \fBdselect\fP
 Quitte le programme avec un code d'erreur de 0 (succès).
 .sp
 .
-.SH "Gestion des sélections de paquets"
+.SH "PACKAGE SELECTIONS MANAGEMENT"
 .sp
 .SS Introduction
 .sp
@@ -228,7 +247,7 @@ au système de gestion des paquets Debian. En cas de doute, consultez la page
 de manuel \fBdpkg\fP(1) et la charte Debian présente dans le paquet
 \fBdebian\-policy\fP.
 .sp
-A moins que \fBdselect\fP soit lancé en mode expert ou intermédiaire, un
+À moins que \fBdselect\fP soit lancé en mode expert ou intermédiaire, un
 message d'aide est d'abord affiché lorsque cette action est choisie dans le
 menu. Il est \fBfortement\fP conseillé à l'utilisateur d'étudier toutes les
 informations dans ces écrans d'aide lorsqu'ils apparaissent. Les écrans
@@ -238,7 +257,7 @@ d'aide peuvent être affichés à tout moment à l'aide de la touche «\ \fB?\fP\ ».
 .sp
 L'écran de sélection est découpé par défaut en une moitié supérieure et une
 moitié inférieure. La moitié supérieure affiche une liste de paquets. Un
-curseur permet de sélectionner un paquet, ou un groupe de paquet en
+curseur permet de sélectionner un paquet, ou un groupe de paquets en
 sélectionnant le titre du groupe, si ça s'applique. La moitié inférieure de
 l'écran affiche les détails du paquet sélectionné dans la moitié
 supérieure. Le type de détail affiché peut varier.
@@ -261,7 +280,7 @@ du paquet dans la liste.
 .SS "Liste des états des paquets"
 .sp
 L'écran principal de sélection affiche une liste de tous les paquets connus
-par le système de gestion des paquets Debian. Ceci inclus les paquets
+par le système de gestion des paquets Debian. Ceci inclut les paquets
 installés sur le système et les paquets connus par la base de données des
 paquets disponibles.
 .sp
@@ -292,7 +311,7 @@ Voici la signification des codes d'indication des états\ :
  Sélection actuelle et demandée\ :
   \fB*\fP       marqué comme étant à installer ou à mettre à jour\ ;
   \fB\-\fP       marqué comme étant à retirer, en conservant la configuration\ ;
-  \fB=\fP       marqué comme à conserver\ : le paquet ne sera pas traité\ ;
+  \fB=\fP       marqué comme étant à conserver\ : le paquet ne sera pas traité\ ;
   \fB_\fP       marqué comme étant à nettoyé, la configuration sera retirée également\ ;
   \fBn\fP       nouveau paquet, n'a toujours pas été marqué.
 .sp
@@ -414,7 +433,7 @@ Si par erreur vous avez fixé certains paramètres et que vous souhaitez
 revenir en arrière sur ce qui est actuellement installé sur le système,
 appuyez sur la touche \fB'C'\fP. C'est un peu comme utiliser la commande de
 déblocage sur tous les paquets, mais cela offre un bouton panique plus
-évident pour les cas où l'utilisateur à appuyé sur \fBentrer\fP
+évident pour les cas où l'utilisateur a appuyé sur \fBentrer\fP
 accidentellement.
 .sp
 .
@@ -443,14 +462,6 @@ intégrée.
 .
 .SH "VOIR AUSSI"
 \fBdpkg\fP(1), \fBapt\-get\fP(8), \fBsources.list\fP(5), \fBdeb\fP(5).
-.
-.SH AUTEURS
-\fBdselect\fP a été écrit par Ian Jackson (ijackson@gnu.ai.mit.edu). La liste
-complète des contributeurs est affichée par «\ dselect \-\-version\ ».
-.br
-Cette page de manuel a été écrite par Juho Vuori
-<javuori@cc.helsinki.fi>, Josip Rodin et Joost kooij.
-
 .SH TRADUCTION
 Ariel VARDI <ariel.vardi@freesbee.fr>, 2002.
 Philippe Batailler, 2006.

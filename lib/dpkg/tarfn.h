@@ -16,7 +16,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #ifndef LIBDPKG_TARFN_H
@@ -24,10 +24,13 @@
 
 #include <sys/types.h>
 
-#include <unistd.h>
-#include <stdlib.h>
-
 #include <dpkg/file.h>
+
+/**
+ * @defgroup tar Tar archive handling
+ * @ingroup dpkg-public
+ * @{
+ */
 
 #define TARBLKSZ	512
 
@@ -39,7 +42,8 @@ enum tar_format {
 };
 
 enum tar_filetype {
-	tar_filetype_file0 = '\0',	/* For compatibility with decades-old bug */
+	/** For compatibility with decades-old bug. */
+	tar_filetype_file0 = '\0',
 	tar_filetype_file = '0',
 	tar_filetype_hardlink = '1',
 	tar_filetype_symlink = '2',
@@ -52,12 +56,20 @@ enum tar_filetype {
 };
 
 struct tar_entry {
-	enum tar_format format;	/* Tar archive format. */
-	enum tar_filetype type;	/* Regular, Directory, Special, Link */
-	char *name;		/* File name */
-	char *linkname;		/* Name for symbolic and hard links */
-	off_t size;		/* Size of file */
-	dev_t dev;		/* Special device for mknod() */
+	/** Tar archive format. */
+	enum tar_format format;
+	/** File type. */
+	enum tar_filetype type;
+	/** File name. */
+	char *name;
+	/** Symlink or hardlink name. */
+	char *linkname;
+	/** File size. */
+	off_t size;
+	/** Last-modified time. */
+	time_t mtime;
+	/** Special device for mknod(). */
+	dev_t dev;
 
 	struct file_stat stat;
 };
@@ -76,5 +88,7 @@ struct tar_operations {
 };
 
 int tar_extractor(void *ctx, const struct tar_operations *ops);
+
+/** @} */
 
 #endif

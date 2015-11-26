@@ -1,0 +1,281 @@
+.\" dpkg manual page - dpkg-buildpackage(1)
+.\"
+.\" Copyright Â© 1995-1996 Ian Jackson
+.\" Copyright Â© 2000 Wichert Akkerman <wakkerma@debian.org>
+.\" Copyright Â© 2007-2008 Frank Lichtenheld <djpig@debian.org>
+.\" Copyright Â© 2008-2013 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2008-2012 RaphaÃ«l Hertzog <hertzog@debian.org>
+.\"
+.\" This is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <https://www.gnu.org/licenses/>.
+.
+.\"*******************************************************************
+.\"
+.\" This file was generated with po4a. Translate the source file.
+.\"
+.\"*******************************************************************
+.TH dpkg\-buildpackage 1 2013\-12\-12 "Progetto Debian" "utilità dpkg"
+.SH NOME
+dpkg\-buildpackage \- crea pacchetti binari o sorgente a partire dai sorgenti
+.
+.SH SINTASSI
+\fBdpkg\-buildpackage\fP [\fIopzione\fP...]
+.
+.SH DESCRIZIONE
+\fBdpkg\-buildpackage\fP è un programma che automatizza il processo di creazione
+di un pacchetto Debian. Effettua i seguenti passaggi:
+.IP \fB1.\fP 3
+Prepara l'ambiente di compilazione impostando diverse variabili d'ambiente
+(vedere \fBENVIRONMENT\fP) e invoca \fBdpkg\-source \-\-before\-build\fP (a meno che
+non sia stata usata \fB\-T\fP o \fB\-\-target\fP.
+.IP \fB2.\fP 3
+Controlla che le dipendenze di compilazione ed i conflitti di compilazione
+siano soddisfatti (a meno che non sia stata usata \fB\-d\fP).
+.IP \fB3.\fP 3
+Se è stato selezionato un target specifico con l'opzione \fB\-T\fP o
+\fB\-\-target\fP, invoca quel target e si ferma a questo punto. Altrimenti invoca
+\fBfakeroot debian/rules clean\fP per pulire l'albero di compilazione (a meno
+che non sia stata usata \fB\-nc\fP).
+.IP \fB4.\fP 3
+Invoca \fBdpkg\-source \-b\fP per generare il pacchetto sorgente (a meno che non
+sia stato richiesto di creare solo il pacchetto binario usando \fB\-b\fP, \fB\-B\fP
+o \fB\-A\fP).
+.IP \fB5.\fP 3
+Invoca \fBdebian/rules\fP \fItarget\-compilazione\fP seguito da \fBfakeroot
+debian/rules\fP \fItarget\-binario\fP (a meno che non sia stato richiesto di
+creare solo il pacchetto sorgente usando \fB\-S\fP). Notare che
+\fItarget\-compilazione\fP e \fItarget\-binario\fP sono \fBbuild\fP e \fBbinary\fP (in
+modo predefinito o se viene specificata \fB\-b\fP) o \fBbuild\-arch\fP e
+\fBbinary\-arch\fP (se viene specificata \fB\-B\fP) oppure \fBbuild\-indep\fP e
+\fBbinary\-indep\fP (se viene specificata \fB\-A\fP).
+.IP \fB6.\fP 3
+It calls \fBgpg2\fP or \fBgpg\fP to sign the \fB.dsc\fP file (if any, unless \fB\-us\fP
+is specified or on UNRELEASED builds).
+.IP \fB7.\fP 3
+Invoca \fBdpkg\-genchanges\fP per generare un file \fB.changes\fP. Molte opzioni di
+\fBdpkg\-buildpackage\fP vengono inoltrate a \fBdpkg\-genchanges\fP.
+.IP \fB8.\fP 3
+It calls \fBgpg2\fP or \fBgpg\fP to sign the \fB.changes\fP file (unless \fB\-uc\fP is
+specified or on UNRELEASED builds).
+.IP \fB9.\fP 3
+Se viene specificata l'opzione \fB\-tc\fP, invoca nuovamente \fBfakeroot
+debian/rules clean\fP. Da ultimo invoca \fBdpkg\-source \-\-after\-build\fP.
+.
+.SH OPZIONI
+.TP 
+\fB\-b\fP
+Specifica una compilazione solo binaria, nessun file sorgente deve essere
+creato o distribuito. Passata a \fBdpkg\-genchanges\fP.
+.TP 
+\fB\-B\fP
+Specifica una compilazione solo binaria, limitata ai pacchetti che dipendono
+dall'architettura. Passata a \fBdpkg\-genchanges\fP.
+.TP 
+\fB\-A\fP
+Specifica una compilazione solo binaria, limitata ai pacchetti indipendenti
+dall'architettura. Passata a \fBdpkg\-genchanges\fP.
+.TP 
+\fB\-S\fP
+Specifica la creazione dei soli pacchetti sorgente, nessun pacchetto binario
+deve essere creato. Passata a \fBdpkg\-genchanges\fP.
+.TP 
+\fB\-F\fP
+Specifica una normale compilazione completa; verranno creati i pacchetti
+binari e sorgente. Questo è ciò che avviene in modo predefinito quando non
+viene specificata alcuna opzione riguardo la compilazione.
+.TP 
+\fB\-\-target=\fP\fItarget\fP
+.TQ
+\fB\-\-target \fP\fItarget\fP
+.TQ
+\fB\-T\fP\fItarget\fP
+Invoca \fBdebian/rules\fP \fItarget\fP dopo aver impostato l'ambiente di
+compilazione e interrompe lì il processo di compilazione del pacchetto. Se
+viene usata anche l'opzione \fB\-\-as\-root\fP, allora il comando viene eseguito
+come utente root (vedere \fB\-r\fP). Notare che questa opzione non è necessaria
+per i target ufficiali che devono essere eseguiti come root, secondo quanto
+stabilito nella Debian Policy.
+.TP 
+\fB\-\-as\-root\fP
+Ha significato solo insieme a \fB\-\-target\fP. È necessario che il target venga
+eseguito con i permessi di root.
+.TP 
+\fB\-si\fP
+.TQ
+\fB\-sa\fP
+.TQ
+\fB\-sd\fP
+.TQ
+\fB\-v\fP\fIversione\fP
+.TQ
+\fB\-C\fP\fIdescrizione\-modifiche\fP
+.TQ
+\fB\-m\fP\fIindirizzo\-manutentore\fP
+.TQ
+\fB\-e\fP\fIindirizzo\-manutentore\fP
+Passate inalterate a \fBdpkg\-genchanges\fP. Vedere la sua pagina di manuale.
+.TP 
+\fB\-a\fP\fIarchitettura\fP
+Specifica l'architettura Debian per cui compilare. L'architettura della
+macchina in cui viene fatta la compilazione viene determinata
+automaticamente ed è anche il valore predefinito per la macchina host.
+.TP 
+\fB\-t\fP\fIgnu\-system\-type\fP
+Specifica il tipo di sistema GNU per cui compilare. Può essere usata al
+posto di \-a o in aggiunta per scavalcare l'impostazione predefinita del tipo
+di sistema GNU dell'architettura Debian target.
+.TP 
+\fB\-P\fP\fIprofile\fP[\fB,\fP...]
+Specify the profile(s) we build, as a comma\-separated list, without the
+"\fBprofile.\fP" namespace prefix. The default behavior is to build for no
+specific profile. Also adds them (as a space separated list) to the
+\fBDEB_BUILD_PROFILES\fP environment variable which allows, for example,
+\fBdebian/rules\fP files to use this information for conditional builds.
+.TP 
+\fB\-j\fP\fIcompiti\fP
+Number of jobs allowed to be run simultaneously, equivalent to the
+\fBmake\fP(1)  option of the same name. Will add itself to the \fBMAKEFLAGS\fP
+environment variable, which should cause all subsequent make invocations to
+inherit the option. Also adds \fBparallel=\fP\fIjobs\fP to the
+\fBDEB_BUILD_OPTIONS\fP environment variable which allows debian/rules files to
+use this information for their own purposes.  The \fBparallel=\fP\fIjobs\fP in
+\fBDEB_BUILD_OPTIONS\fP environment variable will override the \fB\-j\fP value if
+this option is given.
+.TP 
+\fB\-D\fP
+Controlla le dipendenze e i conflitti di compilazione; si interrompe se non
+sono soddisfatti. Questo è il comportamento predefinito.
+.TP 
+\fB\-d\fP
+Non controlla le dipendenze e i conflitti di compilazione.
+.TP 
+\fB\-nc\fP
+Non pulisce l'albero dei sorgenti (implica \fB\-b\fP se non è stata selezionata
+un'altra opzione tra \fB\-B\fP, \fB\-A\fP o \fB\-S\fP).
+.TP 
+\fB\-tc\fP
+Pulisce l'albero dei sorgenti (usando \fIcomando\-per\-diventare\-root\fP
+\fBdebian/rules clean\fP) dopo che il pacchetto è stato creato.
+.TP 
+\fB\-r\fP\fIcomando\-per\-diventare\-root\fP
+Quando \fBdpkg\-buildpackage\fP deve eseguire parte del processo di creazione
+dei pacchetti come utente root, antepone al comando che esegue
+\fIcomando\-per\-diventare\-root\fP, se è stato specificato. Altrimenti, se non è
+stato specificato, viene in modo predefinito usato \fBfakeroot\fP, se tale
+comando è presente. \fIcomando\-per\-diventare\-root\fP dovrebbe iniziare con il
+nome di un programma in \fBPATH\fP e accetta come argomenti il nome del vero
+comando da eseguire e gli argomenti per esso. \fIcomando\-per\-diventare\-root\fP
+può includere parametri (che devono essere separati da spazi) ma non
+metacaratteri della shell. \fIcomando\-per\-diventare\-root\fP tipicamente può
+essere \fBfakeroot\fP, \fBsudo\fP, \fBsuper\fP o \fBreally\fP. \fBsu\fP non è adatto perché
+può solo invocare la shell utente con \fB\-c\fP invece di passare singoli
+argomenti al comando da eseguire.
+.TP 
+\fB\-R\fP\fIfile\-rules\fP
+La creazione di un pacchetto Debian comporta solitamente l'invocazione di
+\fBdebian/rules\fP come comando con svariati parametri standard. Con questa
+opzione è possibile usare un'altra invocazione del programma per creare il
+pacchetto (può includere parametri separati da spazi). In alternativa, può
+essere usato per eseguire il file rules standard con un altro programma make
+(per esempio usando \fB/usr/local/bin/make \-f debian/rules\fP come
+\fIfile\-rules\fP).
+.TP 
+\fB\-p\fP\fIcomando\-per\-firmare\fP
+When \fBdpkg\-buildpackage\fP needs to execute GPG to sign a source control
+(\fB.dsc\fP) file or a \fB.changes\fP file it will run \fIsign\-command\fP (searching
+the \fBPATH\fP if necessary) instead of \fBgpg2\fP or \fBgpg\fP. \fIsign\-command\fP will
+get all the arguments that \fBgpg2\fP or \fBgpg\fP would have
+gotten. \fIsign\-command\fP should not contain spaces or any other shell
+metacharacters.
+.TP 
+\fB\-k\fP\fIID\-chiave\fP
+Specifica l'ID della chiave da usare per firmare i pacchetti.
+.TP 
+\fB\-us\fP
+Non firma il pacchetto sorgente.
+.TP 
+\fB\-uc\fP
+Non firma il file \fB.changes\fP.
+.TP 
+\fB\-\-force\-sign\fP
+Force the signing of the resulting files (since dpkg 1.17.0), regardless of
+\fB\-us\fP or \fB\-uc\fP or other internal heuristics.
+.TP 
+\fB\-i\fP[\fIregex\fP]
+.TQ
+\fB\-I\fP[\fIpattern\fP]
+.TQ
+\fB\-s\fP[\fBnsAkurKUR\fP]
+.TQ
+\fB\-z\fP, \fB\-Z\fP
+Passate inalterate a \fBdpkg\-source\fP. Vedere la sua pagina di manuale.
+.TP 
+\fB\-\-source\-option=\fP\fIopz\fP
+Passa l'opzione \fIopz\fP a \fBdpkg\-source\fP.
+.TP 
+\fB\-\-changes\-option=\fP\fIopz\fP
+Passa l'opzione \fIopz\fP a \fBdpkg\-genchanges\fP.
+.TP 
+\fB\-\-admindir=\fP\fIdir\fP
+.TQ
+\fB\-\-admindir \fP\fIdir\fP
+Cambia la posizione del database di \fBdpkg\fP. La posizione predefinita è
+\fI/var/lib/dpkg\fP.
+.TP 
+\fB\-?\fP, \fB\-\-help\fP
+Show the usage message and exit.
+.TP 
+\fB\-\-version\fP
+Show the version and exit.
+.
+.SH AMBIENTE
+.TP 
+\fBDEB_SIGN_KEYID\fP
+If set, it will be used to sign the \fB.changes\fP and \fB.dsc\fP files.
+Overridden by the \fB\-k\fP option.
+.TP 
+\fBDEB_BUILD_PROFILES\fP
+If set, it will be used as the active build profile(s) for the package being
+built. It is a space separated list of profile names, without the
+"\fBprofile.\fP" namespace prefix. Overridden by the \fB\-P\fP option.
+
+.SS "Reliance on exported environment flags"
+Anche se \fBdpkg\-buildpackage\fP esporta alcune variabili, \fBdebian/rules\fP non
+dovrebbe fare affidamento sulla loro presenza e dovrebbe invece usare
+l'interfaccia apposita per recuperare i valori necessari.
+.SS "Variabili impostate da dpkg\-architecture"
+\fBdpkg\-architecture\fP viene invocata inoltrando i parametri \fB\-a\fP e
+\fB\-t\fP. Qualsiasi variabile che è prodotta in output dalla sua opzione \fB\-s\fP
+viene integrata nell'ambiente di compilazione.
+.
+.SH NOTE
+.SS "I flag di compilazione non sono più esportati"
+Between dpkg 1.14.17 and 1.16.1, \fBdpkg\-buildpackage\fP exported compiler
+flags (\fBCFLAGS\fP, \fBCXXFLAGS\fP, \fBFFLAGS\fP, \fBCPPFLAGS\fP and \fBLDFLAGS\fP) with
+values as returned by \fBdpkg\-buildflags\fP. This is no longer the case.
+.SS "Default build targets"
+\fBdpkg\-buildpackage\fP is using the \fBbuild\-arch\fP and \fBbuild\-indep\fP targets
+since dpkg 1.16.2. Those targets are thus mandatory. But to avoid breakages
+of existing packages, and ease the transition, it will fallback to using the
+\fBbuild\fP target if \fBmake \-f debian/rules \-qn\fP \fIbuild\-target\fP returns 2 as
+exit code.
+.SH BUG
+Dovrebbe essere possibile usare spazi e metacaratteri della shell e
+specificare argomenti iniziali quando si usa \fIcomando\-per\-diventare\-root\fP e
+\fIcomando\-per\-firmare\fP.
+.
+.SH "VEDERE ANCHE"
+.ad l
+.nh
+\fBdpkg\-source\fP(1), \fBdpkg\-architecture\fP(1), \fBdpkg\-buildflags\fP(1),
+\fBdpkg\-genchanges\fP(1), \fBfakeroot\fP(1), \fBgpg2\fP(1), \fBgpg\fP(1).

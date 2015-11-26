@@ -1,9 +1,26 @@
+.\" dpkg manual page - dpkg-vendor(1)
+.\"
+.\" Copyright Â© 2009 RaphaÃ«l Hertzog <hertzog@debian.org>
+.\"
+.\" This is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <https://www.gnu.org/licenses/>.
+.
 .\"*******************************************************************
 .\"
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH dpkg\-vendor 1 2009\-05\-10 Debianprojektet Dpkg\-sviten
+.TH dpkg\-vendor 1 2011\-11\-10 Debianprojektet Dpkg\-sviten
 .SH NAMN
 dpkg\-vendor \- frågar efter information om distributionsåterförsäljare
 .
@@ -18,14 +35,13 @@ den aktuella återförsäljaren.
 .SH KOMMANDON
 .TP 
 \fB\-\-is\fP\fI återförsäljare\fP
-Avslutar med 0 om den aktuella återförsäljaren är \fIåterförsäljare\fP. I annat
-fall avslutas programmet med icke\-noll.
+Avslutar med \fB0\fP om den aktuella återförsäljaren är \fIåterförsäljare\fP. I
+annat fall avslutas programmet med icke\-noll.
 .TP 
 \fB\-\-derives\-from\fP\fI återförsäljare\fP
-Avslutar med 0 om den aktuella återförsäljardistributionen är härledd från
-\fIåterförsäljare\fP. I annat fall avslutas programmet med icke\-noll. Använder
-fältet "Parent" för att bläddra genom alla föräldrar till den aktuella
-återförsäljaren.
+Exits with \fB0\fP if the current vendor distribution is a derivative of
+\fIvendor\fP, otherwise exits with non\-zero. It uses the \fBParent\fP field to
+browse all ancestors of the current vendor.
 .TP 
 \fB\-\-query\fP \fIfält\fP
 Skriver värdet för det återförsäljarspecifika fältet \fIfält\fP för den
@@ -41,7 +57,7 @@ Visar version och avslutar.
 .TP 
 \fB\-\-vendor\fP\fI återförsäljare\fP
 Anta att den aktuella återförsäljaren är \fIåterförsäljare\fP istället för att
-upptäcka det via miljövariabeln DEB_VENDOR eller
+upptäcka det via miljövariabeln \fBDEB_VENDOR\fP eller
 \fB/etc/dpkg/origins/default\fP.
 .
 .SH MILJÖVARIABLER
@@ -51,11 +67,7 @@ Inställningen anger den aktuella återförsäljaren. Om den inte är satt kommer
 återförsäljaren att identifieras genom att läsa
 \fB/etc/dpkg/origins/default\fP.
 .
-.SH FÖRFATTARE
-Upphovsrättsskyddat © 2009 Raphaël Hertzog
-.sp
-Detta är fri programvara; se GNU General Public License version 2 eller
-senare för kopieringsvillkor. Det finns INGEN GARANTI.
-
-.SH "ÖVERSÄTTNING"
+.SH "SE ÄVEN"
+\fBdeb\-origin\fP(5).
+.SH ÖVERSÄTTNING
 Peter Krefting och Daniel Nylander.

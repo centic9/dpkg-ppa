@@ -2,7 +2,7 @@
  * libdpkg - Debian packaging suite library routines
  * t-command.c - test command implementation
  *
- * Copyright © 2010 Guillem Jover <guillem@debian.org>
+ * Copyright © 2010-2012 Guillem Jover <guillem@debian.org>
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,11 +15,13 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
 #include <compat.h>
+
+#include <stdlib.h>
 
 #include <dpkg/test.h>
 #include <dpkg/subproc.h>
@@ -139,7 +141,7 @@ test_command_exec(void)
 	struct command cmd;
 	pid_t pid;
 
-	command_init(&cmd, "/bin/true", "exec test");
+	command_init(&cmd, "true", "exec test");
 
 	command_add_arg(&cmd, "arg 0");
 	command_add_arg(&cmd, "arg 1");
@@ -153,6 +155,32 @@ test_command_exec(void)
 }
 
 static void
+test_command_shell(void)
+{
+	pid_t pid;
+	int ret;
+
+	pid = subproc_fork();
+	if (pid == 0)
+		command_shell("true", "command shell pass test");
+	ret = subproc_wait_check(pid, "command shell pass test", 0);
+	test_pass(ret == 0);
+
+	pid = subproc_fork();
+	if (pid == 0)
+		command_shell("false", "command shell fail test");
+	ret = subproc_wait_check(pid, "command shell fail test", PROCNOERR);
+	test_fail(ret == 0);
+
+	unsetenv("SHELL");
+	pid = subproc_fork();
+	if (pid == 0)
+		command_shell("true", "command default shell test");
+	ret = subproc_wait_check(pid, "command default shell test", 0);
+	test_pass(ret == 0);
+}
+
+static void
 test(void)
 {
 	test_command_init();
@@ -160,4 +188,5 @@ test(void)
 	test_command_add_argl();
 	test_command_add_args();
 	test_command_exec();
+	test_command_shell();
 }

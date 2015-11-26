@@ -1,3 +1,4 @@
+# Copyright © 2006-2009,2012 Guillem Jover <guillem@debian.org>
 # Copyright © 2007-2010 Raphaël Hertzog <hertzog@debian.org>
 #
 # This program is free software; you can redistribute it and/or modify
@@ -11,23 +12,24 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 package Dpkg::Substvars;
 
 use strict;
 use warnings;
 
-our $VERSION = "1.00";
+our $VERSION = '1.02';
 
-use Dpkg qw($version);
+use Dpkg ();
 use Dpkg::Arch qw(get_host_arch);
 use Dpkg::ErrorHandling;
 use Dpkg::Gettext;
 
+use Carp;
 use POSIX qw(:errno_h);
 
-use base qw(Dpkg::Interface::Storable);
+use parent qw(Dpkg::Interface::Storable);
 
 my $maxsubsts = 50;
 
@@ -65,18 +67,18 @@ sub new {
     my $class = ref($this) || $this;
     my $self = {
         vars => {
-            "Newline" => "\n",
-            "Space" => " ",
-            "Tab" => "\t",
-            "dpkg:Version" => $version,
-            "dpkg:Upstream-Version" => $version,
+            'Newline' => "\n",
+            'Space' => ' ',
+            'Tab' => "\t",
+            'dpkg:Version' => $Dpkg::PROGVERSION,
+            'dpkg:Upstream-Version' => $Dpkg::PROGVERSION,
             },
         used => {},
-	msg_prefix => "",
+	msg_prefix => '',
     };
-    $self->{'vars'}{'dpkg:Upstream-Version'} =~ s/-[^-]+$//;
+    $self->{vars}{'dpkg:Upstream-Version'} =~ s/-[^-]+$//;
     bless $self, $class;
-    $self->no_warn($_) foreach keys %{$self->{'vars'}};
+    $self->mark_as_used($_) foreach keys %{$self->{vars}};
     if ($arg) {
         $self->load($arg) if -e $arg;
     }
@@ -91,7 +93,20 @@ Add/replace a substitution.
 
 sub set {
     my ($self, $key, $value) = @_;
-    $self->{'vars'}{$key} = $value;
+    $self->{vars}{$key} = $value;
+}
+
+=item $s->set_as_used($key, $value)
+
+Add/replace a substitution and mark it as used (no warnings will be produced
+even if unused).
+
+=cut
+
+sub set_as_used {
+    my ($self, $key, $value) = @_;
+    $self->set($key, $value);
+    $self->mark_as_used($key);
 }
 
 =item $s->get($key)
@@ -102,7 +117,7 @@ Get the value of a given substitution.
 
 sub get {
     my ($self, $key) = @_;
-    return $self->{'vars'}{$key};
+    return $self->{vars}{$key};
 }
 
 =item $s->delete($key)
@@ -113,20 +128,32 @@ Remove a given substitution.
 
 sub delete {
     my ($self, $key) = @_;
-    delete $self->{'used'}{$key};
-    return delete $self->{'vars'}{$key};
+    delete $self->{used}{$key};
+    return delete $self->{vars}{$key};
 }
 
-=item $s->no_warn($key)
+=item $s->mark_as_used($key)
 
 Prevents warnings about a unused substitution, for example if it is provided by
 default.
 
 =cut
 
+sub mark_as_used {
+    my ($self, $key) = @_;
+    $self->{used}{$key}++;
+}
+
+=item $s->no_warn($key)
+
+Obsolete function, use mark_as_used() instead.
+
+=cut
+
 sub no_warn {
     my ($self, $key) = @_;
-    $self->{'used'}{$key}++;
+    carp 'obsolete no_warn() function, use mark_as_used() instead';
+    $self->mark_as_used($key);
 }
 
 =item $s->load($file)
@@ -146,35 +173,42 @@ sub parse {
     while (<$fh>) {
 	next if m/^\s*\#/ || !m/\S/;
 	s/\s*\n$//;
-	m/^(\w[-:0-9A-Za-z]*)\=(.*)$/ ||
-	    error(_g("bad line in substvars file %s at line %d"),
+	if (! m/^(\w[-:0-9A-Za-z]*)\=(.*)$/) {
+	    error(_g('bad line in substvars file %s at line %d'),
 		  $varlistfile, $.);
-	$self->{'vars'}{$1} = $2;
+	}
+	$self->{vars}{$1} = $2;
     }
 }
 
-=item $s->set_version_substvars($version)
+=item $s->set_version_substvars($sourceversion, $binaryversion)
 
 Defines ${binary:Version}, ${source:Version} and
-${source:Upstream-Version} based on the given version string.
+${source:Upstream-Version} based on the given version strings.
 
 These will never be warned about when unused.
 
 =cut
 
 sub set_version_substvars {
-    my ($self, $version) = @_;
+    my ($self, $sourceversion, $binaryversion) = @_;
 
-    $self->{'vars'}{'binary:Version'} = $version;
-    $self->{'vars'}{'source:Version'} = $version;
-    $self->{'vars'}{'source:Version'} =~ s/\+b[0-9]+$//;
-    $self->{'vars'}{'source:Upstream-Version'} = $version;
-    $self->{'vars'}{'source:Upstream-Version'} =~ s/-[^-]*$//;
+    # Handle old function signature taking only one argument.
+    $binaryversion ||= $sourceversion;
+
+    # For backwards compatibility on binNMUs that do not use the Binary-Only
+    # field on the changelog, always fix up the source version.
+    $sourceversion =~ s/\+b[0-9]+$//;
+
+    $self->{vars}{'binary:Version'} = $binaryversion;
+    $self->{vars}{'source:Version'} = $sourceversion;
+    $self->{vars}{'source:Upstream-Version'} = $sourceversion;
+    $self->{vars}{'source:Upstream-Version'} =~ s/-[^-]*$//;
 
     # XXX: Source-Version is now deprecated, remove in the future.
-    $self->{'vars'}{'Source-Version'} = $version;
+    $self->{vars}{'Source-Version'} = $binaryversion;
 
-    $self->no_warn($_) foreach qw/binary:Version source:Version source:Upstream-Version Source-Version/;
+    $self->mark_as_used($_) foreach qw/binary:Version source:Version source:Upstream-Version Source-Version/;
 }
 
 =item $s->set_arch_substvars()
@@ -188,8 +222,7 @@ This will never be warned about when unused.
 sub set_arch_substvars {
     my ($self) = @_;
 
-    $self->{'vars'}{'Arch'} = get_host_arch();
-    $self->no_warn('Arch');
+    $self->set_as_used('Arch', get_host_arch());
 }
 
 =item $newstring = $s->substvars($string)
@@ -212,16 +245,17 @@ sub substvars {
         # reset the recursive counter.
         $count = 0 if (length($3) < length($rhs));
 
-        $count < $maxsubsts ||
+        if ($count >= $maxsubsts) {
             error($opts{msg_prefix} .
 	          _g("too many substitutions - recursive ? - in \`%s'"), $v);
+        }
         $lhs = $1; $vn = $2; $rhs = $3;
-        if (defined($self->{'vars'}{$vn})) {
-            $v = $lhs . $self->{'vars'}{$vn} . $rhs;
-	    $self->no_warn($vn);
+        if (defined($self->{vars}{$vn})) {
+            $v = $lhs . $self->{vars}{$vn} . $rhs;
+            $self->mark_as_used($vn);
             $count++;
         } else {
-            warning($opts{msg_prefix} . _g("unknown substitution variable \${%s}"),
+            warning($opts{msg_prefix} . _g('unknown substitution variable ${%s}'),
 	            $vn) unless $opts{no_warn};
             $v = $lhs . $rhs;
         }
@@ -239,13 +273,14 @@ sub warn_about_unused {
     my ($self, %opts) = @_;
     $opts{msg_prefix} = $self->{msg_prefix} unless exists $opts{msg_prefix};
 
-    foreach my $vn (keys %{$self->{'vars'}}) {
-        next if $self->{'used'}{$vn};
+    foreach my $vn (keys %{$self->{vars}}) {
+        next if $self->{used}{$vn};
         # Empty substitutions variables are ignored on the basis
         # that they are not required in the current situation
         # (example: debhelper's misc:Depends in many cases)
-        next if $self->{'vars'}{$vn} eq "";
-        warning($opts{msg_prefix} . _g("unused substitution variable \${%s}"), $vn);
+        next if $self->{vars}{$vn} eq '';
+        warning($opts{msg_prefix} . _g('unused substitution variable ${%s}'),
+                $vn);
     }
 }
 
@@ -280,12 +315,12 @@ filehandle and return the content written.
 
 sub output {
     my ($self, $fh) = @_;
-    my $str = "";
+    my $str = '';
     # Store all non-automatic substitutions only
-    foreach my $vn (sort keys %{$self->{'vars'}}) {
+    foreach my $vn (sort keys %{$self->{vars}}) {
 	next if /^(?:(?:dpkg|source|binary):(?:Source-)?Version|Space|Tab|Newline|Arch|Source-Version|F:.+)$/;
 	my $line = "$vn=" . $self->{vars}{$vn} . "\n";
-	print $fh $line if defined $fh;
+	print { $fh } $line if defined $fh;
 	$str .= $line;
     }
     return $str;

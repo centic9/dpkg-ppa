@@ -1,11 +1,30 @@
-.TH dpkg\-deb 1 "2010-03-07" "Debian Project" "dpkg suite"
+.\" dpkg manual page - dpkg-deb(1)
+.\"
+.\" Copyright © 1995-1996 Ian Jackson <ian@chiark.chu.cam.ac.uk>
+.\" Copyright © 1999 Wichert Akkerman <wakkerma@debian.org>
+.\" Copyright © 2006 Frank Lichtenheld <djpig@debian.org>
+.\" Copyright © 2007-2012 Guillem Jover <guillem@debian.org>
+.\"
+.\" This is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <https://www.gnu.org/licenses/>.
+.
+.TH dpkg\-deb 1 "2013-03-27" "Debian Project" "dpkg suite"
 .SH NAME
 dpkg\-deb \- Debian package archive (.deb) manipulation tool
 .
 .SH SYNOPSIS
 .B dpkg\-deb
-.RI [ options ]
-.I command
+.RI [ option "...] " command
 .
 .SH DESCRIPTION
 .B dpkg\-deb
@@ -140,7 +159,16 @@ modified to match the contents of the package.
 .BR \-X ", " \-\-vextract " \fIarchive directory\fP"
 Is like
 .BR \-\-extract " (" \-x ")"
-but prints a listing of the files extracted as it goes.
+with
+.BR \-\-verbose " (" \-v ")"
+which prints a listing of the files extracted as it goes.
+.TP
+.BR \-R ", " \-\-raw\-extract " \fIarchive directory\fP"
+Extracts the filesystem tree from a package archive into a specified
+directory, and the control information files into a DEBIAN subdirectory
+of the specified directory.
+
+The target directory (but not its parents) will be created if necessary.
 .TP
 .BR \-\-fsys\-tarfile " \fIarchive\fP"
 Extracts the filesystem tree data from a binary package and sends it
@@ -149,6 +177,7 @@ to standard output in
 format. Together with
 .BR tar (1)
 this can be used to extract a particular file from a package archive.
+The input archive will always be processed sequentially.
 .TP
 .BR \-e ", " \-\-control " \fIarchive\fP [\fIdirectory\fP]"
 Extracts the control information files from a package archive into the
@@ -161,7 +190,7 @@ in the current directory is used.
 The target directory (but not its parents) will be created if
 necessary.
 .TP
-.BR \-h ", " \-\-help
+.BR \-? ", " \-\-help
 Show the usage message and exit.
 .TP
 .BR \-\-version
@@ -181,37 +210,53 @@ produced using
 on the same package. A complete explanation of the formatting options
 (including escape sequences and field tabbing) can be found in the
 explanation of the \fB\-\-showformat\fP option in
-.BR dpkg-query (1).
+.BR dpkg\-query (1).
 
 The default for this field is "${Package}\\t${Version}\\n".
 .TP
-.BI \-z compress_level
-Specify which compression level to pass to the compressor backend program,
-when building a package.
+.BI \-z compress-level
+Specify which compression level to use on the compressor backend, when
+building a package (default is 9 for gzip and bzip2, 6 for xz and lzma).
+The accepted values are 0-9 with: 0 being mapped to compressor none for
+gzip and 0 mapped to 1 for bzip2. Before dpkg 1.16.2 level 0 was
+equivalent to compressor none for all compressors.
 .TP
-.BI \-Z compress_type
+.BI \-S compress-strategy
+Specify which compression strategy to use on the compressor backend, when
+building a package (since dpkg 1.16.2). Allowed values are \fInone\fP (since
+dpkg 1.16.4), \fIfiltered\fP, \fIhuffman\fP, \fIrle\fP and \fIfixed\fP for
+gzip (since dpkg 1.17.0) and \fIextreme\fP for xz.
+.TP
+.BI \-Z compress-type
 Specify which compression type to use when building a package. Allowed
 values are \fIgzip\fP, \fIxz\fP, \fIbzip2\fP, \fIlzma\fP, and \fInone\fP
-(default is \fIgzip\fP).
+(default is \fIxz\fP).
+.TP
+.BI \-\-deb\-format= format
+Set the archive format version used when building (since dpkg 1.17.0).
+Allowed values are \fI2.0\fP for the new format, and \fI0.939000\fP
+for the old one (default is \fI2.0\fP).
+
+The old archive format is less easily parsed by non-Debian tools and is
+now obsolete; its only use is when building packages to be parsed by
+versions of dpkg older than 0.93.76 (September 1995), which was released
+as i386 a.out only.
 .TP
 .BR \-\-new
-Ensures that
-.B dpkg\-deb
-builds a `new' format archive. This is the default.
+This is a legacy alias for \fB\-\-deb\-format=2.0\fP.
 .TP
 .BR \-\-old
-Forces
-.B dpkg\-deb
-to build an `old' format archive. This old archive format is less
-easily parsed by non-Debian tools and is now obsolete; its only use is
-when building packages to be parsed by versions of dpkg older than
-0.93.76 (September 1995), which was released as i386 a.out only.
+This is a legacy alias for \fB\-\-deb\-format=0.939000\fP.
 .TP
 .BR \-\-nocheck
 Inhibits
 .BR "dpkg\-deb \-\-build" 's
 usual checks on the proposed contents of an archive. You can build
 any archive you want, no matter how broken, this way.
+.TP
+.BR \-v ", " \-\-verbose
+Enables verbose output. This currently only affects \fB\-\-extract\fP making
+it behave like \fB\-\-vextract\fP.
 .TP
 .BR \-D ", " \-\-debug
 Enables debugging output. This is not very interesting.
@@ -221,6 +266,14 @@ Enables debugging output. This is not very interesting.
 .B TMPDIR
 If set, \fBdpkg\-deb\fP will use it as the directory in which to create
 temporary files and directories.
+.
+.SH NOTES
+Do not attempt to use just
+.B dpkg\-deb
+to install software! You must use
+.B dpkg
+proper to ensure that all the files are correctly placed and the
+package's scripts run and its status and contents recorded.
 .
 .SH BUGS
 .B dpkg\-deb \-I
@@ -235,22 +288,9 @@ files; in fact, there isn't even a straightforward checksum.
 retrieved from a given repository, and most packages nowadays provide an
 md5sum control file generated by debian/rules. Though this is not directly
 supported by the lower level tools.)
-
-Do not attempt to use just
-.B dpkg\-deb
-to install software! You must use
-.B dpkg
-proper to ensure that all the files are correctly placed and the
-package's scripts run and its status and contents recorded.
 .
 .SH SEE ALSO
 .BR deb (5),
 .BR deb\-control (5),
 .BR dpkg (1),
 .BR dselect (1).
-.
-.SH AUTHOR
-Copyright \(co 1995-1996 Ian Jackson
-.sp
-This is free software; see the GNU General Public Licence version 2 or
-later for copying conditions. There is NO WARRANTY.

@@ -4,6 +4,7 @@
  *
  * Copyright © 1995 Ian Jackson <ian@chiark.greenend.org.uk>
  * Copyright © 1999, 2002 Wichert Akkerman <wichert@deephackmode.org>
+ * Copyright © 2007-2012 Guillem Jover <guillem@debian.org>
  * Copyright © 2011 Linaro Limited
  * Copyright © 2011 Raphaël Hertzog <hertzog@debian.org>
  *
@@ -18,7 +19,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
@@ -27,7 +28,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
-#include <sys/termios.h>
 
 #include <assert.h>
 #include <errno.h>
@@ -36,6 +36,7 @@
 #include <time.h>
 #include <fcntl.h>
 #include <dirent.h>
+#include <termios.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -44,8 +45,11 @@
 #include <dpkg/i18n.h>
 #include <dpkg/dpkg.h>
 #include <dpkg/dpkg-db.h>
+#include <dpkg/pkg.h>
+#include <dpkg/string.h>
 #include <dpkg/buffer.h>
 #include <dpkg/file.h>
+#include <dpkg/path.h>
 #include <dpkg/subproc.h>
 #include <dpkg/command.h>
 #include <dpkg/triglib.h>
@@ -53,479 +57,135 @@
 #include "filesdb.h"
 #include "main.h"
 
+enum conffopt {
+	cfof_prompt		= DPKG_BIT(0),
+	cfof_keep		= DPKG_BIT(1),
+	cfof_install		= DPKG_BIT(2),
+	cfof_backup		= DPKG_BIT(3),
+	cfof_newconff		= DPKG_BIT(4),
+	cfof_isnew		= DPKG_BIT(5),
+	cfof_isold		= DPKG_BIT(6),
+	cfof_userrmd		= DPKG_BIT(7),
+
+	cfo_keep		= cfof_keep,
+	cfo_identical		= cfof_keep,
+	cfo_install		= cfof_install,
+	cfo_newconff		= cfof_newconff | cfof_install,
+	cfo_prompt		= cfof_prompt,
+	cfo_prompt_keep		= cfof_prompt | cfof_keep,
+	cfo_prompt_install	= cfof_prompt | cfof_install,
+};
+
 static int conffoptcells[2][2] = {
 	/* Distro !edited. */	/* Distro edited. */
 	{ cfo_keep,		cfo_install },		/* User !edited. */
 	{ cfo_keep,		cfo_prompt_keep },	/* User edited. */
 };
 
-static void showdiff(const char *old, const char *new);
-static enum conffopt promptconfaction(struct pkginfo *pkg, const char *cfgfile,
-                                      const char *realold, const char *realnew,
-                                      int useredited, int distedited,
-                                      enum conffopt what);
-
-static void
-deferred_configure_conffile(struct pkginfo *pkg, struct conffile *conff)
+static int
+show_prompt(const char *cfgfile, const char *realold, const char *realnew,
+            int useredited, int distedited, enum conffopt what)
 {
-	struct filenamenode *usenode;
-	static const char EMPTY_HASH[] = "-";
-	char currenthash[MD5HASHLEN + 1], newdisthash[MD5HASHLEN + 1];
-	int useredited, distedited;
-	enum conffopt what;
-	struct stat stab;
-	struct varbuf cdr = VARBUF_INIT, cdr2 = VARBUF_INIT;
-	char *cdr2rest;
-	int r;
+	const char *s;
+	int c, cc;
 
-	usenode = namenodetouse(findnamenode(conff->name, fnn_nocopy), pkg);
+	/* Flush the terminal's input in case the user involuntarily
+	 * typed some characters. */
+	tcflush(STDIN_FILENO, TCIFLUSH);
 
-	r = conffderef(pkg, &cdr, usenode->name);
-	if (r == -1) {
-		conff->hash = EMPTY_HASH;
-		return;
-	}
-	md5hash(pkg, currenthash, cdr.buf, -1);
+	fputs("\n", stderr);
+	if (strcmp(cfgfile, realold) == 0)
+		fprintf(stderr, _("Configuration file '%s'\n"), cfgfile);
+	else
+		fprintf(stderr, _("Configuration file '%s' (actually '%s')\n"),
+		        cfgfile, realold);
 
-	varbuf_reset(&cdr2);
-	varbuf_add_str(&cdr2, cdr.buf);
-	varbuf_end_str(&cdr2);
-	/* XXX: Make sure there's enough room for extensions. */
-	varbuf_grow(&cdr2, 50);
-	cdr2rest = cdr2.buf + strlen(cdr.buf);
-	/* From now on we can just strcpy(cdr2rest, extension); */
-
-	strcpy(cdr2rest, DPKGNEWEXT);
-	/* If the .dpkg-new file is no longer there, ignore this one. */
-	if (lstat(cdr2.buf, &stab)) {
-		if (errno == ENOENT)
-			return;
-		ohshite(_("unable to stat new distributed conffile '%.250s'"),
-		        cdr2.buf);
-	}
-	md5hash(pkg, newdisthash, cdr2.buf, -1);
-
-	/* Copy the permissions from the installed version to the new
-	 * distributed version. */
-	if (!stat(cdr.buf, &stab))
-		file_copy_perms(cdr.buf, cdr2.buf);
-	else if (errno != ENOENT)
-		ohshite(_("unable to stat current installed conffile `%.250s'"),
-		        cdr.buf);
-
-	/* Select what to do. */
-	if (!strcmp(currenthash, newdisthash)) {
-		/* They're both the same so there's no point asking silly
-		 * questions. */
-		useredited = -1;
-		distedited = -1;
-		what = cfo_identical;
-	} else if (!strcmp(currenthash, NONEXISTENTFLAG) && fc_conff_miss) {
+	if (what & cfof_isnew) {
 		fprintf(stderr,
-		        _("\n"
-		          "Configuration file `%s', does not exist on system.\n"
-		          "Installing new config file as you requested.\n"),
-		        usenode->name);
-		what = cfo_newconff;
-		useredited = -1;
-		distedited = -1;
-	} else if (!strcmp(conff->hash, NEWCONFFILEFLAG)) {
-		if (!strcmp(currenthash, NONEXISTENTFLAG)) {
-			what = cfo_newconff;
-			useredited = -1;
-			distedited = -1;
-		} else {
-			useredited = 1;
-			distedited = 1;
-			what = conffoptcells[useredited][distedited] |
-			       cfof_isnew;
-		}
+		        _(" ==> File on system created by you or by a script.\n"
+		          " ==> File also in package provided by package maintainer.\n"));
 	} else {
-		useredited = strcmp(conff->hash, currenthash) != 0;
-		distedited = strcmp(conff->hash, newdisthash) != 0;
+		fprintf(stderr, !useredited ?
+		        _("     Not modified since installation.\n") :
+		        !(what & cfof_userrmd) ?
+		        _(" ==> Modified (by you or by a script) since installation.\n") :
+		        _(" ==> Deleted (by you or by a script) since installation.\n"));
 
-		if (fc_conff_ask && useredited)
-			what = cfo_prompt_keep;
-		else
-			what = conffoptcells[useredited][distedited];
-
-		if (!strcmp(currenthash, NONEXISTENTFLAG))
-			what |= cfof_userrmd;
+		fprintf(stderr, distedited ?
+		        _(" ==> Package distributor has shipped an updated version.\n") :
+		        _("     Version in package is the same as at last installation.\n"));
 	}
 
-	debug(dbg_conff,
-	      "deferred_configure '%s' (= '%s') useredited=%d distedited=%d what=%o",
-	      usenode->name, cdr.buf, useredited, distedited, what);
-
-	what = promptconfaction(pkg, usenode->name, cdr.buf, cdr2.buf,
-	                        useredited, distedited, what);
-
-	switch (what & ~(cfof_isnew | cfof_userrmd)) {
-	case cfo_keep | cfof_backup:
-		strcpy(cdr2rest, DPKGOLDEXT);
-		if (unlink(cdr2.buf) && errno != ENOENT)
-			warning(_("%s: failed to remove old backup '%.250s': %s"),
-			        pkg_describe(pkg, pdo_foreign), cdr2.buf,
-			        strerror(errno));
-
-		varbuf_add_str(&cdr, DPKGDISTEXT);
-		varbuf_end_str(&cdr);
-		strcpy(cdr2rest, DPKGNEWEXT);
-		trig_file_activate(usenode, pkg);
-		if (rename(cdr2.buf, cdr.buf))
-			warning(_("%s: failed to rename '%.250s' to '%.250s': %s"),
-			        pkg_describe(pkg, pdo_foreign), cdr2.buf,
-			        cdr.buf, strerror(errno));
-		break;
-	case cfo_keep:
-		strcpy(cdr2rest, DPKGNEWEXT);
-		if (unlink(cdr2.buf))
-			warning(_("%s: failed to remove '%.250s': %s"),
-			        pkg_describe(pkg, pdo_foreign), cdr2.buf,
-			        strerror(errno));
-		break;
-	case cfo_install | cfof_backup:
-		strcpy(cdr2rest, DPKGDISTEXT);
-		if (unlink(cdr2.buf) && errno != ENOENT)
-			warning(_("%s: failed to remove old distributed version '%.250s': %s"),
-			        pkg_describe(pkg, pdo_foreign), cdr2.buf,
-			        strerror(errno));
-		strcpy(cdr2rest, DPKGOLDEXT);
-		if (unlink(cdr2.buf) && errno != ENOENT)
-			warning(_("%s: failed to remove '%.250s' (before overwrite): %s"),
-			        pkg_describe(pkg, pdo_foreign), cdr2.buf,
-			        strerror(errno));
-		if (!(what & cfof_userrmd))
-			if (link(cdr.buf, cdr2.buf))
-				warning(_("%s: failed to link '%.250s' to '%.250s': %s"),
-				        pkg_describe(pkg, pdo_foreign), cdr.buf,
-				        cdr2.buf, strerror(errno));
-		/* Fall through. */
-	case cfo_install:
-		printf(_("Installing new version of config file %s ...\n"),
-		       usenode->name);
-	case cfo_newconff:
-		strcpy(cdr2rest, DPKGNEWEXT);
-		trig_file_activate(usenode, pkg);
-		if (rename(cdr2.buf, cdr.buf))
-			ohshite(_("unable to install `%.250s' as `%.250s'"),
-			        cdr2.buf, cdr.buf);
-		break;
-	default:
-		internerr("unknown conffopt '%d'", what);
-	}
-
-	conff->hash = nfstrsave(newdisthash);
-	modstatdb_note(pkg);
-
-	varbuf_destroy(&cdr);
-	varbuf_destroy(&cdr2);
-}
-
-/**
- * Process the deferred configure package.
- *
- * The algorithm for deciding what to configure first is as follows:
- * Loop through all packages doing a ‘try 1’ until we've been round
- * and nothing has been done, then do ‘try 2’ and ‘try 3’ likewise.
- * The incrementing of ‘dependtry’ is done by process_queue().
- *
- * Try 1:
- *   Are all dependencies of this package done? If so, do it.
- *   Are any of the dependencies missing or the wrong version?
- *     If so, abort (unless --force-depends, in which case defer).
- *   Will we need to configure a package we weren't given as an
- *     argument? If so, abort ─ except if --force-configure-any,
- *     in which case we add the package to the argument list.
- *   If none of the above, defer the package.
- *
- * Try 2:
- *   Find a cycle and break it (see above).
- *   Do as for try 1.
- *
- * Try 3 (only if --force-depends-version):
- *   Same as for try 2, but don't mind version number in dependencies.
- *
- * Try 4 (only if --force-depends):
- *   Do anyway.
- *
- * @param pkg The package to act on.
- */
-void
-deferred_configure(struct pkginfo *pkg)
-{
-	struct varbuf aemsgs = VARBUF_INIT;
-	struct conffile *conff;
-	struct pkginfo *otherpkg;
-	int ok;
-
-	if (pkg->status == stat_notinstalled)
-		ohshit(_("no package named `%s' is installed, cannot configure"),
-		       pkg_describe(pkg, pdo_foreign));
-	if (pkg->status == stat_installed)
-		ohshit(_("package %.250s is already installed and configured"),
-		       pkg_describe(pkg, pdo_foreign));
-	if (pkg->status != stat_unpacked && pkg->status != stat_halfconfigured)
-		ohshit(_("package %.250s is not ready for configuration\n"
-		         " cannot configure (current status `%.250s')"),
-		       pkg_describe(pkg, pdo_foreign),
-		       statusinfos[pkg->status].name);
-
-	for (otherpkg = &pkg->set->pkg; otherpkg; otherpkg = otherpkg->arch_next) {
-		if (otherpkg == pkg || otherpkg->status < stat_halfinstalled)
-			continue;
-		if(versioncompare(&pkg->installed.version,
-		                  &otherpkg->installed.version))
-			ohshit(_("%s %s cannot be configured because %s "
-			         "is in a different version (%s)"),
-			       pkg_describe(pkg, pdo_always),
-			       versiondescribe(&pkg->installed.version,
-			                       vdew_nonambig),
-			       pkg_describe(otherpkg, pdo_always),
-			       versiondescribe(&otherpkg->installed.version,
-			                       vdew_nonambig));
-		if (otherpkg->status < stat_unpacked)
-			ohshit(_("%s cannot be configured because %s "
-			         "is not ready for configuration "
-			         "(current status '%s')"),
-			       pkg_describe(pkg, pdo_always),
-			       pkg_describe(otherpkg, pdo_always),
-			       statusinfos[otherpkg->status].name);
-	}
-
-	if (dependtry > 1)
-		if (findbreakcycle(pkg))
-			sincenothing = 0;
-
-	ok = dependencies_ok(pkg, NULL, &aemsgs);
-	if (ok == 1) {
-		varbuf_destroy(&aemsgs);
-		pkg->clientdata->istobe = itb_installnew;
-		add_to_queue(pkg);
-		return;
-	}
-
-	trigproc_reset_cycle();
-
-	/*
-	 * At this point removal from the queue is confirmed. This
-	 * represents irreversible progress wrt trigger cycles. Only
-	 * packages in stat_unpacked are automatically added to the
-	 * configuration queue, and during configuration and trigger
-	 * processing new packages can't enter into unpacked.
-	 */
-
-	ok = breakses_ok(pkg, &aemsgs) ? ok : 0;
-	if (ok == 0) {
-		sincenothing = 0;
-		varbuf_end_str(&aemsgs);
-		fprintf(stderr,
-		        _("dpkg: dependency problems prevent configuration of %s:\n%s"),
-		        pkg_describe(pkg, pdo_foreign), aemsgs.buf);
-		varbuf_destroy(&aemsgs);
-		ohshit(_("dependency problems - leaving unconfigured"));
-	} else if (aemsgs.used) {
-		varbuf_end_str(&aemsgs);
-		fprintf(stderr,
-		        _("dpkg: %s: dependency problems, but configuring anyway as you requested:\n%s"),
-		        pkg_describe(pkg, pdo_foreign), aemsgs.buf);
-	}
-	varbuf_destroy(&aemsgs);
-	sincenothing = 0;
-
-	if (pkg->eflag & eflag_reinstreq)
-		forcibleerr(fc_removereinstreq,
-		            _("Package is in a very bad inconsistent state - you should\n"
-		              " reinstall it before attempting configuration."));
-
-	printf(_("Setting up %s (%s) ...\n"), pkg_describe(pkg, pdo_foreign),
-	       versiondescribe(&pkg->installed.version, vdew_nonambig));
-	log_action("configure", pkg);
-
-	trig_activate_packageprocessing(pkg);
-
-	if (f_noact) {
-		pkg->status = stat_installed;
-		pkg->clientdata->istobe = itb_normal;
-		return;
-	}
-
-	if (pkg->status == stat_unpacked) {
-		debug(dbg_general, "deferred_configure updating conffiles");
-		/* This will not do at all the right thing with overridden
-		 * conffiles or conffiles that are the ‘target’ of an override;
-		 * all the references here would be to the ‘contested’
-		 * filename, and in any case there'd only be one hash for both
-		 * ‘versions’ of the conffile.
-		 *
-		 * Overriding conffiles is a silly thing to do anyway :-). */
-
-		modstatdb_note(pkg);
-
-		/* On entry, the ‘new’ version of each conffile has been
-		 * unpacked as ‘*.dpkg-new’, and the ‘installed’ version is
-		 * as-yet untouched in ‘*’. The hash of the ‘old distributed’
-		 * version is in the conffiles data for the package. If
-		 * ‘*.dpkg-new’ no longer exists we assume that we've
-		 * already processed this one. */
-		for (conff = pkg->installed.conffiles; conff; conff = conff->next)
-			deferred_configure_conffile(pkg, conff);
-
-		pkg->status = stat_halfconfigured;
-	}
-
-	assert(pkg->status == stat_halfconfigured);
-
-	modstatdb_note(pkg);
-
-	maintainer_script_postinst(pkg, "configure",
-	                           informativeversion(&pkg->configversion) ?
-	                           versiondescribe(&pkg->configversion,
-	                                           vdew_nonambig) : "",
-	                           NULL);
-
-	pkg->eflag = eflag_ok;
-	post_postinst_tasks(pkg, stat_installed);
-}
-
-/**
- * Dereference a file by following all possibly used symlinks.
- *
- * @param[in] pkg The package to act on.
- * @param[out] result The dereference conffile path.
- * @param[in] in The conffile path to dereference.
- *
- * @return An error code for the operation.
- * @retval 0 Everything went ok.
- * @retval -1 Otherwise.
- */
-int
-conffderef(struct pkginfo *pkg, struct varbuf *result, const char *in)
-{
-	static struct varbuf target = VARBUF_INIT;
-	struct stat stab;
-	int r;
-	int loopprotect;
-
-	varbuf_reset(result);
-	varbuf_add_str(result, instdir);
-	if (*in != '/')
-		varbuf_add_char(result, '/');
-	varbuf_add_str(result, in);
-	varbuf_end_str(result);
-
-	loopprotect = 0;
-
-	for (;;) {
-		debug(dbg_conffdetail, "conffderef in='%s' current working='%s'",
-		      in, result->buf);
-		if (lstat(result->buf, &stab)) {
-			if (errno != ENOENT)
-				warning(_("%s: unable to stat config file '%s'\n"
-				          " (= '%s'): %s"),
-				        pkg_describe(pkg, pdo_foreign), in,
-				        result->buf, strerror(errno));
-			debug(dbg_conffdetail, "conffderef nonexistent");
-			return 0;
-		} else if (S_ISREG(stab.st_mode)) {
-			debug(dbg_conff, "conffderef in='%s' result='%s'",
-			      in, result->buf);
-			return 0;
-		} else if (S_ISLNK(stab.st_mode)) {
-			debug(dbg_conffdetail, "conffderef symlink loopprotect=%d",
-			      loopprotect);
-			if (loopprotect++ >= 25) {
-				warning(_("%s: config file '%s' is a circular link\n"
-				          " (= '%s')"),
-				        pkg_describe(pkg, pdo_foreign), in,
-				        result->buf);
-				return -1;
-			}
-
-			varbuf_reset(&target);
-			varbuf_grow(&target, stab.st_size + 1);
-			r = readlink(result->buf, target.buf, target.size);
-			if (r < 0) {
-				warning(_("%s: unable to readlink conffile '%s'\n"
-				          " (= '%s'): %s"),
-				        pkg_describe(pkg, pdo_foreign), in,
-				        result->buf, strerror(errno));
-				return -1;
-			}
-			assert(r == stab.st_size); /* XXX: debug */
-			varbuf_trunc(&target, r);
-			varbuf_end_str(&target);
-
-			debug(dbg_conffdetail,
-			      "conffderef readlink gave %d, '%s'",
-			      r, target.buf);
-
-			if (target.buf[0] == '/') {
-				varbuf_reset(result);
-				varbuf_add_str(result, instdir);
-				debug(dbg_conffdetail,
-				      "conffderef readlink absolute");
-			} else {
-				for (r = result->used - 1; r > 0 && result->buf[r] != '/'; r--)
-					;
-				if (r < 0) {
-					warning(_("%s: conffile '%.250s' resolves to degenerate filename\n"
-					          " ('%s' is a symlink to '%s')"),
-					        pkg_describe(pkg, pdo_foreign),
-					        in, result->buf, target.buf);
-					return -1;
-				}
-				if (result->buf[r] == '/')
-					r++;
-				varbuf_trunc(result, r);
-				debug(dbg_conffdetail,
-				      "conffderef readlink relative to '%.*s'",
-				      (int)result->used, result->buf);
-			}
-			varbuf_add_buf(result, target.buf, target.used);
-			varbuf_end_str(result);
-		} else {
-			warning(_("%s: conffile '%.250s' is not a plain file or symlink (= '%s')"),
-			        pkg_describe(pkg, pdo_foreign), in, result->buf);
-			return -1;
+	/* No --force-confdef but a forcible situtation. */
+	/* TODO: check if this condition can not be simplified to
+	 *       just !fc_conff_def */
+	if (!(fc_conff_def && (what & (cfof_install | cfof_keep)))) {
+		if (fc_conff_new) {
+			fprintf(stderr,
+			        _(" ==> Using new file as you requested.\n"));
+			return 'y';
+		} else if (fc_conff_old) {
+			fprintf(stderr,
+			        _(" ==> Using current old file as you requested.\n"));
+			return 'n';
 		}
 	}
-}
 
-/**
- * Generate a file contents MD5 hash.
- *
- * The caller is responsible for providing a buffer for the hash result
- * at least MD5HASHLEN + 1 characters long.
- *
- * @param[in] pkg The package to act on.
- * @param[out] hashbuf The buffer to store the generated hash.
- * @param[in] fn The filename.
- * @param[in] fd A file descriptor ready to use, or -1.
- */
-void
-md5hash(struct pkginfo *pkg, char *hashbuf, const char *fn, int fd)
-{
-	bool close_fd = false;
-
-	if (fd < 0) {
-		fd = open(fn, O_RDONLY);
-		close_fd = true;
+	/* Force the default action (if there is one. */
+	if (fc_conff_def) {
+		if (what & cfof_keep) {
+			fprintf(stderr,
+			        _(" ==> Keeping old config file as default.\n"));
+			return 'n';
+		} else if (what & cfof_install) {
+			fprintf(stderr,
+			        _(" ==> Using new config file as default.\n"));
+			return 'y';
+		}
 	}
 
-	if (fd >= 0) {
-		push_cleanup(cu_closefd, ehflag_bombout, NULL, 0, 1, &fd);
-		fd_md5(fd, hashbuf, -1, _("md5hash"));
-		pop_cleanup(ehflag_normaltidy); /* fd = open(cdr.buf) */
-		if (close_fd && close(fd))
-			ohshite(_("error closing %.250s"), fn);
-	} else if (errno == ENOENT) {
-		strcpy(hashbuf, NONEXISTENTFLAG);
-	} else {
-		warning(_("%s: unable to open %s for hash: %s"),
-		        pkg_describe(pkg, pdo_foreign), fn, strerror(errno));
-		strcpy(hashbuf, "-");
+	fprintf(stderr,
+	        _("   What would you like to do about it ?  Your options are:\n"
+	          "    Y or I  : install the package maintainer's version\n"
+	          "    N or O  : keep your currently-installed version\n"
+	          "      D     : show the differences between the versions\n"
+	          "      Z     : start a shell to examine the situation\n"));
+
+	if (what & cfof_keep)
+		fprintf(stderr,
+		        _(" The default action is to keep your current version.\n"));
+	else if (what & cfof_install)
+		fprintf(stderr,
+		        _(" The default action is to install the new version.\n"));
+
+	s = path_basename(cfgfile);
+	fprintf(stderr, "*** %s (Y/I/N/O/D/Z) %s ? ", s,
+	        (what & cfof_keep) ? _("[default=N]") :
+	        (what & cfof_install) ? _("[default=Y]") :
+	        _("[no default]"));
+
+	if (ferror(stderr))
+		ohshite(_("error writing to stderr, discovered before conffile prompt"));
+
+	cc = 0;
+	while ((c = getchar()) != EOF && c != '\n')
+		if (!isspace(c) && !cc)
+			cc = tolower(c);
+
+	if (c == EOF) {
+		if (ferror(stdin))
+			ohshite(_("read error on stdin at conffile prompt"));
+		ohshit(_("EOF on stdin at conffile prompt"));
 	}
+
+	if (!cc) {
+		if (what & cfof_keep)
+			return 'n';
+		else if (what & cfof_install)
+			return 'y';
+	}
+
+	return cc;
 }
 
 /**
@@ -535,22 +195,18 @@ md5hash(struct pkginfo *pkg, char *hashbuf, const char *fn, int fd)
  * @param new The path to the new file.
  */
 static void
-showdiff(const char *old, const char *new)
+show_diff(const char *old, const char *new)
 {
 	pid_t pid;
 
 	pid = subproc_fork();
 	if (!pid) {
 		/* Child process. */
-		const char *pager;
 		char cmdbuf[1024];
 
-		pager = getenv("PAGER");
-		if (!pager || !*pager)
-			pager = DEFAULTPAGER;
-
 		sprintf(cmdbuf, DIFF " -Nu %.250s %.250s | %.250s",
-		        old, new, pager);
+		        str_quote_meta(old), str_quote_meta(new),
+		        command_get_pager());
 
 		command_shell(cmdbuf, _("conffile difference visualizer"));
 	}
@@ -618,8 +274,7 @@ promptconfaction(struct pkginfo *pkg, const char *cfgfile,
                  const char *realold, const char *realnew,
                  int useredited, int distedited, enum conffopt what)
 {
-	const char *s;
-	int c, cc;
+	int cc;
 
 	if (!(what & cfof_prompt))
 		return what;
@@ -629,106 +284,12 @@ promptconfaction(struct pkginfo *pkg, const char *cfgfile,
 	              realold, realnew, useredited, distedited);
 
 	do {
-		/* Flush the terminal's input in case the user involuntarily
-		 * typed some characters. */
-		tcflush(STDIN_FILENO, TCIFLUSH);
-		fprintf(stderr, _("\nConfiguration file `%s'"), cfgfile);
-		if (strcmp(cfgfile, realold))
-			fprintf(stderr, _(" (actually `%s')"), realold);
-
-		if (what & cfof_isnew) {
-			fprintf(stderr,
-			        _("\n"
-			          " ==> File on system created by you or by a script.\n"
-			          " ==> File also in package provided by package maintainer.\n"));
-		} else {
-			fprintf(stderr, !useredited ?
-			        _("\n     Not modified since installation.\n") :
-			        !(what & cfof_userrmd) ?
-			        _("\n ==> Modified (by you or by a script) since installation.\n") :
-			        _("\n ==> Deleted (by you or by a script) since installation.\n"));
-
-			fprintf(stderr, distedited ?
-			        _(" ==> Package distributor has shipped an updated version.\n") :
-			        _("     Version in package is the same as at last installation.\n"));
-		}
-
-		/* No --force-confdef but a forcible situtation. */
-		/* TODO: check if this condition can not be simplified to
-		 *       just !fc_conff_def */
-		if (!(fc_conff_def && (what & (cfof_install | cfof_keep)))) {
-			if (fc_conff_new) {
-				fprintf(stderr, _(" ==> Using new file as you requested.\n"));
-				cc = 'y';
-				break;
-			} else if (fc_conff_old) {
-				fprintf(stderr, _(" ==> Using current old file as you requested.\n"));
-				cc = 'n';
-				break;
-			}
-		}
-
-		/* Force the default action (if there is one. */
-		if (fc_conff_def) {
-			if (what & cfof_keep) {
-				fprintf(stderr, _(" ==> Keeping old config file as default.\n"));
-				cc = 'n';
-				break;
-			} else if (what & cfof_install) {
-				fprintf(stderr, _(" ==> Using new config file as default.\n"));
-				cc = 'y';
-				break;
-			}
-		}
-
-		fprintf(stderr,
-		        _("   What would you like to do about it ?  Your options are:\n"
-		          "    Y or I  : install the package maintainer's version\n"
-		          "    N or O  : keep your currently-installed version\n"
-		          "      D     : show the differences between the versions\n"
-		          "      Z     : start a shell to examine the situation\n"));
-
-		if (what & cfof_keep)
-			fprintf(stderr, _(" The default action is to keep your current version.\n"));
-		else if (what & cfof_install)
-			fprintf(stderr, _(" The default action is to install the new version.\n"));
-
-		s = strrchr(cfgfile, '/');
-		if (!s || !*++s)
-			s = cfgfile;
-		fprintf(stderr, "*** %s (Y/I/N/O/D/Z) %s ? ",
-		        s,
-		        (what & cfof_keep) ? _("[default=N]") :
-		        (what & cfof_install) ? _("[default=Y]") :
-		        _("[no default]"));
-
-		if (ferror(stderr))
-			ohshite(_("error writing to stderr, discovered before conffile prompt"));
-
-		cc = 0;
-		while ((c = getchar()) != EOF && c != '\n')
-			if (!isspace(c) && !cc)
-				cc = tolower(c);
-
-		if (c == EOF) {
-			if (ferror(stdin))
-				ohshite(_("read error on stdin at conffile prompt"));
-			ohshit(_("EOF on stdin at conffile prompt"));
-		}
-
-		if (!cc) {
-			if (what & cfof_keep) {
-				cc = 'n';
-				break;
-			} else if (what & cfof_install) {
-				cc = 'y';
-				break;
-			}
-		}
+		cc = show_prompt(cfgfile, realold, realnew,
+		                 useredited, distedited, what);
 
 		/* FIXME: Say something if silently not install. */
 		if (cc == 'd')
-			showdiff(realold, realnew);
+			show_diff(realold, realnew);
 
 		if (cc == 'z')
 			spawn_shell(realold, realnew);
@@ -755,4 +316,521 @@ promptconfaction(struct pkginfo *pkg, const char *cfgfile,
 	}
 
 	return what;
+}
+
+/**
+ * Configure the ghost conffile instance.
+ *
+ * When the first instance of a package set is configured, the *.dpkg-new
+ * files gets installed into their destination, which makes configuration of
+ * conffiles from subsequent package instances be skept along with updates
+ * to the Conffiles field hash.
+ *
+ * In case the conffile has already been processed, sync the hash from an
+ * already configured package instance conffile.
+ *
+ * @param pkg	The current package being configured.
+ * @param conff	The current conffile being configured.
+ */
+static void
+deferred_configure_ghost_conffile(struct pkginfo *pkg, struct conffile *conff)
+{
+	struct pkginfo *otherpkg;
+	struct conffile *otherconff;
+
+	for (otherpkg = &pkg->set->pkg; otherpkg; otherpkg = otherpkg->arch_next) {
+		if (otherpkg == pkg)
+			continue;
+		if (otherpkg->status <= stat_halfconfigured)
+			continue;
+
+		for (otherconff = otherpkg->installed.conffiles; otherconff;
+		     otherconff = otherconff->next) {
+			if (otherconff->obsolete)
+				continue;
+
+			/* Check if we need to propagate the new hash from
+			 * an already processed conffile in another package
+			 * instance. */
+			if (strcmp(otherconff->name, conff->name) == 0) {
+				conff->hash = otherconff->hash;
+				modstatdb_note(pkg);
+				return;
+			}
+		}
+	}
+}
+
+static void
+deferred_configure_conffile(struct pkginfo *pkg, struct conffile *conff)
+{
+	struct filenamenode *usenode;
+	char currenthash[MD5HASHLEN + 1], newdisthash[MD5HASHLEN + 1];
+	int useredited, distedited;
+	enum conffopt what;
+	struct stat stab;
+	struct varbuf cdr = VARBUF_INIT, cdr2 = VARBUF_INIT;
+	char *cdr2rest;
+	int r;
+
+	usenode = namenodetouse(findnamenode(conff->name, fnn_nocopy),
+                                pkg, &pkg->installed);
+
+	r = conffderef(pkg, &cdr, usenode->name);
+	if (r == -1) {
+		conff->hash = EMPTYHASHFLAG;
+		return;
+	}
+	md5hash(pkg, currenthash, cdr.buf);
+
+	varbuf_reset(&cdr2);
+	varbuf_add_str(&cdr2, cdr.buf);
+	varbuf_end_str(&cdr2);
+	/* XXX: Make sure there's enough room for extensions. */
+	varbuf_grow(&cdr2, 50);
+	cdr2rest = cdr2.buf + strlen(cdr.buf);
+	/* From now on we can just strcpy(cdr2rest, extension); */
+
+	strcpy(cdr2rest, DPKGNEWEXT);
+	/* If the .dpkg-new file is no longer there, ignore this one. */
+	if (lstat(cdr2.buf, &stab)) {
+		if (errno == ENOENT) {
+			/* But, sync the conffile hash value from another
+			 * package set instance. */
+			deferred_configure_ghost_conffile(pkg, conff);
+			return;
+		}
+		ohshite(_("unable to stat new distributed conffile '%.250s'"),
+		        cdr2.buf);
+	}
+	md5hash(pkg, newdisthash, cdr2.buf);
+
+	/* Copy the permissions from the installed version to the new
+	 * distributed version. */
+	if (!stat(cdr.buf, &stab))
+		file_copy_perms(cdr.buf, cdr2.buf);
+	else if (errno != ENOENT)
+		ohshite(_("unable to stat current installed conffile `%.250s'"),
+		        cdr.buf);
+
+	/* Select what to do. */
+	if (strcmp(currenthash, newdisthash) == 0) {
+		/* They're both the same so there's no point asking silly
+		 * questions. */
+		useredited = -1;
+		distedited = -1;
+		what = cfo_identical;
+	} else if (strcmp(currenthash, NONEXISTENTFLAG) == 0 && fc_conff_miss) {
+		fprintf(stderr,
+		        _("\n"
+		          "Configuration file `%s', does not exist on system.\n"
+		          "Installing new config file as you requested.\n"),
+		        usenode->name);
+		what = cfo_newconff;
+		useredited = -1;
+		distedited = -1;
+	} else if (strcmp(conff->hash, NEWCONFFILEFLAG) == 0) {
+		if (strcmp(currenthash, NONEXISTENTFLAG) == 0) {
+			what = cfo_newconff;
+			useredited = -1;
+			distedited = -1;
+		} else {
+			useredited = 1;
+			distedited = 1;
+			what = conffoptcells[useredited][distedited] |
+			       cfof_isnew;
+		}
+	} else {
+		useredited = strcmp(conff->hash, currenthash) != 0;
+		distedited = strcmp(conff->hash, newdisthash) != 0;
+
+		if (fc_conff_ask && useredited)
+			what = cfo_prompt_keep;
+		else
+			what = conffoptcells[useredited][distedited];
+
+		if (strcmp(currenthash, NONEXISTENTFLAG) == 0)
+			what |= cfof_userrmd;
+	}
+
+	debug(dbg_conff,
+	      "deferred_configure '%s' (= '%s') useredited=%d distedited=%d what=%o",
+	      usenode->name, cdr.buf, useredited, distedited, what);
+
+	what = promptconfaction(pkg, usenode->name, cdr.buf, cdr2.buf,
+	                        useredited, distedited, what);
+
+	switch (what & ~(cfof_isnew | cfof_userrmd)) {
+	case cfo_keep | cfof_backup:
+		strcpy(cdr2rest, DPKGOLDEXT);
+		if (unlink(cdr2.buf) && errno != ENOENT)
+			warning(_("%s: failed to remove old backup '%.250s': %s"),
+			        pkg_name(pkg, pnaw_nonambig), cdr2.buf,
+			        strerror(errno));
+
+		varbuf_add_str(&cdr, DPKGDISTEXT);
+		varbuf_end_str(&cdr);
+		strcpy(cdr2rest, DPKGNEWEXT);
+		trig_path_activate(usenode, pkg);
+		if (rename(cdr2.buf, cdr.buf))
+			warning(_("%s: failed to rename '%.250s' to '%.250s': %s"),
+			        pkg_name(pkg, pnaw_nonambig), cdr2.buf, cdr.buf,
+			        strerror(errno));
+		break;
+	case cfo_keep:
+		strcpy(cdr2rest, DPKGNEWEXT);
+		if (unlink(cdr2.buf))
+			warning(_("%s: failed to remove '%.250s': %s"),
+			        pkg_name(pkg, pnaw_nonambig), cdr2.buf,
+			        strerror(errno));
+		break;
+	case cfo_install | cfof_backup:
+		strcpy(cdr2rest, DPKGDISTEXT);
+		if (unlink(cdr2.buf) && errno != ENOENT)
+			warning(_("%s: failed to remove old distributed version '%.250s': %s"),
+			        pkg_name(pkg, pnaw_nonambig), cdr2.buf,
+			        strerror(errno));
+		strcpy(cdr2rest, DPKGOLDEXT);
+		if (unlink(cdr2.buf) && errno != ENOENT)
+			warning(_("%s: failed to remove '%.250s' (before overwrite): %s"),
+			        pkg_name(pkg, pnaw_nonambig), cdr2.buf,
+			        strerror(errno));
+		if (!(what & cfof_userrmd))
+			if (link(cdr.buf, cdr2.buf))
+				warning(_("%s: failed to link '%.250s' to '%.250s': %s"),
+				        pkg_name(pkg, pnaw_nonambig), cdr.buf,
+				        cdr2.buf, strerror(errno));
+		/* Fall through. */
+	case cfo_install:
+		printf(_("Installing new version of config file %s ...\n"),
+		       usenode->name);
+	case cfo_newconff:
+		strcpy(cdr2rest, DPKGNEWEXT);
+		trig_path_activate(usenode, pkg);
+		if (rename(cdr2.buf, cdr.buf))
+			ohshite(_("unable to install `%.250s' as `%.250s'"),
+			        cdr2.buf, cdr.buf);
+		break;
+	default:
+		internerr("unknown conffopt '%d'", what);
+	}
+
+	conff->hash = nfstrsave(newdisthash);
+	modstatdb_note(pkg);
+
+	varbuf_destroy(&cdr);
+	varbuf_destroy(&cdr2);
+}
+
+/**
+ * Process the deferred configure package.
+ *
+ * The algorithm for deciding what to configure first is as follows:
+ * Loop through all packages doing a ‘try 1’ until we've been round
+ * and nothing has been done, then do ‘try 2’ and ‘try 3’ likewise.
+ * The incrementing of ‘dependtry’ is done by process_queue().
+ *
+ * Try 1:
+ *   Are all dependencies of this package done? If so, do it.
+ *   Are any of the dependencies missing or the wrong version?
+ *     If so, abort (unless --force-depends, in which case defer).
+ *   Will we need to configure a package we weren't given as an
+ *     argument? If so, abort ─ except if --force-configure-any,
+ *     in which case we add the package to the argument list.
+ *   If none of the above, defer the package.
+ *
+ * Try 2:
+ *   Find a cycle and break it (see above).
+ *   Do as for try 1.
+ *
+ * Try 3 (only if --force-depends-version):
+ *   Same as for try 2, but don't mind version number in dependencies.
+ *
+ * Try 4 (only if --force-depends):
+ *   Do anyway.
+ *
+ * @param pkg The package to act on.
+ */
+void
+deferred_configure(struct pkginfo *pkg)
+{
+	struct varbuf aemsgs = VARBUF_INIT;
+	struct conffile *conff;
+	struct pkginfo *otherpkg;
+	enum dep_check ok;
+
+	if (pkg->status == stat_notinstalled)
+		ohshit(_("no package named `%s' is installed, cannot configure"),
+		       pkg_name(pkg, pnaw_nonambig));
+	if (pkg->status == stat_installed)
+		ohshit(_("package %.250s is already installed and configured"),
+		       pkg_name(pkg, pnaw_nonambig));
+	if (pkg->status != stat_unpacked && pkg->status != stat_halfconfigured)
+		ohshit(_("package %.250s is not ready for configuration\n"
+		         " cannot configure (current status `%.250s')"),
+		       pkg_name(pkg, pnaw_nonambig),
+		       statusinfos[pkg->status].name);
+
+	for (otherpkg = &pkg->set->pkg; otherpkg; otherpkg = otherpkg->arch_next) {
+		if (otherpkg == pkg)
+			continue;
+		if (otherpkg->status <= stat_configfiles)
+			continue;
+
+		if (otherpkg->status < stat_unpacked)
+			ohshit(_("package %s cannot be configured because "
+			         "%s is not ready (current status '%s')"),
+			       pkg_name(pkg, pnaw_always),
+			       pkg_name(otherpkg, pnaw_always),
+			       statusinfos[otherpkg->status].name);
+
+		if (dpkg_version_compare(&pkg->installed.version,
+		                         &otherpkg->installed.version))
+			ohshit(_("package %s %s cannot be configured because "
+			         "%s is at a different version (%s)"),
+			       pkg_name(pkg, pnaw_always),
+			       versiondescribe(&pkg->installed.version,
+			                       vdew_nonambig),
+			       pkg_name(otherpkg, pnaw_always),
+			       versiondescribe(&otherpkg->installed.version,
+			                       vdew_nonambig));
+	}
+
+	if (dependtry > 1)
+		if (findbreakcycle(pkg))
+			sincenothing = 0;
+
+	ok = dependencies_ok(pkg, NULL, &aemsgs);
+	if (ok == dep_check_defer) {
+		varbuf_destroy(&aemsgs);
+		pkg->clientdata->istobe = itb_installnew;
+		enqueue_package(pkg);
+		return;
+	}
+
+	trigproc_reset_cycle();
+
+	/*
+	 * At this point removal from the queue is confirmed. This
+	 * represents irreversible progress wrt trigger cycles. Only
+	 * packages in stat_unpacked are automatically added to the
+	 * configuration queue, and during configuration and trigger
+	 * processing new packages can't enter into unpacked.
+	 */
+
+	ok = breakses_ok(pkg, &aemsgs) ? ok : dep_check_halt;
+	if (ok == dep_check_halt) {
+		sincenothing = 0;
+		varbuf_end_str(&aemsgs);
+		notice(_("dependency problems prevent configuration of %s:\n%s"),
+		       pkg_name(pkg, pnaw_nonambig), aemsgs.buf);
+		varbuf_destroy(&aemsgs);
+		ohshit(_("dependency problems - leaving unconfigured"));
+	} else if (aemsgs.used) {
+		varbuf_end_str(&aemsgs);
+		notice(_("%s: dependency problems, but configuring anyway as you requested:\n%s"),
+		       pkg_name(pkg, pnaw_nonambig), aemsgs.buf);
+	}
+	varbuf_destroy(&aemsgs);
+	sincenothing = 0;
+
+	if (pkg->eflag & eflag_reinstreq)
+		forcibleerr(fc_removereinstreq,
+		            _("package is in a very bad inconsistent state; you should\n"
+		              " reinstall it before attempting configuration"));
+
+	printf(_("Setting up %s (%s) ...\n"), pkg_name(pkg, pnaw_nonambig),
+	       versiondescribe(&pkg->installed.version, vdew_nonambig));
+	log_action("configure", pkg, &pkg->installed);
+
+	trig_activate_packageprocessing(pkg);
+
+	if (f_noact) {
+		pkg_set_status(pkg, stat_installed);
+		pkg->clientdata->istobe = itb_normal;
+		return;
+	}
+
+	if (pkg->status == stat_unpacked) {
+		debug(dbg_general, "deferred_configure updating conffiles");
+		/* This will not do at all the right thing with overridden
+		 * conffiles or conffiles that are the ‘target’ of an override;
+		 * all the references here would be to the ‘contested’
+		 * filename, and in any case there'd only be one hash for both
+		 * ‘versions’ of the conffile.
+		 *
+		 * Overriding conffiles is a silly thing to do anyway :-). */
+
+		modstatdb_note(pkg);
+
+		/* On entry, the ‘new’ version of each conffile has been
+		 * unpacked as ‘*.dpkg-new’, and the ‘installed’ version is
+		 * as-yet untouched in ‘*’. The hash of the ‘old distributed’
+		 * version is in the conffiles data for the package. If
+		 * ‘*.dpkg-new’ no longer exists we assume that we've
+		 * already processed this one. */
+		for (conff = pkg->installed.conffiles; conff; conff = conff->next) {
+			if (conff->obsolete)
+				continue;
+			deferred_configure_conffile(pkg, conff);
+		}
+
+		pkg_set_status(pkg, stat_halfconfigured);
+	}
+
+	assert(pkg->status == stat_halfconfigured);
+
+	modstatdb_note(pkg);
+
+	maintscript_postinst(pkg, "configure",
+	                     dpkg_version_is_informative(&pkg->configversion) ?
+	                     versiondescribe(&pkg->configversion,
+	                                     vdew_nonambig) : "",
+	                     NULL);
+
+	pkg_reset_eflags(pkg);
+	pkg->trigpend_head = NULL;
+	post_postinst_tasks(pkg, stat_installed);
+}
+
+/**
+ * Dereference a file by following all possibly used symlinks.
+ *
+ * @param[in] pkg The package to act on.
+ * @param[out] result The dereference conffile path.
+ * @param[in] in The conffile path to dereference.
+ *
+ * @return An error code for the operation.
+ * @retval 0 Everything went ok.
+ * @retval -1 Otherwise.
+ */
+int
+conffderef(struct pkginfo *pkg, struct varbuf *result, const char *in)
+{
+	static struct varbuf target = VARBUF_INIT;
+	struct stat stab;
+	ssize_t r;
+	int loopprotect;
+
+	varbuf_reset(result);
+	varbuf_add_str(result, instdir);
+	if (*in != '/')
+		varbuf_add_char(result, '/');
+	varbuf_add_str(result, in);
+	varbuf_end_str(result);
+
+	loopprotect = 0;
+
+	for (;;) {
+		debug(dbg_conffdetail, "conffderef in='%s' current working='%s'",
+		      in, result->buf);
+		if (lstat(result->buf, &stab)) {
+			if (errno != ENOENT)
+				warning(_("%s: unable to stat config file '%s'\n"
+				          " (= '%s'): %s"),
+				        pkg_name(pkg, pnaw_nonambig), in,
+				        result->buf, strerror(errno));
+			debug(dbg_conffdetail, "conffderef nonexistent");
+			return 0;
+		} else if (S_ISREG(stab.st_mode)) {
+			debug(dbg_conff, "conffderef in='%s' result='%s'",
+			      in, result->buf);
+			return 0;
+		} else if (S_ISLNK(stab.st_mode)) {
+			debug(dbg_conffdetail, "conffderef symlink loopprotect=%d",
+			      loopprotect);
+			if (loopprotect++ >= 25) {
+				warning(_("%s: config file '%s' is a circular link\n"
+				          " (= '%s')"),
+				        pkg_name(pkg, pnaw_nonambig), in,
+				        result->buf);
+				return -1;
+			}
+
+			varbuf_reset(&target);
+			varbuf_grow(&target, stab.st_size + 1);
+			r = readlink(result->buf, target.buf, target.size);
+			if (r < 0) {
+				warning(_("%s: unable to readlink conffile '%s'\n"
+				          " (= '%s'): %s"),
+				        pkg_name(pkg, pnaw_nonambig), in,
+				        result->buf, strerror(errno));
+				return -1;
+			} else if (r != stab.st_size) {
+				warning(_("symbolic link '%.250s' size has "
+				          "changed from %jd to %zd"),
+				        result->buf, stab.st_size, r);
+				return -1;
+			}
+			varbuf_trunc(&target, r);
+			varbuf_end_str(&target);
+
+			debug(dbg_conffdetail,
+			      "conffderef readlink gave %zd, '%s'",
+			      r, target.buf);
+
+			if (target.buf[0] == '/') {
+				varbuf_reset(result);
+				varbuf_add_str(result, instdir);
+				debug(dbg_conffdetail,
+				      "conffderef readlink absolute");
+			} else {
+				for (r = result->used - 1; r > 0 && result->buf[r] != '/'; r--)
+					;
+				if (r < 0) {
+					warning(_("%s: conffile '%.250s' resolves to degenerate filename\n"
+					          " ('%s' is a symlink to '%s')"),
+					        pkg_name(pkg, pnaw_nonambig),
+					        in, result->buf, target.buf);
+					return -1;
+				}
+				if (result->buf[r] == '/')
+					r++;
+				varbuf_trunc(result, r);
+				debug(dbg_conffdetail,
+				      "conffderef readlink relative to '%.*s'",
+				      (int)result->used, result->buf);
+			}
+			varbuf_add_buf(result, target.buf, target.used);
+			varbuf_end_str(result);
+		} else {
+			warning(_("%s: conffile '%.250s' is not a plain file or symlink (= '%s')"),
+			        pkg_name(pkg, pnaw_nonambig), in, result->buf);
+			return -1;
+		}
+	}
+}
+
+/**
+ * Generate a file contents MD5 hash.
+ *
+ * The caller is responsible for providing a buffer for the hash result
+ * at least MD5HASHLEN + 1 characters long.
+ *
+ * @param[in] pkg The package to act on.
+ * @param[out] hashbuf The buffer to store the generated hash.
+ * @param[in] fn The filename.
+ */
+void
+md5hash(struct pkginfo *pkg, char *hashbuf, const char *fn)
+{
+	struct dpkg_error err;
+	static int fd;
+
+	fd = open(fn, O_RDONLY);
+
+	if (fd >= 0) {
+		push_cleanup(cu_closefd, ehflag_bombout, NULL, 0, 1, &fd);
+		if (fd_md5(fd, hashbuf, -1, &err) < 0)
+			ohshit(_("cannot compute MD5 hash for file '%s': %s"),
+			       fn, err.str);
+		pop_cleanup(ehflag_normaltidy); /* fd = open(cdr.buf) */
+		close(fd);
+	} else if (errno == ENOENT) {
+		strcpy(hashbuf, NONEXISTENTFLAG);
+	} else {
+		warning(_("%s: unable to open %s for hash: %s"),
+		        pkg_name(pkg, pnaw_nonambig), fn, strerror(errno));
+		strcpy(hashbuf, EMPTYHASHFLAG);
+	}
 }

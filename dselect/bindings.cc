@@ -15,7 +15,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
@@ -33,7 +33,7 @@
 
 keybindings::keybindings(const interpretation *ints, const orgbinding *orgbindings) {
   interps= ints;
-  bindings=0;
+  bindings = nullptr;
   const orgbinding *b= orgbindings;
   while (b->action) { bind(b->key,b->action); b++; }
   describestart();
@@ -66,7 +66,7 @@ keybindings::bind(int key, const char *action)
     bindings = b;
   }
   b->interp = interp;
-  b->desc = desc ? desc->desc : 0;
+  b->desc = desc ? desc->desc : nullptr;
 
   return true;
 }
@@ -87,7 +87,8 @@ const keybindings::interpretation *keybindings::operator()(int key) {
   binding *b = bindings;
   while (b && b->key != key)
     b = b->next;
-  if (!b) return 0;
+  if (!b)
+    return nullptr;
   return b->interp;
 }
 
@@ -95,9 +96,10 @@ const char **keybindings::describenext() {
   binding *search;
   int count;
   for (;;) {
-    if (!iterate->action) return 0;
+    if (!iterate->action)
+      return nullptr;
     for (count=0, search=bindings; search; search=search->next)
-      if (!strcmp(search->interp->action,iterate->action))
+      if (strcmp(search->interp->action, iterate->action) == 0)
         count++;
     if (count) break;
     iterate++;
@@ -105,9 +107,9 @@ const char **keybindings::describenext() {
   const char **retarray= new const char *[count+2];
   retarray[0]= iterate->desc;
   for (count=1, search=bindings; search; search=search->next)
-    if (!strcmp(search->interp->action,iterate->action))
+    if (strcmp(search->interp->action, iterate->action) == 0)
       retarray[count++]= key2name(search->key);
-  retarray[count]= 0;
+  retarray[count] = nullptr;
   iterate++;
   return retarray;
 }
@@ -159,7 +161,7 @@ const keybindings::description keybindings::descriptions[]= {
   { "morespecific",    N_("Make highlight more specific")                        },
   { "lessspecific",    N_("Make highlight less specific")                        },
   { "search",          N_("Search for a package whose name contains a string")   },
-  { "searchagain",     N_("Repeat last search.")                                 },
+  { "searchagain",     N_("Repeat last search")                                 },
   { "swaporder",       N_("Swap sort order priority/section")                    },
   { "quitcheck",       N_("Quit, confirming, and checking dependencies")         },
   { "quitnocheck",     N_("Quit, confirming without check")                      },
@@ -173,5 +175,5 @@ const keybindings::description keybindings::descriptions[]= {
   // Actions which apply only to lists of methods.
   { "select-and-quit", N_("Select currently-highlighted access method")          },
   { "abort",           N_("Quit without changing selected access method")        },
-  {  0,                0                                                         }
+  { nullptr,           nullptr                                                   }
 };

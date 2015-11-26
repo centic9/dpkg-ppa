@@ -1,20 +1,15 @@
 #!/usr/bin/make -f
 # debian/rules for the dpkg suite.
 # Copyright © 2004 Scott James Remnant <scott@netsplit.com>
+# Copyright © 2006-2012 Guillem Jover <guillem@debian.org>
 
 WFLAGS := -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers
 
-CFLAGS = -g $(WFLAGS)
-CXXFLAGS = -g $(WFLAGS)
-
-# Disable optimisations if ‘noopt’ found in $DEB_BUILD_OPTIONS
-ifneq (,$(filter noopt,$(DEB_BUILD_OPTIONS)))
-	CFLAGS += -O0
-	CXXFLAGS += -O0
-else
-	CFLAGS += -O2
-	CXXFLAGS += -O2
-endif
+# Use the in-tree dpkg-buildflags
+dpkg_buildflags = \
+	DEB_CFLAGS_MAINT_APPEND="$(WFLAGS)" \
+	DEB_CXXFLAGS_MAINT_APPEND="$(WFLAGS)" \
+	$(CURDIR)/run-script perl $(CURDIR)/scripts/dpkg-buildflags.pl
 
 # These are used for cross-compiling and for saving the configure script
 # from having to guess our platform (since we know it already)
@@ -33,7 +28,9 @@ DEB_HOST_ARCH_OS  ?= $(shell dpkg-architecture -qDEB_HOST_ARCH_OS)
 ifeq ($(DEB_HOST_ARCH_OS),linux)
 	confflags += --with-selinux
 endif
-
+ifeq (,$(filter maintainer-build,$(DEB_BUILD_OPTIONS)))
+	confflags += --disable-silent-rules
+endif
 
 # Create configure script if necessary, automake handles rebuilding it.
 configure:
@@ -47,18 +44,19 @@ build-tree/config.status: configure
 
 	install -d build-tree
 	cd build-tree && ../configure $(confflags) \
-		CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" \
-		--disable-silent-rules \
+		$(shell $(dpkg_buildflags) --export=configure) \
 		--prefix=/usr \
 		--mandir=\$${datadir}/man \
 		--infodir=\$${datadir}/info \
 		--sysconfdir=/etc \
+		--sbindir=/sbin \
 		--localstatedir=/var \
 		--with-zlib \
+		--with-liblzma \
 		--with-bz2
 
 # Build the package in build-tree
-build: build-tree/config.status
+build-indep build-arch build: build-tree/config.status
 	dh_testdir
 
 	cd build-tree && $(MAKE)
@@ -75,7 +73,7 @@ endif
 install: check
 	dh_testdir
 	dh_testroot
-	dh_clean -k
+	dh_prep
 	dh_installdirs
 
 	cd build-tree && $(MAKE) DESTDIR="$(CURDIR)/debian/tmp" install
@@ -87,6 +85,13 @@ ifeq (yes,$(shell dpkg-vendor --derives-from Ubuntu && echo yes))
 	        $(CURDIR)/debian/tmp/usr/share/dpkg/cputable
 endif
 
+define dpkg-installmanl10n
+for f in `sed -e 's:\*:*/*:' debian/$(1).manpages`; do \
+	test -e $$f && \
+	install -D $$f `echo $$f | sed -e 's:^debian/tmp:debian/$(1):'`; \
+done
+endef
+
 # Put together the dpkg and dselect packages
 binary-arch: install
 	dh_testdir -a
@@ -94,12 +99,11 @@ binary-arch: install
 	dh_install --sourcedir=debian/tmp -a
 	dh_installcron -a
 	dh_installlogrotate -a
-
-	install -d debian/dpkg/sbin
-	mv debian/dpkg/usr/sbin/start-stop-daemon debian/dpkg/sbin
-
 	dh_installchangelogs -a ChangeLog*
 	dh_installdocs -a
+	$(call dpkg-installmanl10n,dpkg)
+	$(call dpkg-installmanl10n,dselect)
+	dh_installman -a
 	dh_link -a
 	dh_lintian -a
 	dh_strip -a
@@ -109,7 +113,10 @@ binary-arch: install
 	dh_shlibdeps -a
 	dh_gencontrol -a
 	dh_md5sums -a
-	dh_builddeb -a
+	# Make debootstrap life easier on non-Debian based systems by
+	# compressing dpkg.deb with gzip instead of xz.
+	dh_builddeb -pdpkg -- -Zgzip
+	dh_builddeb -a -Ndpkg
 
 # Put together the dpkg-dev package
 binary-indep: install
@@ -119,6 +126,8 @@ binary-indep: install
 	dh_installcron -i
 	dh_installchangelogs -i ChangeLog*
 	dh_installdocs -i
+	$(call dpkg-installmanl10n,dpkg-dev)
+	dh_installman -i
 	dh_link -i
 	dh_lintian -i
 	dh_strip -i

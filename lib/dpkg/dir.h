@@ -15,7 +15,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #ifndef LIBDPKG_DIR_H
@@ -27,9 +27,17 @@
 
 DPKG_BEGIN_DECLS
 
+/**
+ * @defgroup dir Directory handling
+ * @ingroup dpkg-internal
+ * @{
+ */
+
 void dir_sync_path(const char *path);
 void dir_sync_path_parent(const char *path);
 void dir_sync_contents(const char *path);
+
+/** @} */
 
 DPKG_END_DECLS
 

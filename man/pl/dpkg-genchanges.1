@@ -1,14 +1,34 @@
+.\" dpkg manual page - dpkg-genchanges(1)
+.\"
+.\" Copyright Â© 1995-1996 Ian Jackson <ian@chiark.chu.cam.ac.uk>
+.\" Copyright Â© 2000 Wichert Akkerman <wakkerma@debian.org>
+.\" Copyright Â© 2006-2012 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2008-2010 RaphaÃ«l Hertzog <hertzog@debian.org>
+.\"
+.\" This is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <https://www.gnu.org/licenses/>.
+.
 .\"*******************************************************************
 .\"
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH dpkg\-genchanges 1 2008\-08\-18 "Projekt Debiana" "programy pomocnicze dpkg"
+.TH dpkg\-genchanges 1 2012\-05\-04 "Projekt Debian" "programy pomocnicze dpkg"
 .SH NAZWA
 dpkg\-genchanges \- tworzy pliki .changes
 .
 .SH SK£ADNIA
-\fBdpkg\-genchanges\fP [\fIopcje\fP]
+\fBdpkg\-genchanges\fP [\fIopcja\fP...]
 .br
 .
 .SH OPIS
@@ -50,28 +70,28 @@ Wymusza pominiêcie oryginalnych ¼róde³ i do³±czenie tylko pliku ró¿nic
 Powoduje, ¿e bêd± u¿ywane informacje z dziennika zmian ze wszystkich wersji
 wiêkszych ni¿ \fIwersja\fP.
 .TP 
-\fB\-C\fP\fIopis_zmian\fP
-Czyta opis zmian z pliku \fIopis_zmian\fP, zamiast u¿ywaæ informacji z
+\fB\-C\fP\fIopis\-zmian\fP
+Czyta opis zmian z pliku \fIopis\-zmian\fP, zamiast u¿ywaæ informacji z
 dziennika zmian z katalogu ze ¼ród³ami.
 .TP 
-\fB\-m\fP\fIadres opiekuna\fP
-U¿ywa \fIadresu_opiekuna\fP jako nazwy i adresu e\-mail opiekuna tego pakietu,
+\fB\-m\fP\fIadres\-opiekuna\fP
+U¿ywa \fIadresu\-opiekuna\fP jako nazwy i adresu e\-mail opiekuna tego pakietu,
 zamiast pobieraæ te warto¶ci z pliku kontrolnego z katalogu ze ¼ród³ami.
 .TP 
-\fB\-e\fP\fIadres_opiekuna\fP
-U¿ywa \fIadresu_opiekuna\fP jako nazwy i adresu e\-mail opiekuna tego wydania,
+\fB\-e\fP\fIadres\-opiekuna\fP
+U¿ywa \fIadresu\-opiekuna\fP jako nazwy i adresu e\-mail opiekuna tego wydania,
 zamiast pobieraæ te warto¶ci z dziennika zmian z katalogu ze ¼ród³ami.
 .TP 
 \fB\-V\fP\fInazwa\fP\fB=\fP\fIwarto¶æ\fP
 Ustawia zmienn± podstawienia wyj¶cia. Szczegó³owy opis podstawiania
 zmiennych wyj¶ciowych znajduje siê w \fBdeb\-substvars\fP(5).
 .TP 
-\fB\-T\fP\fIplik_zmiennych_podst\fP
-Read substitution variables in \fIsubstvarsfile\fP; the default is
-\fBdebian/substvars\fP.  No variable substitution is done on any of the fields
-that are output, however the special variable \fIFormat\fP will override the
-field of the same name. This option can be used multiple times to read
-substitution variables from multiple files.
+\fB\-T\fP\fIplik\-zmiennych\-podst\fP
+Odczytuje zmienne podstawiania z \fIpliku\-zmiennych\-podst\fP; domy¶lnie jest to
+\fBdebian/substvars\fP. Nie s± robione ¿adne podstawiania na ¿adnym z pól,
+które s± wypisywane na wyj¶ciu, jednak¿e specjalna zmienna \fIFormat\fP
+nadpisze pole o tej samej nazwie. Opcja ta mo¿e zostaæ podana wiele razy,
+aby odczytaæ zmienne podstawiania z wielu plików.
 
 .TP 
 \fB\-D\fP\fIpole\fP\fB=\fP\fIwarto¶æ\fP
@@ -84,30 +104,29 @@ Usuwa wyj¶ciowe pole pliku kontrolnego.
 Okre¶la g³ówny plik kontrolny, z którego bêd± czytane informacje. Domy¶lnie
 jest to \fBdebian/control\fP.
 .TP 
-\fB\-l\fP\fIdziennik_zmian\fP
+\fB\-l\fP\fIplik\-dziennika\-zmian\fP
 Okre¶la dziennik zmian, z którego bêd± czytane informacje. Domy¶lnym plikiem
 jest \fBdebian/changelog\fP.
 .TP 
-\fB\-f\fP\fIplik_z_list±_plików\fP
+\fB\-f\fP\fIplik\-z\-list±\-plików\fP
 Czyta z tego pliku listê plików do wydania zamiast u¿ywaæ \fBdebian/files\fP.
 .TP 
-\fB\-F\fP\fIformat_dziennika_zmian\fP
-Okre¶la format dziennika zmian. Domy¶lnie format jest czytany ze specjalnej
-linii znajduj±cej siê przy koñcu pliku lub \- je¶li taka linia nie istnieje \-
-u¿ywany jest standardowy format Debiana.
+\fB\-F\fP\fIformat\-dziennika\-zmian\fP
+Okre¶la format dziennika zmian. Wiêcej informacji o alternatywnych formatach
+mo¿na znale¼æ w \fBdpkg\-parsechangelog\fP(1).
 .TP 
-\fB\-u\fP\fIkatalog_z_plikami_wydania\fP
+\fB\-u\fP\fIkatalog\-wysy³ki\-plików\fP
 Poszukuje plików, które maj± byæ do³±czone do wydania w
-\fIkatalogu_z_plikami_wydania\fP zamiast w katalogu \fB..\fP (\fBdpkg\-genchanges\fP
-musi znale¼æ te pliki, tak ¿eby móc zapisaæ ich rozmiary oraz sumy kontrolne
-w pliku \fB.changes\fP).
+\fIkatalogu\-wysy³ki\-plików\fP zamiast w katalogu \fB..\fP (\fBdpkg\-genchanges\fP musi
+znale¼æ te pliki, tak ¿eby móc zapisaæ ich rozmiary oraz sumy kontrolne w
+pliku \fB.changes\fP).
 .TP 
 \fB\-q\fP
 Zazwyczaj \fBdpkg\-genchanges\fP na standardowym wyj¶ciu b³êdów wypisze
 komunikaty informuj±ce na przyk³ad o liczbie plików wygenerowanych
 ¼ród³owych pakietu. \fB\-q\fP powstrzymuje wypisywanie takich komunikatów
 .TP 
-\fB\-h\fP, \fB\-\-help\fP
+\fB\-?\fP, \fB\-\-help\fP
 Wy¶wietla informacjê o u¿ytkowaniu i koñczy dzia³anie.
 .TP 
 \fB\-\-version\fP
@@ -119,16 +138,7 @@ Wy¶wietla informacjê o wersji i pomy¶lnie koñczy dzia³anie.
 Lista wygenerowanych plików, które s± czê¶ci± przygotowywanego
 wydania. \fBdpkg\-genchanges\fP czyta st±d dane podczas tworzenia pliku
 \&\fB.changes\fP.
-.
-.SH AUTORZY
-Copyright \(co 1995\-1996 Ian Jackson
-.br
-Copyright \(co 2000 Wichert Akkerman
-.sp
-Niniejszy program jest oprogramowaniem wolnym, sprawd¼ Powszechn± Licencjê
-Publiczn± GNU w wersji drugiej lub pó¼niejszej, by dowiedzieæ siê o
-warunkach dystrybucji. Brak JAKIEJKOLWIEK gwarancji.
-.SH "T£UMACZE"
+.SH T£UMACZE
 Piotr Roszatycki <dexter@debian.org>, 1999
 .br
 Bartosz Feñski <fenio@debian.org>, 2004-2005
@@ -136,3 +146,5 @@ Bartosz Feñski <fenio@debian.org>, 2004-2005
 Robert Luberda <robert@debian.org>, 2006-2008
 .br
 Wiktor Wandachowicz <siryes@gmail.com>, 2008
+.br
+Micha³ Ku³ach <michal.kulach@gmail.com>, 2012

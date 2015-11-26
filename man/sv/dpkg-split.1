@@ -1,15 +1,32 @@
-.\" Authors: Ian Jackson
+.\" dpkg manual page - dpkg-split(1)
+.\"
+.\" Copyright Â© 1995-1996 Ian Jackson <ian@chiark.chu.cam.ac.uk>
+.\" Copyright Â© 2011 Guillem Jover <guillem@debian.org>
+.\"
+.\" This is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <https://www.gnu.org/licenses/>.
+.
 .\"*******************************************************************
 .\"
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH dpkg\-split 1 2009\-06\-26 Debianprojektet dpkg\-verktygen
+.TH dpkg\-split 1 2011\-07\-04 Debianprojektet dpkg\-verktygen
 .SH NAMN
 dpkg\-split \- Verktyg för att dela/slå ihop Debianpaket
 .
 .SH SYNOPS
-\fBdpkg\-split\fP [\fIflaggor\fP] \fIåtgärd\fP
+\fBdpkg\-split\fP [\fIflaggor\fP...] \fIåtgärd\fP
 .
 .SH BESKRIVNING
 \fBdpkg\-split\fP delar upp binära Debianpaketfiler i mindre delar och slår
@@ -53,7 +70,7 @@ vid samma körning av \fBdpkg\-split \-\-split\fP.
 
 Delarnas filnamn är inte signifikanta för sammanslagningsproceduren.
 
-Förvalt namn på utdatafilen är \fIpaket\fP\fB\-\fP\fIversion\fP\fB.deb\fP.
+Förvalt namn på utdatafilen är \fIpaket\fP\fB_\fP\fIversion\fP\fB_\fP\fIark\fP\fB.deb\fP.
 
 .TP 
 \fB\-I\fP, \fB\-\-info\fP \fIdel\fP...
@@ -76,8 +93,8 @@ Om inte kommer \fIdel\fP att kopieras till kön och \fIfullständig\-utdata\fP ska
 inte.
 
 Om \fIdel\fP inte är en del av ett delat binärpaket kommer \fBdpkg\-split\fP att
-avsluta med returvärde 1; om något annat fel uppstår avslutar det med
-returvärde 2.
+avsluta med returvärde \fB1\fP; om något annat fel uppstår avslutar det med
+returvärde \fB2\fP.
 
 Flaggan \fB\-\-output\fP eller \fB\-o\fP måste ges då \fB\-\-auto\fPanvänds.  (Om detta
 inte vore ett krav skulle det anropande programmet inte veta vilken
@@ -96,7 +113,7 @@ Kastar bort delar från kön över de som väntar på återstående delar av paket.
 Om inget \fIpaket\fP anges töms kön helt; om paket anges kastas bara delar för
 de(t) paket som anges.
 .TP 
-\fB\-h\fP, \fB\-\-help\fP
+\fB\-?\fP, \fB\-\-help\fP
 Visar hjälpskärm och avslutar.
 .TP 
 \fB\-\-version\fP
@@ -136,30 +153,19 @@ Resultatet trunkeras så långt som möjligt, och filnamn på formen
 \fIprefixN\fP\fBof\fP\fIM\fP\fB.deb\fP genereras.
 .
 .SH RETURVÄRDE
-Returvärdet 0 betyder att den efterfrågade funktionen (delning,
-sammanslagning eller annan) slutfördes lyckades. \fB\-\-info\fP\-kommandon lyckas
-även om indatafilen inte är en del av ett binärpaket.
-
-Returvärdet 1 uppkommer endast med \fB\-\-auto\fP och anger att \fIdel\fPfilen inte
-var en del av ett binärpaket.
-
-Returvärdet 2 indikerar att något har gått fel, till exempel ett
-systemanrop, att en fil såg ut som en paketdel men var trasig, ett
-användningsfel, eller något annat problem.
-.
-.SH PROGRAMFEL
-\fBdpkg\-split\fP använder några ganska gamla konventioner för filnamn på
-Debianpaket.
-
-Kompletta detaljer för paket i kön kan inte fås utan att själv gräva i
-kö\-katalogen.
-
-Det finns inget lätt sätta att testa om en fil som kan vara en del av ett
-binärpaket faktiskt är det.
-
-Arkitekturen anges inte i delfilernas filhuvud, bara i kontrollinformationen
-i paketfilen som delarna innehåller, och den förekommer inte i de filnamn
-som genereras.
+.TP 
+\fB0\fP
+Den efterfrågade delningen, sammanslagningen eller annan åtgärd
+lyckades. \fB\-\-info\fP\-kommandon lyckas även om indatafilen inte är en del av
+ett binärpaket.
+.TP 
+\fB1\fP
+Uppkommer endast med \fB\-\-auto\fP och anger att \fIdel\fPfilen inte var en del av
+ett binärpaket.
+.TP 
+\fB2\fP
+Något har gått fel, till exempel ett systemanrop, att en fil såg ut som en
+paketdel men var trasig, ett användningsfel, eller något annat problem.
 .
 .SH FILER
 .TP 
@@ -170,13 +176,14 @@ Filnamnen som används i katalogen är i ett internt format för \fBdpkg\-split\fP
 och är knappast användbara för andra program, och hur som helst kan inte
 formatet på filnamnen litas på.
 .
+.SH PROGRAMFEL
+Kompletta detaljer för paket i kön kan inte fås utan att själv gräva i
+kö\-katalogen.
+
+Det finns inget lätt sätta att testa om en fil som kan vara en del av ett
+binärpaket faktiskt är det.
+.
 .SH "SE ÄVEN"
 \fBdeb\fP(5), \fBdeb\-control\fP(5), \fBdpkg\-deb\fP(1), \fBdpkg\fP(1).
-.
-.SH FÖRFATTARE
-Upphovsrättsskyddat © 1995\-1996 Ian Jackson
-.sp
-Detta är fri programvara; se GNU General Public License version 2 eller
-senare för kopieringsvillkor. Det finns INGEN GARANTI.
-.SH "ÖVERSÄTTNING"
+.SH ÖVERSÄTTNING
 Peter Krefting och Daniel Nylander.

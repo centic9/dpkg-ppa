@@ -15,7 +15,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
@@ -37,7 +37,7 @@
 #include <dpkg/i18n.h>
 #include <dpkg/dpkg.h>
 #include <dpkg/dpkg-db.h>
-#include <dpkg/myopt.h>
+#include <dpkg/options.h>
 
 #include "main.h"
 
@@ -47,56 +47,75 @@ static int nerrs = 0;
 
 struct error_report {
   struct error_report *next;
-  char *what;
+  const char *what;
 };
 
 static struct error_report *reports = NULL;
 static struct error_report **lastreport= &reports;
 static struct error_report emergency;
 
-void print_error_perpackage(const char *emsg, const char *arg) {
+static void
+enqueue_error_report(const char *arg)
+{
   struct error_report *nr;
-
-  fprintf(stderr, _("%s: error processing %s (--%s):\n %s\n"),
-          thisname, arg, cipaction->olong, emsg);
-
-  statusfd_send("status: %s : %s : %s", arg, "error", emsg);
 
   nr= malloc(sizeof(struct error_report));
   if (!nr) {
-    fprintf(stderr,
-            _("%s: failed to allocate memory for new entry in list of failed packages: %s"),
-            thisname, strerror(errno));
+    notice(_("failed to allocate memory for new entry in list of failed packages: %s"),
+           strerror(errno));
     abort_processing = true;
     nr= &emergency;
   }
-  nr->what = m_strdup(arg);
+  nr->what= arg;
   nr->next = NULL;
   *lastreport= nr;
   lastreport= &nr->next;
 
   if (nerrs++ < errabort) return;
-  fprintf(stderr, _("%s: too many errors, stopping\n"), thisname);
+  notice(_("too many errors, stopping"));
   abort_processing = true;
 }
 
-int reportbroken_retexitstatus(void) {
-  struct error_report *next;
+void
+print_error_perpackage(const char *emsg, const void *data)
+{
+  const char *pkgname = data;
+
+  notice(_("error processing package %s (--%s):\n %s"),
+         pkgname, cipaction->olong, emsg);
+
+  statusfd_send("status: %s : %s : %s", pkgname, "error", emsg);
+
+  enqueue_error_report(pkgname);
+}
+
+void
+print_error_perarchive(const char *emsg, const void *data)
+{
+  const char *filename = data;
+
+  notice(_("error processing archive %s (--%s):\n %s"),
+         filename, cipaction->olong, emsg);
+
+  statusfd_send("status: %s : %s : %s", filename, "error", emsg);
+
+  enqueue_error_report(filename);
+}
+
+int
+reportbroken_retexitstatus(int ret)
+{
   if (reports) {
     fputs(_("Errors were encountered while processing:\n"),stderr);
     while (reports) {
       fprintf(stderr," %s\n",reports->what);
-      next = reports->next;
-      free(reports->what);
-      free(reports);
-      reports = next;
+      reports= reports->next;
     }
-    lastreport = &reports;
   }
   if (abort_processing) {
     fputs(_("Processing was halted because there were too many errors.\n"),stderr);
   }
-  return nerrs ? 1 : 0;
+  return nerrs ? 1 : ret;
 }
 
 bool
@@ -105,12 +124,12 @@ skip_due_to_hold(struct pkginfo *pkg)
   if (pkg->want != want_hold)
     return false;
   if (fc_hold) {
-    fprintf(stderr, _("Package %s was on hold, processing it anyway as you requested\n"),
-            pkg_describe(pkg, pdo_foreign));
+    notice(_("package %s was on hold, processing it anyway as you requested"),
+           pkg_name(pkg, pnaw_nonambig));
     return false;
   }
   printf(_("Package %s is on hold, not touching it.  Use --force-hold to override.\n"),
-         pkg_describe(pkg, pdo_foreign));
+         pkg_name(pkg, pnaw_nonambig));
   return true;
 }
 
@@ -120,9 +139,7 @@ void forcibleerr(int forceflag, const char *fmt, ...) {
   va_start(args, fmt);
   if (forceflag) {
     warning(_("overriding problem because --force enabled:"));
-    fputc(' ', stderr);
-    vfprintf(stderr, fmt, args);
-    fputc('\n',stderr);
+    warningv(fmt, args);
   } else {
     ohshitv(fmt, args);
   }

@@ -15,7 +15,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #ifndef LIBDPKG_DEBUG_H
@@ -28,6 +28,16 @@
 
 DPKG_BEGIN_DECLS
 
+/**
+ * @defgroup debug Debugging
+ * @ingroup dpkg-internal
+ * @{
+ */
+
+/*
+ * XXX: We do not use DPKG_BIT() here, because the octal values are part
+ * of the current output interface.
+ */
 enum debugflags {
 	dbg_general = 01,
 	dbg_scripts = 02,
@@ -48,6 +58,8 @@ void debug_set_output(FILE *output);
 void debug_set_mask(int mask);
 bool debug_has_flag(int flag);
 void debug(int flag, const char *fmt, ...) DPKG_ATTR_PRINTF(2);
+
+/** @} */
 
 DPKG_END_DECLS
 

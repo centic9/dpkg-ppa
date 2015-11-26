@@ -16,7 +16,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #ifndef LIBDPKG_EHANDLE_H
@@ -30,27 +30,32 @@
 
 DPKG_BEGIN_DECLS
 
-/* Defined separately in each program. */
-extern const char thisname[];
+/**
+ * @defgroup ehandle Error context handling
+ * @ingroup dpkg-public
+ * @{
+ */
 
 extern volatile int onerr_abort;
 
 enum {
-	ehflag_normaltidy = 01,
-	ehflag_bombout = 02,
-	ehflag_recursiveerror = 04
+	ehflag_normaltidy	= DPKG_BIT(0),
+	ehflag_bombout		= DPKG_BIT(1),
+	ehflag_recursiveerror	= DPKG_BIT(2),
 };
 
-typedef void error_handler(void);
-typedef void error_printer(const char *emsg, const char *contextstring);
+typedef void error_handler_func(void);
+typedef void error_printer_func(const char *emsg, const void *data);
 
-void print_fatal_error(const char *emsg, const char *contextstring);
+void print_fatal_error(const char *emsg, const void *data);
 void catch_fatal_error(void);
 
-void push_error_context_jump(jmp_buf *jbufp, error_printer *printerror,
-                             const char *contextstring);
-void push_error_context_func(error_handler *func, error_printer *printerror,
-                             const char *contextstring);
+void push_error_context_jump(jmp_buf *jumper,
+                             error_printer_func *printer,
+                             const void *printer_data);
+void push_error_context_func(error_handler_func *handler,
+                             error_printer_func *printer,
+                             const void *printer_data);
 void push_error_context(void);
 void pop_error_context(int flagset);
 
@@ -60,18 +65,17 @@ void push_cleanup(void (*f1)(int argc, void **argv), int flagmask1,
 void push_checkpoint(int mask, int value);
 void pop_cleanup(int flagset);
 
-int warning_get_count(void);
-void warningv(const char *fmt, va_list args) DPKG_ATTR_VPRINTF(1);
-void warning(const char *fmt, ...) DPKG_ATTR_PRINTF(1);
-
 void ohshitv(const char *fmt, va_list args)
 	DPKG_ATTR_NORET DPKG_ATTR_VPRINTF(1);
 void ohshit(const char *fmt, ...) DPKG_ATTR_NORET DPKG_ATTR_PRINTF(1);
 void ohshite(const char *fmt, ...) DPKG_ATTR_NORET DPKG_ATTR_PRINTF(1);
 
-void do_internerr(const char *file, int line, const char *fmt, ...)
-	DPKG_ATTR_NORET DPKG_ATTR_PRINTF(3);
-#define internerr(...) do_internerr(__FILE__, __LINE__, __VA_ARGS__)
+void do_internerr(const char *file, int line, const char *func,
+                  const char *fmt, ...)
+	DPKG_ATTR_NORET DPKG_ATTR_PRINTF(4);
+#define internerr(...) do_internerr(__FILE__, __LINE__, __func__, __VA_ARGS__)
+
+/** @} */
 
 DPKG_END_DECLS
 

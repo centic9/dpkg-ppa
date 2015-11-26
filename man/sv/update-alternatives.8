@@ -1,22 +1,39 @@
-.\" update\-alternatives.8
-.\" This man page is copyright 1997 Charles Briscoe-Smith
-.\" This is free documentation; you can redistribute it and/or modify
-.\" it under the terms of the GNU General Public License as published
-.\" by the Free Software Foundation; either version 2 of the License, or
-.\" (at your option) any later version.  There is NO WARRANTY.  You can
-.\" find the GNU GPL in /usr/share/common-licenses/GPL on any Debian system.
+.\" dpkg manual page - update-alternatives(8)
+.\"
+.\" Copyright Â© 1997-1998 Charles Briscoe-Smith
+.\" Copyright Â© 1999 Ben Collins <bcollins@debian.org>
+.\" Copyright Â© 2000 Wichert Akkerman <wakkerma@debian.org>
+.\" Copyright Â© 2003 Adam Heath <doogie@debian.org>
+.\" Copyright Â© 2005 Scott James Remnant <scott@netsplit.com>
+.\" Copyright Â© 2006-2012 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2008 Pierre Habouzit <madcoder@debian.org>
+.\" Copyright Â© 2009-2011 RaphaÃ«l Hertzog <hertzog@debian.org>
+.\"
+.\" This is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <https://www.gnu.org/licenses/>.
+.
 .\"*******************************************************************
 .\"
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH update\-alternatives 8 2009\-04\-13 Debianprojektet dpkg\-verktygen
+.TH update\-alternatives 8 2012\-07\-31 Debianprojektet dpkg\-verktygen
 .SH NAMN
 update\-alternatives \- underhåller symboliska länkar för att bestämma
 standardkommandon
 .
 .SH SYNOPS
-\fBupdate\-alternatives\fP [\fIflaggor\fP] \fIåtgärd\fP
+\fBupdate\-alternatives\fP [\fIflagga\fP...] \fIåtgärd\fP
 .
 .SH BESKRIVNING
 \fBupdate\-alternatives\fP skapar, tar bort, underhåller och visar information
@@ -83,11 +100,11 @@ När flaggan \fI\-\-config\fP används kommer \fBupdate\-alternatives\fP att visa 
 val för länkgruppen där \fInamn\fP är huvudalternativnamnet. Det aktuella valet
 är markerat med en "*". Du kommer därefter att få välja vad som skall göras
 med länkgruppen. Beroende på vad du väljer kommer längruppen inte längre att
-vara i \fIauto\fP\-läge. Du måste använda flaggan \fI\-\-auto\fP för att återgå till
-automatiskt läge (eller köra \fI\-\-config\fP på nytt och välja alternativet som
+vara i \fIauto\fP\-läge. Du måste använda flaggan \fB\-\-auto\fP för att återgå till
+automatiskt läge (eller köra \fB\-\-config\fP på nytt och välja alternativet som
 märkts som automatiskt).
 .PP
-Om du vill konfigurera icke\-interaktivt kan du använda flaggan \fI\-\-set\fP i
+Om du vill konfigurera icke\-interaktivt kan du använda flaggan \fB\-\-set\fP i
 stället (se nedan).
 .PP
 Olika paket som tillhandahåller samma fil måste göra så i
@@ -163,7 +180,7 @@ uppdateras så att de pekar på de nyligen tillagda alternativen.
 .TP 
 \fB\-\-set\fP \fInamn sökväg\fP
 Sätt programmet \fIsökväg\fP som ett alternativ till \fInamn\fP. Detta motsvarar
-\fI\-\-config\fP men är icke\-interaktivt och kan därmed användas i ett skript.
+\fB\-\-config\fP men är icke\-interaktivt och kan därmed användas i ett skript.
 .TP 
 \fB\-\-remove\fP \fInamn sökväg\fP
 Ta bort ett alternativ och alla dess anknutna slavlänkar. \fInamn\fP är ett
@@ -243,8 +260,8 @@ Anger loggfilen, om det skall vara en annan än standard
 (/var/log/alternatives.log).
 .TP 
 \fB\-\-force\fP
-Låt \fBupdate\-alternatives\fP ersätta en verklig fil som installerats där en
-alternativlänk måste installeras.
+Låt \fBupdate\-alternatives\fP ersätta eller ta bort en verklig fil som
+installerats där en alternativlänk måste installeras eller tas bort.
 .TP 
 \fB\-\-skip\-auto\fP
 Hoppa över konfigureringsfrågor för alternativ som är korrekt konfigurerade
@@ -257,6 +274,21 @@ Visa fler kommentarer om vad \fBupdate\-alternatives\fP gör.
 \fB\-\-quiet\fP
 Skriv inte några kommentarer såvida det inte uppstår ett fel.
 .
+.SH RETURVÄRDE
+.TP 
+\fB0\fP
+Den önskade funktionen utfördes utan fel.
+.TP 
+\fB2\fP
+Problem uppstod vid tolkning av kommandoraden eller när funktionen skulle
+utföras.
+.
+.SH MILJÖVARIABLER
+.TP 
+\fBDPKG_ADMINDIR\fP
+Om satt och flaggan \fB\-\-admindir\fP inte har angivits används det som
+bas\-administrativ katalog.
+.
 .SH FILER
 .TP 
 \fI/etc/alternatives/\fP
@@ -266,81 +298,84 @@ Den förvalda alternativkatalogen. Kan överstyras med flaggan \fB\-\-altdir\fP.
 Den förvalda administrativa katalogen. Kan överstyras med flaggan
 \fB\-\-admindir\fP.
 .
-.SH RETURVÄRDE
-.IP 0
-Den önskade funktionen utfördes utan fel.
-.IP 2
-Problem uppstod vid tolkning av kommandoraden eller när funktionen skulle
-utföras.
-.
 .SH FRÅGEFORMAT
-Formatet för \fBupdate\-alternatives\fP \fI\-\-query\fP använder ett RFC822\-liknande
+Formatet för \fBupdate\-alternatives \-\-query\fP använder ett RFC822\-liknande
 platt format. Det består av \fIn\fP + 1 block där \fIn\fP är antalet tillgängliga
 alternativ i den efterfrågade länkgruppen. Det första blocket innehåller
 följande fält:
 .TP 
-\fBLink:\fP <länk>
+\fBNamn:\fP \fInamn\fP
+Alternativets namn i den alternativa katalogen.
+.TP 
+\fBLink:\fP\fI länk\fP
 Generiskt namn för alternativet.
 .TP 
-\fBStatus:\fP <status>
+\fBSlaves:\fP\fI lista\-över\-slavar\fP
+När detta fält är tillgängligt innehåller \fBnext\fP\-raderna alla slavlänkar
+som kopplas till huvudlänken för alternativet. Varje rad beskriver en
+slav. Varje rad innehåller ett blanksteg, det generiska namnet på
+slavalternativet, ytterligare ett blanksteg, och sökvägen till
+slavalternativet.
+.TP 
+\fBStatus:\fP\fI status\fP
 Status för alternativet (\fBauto\fP eller \fBmanual\fP).
 .TP 
-\fBBest:\fP <bästa val>
+\fBBest:\fP\fI bästa\-val\fP
 Sökvägen till det bästa alternativet i länkgruppen. Tas inte med om inget
 alternativ är tillgängligt.
 .TP 
-\fBValue:\fP <för närvarande valt alternativ> 
+\fBValue:\fP\fI för\-närvarande\-valt\-alternativ\fP
 Sökvägen till det för närvarande valda alternativet. Kan även ta det magiska
 värdet \fBnone\fP (inget). Det används om det inte finns någon länk.
 .TP 
 .TP 
 Övriga block beskriver tillgängliga alternativ i den efterfrågade länkgruppen:
 .TP 
-\fBAlternative:\fP <sökväg till alternativet>
+\fBAlternative:\fP\fI sökväg\-till\-alternativet\fP
 Sökväg till alternativet som beskrivs i blocket.
 .TP 
-\fBPriority:\fP <prioritetsvärde>
+\fBPriority:\fP\fI prioritetsvärde\fP
 Värdet för prioriteten på alternativet.
 .TP 
-\fBSlaves:\fP <lista över slavar>
-När denna rubrik är tillgänglig innehåller \fBnext\fP\-raderna alla
-slavalternativ som kopplas till huvudlänken för alternativet. Varje rad
-beskriver en slag. Varje rad innehåller ett blanksteg, det generiska namnet
-på slavalternativet, ytterligare ett blanksteg, och sökvägen till
-slavalternativet.
+\fBSlaves:\fP\fI lista\-över\-slavar\fP
+When this field is present, the \fBnext\fP lines hold all slave alternatives
+associated to the master link of the alternative. There is one slave per
+line. Each line contains one space, the generic name of the slave
+alternative, another space, and the path to the slave alternative.
 .
 .TP 
 \fBExempel\fP
 .nf
 $ update\-alternatives \-\-query editor
-Link: editor
+Name: editor
+Link: /usr/bin/editor
+Slaves:
+ editor.1.gz /usr/share/man/man1/editor.1.gz
+ editor.fr.1.gz /usr/share/man/fr/man1/editor.1.gz
+ editor.it.1.gz /usr/share/man/it/man1/editor.1.gz
+ editor.pl.1.gz /usr/share/man/pl/man1/editor.1.gz
+ editor.ru.1.gz /usr/share/man/ru/man1/editor.1.gz
 Status: auto
-Best: /usr/bin/vim.gtk
-Value: /usr/bin/vim.gtk
+Best: /usr/bin/vim.basic
+Value: /usr/bin/vim.basic
 
 Alternative: /bin/ed
 Priority: \-100
 Slaves:
  editor.1.gz /usr/share/man/man1/ed.1.gz
 
-Alternative: /usr/bin/vim.gtk
+Alternative: /usr/bin/vim.basic
 Priority: 50
 Slaves:
  editor.1.gz /usr/share/man/man1/vim.1.gz
- editor.ru.1.gz /usr/share/man/ru/man1/vim.1.gz
- editor.pl.ISO8859\-2.1.gz /usr/share/man/pl.ISO8859\-2/man1/vim.1.gz
- editor.it.ISO8859\-1.1.gz /usr/share/man/it.ISO8859\-1/man1/vim.1.gz
- editor.pl.UTF\-8.1.gz /usr/share/man/pl.UTF\-8/man1/vim.1.gz
- editor.it.1.gz /usr/share/man/it/man1/vim.1.gz
- editor.fr.UTF\-8.1.gz /usr/share/man/fr.UTF\-8/man1/vim.1.gz
  editor.fr.1.gz /usr/share/man/fr/man1/vim.1.gz
- editor.it.UTF\-8.1.gz /usr/share/man/it.UTF\-8/man1/vim.1.gz
+ editor.it.1.gz /usr/share/man/it/man1/vim.1.gz
  editor.pl.1.gz /usr/share/man/pl/man1/vim.1.gz
- editor.fr.ISO8859\-1.1.gz /usr/share/man/fr.ISO8859\-1/man1/vim.1.gz
+ editor.ru.1.gz /usr/share/man/ru/man1/vim.1.gz
 .fi
 .
 .SH DIAGNOSTIK
-Med \fI\-\-verbose\fP kommer \fBupdate\-alternatives\fP att beskriva i det oändliga
+Med \fB\-\-verbose\fP kommer \fBupdate\-alternatives\fP att beskriva i det oändliga
 vad det gör på sin standard ut\-kanal. Om ett fel uppstår skriver
 \fBupdate\-alternatives\fP ut felmeddelanden på sin standard fel\-kanal och
 avslutar med felkoden 2. Diagnostikinformationen bör vara självförklarande,
@@ -353,7 +388,7 @@ vilken innehåller länkar både för själva programmet och dessa anknutna
 manualsida.
 .PP
 För att visa vilka tillgängliga paket som tillhandahåller \fBvi\fP, samt dess
-aktuella inställning, använd kommandot \fI\-\-display\fP:
+aktuella inställning, använd kommandot \fB\-\-display\fP:
 .RS
 .PP
 \fBupdate\-alternatives \-\-display vi\fP
@@ -373,29 +408,7 @@ detta som root:
 \fBupdate\-alternatives \-\-auto vi\fP
 .RE
 .
-.SH PROGRAMFEL
-Om du hittar ett fel ber vi dig rapportera det via Debians
-felrapporteringssystem.
-.PP
-Om du hittar några diskrepanser mellan vad \fBupdate\-alternatives\fP gör och
-vad som står i manualsidan så är detta ett fel, antingen i implementationen
-eller i dokumentationen; rapportera det.
-.
-.SH FÖRFATTARE
-Upphovsrättsskyddat © 1995 Ian Jackson.
-.br
-Upphovsrättsskyddat © 2009 Raphaël Hertzog
-.sp
-Detta är fri programvara; se GNU General Public License version 2 eller
-senare för kopieringsvillkor. Det finns INGEN GARANTI.
-.PP
-Manualsidan är upphovsrättsskyddad © 1997,1998 Charles Briscoe\-Smith med
-flera.
-.sp
-Detta är fri programvara; se GNU General Public License version 2 eller
-senare för kopieringsvillkor. Det finns INGEN GARANTI.
-.
 .SH "SE ÄVEN"
 \fBln\fP(1), FHS, Filesystem Hierarchy Standard.
-.SH "ÖVERSÄTTNING"
+.SH ÖVERSÄTTNING
 Peter Krefting och Daniel Nylander.

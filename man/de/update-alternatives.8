@@ -1,22 +1,39 @@
-.\" update\-alternatives.8
-.\" This man page is copyright 1997 Charles Briscoe-Smith
-.\" This is free documentation; you can redistribute it and/or modify
-.\" it under the terms of the GNU General Public License as published
-.\" by the Free Software Foundation; either version 2 of the License, or
-.\" (at your option) any later version.  There is NO WARRANTY.  You can
-.\" find the GNU GPL in /usr/share/common-licenses/GPL on any Debian system.
+.\" dpkg manual page - update-alternatives(8)
+.\"
+.\" Copyright Â© 1997-1998 Charles Briscoe-Smith
+.\" Copyright Â© 1999 Ben Collins <bcollins@debian.org>
+.\" Copyright Â© 2000 Wichert Akkerman <wakkerma@debian.org>
+.\" Copyright Â© 2003 Adam Heath <doogie@debian.org>
+.\" Copyright Â© 2005 Scott James Remnant <scott@netsplit.com>
+.\" Copyright Â© 2006-2012 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2008 Pierre Habouzit <madcoder@debian.org>
+.\" Copyright Â© 2009-2011 RaphaÃ«l Hertzog <hertzog@debian.org>
+.\"
+.\" This is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <https://www.gnu.org/licenses/>.
+.
 .\"*******************************************************************
 .\"
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH update\-alternatives 8 2009\-04\-13 Debian\-Projekt dpkg\-Hilfsprogramme
+.TH update\-alternatives 8 2012\-07\-31 Debian\-Projekt dpkg\-Hilfsprogramme
 .SH NAME
 update\-alternatives \- Verwaltung symbolischer Links zur Bestimmung von
 Standardwerten für Befehle
 .
 .SH ÜBERSICHT
-\fBupdate\-alternatives\fP [\fIOptionen\fP] \fIBefehl\fP
+\fBupdate\-alternatives\fP [\fIOption\fP ?] \fIBefehl\fP
 .
 .SH BESCHREIBUNG
 \fBupdate\-alternatives\fP erzeugt, entfernt, verwaltet und zeigt die
@@ -86,18 +103,18 @@ Jede Alternative hat eine ihr zugeordnete \fIPriorität\fP. Befindet sich eine
 Linkgruppe im automatischen Modus, zeigen die Mitglieder einer Gruppe auf
 die Alternative mit der höchsten Priorität.
 .PP
-Wird die \fI\-\-config\fP\-Option verwendet, dann zeigt \fBupdate\-alternatives\fP
+Wird die \fB\-\-config\fP\-Option verwendet, dann zeigt \fBupdate\-alternatives\fP
 alle Auswahlmöglichkeiten für die Link\-Gruppe an, für die der gegebene
 \fIName\fP der Master\-Alternative\-Name ist. Die aktuelle Auswahl ist mit »*«
 markiert. Sie werden dann aufgefordert, Ihre Auswahl bezüglich der
 Linkgruppe anzugeben. Abhängig von der getroffenen Auswahl könnte sich die
 Link\-Gruppe nicht mehr im \fIautomatischen\fP Modus befinden. Sie müssen dann
-die Option \fI\-\-auto\fP verwenden, um wieder in den automatischen Zustand
-zurückzukehren (oder Sie können \fI\-\-config\fP erneut ausführen und den als
+die Option \fB\-\-auto\fP verwenden, um wieder in den automatischen Zustand
+zurückzukehren (oder Sie können \fB\-\-config\fP erneut ausführen und den als
 automatisch markierten Eintrag auswählen).
 .PP
 Falls Sie nicht\-interaktiv konfigurieren möchten, können Sie stattdessen die
-\fI\-\-set\fP Option verwenden (siehe unten).
+Option \fB\-\-set\fP verwenden (siehe unten).
 .PP
 Verschiedene Pakete, die die gleiche Datei bereitstellen, müssen dies
 \fBkooperativ\fP durchführen. Anders gesagt ist in diesem Fall die Verwendung
@@ -152,7 +169,7 @@ keine Änderungen an den Einstellungen des Systemadministrators durch.
 .
 .SH BEFEHLE
 .TP 
-\fB\-\-install\fP \fILink Name Pfad Priorität\fP [\fB\-\-slave\fP \fILink Name Pfad\fP] ...
+\fB\-\-install\fP \fILink Name Pfad Priorität\fP [\fB\-\-slave\fP \fILink Name Pfad\fP] ?
 Füge eine Gruppe von Alternativen zum System hinzu. \fILink\fP ist der
 generische Name des Master\-Links, \fIName\fP ist der Name seines Symlinks im
 Alternativ\-Verzeichnis und \fIPfad\fP ist die Alternative, die für den
@@ -178,7 +195,7 @@ so dass sie auf die neu hinzugefügte Alternative zeigen.
 .TP 
 \fB\-\-set\fP \fIName Pfad\fP
 Setzt das Programm \fIPfad\fP als Alternative für \fIName\fP. Dies ist äquivalent
-zu \fI\-\-config\fP, ist aber nicht interaktiv und kann somit geskriptet werden.
+zu \fB\-\-config\fP, ist aber nicht interaktiv und kann somit geskriptet werden.
 .TP 
 \fB\-\-remove\fP \fIName Pfad\fP
 Entferne eine Alternative und alle zugehörigen Slave\-Links. \fIName\fP ist ein
@@ -263,8 +280,9 @@ Gibt die Protokolldatei an, wenn diese sich von der Vorgabe
 (/var/log/alternatives.log) unterscheiden soll.
 .TP 
 \fB\-\-force\fP
-Lässt \fBupdate\-alternatives\fP alle echten Dateien ersetzen, die sich an
-Stellen befinden, an denen ein Alternativ\-Link installiert werden muss.
+Lässt \fBupdate\-alternatives\fP alle echten Dateien ersetzen oder entfernen,
+die sich an Stellen befinden, an denen ein Alternativ\-Link installiert
+werden muss.
 .TP 
 \fB\-\-skip\-auto\fP
 Überspringt die Konfigurationsabfrage für Alternativen, die korrekt im
@@ -277,6 +295,21 @@ Erzeugt mehr Kommentare über die Tätigkeit von \fBupdate\-alternatives\fP.
 \fB\-\-quiet\fP
 Erzeuge keine Kommentare, es sei denn, ein Fehler tritt auf.
 .
+.SH RÜCKGABEWERT
+.TP 
+\fB0\fP
+Die angeforderte Aktion wurde erfolgreich ausgeführt.
+.TP 
+\fB2\fP
+Beim Lesen der Kommandozeile oder beim Ausführen der Aktion traten Probleme
+auf.
+.
+.SH UMGEBUNG
+.TP 
+\fBDPKG_ADMINDIR\fP
+Falls gesetzt und die Option \fB\-\-admindir\fP nicht angegeben wurde, wird dies
+als Basis\-Administrationsverzeichnis verwandt.
+.
 .SH DATEIEN
 .TP 
 \fI/etc/alternatives/\fP
@@ -287,44 +320,46 @@ Das standardmäßige Alternativ\-Verzeichnis. Kann mittels der Option
 Das standardmäßige administrative Verzeichnis. Kann mittels der
 \fB\-\-admindir\fP Option geändert werden.
 .
-.SH RÜCKGABEWERT
-.IP 0
-Die angeforderte Aktion wurde erfolgreich ausgeführt.
-.IP 2
-Beim Lesen der Kommandozeile oder beim Ausführen der Aktion traten Probleme
-auf.
-.
 .SH ABFRAGE\-FORMAT
-Das Format von \fBupdate\-alternatives\fP \fI\-\-query\fP ist ein RFC822\-artiges,
+Das Format von \fBupdate\-alternatives \-\-query\fP ist ein RFC822\-artiges,
 flaches Format. Es besteht aus \fIn\fP+1 Blöcken, wobei \fIn\fP die Anzahl der in
 einer abgefragten Linkgruppe verfügbaren Alternativen ist. Der erste Block
 enthält die folgenden Felder:
 .TP 
-\fBLink:\fP <Link>
+\fBName:\fP\fI Name\fP
+Der alternative Name im Alternativ\-Verzeichnis.
+.TP 
+\fBLink:\fP\fI Link\fP
 Der generische Name der Alternative.
 .TP 
-\fBStatus:\fP <Status>
+\fBSlaves:\fP\fI Liste\-von\-Slaves\fP
+Wenn diese Feld vorhanden ist enthält die \fBnächste\fP Zeile alle Slave\-Links,
+die dem Masterlink dieser Alternativen zugeordnet sind. Pro Zeile wird ein
+Slave aufgeführt. Jede Zeile enthält ein Leerzeichen, den generischen Namen
+des Slaves, ein weiteres Leerzeichen und den Pfad zu dem Slave\-Link.
+.TP 
+\fBStatus:\fP\fI Status\fP
 Der Status der Alternative (\fBauto\fP oder \fBmanual\fP).
 .TP 
-\fBBest:\fP <beste Wahl>
+\fBBest:\fP\fI beste\-Wahl\fP
 Der Pfad der besten Alternative für diese Linkgruppe. Nicht vorhanden, falls
 keine Alternative verfügbar ist.
 .TP 
-\fBValue:\fP <derzeit ausgewählte Alternative>
+\fBValue:\fP\fI derzeit\-ausgewählte\-Alternative\fP
 Der Pfad der derzeit ausgewählten Alternative. Es akzeptiert auch den
 magischen Wert \fBnone\fP, der verwandt wird, falls der Link nicht existiert.
 .TP 
 .TP 
 Die anderen Blöcke beschreiben die verfügbaren Alternativen in der abgefragten Linkgruppe:
 .TP 
-\fBAlternative:\fP <Pfad dieser Alternativen>
+\fBAlternative:\fP\fI Pfad\-dieser\-Alternativen\fP
 Pfad zum Block dieser Alternativen.
 .TP 
-\fBPriority:\fP <Prioritätswert>
+\fBPriority:\fP\fI Prioritätswert\fP
 Wert der Priorität dieser Alternativen.
 .TP 
-\fBSlaves:\fP <Liste von Slaves>
-Wenn diese Kopfzeile vorhanden ist enthält die \fBnächste\fP Zeile alle
+\fBSlaves:\fP\fI Liste\-von\-Slaves\fP
+Wenn dieses Feld vorhanden ist enthält die \fBnächste\fP Zeile alle
 Slave\-Alternativen, die dem Masterlink dieser Alternativen zugeordnet
 sind. Pro Zeile wird ein Slave aufgeführt. Jede Zeile enthält ein
 Leerzeichen, den generischen Namen des Slaves, ein weiteres Leerzeichen und
@@ -334,34 +369,35 @@ den Pfad zu der Slave\-Alternative.
 \fBBeispiel\fP
 .nf
 $ update\-alternatives \-\-query editor
-Link: editor
+Name: editor
+Link: /usr/bin/editor
+Slaves:
+ editor.1.gz /usr/share/man/man1/editor.1.gz
+ editor.fr.1.gz /usr/share/man/fr/man1/editor.1.gz
+ editor.it.1.gz /usr/share/man/it/man1/editor.1.gz
+ editor.pl.1.gz /usr/share/man/pl/man1/editor.1.gz
+ editor.ru.1.gz /usr/share/man/ru/man1/editor.1.gz
 Status: auto
-Best: /usr/bin/vim.gtk
-Value: /usr/bin/vim.gtk
+Best: /usr/bin/vim.basic
+Value: /usr/bin/vim.basic
 
 Alternative: /bin/ed
 Priority: \-100
 Slaves:
  editor.1.gz /usr/share/man/man1/ed.1.gz
 
-Alternative: /usr/bin/vim.gtk
+Alternative: /usr/bin/vim.basic
 Priority: 50
 Slaves:
  editor.1.gz /usr/share/man/man1/vim.1.gz
- editor.ru.1.gz /usr/share/man/ru/man1/vim.1.gz
- editor.pl.ISO8859\-2.1.gz /usr/share/man/pl.ISO8859\-2/man1/vim.1.gz
- editor.it.ISO8859\-1.1.gz /usr/share/man/it.ISO8859\-1/man1/vim.1.gz
- editor.pl.UTF\-8.1.gz /usr/share/man/pl.UTF\-8/man1/vim.1.gz
- editor.it.1.gz /usr/share/man/it/man1/vim.1.gz
- editor.fr.UTF\-8.1.gz /usr/share/man/fr.UTF\-8/man1/vim.1.gz
  editor.fr.1.gz /usr/share/man/fr/man1/vim.1.gz
- editor.it.UTF\-8.1.gz /usr/share/man/it.UTF\-8/man1/vim.1.gz
+ editor.it.1.gz /usr/share/man/it/man1/vim.1.gz
  editor.pl.1.gz /usr/share/man/pl/man1/vim.1.gz
- editor.fr.ISO8859\-1.1.gz /usr/share/man/fr.ISO8859\-1/man1/vim.1.gz
+ editor.ru.1.gz /usr/share/man/ru/man1/vim.1.gz
 .fi
 .
 .SH DIAGNOSE
-Mit \fI\-\-verbose\fP quatscht \fBupdate\-alternatives\fP ohne Unterlass über seine
+Mit \fB\-\-verbose\fP quatscht \fBupdate\-alternatives\fP ohne Unterlass über seine
 Aktivitäten auf seinem Standardausgabekanal. Falls Probleme auftreten, gibt
 \fBupdate\-alternatives\fP eine Fehlermeldung auf seinem Standardfehlerkanal aus
 und beendet sich mit dem Exit\-Status 2. Die Diagnostiken sollten
@@ -375,7 +411,7 @@ durch die Linkgruppe \fBvi\fP eingestellt, welche Links für das Programm selber
 und die zugehörige Handbuchseite beinhaltet.
 .PP
 Um alle verfügbaren Programme anzuzeigen, die \fBvi\fP bereitstellen, und die
-dazu gehörigen Einstellungen, benutzen Sie die \fI\-\-display\fP Aktion:
+dazu gehörigen Einstellungen, benutzen Sie die Aktion \fB\-\-display\fP:
 .RS
 .PP
 \fBupdate\-alternatives \-\-display vi\fP
@@ -395,31 +431,8 @@ Sie folgendes als Root aus:
 \fBupdate\-alternatives \-\-auto vi\fP
 .RE
 .
-.SH FEHLER
-Falls Sie einen Fehler finden, melden Sie ihn bitte über die Fehlerdatenbank
-von Debian.
-.PP
-Falls Sie einen Unterschied zwischen der Implementation von
-\fBupdate\-alternatives\fP und dieser Handbuchseite finden, ist dies ein Fehler,
-entweder in der Implementation oder in der Dokumentation; bitte melden Sie
-dies.
-.
-.SH AUTOREN
-Copyright \(co 1995 Ian Jackson
-.br
-Copyright \(co 2009 Rapha\[:e]l Hertzog
-.sp
-Dies ist Freie Software; lesen Sie die GNU General Public License Version 2
-oder neuer für die Kopierbedingungen. Es gibt KEINE Haftung.
-.PP
-Diese Handbuchseite ist Copyright 1997,1998 durch Charles Briscoe\-Smith und
-anderen.
-.sp
-Dies ist Freie Dokumentation; lesen Sie die GNU General Public License
-Version 2 oder neuer für die Kopierbedingungen. Es gibt KEINE Haftung.
-.
 .SH ÜBERSETZUNG
-Die deutsche Übersetzung wurde 2004, 2006-2010 von Helge Kreutzmann
+Die deutsche Übersetzung wurde 2004, 2006-2013 von Helge Kreutzmann
 <debian@helgefjell.de>, 2007 von Florian Rehnisch <eixman@gmx.de> und
 2008 von Sven Joachim <svenjoac@gmx.de>
 angefertigt. Diese Übersetzung ist Freie Dokumentation; lesen Sie die

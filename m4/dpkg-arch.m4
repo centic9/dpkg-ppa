@@ -6,9 +6,9 @@
 # Use dpkg-architecture from the source tree to set sh_var using DEB_VAR for
 # the target architecture, to avoid duplicating its logic.
 AC_DEFUN([_DPKG_ARCHITECTURE], [
+AC_REQUIRE([DPKG_PROG_PERL])dnl
 AC_REQUIRE([AC_CANONICAL_HOST])dnl
-$2=$(cd $srcdir/scripts; \
-    PERL5LIB=$(pwd) ./dpkg-architecture.pl -t$host -q$1 2>/dev/null)
+$2=$($srcdir/run-script $PERL scripts/dpkg-architecture.pl -t$host -q$1 2>/dev/null)
 ])# _DPKG_ARCHITECURE
 
 # DPKG_CPU_TYPE
@@ -56,7 +56,11 @@ AC_DEFUN([DPKG_ARCHITECTURE],
 DPKG_OS_TYPE
 AC_MSG_CHECKING([dpkg architecture name])
 _DPKG_ARCHITECTURE([DEB_HOST_ARCH], [dpkg_arch])
-AC_MSG_RESULT([$dpkg_arch])
+if test "x$dpkg_arch" = "x"; then
+	AC_MSG_ERROR([cannot determine host dpkg architecture])
+else
+	AC_MSG_RESULT([$dpkg_arch])
+fi
 AC_DEFINE_UNQUOTED(ARCHITECTURE, "${dpkg_arch}",
 	[Set this to the canonical dpkg architecture name.])
 ])# DPKG_ARCHITECTURE

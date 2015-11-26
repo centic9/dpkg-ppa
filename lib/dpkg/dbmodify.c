@@ -1,5 +1,5 @@
 /*
- * dpkg - main program for package management
+ * libdpkg - Debian packaging suite library routines
  * dbmodify.c - routines for managing dpkg database updates
  *
  * Copyright © 1994,1995 Ian Jackson <ian@chiark.greenend.org.uk>
@@ -16,7 +16,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
@@ -57,7 +57,6 @@ static int nextupdate;
 static char *updatesdir;
 static int updateslength;
 static char *updatefnbuf, *updatefnrest;
-static char *infodir;
 static struct varbuf uvb;
 
 static int ulist_select(const struct dirent *de) {
@@ -79,7 +78,7 @@ static void cleanupdates(void) {
   struct dirent **cdlist;
   int cdn, i;
 
-  parsedb(statusfile, pdb_lax_parser | pdb_weakclassification, NULL);
+  parsedb(statusfile, pdb_parse_status, NULL);
 
   *updatefnrest = '\0';
   updateslength= -1;
@@ -89,23 +88,23 @@ static void cleanupdates(void) {
   if (cdn) {
     for (i=0; i<cdn; i++) {
       strcpy(updatefnrest, cdlist[i]->d_name);
-      parsedb(updatefnbuf, pdb_lax_parser | pdb_weakclassification,
-              NULL);
-      if (cstatus < msdbrw_write) free(cdlist[i]);
+      parsedb(updatefnbuf, pdb_parse_update, NULL);
     }
 
     if (cstatus >= msdbrw_write) {
-      writedb(statusfile,0,1);
+      writedb(statusfile, wdb_must_sync);
 
       for (i=0; i<cdn; i++) {
         strcpy(updatefnrest, cdlist[i]->d_name);
         if (unlink(updatefnbuf))
           ohshite(_("failed to remove incorporated update file %.255s"),updatefnbuf);
-        free(cdlist[i]);
       }
 
       dir_sync_path(updatesdir);
     }
+
+    for (i = 0; i < cdn; i++)
+      free(cdlist[i]);
   }
   free(cdlist);
 
@@ -142,7 +141,6 @@ static const struct fni {
   {   AVAILFILE,                  &availablefile      },
   {   UPDATESDIR,                 &updatesdir         },
   {   UPDATESDIR IMPORTANTTMP,    &importanttmpfile   },
-  {   INFODIR,                    &infodir            },
   {   NULL, NULL                                      }
 };
 
@@ -278,12 +276,12 @@ modstatdb_open(enum modstatdb_rw readwritereq)
     internerr("unknown modstatdb_rw '%d'", readwritereq);
   }
 
+  dpkg_arch_load_list();
+
   if (cstatus != msdbrw_needsuperuserlockonly) {
     cleanupdates();
     if (cflags >= msdbrw_available_readonly)
-    parsedb(availablefile,
-            pdb_recordavailable | pdb_rejectstatus | pdb_lax_parser,
-            NULL);
+      parsedb(availablefile, pdb_parse_available, NULL);
   }
 
   if (cstatus >= msdbrw_write) {
@@ -297,11 +295,17 @@ modstatdb_open(enum modstatdb_rw readwritereq)
   return cstatus;
 }
 
+enum modstatdb_rw
+modstatdb_get_status(void)
+{
+  return cstatus;
+}
+
 void modstatdb_checkpoint(void) {
   int i;
 
   assert(cstatus >= msdbrw_write);
-  writedb(statusfile,0,1);
+  writedb(statusfile, wdb_must_sync);
 
   for (i=0; i<nextupdate; i++) {
     sprintf(updatefnrest, IMPORTANTFMT, i);
@@ -318,7 +322,7 @@ void modstatdb_checkpoint(void) {
 
 void modstatdb_shutdown(void) {
   if (cflags >= msdbrw_available_write)
-    writedb(availablefile, 1, 0);
+    writedb(availablefile, wdb_dump_available);
 
   switch (cstatus) {
   case msdbrw_write:
@@ -347,23 +351,23 @@ modstatdb_note_core(struct pkginfo *pkg)
 
   if (fwrite(uvb.buf, 1, uvb.used, importanttmp) != uvb.used)
     ohshite(_("unable to write updated status of `%.250s'"),
-            pkg_describe(pkg, pdo_foreign));
+            pkg_name(pkg, pnaw_nonambig));
   if (fflush(importanttmp))
     ohshite(_("unable to flush updated status of `%.250s'"),
-            pkg_describe(pkg, pdo_foreign));
+            pkg_name(pkg, pnaw_nonambig));
   if (ftruncate(fileno(importanttmp), uvb.used))
     ohshite(_("unable to truncate for updated status of `%.250s'"),
-            pkg_describe(pkg, pdo_foreign));
+            pkg_name(pkg, pnaw_nonambig));
   if (fsync(fileno(importanttmp)))
     ohshite(_("unable to fsync updated status of `%.250s'"),
-            pkg_describe(pkg, pdo_foreign));
+            pkg_name(pkg, pnaw_nonambig));
   if (fclose(importanttmp))
     ohshite(_("unable to close updated status of `%.250s'"),
-            pkg_describe(pkg, pdo_foreign));
+            pkg_name(pkg, pnaw_nonambig));
   sprintf(updatefnrest, IMPORTANTFMT, nextupdate);
   if (rename(importanttmpfile, updatefnbuf))
     ohshite(_("unable to install updated status of `%.250s'"),
-            pkg_describe(pkg, pdo_foreign));
+            pkg_name(pkg, pnaw_nonambig));
 
   dir_sync_path(updatesdir);
 
@@ -405,9 +409,9 @@ void modstatdb_note(struct pkginfo *pkg) {
   }
 
   log_message("status %s %s %s", statusinfos[pkg->status].name,
-              pkg_describe(pkg, pdo_foreign),
+              pkg_name(pkg, pnaw_always),
 	      versiondescribe(&pkg->installed.version, vdew_nonambig));
-  statusfd_send("status: %s: %s", pkg_describe(pkg, pdo_foreign),
+  statusfd_send("status: %s: %s", pkg_name(pkg, pnaw_nonambig),
                 statusinfos[pkg->status].name);
 
   if (cstatus >= msdbrw_write)

@@ -1,25 +1,28 @@
 #!/usr/bin/perl
-# -*-perl-*-
 #
 # Copyright © 1996 Andy Guy <awpguy@acs.ucalgary.ca>
 # Copyright © 1998 Martin Schulze <joey@infodrom.north.de>
 # Copyright © 1999, 2009 Raphaël Hertzog <hertzog@debian.org>
 #
-# This program has been distributed under the terms of the GNU GPL.
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; version 2 of the License.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use strict;
 use warnings;
 
-use vars qw(%config);
-#use diagnostics;
-
-use lib '/usr/lib/perl5/Debian';
-use lib '/usr/share/perl5/Debian';
-
 eval 'use Net::FTP;';
 if ($@) {
-    print STDERR "Please install the 'perl' package if you want to use the\n" .
-                 "FTP access method of dselect.\n\n";
+    warn "Please install the 'perl' package if you want to use the\n" .
+         "FTP access method of dselect.\n\n";
     exit 1;
 }
 use Dselect::Ftp;
@@ -29,7 +32,7 @@ my $vardir = $ARGV[0];
 my $method = $ARGV[1];
 my $option = $ARGV[2];
 
-if ($option eq "manual") {
+if ($option eq 'manual') {
     print "Manual package installation.\n";
     exit 0;
 }
@@ -45,11 +48,11 @@ chomp $logname;
 my $host = `cat /etc/mailname || dnsdomainname`;
 chomp $host;
 
-$config{'dldir'} = "debian";
-$config{'use_auth_proxy'} = 0;
-$config{'proxyhost'} = "";
-$config{'proxylogname'} = $logname;
-$config{'proxypassword'} = "";
+$CONFIG{dldir} = 'debian';
+$CONFIG{use_auth_proxy} = 0;
+$CONFIG{proxyhost} = '';
+$CONFIG{proxylogname} = $logname;
+$CONFIG{proxypassword} = '';
 
 my $methdir = "$vardir/methods/ftp";
 my $exit = 0;
@@ -60,14 +63,14 @@ if (-f "$methdir/vars") {
 }
 
 chdir "$methdir";
-if (! -d "debian") {
-    mkdir "debian", 0755;
+if (! -d 'debian') {
+    mkdir 'debian', 0755;
 }
 # get info from user
 
 $| = 1;
 
-print <<EOM;
+print <<"EOM";
 
 You must supply an ftp site, use of passive mode, username, password,
 path to the debian directory,list of distributions you are interested
@@ -94,41 +97,40 @@ FTP site:
 
 Eg:  use auth proxy: y
               proxy: proxy.isp.com
-      proxy account: $config{'proxylogname'}
+      proxy account: $CONFIG{proxylogname}
      proxy password: ?
 EOM
 
-if (! $config{'done'}) {
-  view_mirrors() if (yesno("y", "Would you like to see a list of ftp mirrors"));
+if (! $CONFIG{done}) {
+  view_mirrors() if (yesno('y', 'Would you like to see a list of ftp mirrors'));
   add_site();
 }
 edit_config($methdir);
 
 my $ftp;
 sub download() {
- foreach (@{$config{'site'}}) {
+ foreach (@{$CONFIG{site}}) {
 
     $ftp = do_connect ($_->[0], # Ftp server
                        $_->[4], # username
 		       $_->[5], # password
 		       $_->[1], # ftp dir
 		       $_->[3], # passive
-		       $config{'use_auth_proxy'},
-		       $config{'proxyhost'},
-		       $config{'proxylogname'},
-		       $config{'proxypassword'});
+		       $CONFIG{use_auth_proxy},
+		       $CONFIG{proxyhost},
+		       $CONFIG{proxylogname},
+		       $CONFIG{proxypassword});
 
     my @dists = @{$_->[2]};
 
-    my $dist;
-    foreach $dist (@dists) {
+    foreach my $dist (@dists) {
 	my $dir = "$dist/binary-$arch";
 	print "Checking $dir...\n";
-#	if(!$ftp->pasv()) { print $ftp->message . "\n"; die "error"; }
+#	if (!$ftp->pasv()) { print $ftp->message . "\n"; die 'error'; }
 	my @dirlst = $ftp->ls("$dir/");
 	my $got_pkgfile = 0;
-	my $line = "";
-	foreach $line (@dirlst) {
+
+	foreach my $line (@dirlst) {
 	    if($line =~ /Packages/) {
 		$got_pkgfile=1;
 	    }
@@ -148,14 +150,14 @@ sub download() {
 print "\nUsing FTP to check directories...(stop with ^C)\n\n";
 eval {
     local $SIG{INT} = sub {
-	die "Interrupted!\n";
+	die "interrupted!\n";
     };
     download();
 };
 if($@) {
     $ftp->quit();
-    print "FTP ERROR - ";
-    if ($@ eq "connect") {
+    print 'FTP ERROR - ';
+    if ($@ eq 'connect') {
 	print "config was untested\n";
     } else {
 	print "$@\n";
@@ -164,7 +166,7 @@ if($@) {
 };
 
 # output new vars file
-$config{'done'} = 1;
+$CONFIG{done} = 1;
 store_config("$methdir/vars");
 chmod  0600, "$methdir/vars";
 

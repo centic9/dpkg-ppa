@@ -18,7 +18,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
@@ -48,7 +48,7 @@ filter_add(const char *pattern, bool include)
 {
 	struct filter_node *filter;
 
-	debug(dbg_general, "adding %s filter for '%s'\n",
+	debug(dbg_general, "adding %s filter for '%s'",
 	      include ? "include" : "exclude", pattern);
 
 	filter = m_malloc(sizeof(*filter));
@@ -114,8 +114,12 @@ filter_should_skip(struct tar_entry *ti)
 			else
 				path_len = strlen(f->pattern);
 
+			/* Ignore any trailing slash for the comparison. */
+			while (path_len && f->pattern[path_len - 1] == '/')
+				path_len--;
+
 			debug(dbg_eachfiledetail,
-			      "filter subpattern '%*.s'", path_len, f->pattern);
+			      "filter subpattern '%.*s'", path_len, f->pattern);
 
 			if (strncmp(&ti->name[1], f->pattern, path_len) == 0) {
 				debug(dbg_eachfile, "filter reincluding %s",

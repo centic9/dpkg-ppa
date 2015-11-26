@@ -3,6 +3,7 @@
  * main.c - main program
  *
  * Copyright © 1994,1995 Ian Jackson <ian@chiark.greenend.org.uk>
+ * Copyright © 2006-2012 Guillem Jover <guillem@debian.org>
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,14 +16,13 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
 #include <compat.h>
 
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <sys/wait.h>
 
 #include <assert.h>
@@ -30,6 +30,7 @@
 #if HAVE_LOCALE_H
 #include <locale.h>
 #endif
+#include <errno.h>
 #include <ctype.h>
 #include <string.h>
 #include <dirent.h>
@@ -42,11 +43,11 @@
 #include <dpkg/dpkg.h>
 #include <dpkg/dpkg-db.h>
 #include <dpkg/compress.h>
-#include <dpkg/myopt.h>
+#include <dpkg/options.h>
 
 #include "dpkg-deb.h"
 
-const char* showformat	= "${Package}\t${Version}\n";
+const char *showformat = "${Package}\t${Version}\n";
 
 static void DPKG_ATTR_NORET
 printversion(const struct cmdinfo *cip, const char *value)
@@ -79,12 +80,14 @@ usage(const struct cmdinfo *cip, const char *value)
 "  -e|--control <deb> [<directory>] Extract control info.\n"
 "  -x|--extract <deb> <directory>   Extract files.\n"
 "  -X|--vextract <deb> <directory>  Extract & list files.\n"
+"  -R|--raw-extract <deb> <directory>\n"
+"                                   Extract control info and files.\n"
 "  --fsys-tarfile <deb>             Output filesystem tarfile.\n"
 "\n"));
 
   printf(_(
-"  -h|--help                        Show this help message.\n"
-"  --version                        Show the version.\n"
+"  -?, --help                       Show this help message.\n"
+"      --version                    Show the version.\n"
 "\n"));
 
   printf(_(
@@ -96,13 +99,20 @@ usage(const struct cmdinfo *cip, const char *value)
   printf(_(
 "Options:\n"
 "  --showformat=<format>            Use alternative format for --show.\n"
-"  -D                               Enable debugging output.\n"
-"  --old, --new                     Select archive format.\n"
+"  -v, --verbose                    Enable verbose output.\n"
+"  -D, --debug                      Enable debugging output.\n"
+"      --deb-format=<format>        Select archive format.\n"
+"                                     Allowed values: 0.939000, 2.0 (default).\n"
+"      --old                        Legacy alias for '--deb-format=0.939000'.\n"
+"      --new                        Legacy alias for '--deb-format=2.0'.\n"
 "  --nocheck                        Suppress control file check (build bad\n"
 "                                     packages).\n"
 "  -z#                              Set the compression level when building.\n"
 "  -Z<type>                         Set the compression type used when building.\n"
-"                                     Allowed types: gzip, xz, bzip2, lzma, none.\n"
+"                                     Allowed types: gzip, xz, bzip2, none.\n"
+"  -S<strategy>                     Set the compression strategy when building.\n"
+"                                     Allowed values: none; extreme (xz);\n"
+"                                     filtered, huffman, rle, fixed (gzip).\n"
 "\n"));
 
   printf(_(
@@ -116,46 +126,93 @@ usage(const struct cmdinfo *cip, const char *value)
 
   printf(_(
 "\n"
-"Use `dpkg' to install and remove packages from your system, or\n"
-"`dselect' or `aptitude' for user-friendly package management.  Packages\n"
-"unpacked using `dpkg-deb --extract' will be incorrectly installed !\n"));
+"Use 'dpkg' to install and remove packages from your system, or\n"
+"'apt' or 'aptitude' for user-friendly package management. Packages\n"
+"unpacked using 'dpkg-deb --extract' will be incorrectly installed !\n"));
 
   m_output(stdout, _("<standard output>"));
 
   exit(0);
 }
 
-const char thisname[]= BACKEND;
-const char printforhelp[]=
+static const char printforhelp[] =
   N_("Type dpkg-deb --help for help about manipulating *.deb files;\n"
      "Type dpkg --help for help about installing and deinstalling packages.");
 
-int debugflag=0, nocheckflag=0, oldformatflag=BUILDOLDPKGFORMAT;
-struct compressor *compressor = &compressor_gzip;
-int compress_level = -1;
+int debugflag = 0;
+int nocheckflag = 0;
+int opt_verbose = 0;
+
+struct deb_version deb_format = DEB_VERSION(2, 0);
+
+static void
+set_deb_format(const struct cmdinfo *cip, const char *value)
+{
+  const char *err;
+
+  err = deb_version_parse(&deb_format, value);
+  if (err)
+    badusage(_("invalid deb format version: %s"), err);
+
+  if ((deb_format.major == 2 && deb_format.minor == 0) ||
+      (deb_format.major == 0 && deb_format.minor == 939000))
+    return;
+  else
+    badusage(_("unknown deb format version: %s"), value);
+}
+
+static void
+set_deb_old(const struct cmdinfo *cip, const char *value)
+{
+  deb_format = DEB_VERSION(0, 939000);
+
+  warning(_("obsolete option '--%s'; please use '--%s' instead"),
+          cip->olong, "deb-format=0.939000");
+}
+
+static void
+set_deb_new(const struct cmdinfo *cip, const char *value)
+{
+  deb_format = DEB_VERSION(2, 0);
+
+  warning(_("obsolete option '--%s'; please use '--%s' instead"),
+          cip->olong, "deb-format=2.0");
+}
+
+struct compress_params compress_params = {
+  .type = DPKG_DEB_DEFAULT_COMPRESSOR,
+  .strategy = compressor_strategy_none,
+  .level = -1,
+};
 
 static void
 set_compress_level(const struct cmdinfo *cip, const char *value)
 {
   long level;
-  char *end;
 
-  level = strtol(value, &end, 0);
-  if (value == end || *end || level > INT_MAX)
-    badusage(_("invalid integer for -%c: '%.250s'"), cip->oshort, value);
-
+  level = dpkg_options_parse_arg_int(cip, value);
   if (level < 0 || level > 9)
     badusage(_("invalid compression level for -%c: %ld'"), cip->oshort, level);
 
-  compress_level = level;
+  compress_params.level = level;
 }
 
 static void
-setcompresstype(const struct cmdinfo *cip, const char *value)
+set_compress_strategy(const struct cmdinfo *cip, const char *value)
 {
-  compressor = compressor_find_by_name(value);
-  if (compressor == NULL)
+  compress_params.strategy = compressor_get_strategy(value);
+  if (compress_params.strategy == compressor_strategy_unknown)
+    ohshit(_("unknown compression strategy '%s'!"), value);
+}
+
+static void
+set_compress_type(const struct cmdinfo *cip, const char *value)
+{
+  compress_params.type = compressor_find_by_name(value);
+  if (compress_params.type == compressor_type_unknown)
     ohshit(_("unknown compression type `%s'!"), value);
+  if (compress_params.type == compressor_type_lzma)
+    warning(_("deprecated compression type '%s'; use xz instead"), value);
 }
 
 static const struct cmdinfo cmdinfos[]= {
@@ -166,40 +223,41 @@ static const struct cmdinfo cmdinfos[]= {
   ACTION("field",         'f', 0, do_field),
   ACTION("extract",       'x', 0, do_extract),
   ACTION("vextract",      'X', 0, do_vextract),
+  ACTION("raw-extract",   'R', 0, do_raw_extract),
   ACTION("fsys-tarfile",  0,   0, do_fsystarfile),
   ACTION("show",          'W', 0, do_showinfo),
 
-  { "new",           0,   0, &oldformatflag, NULL,         NULL,          0 },
-  { "old",           0,   0, &oldformatflag, NULL,         NULL,          1 },
+  { "deb-format",    0,   1, NULL,           NULL,         set_deb_format   },
+  { "new",           0,   0, NULL,           NULL,         set_deb_new      },
+  { "old",           0,   0, NULL,           NULL,         set_deb_old      },
   { "debug",         'D', 0, &debugflag,     NULL,         NULL,          1 },
+  { "verbose",       'v', 0, &opt_verbose,   NULL,         NULL,          1 },
   { "nocheck",       0,   0, &nocheckflag,   NULL,         NULL,          1 },
-  { "compression",   'z', 1, NULL,           NULL,         set_compress_level },
-  { "compress_type", 'Z', 1, NULL,           NULL,         setcompresstype  },
+  { NULL,            'z', 1, NULL,           NULL,         set_compress_level },
+  { NULL,            'Z', 1, NULL,           NULL,         set_compress_type  },
+  { NULL,            'S', 1, NULL,           NULL,         set_compress_strategy },
   { "showformat",    0,   1, NULL,           &showformat,  NULL             },
-  { "help",          'h', 0, NULL,           NULL,         usage            },
+  { "help",          '?', 0, NULL,           NULL,         usage            },
   { "version",       0,   0, NULL,           NULL,         printversion     },
   {  NULL,           0,   0, NULL,           NULL,         NULL             }
 };
 
 int main(int argc, const char *const *argv) {
-  dofunction *action;
+  struct dpkg_error err;
+  int ret;
 
-  setlocale(LC_NUMERIC, "POSIX");
-  setlocale(LC_ALL, "");
-  bindtextdomain(PACKAGE, LOCALEDIR);
-  textdomain(PACKAGE);
-
-  standard_startup();
-  myopt(&argv, cmdinfos);
+  dpkg_locales_init(PACKAGE);
+  dpkg_program_init(BACKEND);
+  dpkg_options_parse(&argv, cmdinfos, printforhelp);
 
   if (!cipaction) badusage(_("need an action option"));
 
-  unsetenv("GZIP");
-  action = (dofunction *)cipaction->arg_func;
-  action(argv);
-  standard_shutdown();
-  exit(0);
-}
+  if (!compressor_check_params(&compress_params, &err))
+    badusage(_("invalid compressor parameters: %s"), err.str);
 
-/* vi: sw=2
- */
+  ret = cipaction->action(argv);
+
+  dpkg_program_done();
+
+  return ret;
+}

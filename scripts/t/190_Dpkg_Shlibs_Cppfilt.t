@@ -1,4 +1,4 @@
-# -*- mode: cperl;-*-
+#!/usr/bin/perl
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -11,14 +11,14 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-use Test::More tests => 124;
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use strict;
 use warnings;
 
-use_ok("Dpkg::Shlibs::Cppfilt");
+use Test::More tests => 124;
+
+use_ok('Dpkg::Shlibs::Cppfilt');
 
 # Simple C++ demangling tests
 is ( cppfilt_demangle_cpp('_ZNSt10istrstreamC1EPKcl'),
@@ -34,7 +34,7 @@ is ( cppfilt_demangle_cpp('FoobarInvalidSymbol'), undef,
     'non-demanglable string' );
 
 # Mass C++ demangling. Checking if c++filt does not hang and cppfilt_demangle()
-# immediatelly provides a correct answer to the caller (i.e. no buffering).
+# immediately provides a correct answer to the caller (i.e. no buffering).
 my @mangledtext = split(/\n+/s, <<'END');
 0000000000000000      DF *UND*  0000000000000000  GCC_3.0     _Unwind_SetIP
 0000000000000000      DF *UND*  0000000000000000  GLIBC_2.2.5 __towlower_l
@@ -77,9 +77,9 @@ my @demangledtext = split(/\n+/s, <<'END');
 00000000002f6160  w   DO .data.rel.ro   0000000000000050  VTT for std::basic_stringstream<char, std::char_traits<char>, std::allocator<char> >@GLIBCXX_3.4
 END
 
-for (my $try = 1; $try <= 7; $try++) {
-    for (my $i = 0; $i <= $#mangledtext; $i++) {
+for my $try (1 .. 7) {
+    for my $i (0 .. $#mangledtext) {
 	my $demangled = cppfilt_demangle_cpp($mangledtext[$i]) || $mangledtext[$i];
-	is( $demangled, $demangledtext[$i], "mass c++ demangling (${try}x".(${i}+1).")");
+	is($demangled, $demangledtext[$i], "mass c++ demangling (${try}x" . (${i} + 1) . ')');
     }
 }

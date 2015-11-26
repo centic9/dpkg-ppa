@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-if WITH_DSELECT
+if BUILD_DSELECT
   MAYBE_DSELECT = dselect
 endif
 
@@ -18,42 +18,49 @@ SUBDIRS = \
 ACLOCAL_AMFLAGS = -I m4
 
 
-dist_pkgdata_DATA = cputable ostable triplettable
+dist_pkgdata_DATA = \
+	cputable \
+	ostable \
+	abitable \
+	triplettable
 
 EXTRA_DIST = \
 	.mailmap \
 	ChangeLog.old \
-	README.translators \
+	README.l10n \
 	get-version \
+	run-script \
 	doc/README.api \
 	doc/README.feature-removal-schedule \
 	doc/coding-style.txt \
+	doc/frontend.txt \
 	doc/lcov-epilog \
 	doc/lcov-prolog \
 	doc/triggers.txt \
-	debian/archtable \
 	debian/changelog \
 	debian/compat \
 	debian/control \
 	debian/copyright \
 	debian/dpkg-dev.docs \
 	debian/dpkg-dev.install \
+	debian/dpkg-dev.manpages \
 	debian/dpkg-dev.preinst \
 	debian/dpkg-dev.lintian-overrides \
 	debian/dpkg.cfg \
 	debian/dpkg.cron.daily \
 	debian/dpkg.docs \
 	debian/dpkg.install \
+	debian/dpkg.manpages \
 	debian/dpkg.postinst \
 	debian/dpkg.postrm \
 	debian/dpkg.preinst \
 	debian/dpkg.prerm \
 	debian/dpkg.logrotate \
-	debian/dpkg.links \
 	debian/dpkg.lintian-overrides \
 	debian/dselect.cfg \
 	debian/dselect.docs \
 	debian/dselect.install \
+	debian/dselect.manpages \
 	debian/dselect.preinst \
 	debian/dselect.lintian-overrides \
 	debian/libdpkg-dev.docs \
@@ -68,7 +75,10 @@ EXTRA_DIST = \
 	debian/usertags \
 	debian/rules \
 	debian/shlibs.default \
-	debian/shlibs.override
+	debian/shlibs.override \
+	$(test_cases) \
+	$(test_data) \
+	$(nil)
 
 .PHONY: doc
 
@@ -92,7 +102,7 @@ LCOV_CAPTURE_OPTS = $(LCOV_OPTS) --no-recursion \
 coverage: all
 	$(RM) -f *.lcov
 	find -name '*.gcda' -o -name '*.gcov' | xargs $(RM) -f
-	
+
 	$(LCOV) $(LCOV_CAPTURE_OPTS) -c -o dpkg_base.lcov -i
 	$(MAKE) -C lib/dpkg check
 	$(MAKE) -C src check
@@ -105,7 +115,7 @@ coverage: all
 	  --html-prolog $(top_srcdir)/doc/lcov-prolog \
 	  --html-epilog $(top_srcdir)/doc/lcov-epilog \
 	  -o doc/coverage dpkg.lcov
-	
+
 	$(MAKE) -C scripts $@
 
 coverage-clean:
@@ -119,6 +129,17 @@ coverage:
 coverage-clean:
 endif
 
+test_cases = \
+	test/000_pod.t \
+	test/100_critic.t \
+	$(nil)
+
+test_data = \
+	test/100_critic/perlcriticrc \
+	$(nil)
+
+include $(top_srcdir)/Makecheck.am
+
 .PHONY: update-po
 
 update-po:
@@ -126,12 +147,6 @@ update-po:
 	$(MAKE) -C scripts/po update-po
 	$(MAKE) -C dselect/po update-po
 	$(MAKE) -C man update-po
-
-.PHONY: ChangeLog
-DISTCLEANFILES = ChangeLog
-
-ChangeLog:
-	git log -C --stat 1.15.0.. >$@
 
 # If we create the dist tarball from the git repository, make sure
 # that we're not forgetting some files...
@@ -144,6 +159,7 @@ dist-hook:
 				exit 1 ; \
 			fi ; \
 		done ; \
+		git log -C --stat 1.15.0.. >$(distdir)/ChangeLog; \
 	fi
 
-clean-local: doc-clean coverage-clean
+clean-local: doc-clean coverage-clean check-clean

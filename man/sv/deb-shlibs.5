@@ -1,6 +1,9 @@
+.\" dpkg manual page - deb-shlibs(5)
+.\"
 .\" Copyright Â© 1996 Michael Shields <shields@crosslink.net>
 .\" Copyright Â© 2008 Zack Weinberg <zackw@panix.com>
-.\" This is free software; you may redistribute it and/or modify
+.\"
+.\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
 .\" the Free Software Foundation; either version 2 of the License, or
 .\" (at your option) any later version.
@@ -11,13 +14,14 @@
 .\" GNU General Public License for more details.
 .\"
 .\" You should have received a copy of the GNU General Public License
-.\" along with this program.  If not, see <http://www.gnu.org/licenses/>.
+.\" along with this program.  If not, see <https://www.gnu.org/licenses/>.
+.
 .\"*******************************************************************
 .\"
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH deb\-shlibs 5 2008\-02\-17 Debianprojektet dpkg\-verktygen
+.TH deb\-shlibs 5 2012\-02\-08 Debianprojektet dpkg\-verktygen
 .SH NAMN
 deb\-shlibs \- Debians informationsfil för delade bibliotek
 .
@@ -29,13 +33,15 @@ post per rad. Blanka rader är \fBinte\fP tillåtna. Rader som inleds med ett
 \fB#\fP\-tecken anses vara kommentarer, och ignoreras. Alla andra rader måste
 vara på formatet
 .IP
-[\fItyp:\fP] \fIbibliotek\fP \fIversion\fP \fIberoenden\fP
+[\fItyp\fP\fB:\fP] \fIbibliotek\fP \fIversion\fP \fIberoenden\fP
 .PP
 Fälten \fIbibliotek\fP och \fIversion\fP avdelas med blanktecken medan fältet
 \fIberoenden\fP sträcker sig till slutet av raden. Fältet \fItyp\fP är frivilligt
 och behövs vanligtvis inte.
 .PP
-Se Debians policymanual för ytterligare detaljer.
+Fältet \fIdependencies\fP har samma syntax som fältet \fBDepends\fP i en
+binär\-kontrollfil, se \fBdeb\-control\fP(5). Se även Debians policyhandbok för
+ytterligare detaljer.
 .
 .SH EXEMPEL
 .PP
@@ -51,6 +57,6 @@ version 1.2 av \fIlibcrunch\fP. Det är inte den enda orsaken till att beroenden
 kan behöva snävas in; återigen, se Debians policymanual för detaljer.
 .
 .SH "SE ÄVEN"
-\fBdpkg\-shlibdeps\fP(1), \fBdeb\-symbols\fP(5).
-.SH "ÖVERSÄTTNING"
+\fBdeb\-control\fP(5), \fBdpkg\-shlibdeps\fP(1), \fBdeb\-symbols\fP(5).
+.SH ÖVERSÄTTNING
 Peter Krefting och Daniel Nylander.

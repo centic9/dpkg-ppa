@@ -1,5 +1,11 @@
+.\" dpkg manual page - dpkg-scanpackages(1)
+.\"
 .\" Copyright Â© 1996 Michael Shields <shields@crosslink.net>
-.\" This is free software; you may redistribute it and/or modify
+.\" Copyright Â© 2006 Frank Lichtenheld <djpig@debian.org>
+.\" Copyright Â© 2007 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2009 RaphaÃ«l Hertzog <hertzog@debian.org>
+.\"
+.\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
 .\" the Free Software Foundation; either version 2 of the License, or
 .\" (at your option) any later version.
@@ -10,18 +16,19 @@
 .\" GNU General Public License for more details.
 .\"
 .\" You should have received a copy of the GNU General Public License
-.\" along with this program.  If not, see <http://www.gnu.org/licenses/>.
+.\" along with this program.  If not, see <https://www.gnu.org/licenses/>.
+.
 .\"*******************************************************************
 .\"
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH dpkg\-scanpackages 1 "1 de Octubre de 2009" "Proyecto Debian" "Herramientas de dpkg"
+.TH dpkg\-scanpackages 1 "7 de mayo del 2012" "Proyecto Debian" "Herramientas de dpkg"
 .SH NOMBRE
 dpkg\-scanpackages \- Creación de ficheros de índice «Packages»
 .
 .SH SINOPSIS
-\fBdpkg\-scanpackages\fP [\fIopciones\fP] \fIdirectorio\-binario\fP
+\fBdpkg\-scanpackages\fP [\fIopción\fP...] \fIdirectorio\-binario\fP
 [\fIfichero\-anulación\fP [\fIprefijo\-ruta\fP]] \fB>\fP \fIPackages\fP
 .
 .SH DESCRIPCIÓN
@@ -29,8 +36,9 @@ dpkg\-scanpackages \- Creación de ficheros de índice «Packages»
 directorios, creando un fichero «Packages» usado por \fBdselect\fP(8) y otros
 para mostrar al usuario los paquetes disponibles para su instalación. Estos
 ficheros «Packages» son idénticos a los presentes en los archivos de Debian
-en Internet o en los discos ópticos. \fBdpkg\-scanpackages\fP se puede usar para
-crear un directorio local con paquetes a instalar en una o varias máquinas.
+en Internet o en los discos ópticos. \fBdpkg\-scanpackages\fP se puede utilizar
+para crear un directorio local con paquetes a instalar en una o varias
+máquinas.
 .PP
 \fBNota:\fP Si desea acceder al fichero «Packages» generado mediante \fBapt\fP,
 posiblemente necesite comprimir el fichero con \fBbzip\fP(1), generando un
@@ -60,9 +68,6 @@ arquitectura, sólo se usará el primero.
 \fB\-t\fP, \fB\-\-type\fP \fItipo\fP
 Busca paquetes «*.\fItipo\fP» en vez de «*.deb».
 .TP 
-\fB\-u\fP, \fB\-\-udeb\fP
-Alias \fBobsoleto\fP para \fB\-tudeb\fP.
-.TP 
 \fB\-e\fP, \fB\-\-extra\-override\fP \fIfichero\fP
 Analiza el \fIfichero\fP para encontrar alternativas adicionales (el fichero
 puede estar descomprimido). Consulte \fBdeb\-extra\-override\fP(5) para más
@@ -80,7 +85,7 @@ Añade un campo «X\-Medium», que consiste del valor de la
 \fIcadena\-identificación\fP. Este campo es necesario si desea generar ficheros
 \fBPackages.cd\fP para su uso a través del método «multicd» de dselect.
 .TP 
-\fB\-h\fP, \fB\-\-help\fP
+\fB\-?\fP, \fB\-\-help\fP
 Muestra el modo de uso y termina.
 .TP 
 \fB\-\-version\fP
@@ -94,9 +99,11 @@ fichero de control, no aparecen en el fichero de anulación, o que contienen
 alguna sustitución del responsable del paquete que no tiene efecto.
 .
 .SH "VÉASE TAMBIÉN"
+.ad l
+.nh
 \fBdpkg\fP(1), \fBdselect\fP(1), \fBdeb\-override\fP(5), \fBdeb\-extra\-override\fP(5),
 \fBdpkg\-scansources\fP(1).
-.SH "TRADUCTOR"
+.SH TRADUCTOR
 Rudy Godoy <rudy@kernel\-panik.org>,
 Rubén Porras <nahoo@inicia.es>,
 Bruno Barrera C. <bruno.barrera@igloo.cl>,

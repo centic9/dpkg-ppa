@@ -12,6 +12,18 @@
 /* Set this to the canonical dpkg system name. */
 #undef ARCHITECTURE_OS
 
+/* Define to 1 if dselect is compiled. */
+#undef BUILD_DSELECT
+
+/* Define to 1 if start-stop-daemon is compiled. */
+#undef BUILD_START_STOP_DAEMON
+
+/* Define to 1 if update-alternatives is compiled. */
+#undef BUILD_UPDATE_ALTERNATIVES
+
+/* default dpkg-deb build compressor */
+#undef DPKG_DEB_DEFAULT_COMPRESSOR
+
 /* Define to 1 if translation of program messages to the user's native
    language is requested. */
 #undef ENABLE_NLS
@@ -22,29 +34,33 @@
 /* Define to 1 if you have the `asprintf' function. */
 #undef HAVE_ASPRINTF
 
-/* Define to 1 if you have the `bcopy' function. */
-#undef HAVE_BCOPY
-
 /* Define to 1 if the compiler supports C99. */
 #undef HAVE_C99
 
 /* Define to 1 if the 'snprintf' family is C99 conformant */
 #undef HAVE_C99_SNPRINTF
 
-/* Define to 1 if you have the MacOS X function CFLocaleCopyCurrent in the
+/* Define to 1 if you have the Mac OS X function CFLocaleCopyCurrent in the
    CoreFoundation framework. */
 #undef HAVE_CFLOCALECOPYCURRENT
 
-/* Define to 1 if you have the MacOS X function CFPreferencesCopyAppValue in
+/* Define to 1 if you have the Mac OS X function CFPreferencesCopyAppValue in
    the CoreFoundation framework. */
 #undef HAVE_CFPREFERENCESCOPYAPPVALUE
 
 /* Define to 1 if you have the <curses.h> header file. */
 #undef HAVE_CURSES_H
 
+/* Define to 1 if the compiler supports C++11. */
+#undef HAVE_CXX11
+
 /* Define if the GNU dcgettext() function is already present or preinstalled.
    */
 #undef HAVE_DCGETTEXT
+
+/* Define to 1 if you have the declaration of `strnlen', and to 0 if you
+   don't. */
+#undef HAVE_DECL_STRNLEN
 
 /* Define to 1 if you have the declaration of `sys_siglist', and to 0 if you
    don't. */
@@ -56,11 +72,17 @@
 /* Define to 1 if you have the `getdtablesize' function. */
 #undef HAVE_GETDTABLESIZE
 
+/* Define to 1 if you have the `getexecname' function. */
+#undef HAVE_GETEXECNAME
+
 /* Define to 1 if you have the `getopt' function. */
 #undef HAVE_GETOPT
 
 /* Define to 1 if you have the `getopt_long' function. */
 #undef HAVE_GETOPT_LONG
+
+/* Define to 1 if you have the `getprogname' function. */
+#undef HAVE_GETPROGNAME
 
 /* Define if the GNU gettext() function is already present or preinstalled. */
 #undef HAVE_GETTEXT
@@ -77,6 +99,9 @@
 /* Define to 1 if you have the <kvm.h> header file. */
 #undef HAVE_KVM_H
 
+/* Define to 1 if you have the `lchown' function. */
+#undef HAVE_LCHOWN
+
 /* Define to 1 if you have the <libintl.h> header file. */
 #undef HAVE_LIBINTL_H
 
@@ -85,6 +110,9 @@
 
 /* Define to 1 if you have the <locale.h> header file. */
 #undef HAVE_LOCALE_H
+
+/* Define to 1 if you have the `lutimes' function. */
+#undef HAVE_LUTIMES
 
 /* Define to 1 if you have the `memcpy' function. */
 #undef HAVE_MEMCPY
@@ -116,8 +144,14 @@
 /* Define to 1 if 'offsetof' is declared in <stddef.h> */
 #undef HAVE_OFFSETOF
 
+/* Define to 1 if 'O_NOFOLLOW' is declared in <fcntl.h> */
+#undef HAVE_O_NOFOLLOW
+
 /* Define to 1 if you have the `posix_fadvise' function. */
 #undef HAVE_POSIX_FADVISE
+
+/* Define to 1 if you have program_invocation_short_name */
+#undef HAVE_PROGRAM_INVOCATION_SHORT_NAME
 
 /* Define to 1 if you have the `scandir' function. */
 #undef HAVE_SCANDIR
@@ -143,6 +177,9 @@
 /* Define to 1 if you have the <string.h> header file. */
 #undef HAVE_STRING_H
 
+/* Define to 1 if you have the `strndup' function. */
+#undef HAVE_STRNDUP
+
 /* Define to 1 if you have the `strnlen' function. */
 #undef HAVE_STRNLEN
 
@@ -151,12 +188,6 @@
 
 /* Define to 1 if you have the `strtoimax' function. */
 #undef HAVE_STRTOIMAX
-
-/* Define to 1 if you have the `strtoul' function. */
-#undef HAVE_STRTOUL
-
-/* Define to 1 if you have the <sys/cdefs.h> header file. */
-#undef HAVE_SYS_CDEFS_H
 
 /* Define to 1 if you have the <sys/stat.h> header file. */
 #undef HAVE_SYS_STAT_H
@@ -184,6 +215,9 @@
 
 /* Define to 1 if 'WCOREDUMP' is declared in <sys/wait.h> */
 #undef HAVE_WCOREDUMP
+
+/* Define to 1 if you have __progname */
+#undef HAVE___PROGNAME
 
 /* Acknowledge the volatility of the API. */
 #undef LIBDPKG_VOLATILE_API
@@ -249,20 +283,11 @@
 /* Define to 1 to use bz2 rather than console tool */
 #undef WITH_BZ2
 
-/* Define to 1 if dselect is compiled. */
-#undef WITH_DSELECT
-
-/* Define to 1 if install-info is compiled. */
-#undef WITH_INSTALL_INFO
+/* Define to 1 to use liblzma rather than console tool */
+#undef WITH_LIBLZMA
 
 /* Define to 1 to compile in SELinux support */
 #undef WITH_SELINUX
-
-/* Define to 1 if start-stop-daemon is compiled. */
-#undef WITH_START_STOP_DAEMON
-
-/* Define to 1 if update-alternatives is compiled. */
-#undef WITH_UPDATE_ALTERNATIVES
 
 /* Define to 1 to use zlib rather than console tool */
 #undef WITH_ZLIB
@@ -282,6 +307,11 @@
 /* Define to 1 if `lex' declares `yytext' as a `char *' by default, not a
    `char[]'. */
 #undef YYTEXT_POINTER
+
+/* Enable large inode numbers on Mac OS X 10.5.  */
+#ifndef _DARWIN_USE_64_BIT_INODE
+# define _DARWIN_USE_64_BIT_INODE 1
+#endif
 
 /* Number of bits in a file offset, on hosts where this is settable. */
 #undef _FILE_OFFSET_BITS
@@ -319,6 +349,18 @@
 
 /* Define to `unsigned int' if <sys/types.h> does not define. */
 #undef size_t
+
+/* Define to 'uint16_t' if not defined. */
+#undef u_int16_t
+
+/* Define to 'uint32_t' if not defined. */
+#undef u_int32_t
+
+/* Define to 'uint64_t' if not defined. */
+#undef u_int64_t
+
+/* Define to 'uint8_t' if not defined. */
+#undef u_int8_t
 
 /* Define to empty if the keyword `volatile' does not work. Warning: valid
    code using `volatile' can become incorrect without. Disable with care. */

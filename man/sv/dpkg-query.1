@@ -1,9 +1,29 @@
+.\" dpkg manual page - dpkg-query(1)
+.\"
+.\" Copyright Â© 2001 Wichert Akkerman <wakkerma@debian.org>
+.\" Copyright Â© 2006-2007 Frank Lichtenheld <djpig@debian.org>
+.\" Copyright Â© 2006-2012 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2008-2011 RaphaÃ«l Hertzog <hertzog@debian.org>
+.\"
+.\" This is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <https://www.gnu.org/licenses/>.
+.
 .\"*******************************************************************
 .\"
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH dpkg\-query 1 2010\-03\-07 Debianprojektet Dpkg\-sviten
+.TH dpkg\-query 1 2012\-04\-03 Debianprojektet Dpkg\-sviten
 .SH NAMN
 dpkg\-query \- ett verktyg för att fråga dpkg\-databasen
 .
@@ -16,7 +36,7 @@ dpkg\-query \- ett verktyg för att fråga dpkg\-databasen
 .
 .SH KOMMANDON
 .TP 
-\fB\-l\fP, \fB\-\-list\fP \fIpaketnamnsmönster\fP ...
+\fB\-l\fP, \fB\-\-list\fP [\fIpaketnamnsmönster\fP ...]
 Lista paket som matchar det givna mönstret. Om inget \fIpaketnamnsmönster\fP
 anges listas alla paket i \fI/var/lib/dpkg/status\fP, förutom de paket som
 markerats som ej installerade (dvs. de som tidigare har helt tagits
@@ -68,42 +88,56 @@ automatiskt för att passa terminalbredden. Det är avsett för mänskliga
 läsare, och är inte enkelt maskinläsbart. Se \fB\-W\fP (\fB\-\-show\fP) och
 \fB\-\-showformat\fP för hur du konfigurerar utdataformatet.
 .TP 
-\fB\-W\fP, \fB\-\-show\fP \fIpaketnamnsmönster\fP ...
-Precis som flaggan \fB\-\-list\fP kommer att paket som matchar det givna mönstret
-att visas. Utdatat kan dock skräddarsys med flaggan
-\fB\-\-showformat\fP. Standardutdataformatet är en rad per paket som träffas, där
-varje rad innehåller namn och installerad version av paketet, avdelat med
-ett tabulatortecken.
+\fB\-W\fP, \fB\-\-show\fP [\fIpaketnamnsmönster\fP ...]
+Just like the \fB\-\-list\fP option this will list all packages matching the
+given pattern. However the output can be customized using the
+\fB\-\-showformat\fP option.  The default output format gives one line per
+matching package, each line having the name (extended with the architecture
+qualifier for \fBMulti\-Arch\fP \fBsame\fP packages) and installed version of the
+package, separated by a tab.
 .TP 
 \fB\-s\fP, \fB\-\-status\fP \fIpaketnamn\fP ...
 Rapportera status om det angivna paketet.  Detta alternativ visar helt
-enkelt posten i statusdatabasen för installerade paket.
+enkelt posten i statusdatabasen för installerade paket. Om flera
+\fIpaketnamn\fP anges avdelas de efterfrågade statusposterna med en tomrad, i
+samma ordningsföljd som i parameterlistan.
 .TP 
 \fB\-L\fP, \fB\-\-listfiles\fP \fIpaketnamn\fP ...
-Listar filer som installerats på ditt system från \fIpaketnamn\fP. Observera
-att filer som skapats av paketspecifika installationsskript inte visas
+Listar filer som installerats på ditt system från \fIpaketnamn\fP. Om flera
+\fIpaketnamn\fP anges avdelas den efterfrågade fillistan med en tomrad, i samma
+ordningsföljd som anges i parameterlistan. Observera att filer som skapats
+av paketspecifika installationsskript inte visas.
+.TP 
+\fB\-\-control\-list\fP \fIpaketnamn\fP
+Lista kontrollfiler installerade på ditt system från \fIpaketnamn\fP. Dessa kan
+användas som inargument till \fB\-\-control\-show\fP.
+.TP 
+\fB\-\-control\-show\fP \fIpaketnamn\fP \fIkontrollfil\fP
+Visar den \fIkontrollfil\fP som installerats på ditt system från \fIpaketnamn\fP
+på standard ut.
 .TP 
 \fB\-c\fP, \fB\-\-control\-path\fP \fIpaketnamn\fP [\fIcontrol\-filnamn\fP]
-Visar sökvägarna till control\-filerna som installerats på ditt system för
-\fIpaketnamn\fP. Om \fIcontrol\-fil\fP anges visas endast sökvägen för den
-control\-filen, om den finns. \fBVarning\fP: kommandot är halvöppet, det bör
-användas endast som en sista desperat åtgärd om det inte finns något annat
-gränssnitt. Det kan avrådas från senare om bättre gränssnitt eller de
-nuvarande arkitektoniska begränsningarna har lösts.
+Visar sökvägarna till kontrollfilerna som installerats på ditt system för
+\fIpaketnamn\fP. Om \fIkontrollfil\fP anges visas endast sökvägen för den
+kontrollfilen, om den finns. \fBVarning\fP: kommandot är föråldrat, vi ber dig
+gå över till att istället använda \fB\-\-control\-list\fP och \fB\-\-control\-show\fP.
 .TP 
 \fB\-S\fP, \fB\-\-search\fP \fIfilnamnssökmönster\fP ...
-Sök efter filnamnet bland de installerade paketen. Alla skalets vanliga
-jokertecken kan användas i mönstret. Kommandot kommer inte att visa
-extrafiler som skapas av paketskript, ej heller kommer det att visa
+Sök efter paket som äger filer som motsvarar det angivna mönstret. Alla
+skalets vanliga jokertecken kan användas i mönstret. Kommandot kommer inte
+att visa extrafiler som skapas av paketskript, ej heller kommer det att visa
 alternativ.
 .TP 
 \fB\-p\fP, \fB\-\-print\-avail\fP \fIpaketnamn\fP
 Visar information om \fIpaketnamn\fP, enligt vad som finns i
-\fI/var/lib/dpkg/available\fP. Använder du ett APT\-baserat skal bör du istället
-använda \fBapt\-cache show\fP \fIpaketnamn\fP, då \fIavailable\fP\-filen endast
-àjourförs om \fBdselect\fP används.
+\fI/var/lib/dpkg/available\fP. Om flera \fIpaketnamn\fP anges avdelas de
+efterfrågade posterna ur \fIavailable\fP\-filen med en tomrad, med samma
+ordningsföljd som anges i parameterlistan.
+
+Använder du ett APT\-baserat skal bör du istället använda \fBapt\-cache show\fP
+\fIpaketnamn\fP, då \fIavailable\fP\-filen endast àjourförs om \fBdselect\fP används.
 .TP 
-\fB\-h\fP, \fB\-\-help\fP
+\fB\-?\fP, \fB\-\-help\fP
 Visar hjälpskärm och avslutar.
 .TP 
 \fB\-\-version\fP
@@ -113,6 +147,10 @@ Visar version och avslutar.
 .TP 
 \fB\-\-admindir=\fP\fIkat\fP
 Ändra platsen för \fBdpkg\fP\-databasen. Förval är \fI/var/lib/dpkg\fP.
+.TP 
+\fB\-\-load\-avail\fP
+Läs även in available\-filen när kommandona \fB\-\-show\fP och \fB\-\-list\fP används,
+vilka numera som standard endast läser statusfilen.
 .TP 
 \fB\-f\fP, \fB\-\-showformat=\fP\fIformat\fP
 Flaggan används för att ange formatet på utdata som skapas av
@@ -148,11 +186,11 @@ binärpaketet hamnar där):
     \fBDescription\fP
     \fBEnhances\fP
     \fBEssential\fP
-    \fBFilename\fP (internt, dselect\-relaterat)
+    \fBFilename\fP (internt, skalrelaterat)
     \fBHomepage\fP
     \fBInstalled\-Size\fP
-    \fBMD5sum\fP (internt, dselect\-relaterat)
-    \fBMSDOS\-Filename\fP (internt, dselect\-relaterat)
+    \fBMD5sum\fP (internt, skalrelaterat)
+    \fBMSDOS\-Filename\fP (internt, skalrelaterat)
     \fBMaintainer\fP
     \fBOrigin\fP
     \fBPackage\fP
@@ -163,46 +201,61 @@ binärpaketet hamnar där):
     \fBReplaces\fP
     \fBRevision\fP (föråldrat)
     \fBSection\fP
-    \fBSize\fP  (internt, dselect\-relaterat)
+    \fBSize\fP  (internt, skalrelaterat)
     \fBSource\fP
     \fBStatus\fP (internt)
     \fBSuggests\fP
-    \fBTag\fP (normalt inte i .deb, utan i APTs Packages\-filer)
+    \fBTag\fP (normalt inte i .deb, utan i arkivets Packages\-filer)
     \fBTriggers\-Awaited\fP (internt)    \fBTriggers\-Pending\fP (internt)    \fBVersion\fP
 .fi
 
-Standardformatet är \(lq\fB${Package}\et${Version}\en\fP\(rq. Alla andra fält
-som finns i statusfilen (även användardefinierade fält) kan också hämtas. De
-visas dock som de är, ingen konvertering eller felkorrigering görs på
-dem. För att hämta namnet på paketansvarig och installerad version av dpkg
-och kan du köra:
+Följande är virtuella fält, genererade av \fBdpkg\-query\fP från värden från
+adnra fält (observera att dessa inte är giltiga namn för fält i
+kontrollfiler):
 
 .nf
-  \fBdpkg\-query \-W \-f=\(aq${Package} ${Version}\et${Maintainer}\en\(aq dpkg\fP
+    \fBbinary:Package\fP
+    \fBbinary:Summary\fP
+    \fBdb:Status\-Abbrev\fP
+    \fBsource:Package\fP
+    \fBsource:Version\fP
+.fi
+
+The default format string is \(lq\fB${binary:Package}\et${Version}\en\fP\(rq.
+Actually, all other fields found in the status file (i.e. user defined
+fields) can be requested, too. They will be printed as\-is, though, no
+conversion nor error checking is done on them. \fBbinary:Package\fP is a
+special field that will print the package name with an architecture
+qualifier (like "libc6:amd64") if the package has a \fBMulti\-Arch\fP field with
+a value of \fBsame\fP, and as such its name could be ambiguous.  To get the
+name of the \fBdpkg\fP maintainer and the installed version, you could run:
+
+.nf
+  \fBdpkg\-query \-W \-f=\(aq${binary:Package} ${Version}\et${Maintainer}\en\(aq dpkg\fP
 .fi
 .
 .SH RETURVÄRDE
-.IP 0
+.TP 
+\fB0\fP
 Den önskade frågan utfördes utan fel.
-.IP 1
-Problem uppstod vid tolkning av kommandoraden eller när frågan skulle
-utföras, till exempel att ingen fil eller paket hittades (förutom för
-\-\-control\-path).
+.TP 
+\fB1\fP
+Problems were encountered while parsing the command line or performing the
+query, including no file or package being found (except for
+\fB\-\-control\-path\fP).
 .
 .SH MILJÖVARIABLER
+.TP 
+\fBDPKG_ADMINDIR\fP
+If set and the \fB\-\-admindir\fP option has not been specified, it will be used
+as the \fBdpkg\fP data directory.
 .TP 
 \fBCOLUMNS\fP
 Inställningen påverkar utdata från kommandot \fB\-\-list\fP genom att ändra
 bredden på dess utdata.
 .
-.SH FÖRFATTARE
-Upphovsrättsskyddat © 2001 Wichert Akkerman
-.sp
-Detta är fri programvara; se GNU General Public License version 2 eller
-senare för kopieringsvillkor. Det finns INGEN GARANTI.
-.
 .SH "SE ÄVEN"
 \fBdpkg\fP(1).
 
-.SH "ÖVERSÄTTNING"
+.SH ÖVERSÄTTNING
 Peter Krefting och Daniel Nylander.

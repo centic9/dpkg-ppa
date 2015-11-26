@@ -1,9 +1,26 @@
+.\" dpkg manual page - dpkg-mergechangelogs(1)
+.\"
+.\" Copyright Â© 2009-2010 RaphaÃ«l Hertzog <hertzog@debian.org>
+.\"
+.\" This is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <https://www.gnu.org/licenses/>.
+.
 .\"*******************************************************************
 .\"
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH dpkg\-mergechangelogs 1 "18 de Abril de 2010" "Proyecto Debian" "Herramientas de dpkg"
+.TH dpkg\-mergechangelogs 1 "14 de agosto del 2011" "Proyecto Debian" "Herramientas de dpkg"
 .SH NOMBRE
 dpkg\-mergechangelogs \- Fusión a partir de tres versiones («3\-way merge») de
 ficheros «debian/changelog»
@@ -56,9 +73,9 @@ estar, etc.
 .
 .SH "INTEGRACIÓN CON GIT"
 .P
-Si desea usar este programa para fusionar ficheros de registro de cambios de
-Debian en un repositorio git primero tendrá que registrar un nuevo «merge
-driver» en \fB.git/config\fP o \fB~/.gitconfig\fP:
+Si desea utilizar este programa para fusionar ficheros de registro de
+cambios de Debian en un repositorio git primero tendrá que registrar un
+nuevo «merge driver» en \fB.git/config\fP o \fB~/.gitconfig\fP:
 .P
  [merge "dpkg\-mergechangelogs"]
      name = debian/changelog merge driver
@@ -69,13 +86,7 @@ Después tendrá que definir el «merge attribute» para el fichero
 \&\fB.git/info/attributes\fP:
 .P
  debian/changelog merge=dpkg\-mergechangelogs
-.SH AUTOR
-Copyright \(co 2009\-2010 Rapha\[:e]l Hertzog
-.sp
-Esto es software libre; vea la versión 2 o posterior de la Licencia Pública
-General GNU para condiciones de copia. NO hay ninguna garantía.
-
-.SH "TRADUCTOR"
+.SH TRADUCTOR
 Rudy Godoy <rudy@kernel\-panik.org>,
 Rubén Porras <nahoo@inicia.es>,
 Bruno Barrera C. <bruno.barrera@igloo.cl>,

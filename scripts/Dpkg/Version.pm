@@ -14,19 +14,20 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 package Dpkg::Version;
 
 use strict;
 use warnings;
 
-our $VERSION = "1.00";
+our $VERSION = '1.01';
 
 use Dpkg::ErrorHandling;
 use Dpkg::Gettext;
 
-use base qw(Exporter);
+use Carp;
+use Exporter qw(import);
 our @EXPORT = qw(version_compare version_compare_relation
                  version_normalize_relation version_compare_string
                  version_compare_part version_split_digits version_check
@@ -43,7 +44,7 @@ use constant {
 use overload
     '<=>' => \&comparison,
     'cmp' => \&comparison,
-    '""'  => \&as_string,
+    '""'  => sub { return $_[0]->as_string(); },
     'bool' => sub { return $_[0]->as_string() if $_[0]->is_valid(); },
     'fallback' => 1;
 
@@ -83,25 +84,25 @@ sub new {
     my $class = ref($this) || $this;
     $ver = "$ver" if ref($ver); # Try to stringify objects
 
-    if ($opts{'check'}) {
-	return undef unless version_check($ver);
+    if ($opts{check}) {
+	return unless version_check($ver);
     }
 
     my $self = {};
-    if ($ver =~ /^(\d*):(.+)$/) {
-	$self->{'epoch'} = $1;
+    if ($ver =~ /^([^:]*):(.+)$/) {
+	$self->{epoch} = $1;
 	$ver = $2;
     } else {
-	$self->{'epoch'} = 0;
-	$self->{'no_epoch'} = 1;
+	$self->{epoch} = 0;
+	$self->{no_epoch} = 1;
     }
     if ($ver =~ /(.*)-(.*)$/) {
-	$self->{'version'} = $1;
-	$self->{'revision'} = $2;
+	$self->{version} = $1;
+	$self->{revision} = $2;
     } else {
-	$self->{'version'} = $ver;
-	$self->{'revision'} = 0;
-	$self->{'no_revision'} = 1;
+	$self->{version} = $ver;
+	$self->{revision} = 0;
+	$self->{no_revision} = 1;
     }
 
     return bless $self, $class;
@@ -132,17 +133,28 @@ Returns the corresponding part of the full version string.
 
 sub epoch {
     my $self = shift;
-    return $self->{'epoch'};
+    return $self->{epoch};
 }
 
 sub version {
     my $self = shift;
-    return $self->{'version'};
+    return $self->{version};
 }
 
 sub revision {
     my $self = shift;
-    return $self->{'revision'};
+    return $self->{revision};
+}
+
+=item $v->is_native()
+
+Returns true if the version is native, false if it has a revision.
+
+=cut
+
+sub is_native {
+    my $self = shift;
+    return $self->{no_revision};
 }
 
 =item $v1 <=> $v2, $v1 < $v2, $v1 <= $v2, $v1 > $v2, $v1 >= $v2
@@ -155,29 +167,48 @@ its string representation is a version number.
 
 sub comparison {
     my ($a, $b, $inverted) = @_;
-    if (not ref($b) or not $b->isa("Dpkg::Version")) {
+    if (not ref($b) or not $b->isa('Dpkg::Version')) {
         $b = Dpkg::Version->new($b);
     }
     ($a, $b) = ($b, $a) if $inverted;
-    my $r = $a->epoch() <=> $b->epoch();
+    my $r = version_compare_part($a->epoch(), $b->epoch());
     return $r if $r;
     $r = version_compare_part($a->version(), $b->version());
     return $r if $r;
     return version_compare_part($a->revision(), $b->revision());
 }
 
-=item "$v", $v->as_string()
+=item "$v", $v->as_string(), $v->as_string(%options)
+
+Accepts an optional option hash reference, affecting the string conversion.
+
+Options:
+
+=over 8
+
+=item omit_epoch (defaults to 0)
+
+Omit the epoch, if present, in the output string.
+
+=item omit_revision (defaults to 0)
+
+Omit the revision, if present, in the output string.
+
+=back
 
 Returns the string representation of the version number.
 
 =cut
 
 sub as_string {
-    my ($self) = @_;
-    my $str = "";
-    $str .= $self->{epoch} . ":" unless $self->{no_epoch};
+    my ($self, %opts) = @_;
+    my $no_epoch = $opts{omit_epoch} || $self->{no_epoch};
+    my $no_revision = $opts{omit_revision} || $self->{no_revision};
+
+    my $str = '';
+    $str .= $self->{epoch} . ':' unless $no_epoch;
     $str .= $self->{version};
-    $str .= "-" . $self->{revision} unless $self->{no_revision};
+    $str .= '-' . $self->{revision} unless $no_revision;
     return $str;
 }
 
@@ -201,9 +232,9 @@ If $a or $b are not valid version numbers, it dies with an error.
 sub version_compare($$) {
     my ($a, $b) = @_;
     my $va = Dpkg::Version->new($a, check => 1);
-    defined($va) || error(_g("%s is not a valid version"), "$a");
+    defined($va) || error(_g('%s is not a valid version'), "$a");
     my $vb = Dpkg::Version->new($b, check => 1);
-    defined($vb) || error(_g("%s is not a valid version"), "$b");
+    defined($vb) || error(_g('%s is not a valid version'), "$b");
     return $va <=> $vb;
 }
 
@@ -233,7 +264,7 @@ sub version_compare_relation($$$) {
     } elsif ($op eq REL_LT) {
 	return $res < 0;
     } else {
-	internerr("unsupported relation for version_compare_relation(): '$op'");
+	croak "unsupported relation for version_compare_relation(): '$op'";
     }
 }
 
@@ -250,7 +281,7 @@ they are obsolete aliases of ">=" and "<=".
 sub version_normalize_relation($) {
     my $op = shift;
 
-    warning("relation %s is deprecated: use %s or %s",
+    warning('relation %s is deprecated: use %s or %s',
             $op, "$op$op", "$op=") if ($op eq '>' or $op eq '<');
 
     if ($op eq '>>' or $op eq 'gt') {
@@ -264,7 +295,7 @@ sub version_normalize_relation($) {
     } elsif ($op eq '<<' or $op eq 'lt') {
 	return REL_LT;
     } else {
-	internerr("bad relation '$op'");
+	croak "bad relation '$op'";
     }
 }
 
@@ -281,21 +312,23 @@ of the character is used to sort between characters.
 
 =cut
 
-sub version_compare_string($$) {
-    sub order {
-        my ($x) = @_;
-	if ($x eq '~') {
-	    return -1;
-	} elsif ($x =~ /^\d$/) {
-	    return $x * 1 + 1;
-	} elsif ($x =~ /^[A-Za-z]$/) {
-	    return ord($x);
-	} else {
-	    return ord($x) + 256;
-	}
+sub _version_order {
+    my ($x) = @_;
+
+    if ($x eq '~') {
+        return -1;
+    } elsif ($x =~ /^\d$/) {
+        return $x * 1 + 1;
+    } elsif ($x =~ /^[A-Za-z]$/) {
+        return ord($x);
+    } else {
+        return ord($x) + 256;
     }
-    my @a = map(order($_), split(//, shift));
-    my @b = map(order($_), split(//, shift));
+}
+
+sub version_compare_string($$) {
+    my @a = map { _version_order($_) } split(//, shift);
+    my @b = map { _version_order($_) } split(//, shift);
     while (1) {
         my ($a, $b) = (shift @a, shift @b);
         return 0 if not defined($a) and not defined($b);
@@ -312,9 +345,8 @@ Compare two corresponding sub-parts of a version number (either upstream
 version or debian revision).
 
 Each parameter is split by version_split_digits() and resulting items
-are compared together.in digits and non-digits items that are compared
-together. As soon as a difference happens, it returns -1 if $a is earlier
-than $b, 0 if they are equal and 1 if $a is later than $b.
+are compared together. As soon as a difference happens, it returns -1 if
+$a is earlier than $b, 0 if they are equal and 1 if $a is later than $b.
 
 =cut
 
@@ -362,36 +394,51 @@ contains a description of the problem with the $version scalar.
 
 sub version_check($) {
     my $version = shift;
-    $version = "$version" if ref($version);
-
-    if (not defined($version) or not length($version)) {
-        my $msg = _g("version number cannot be empty");
+    my $str;
+    if (defined $version) {
+        $str = "$version";
+        $version = Dpkg::Version->new($str) unless ref($version);
+    }
+    if (not defined($str) or not length($str)) {
+        my $msg = _g('version number cannot be empty');
         return (0, $msg) if wantarray;
         return 0;
     }
-    if ($version =~ m/([^-+:.0-9a-zA-Z~])/o) {
+    if ($version->version() =~ m/^[^\d]/) {
+        my $msg = _g('version number does not start with digit');
+        return (0, $msg) if wantarray;
+        return 0;
+    }
+    if ($str =~ m/([^-+:.0-9a-zA-Z~])/o) {
         my $msg = sprintf(_g("version number contains illegal character `%s'"), $1);
         return (0, $msg) if wantarray;
         return 0;
     }
-    if ($version =~ /:/ and $version !~ /^\d*:/) {
-        $version =~ /^([^:]*):/;
-        my $msg = sprintf(_g("epoch part of the version number " .
-                             "is not a number: '%s'"), $1);
+    if ($version->epoch() !~ /^\d*$/) {
+        my $msg = sprintf(_g('epoch part of the version number ' .
+                             "is not a number: '%s'"), $version->epoch());
         return (0, $msg) if wantarray;
         return 0;
     }
-    return (1, "") if wantarray;
+    return (1, '') if wantarray;
     return 1;
 }
 
 =back
 
+=head1 CHANGES
+
+=head2 Version 1.01
+
+New argument: Accept an options argument in $v->as_string().
+
+New method: $v->is_native().
+
 =head1 AUTHOR
 
 Don Armstrong <don@donarmstrong.com>, Colin Watson
 <cjwatson@debian.org> and Raphaël Hertzog <hertzog@debian.org>, based on
-the implementation in C<dpkg/lib/vercmp.c> by Ian Jackson and others.
+the implementation in F<dpkg/lib/version.c> by Ian Jackson and others.
 
 =cut
 

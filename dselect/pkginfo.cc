@@ -15,7 +15,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
@@ -28,6 +28,7 @@
 #include <dpkg/i18n.h>
 #include <dpkg/dpkg.h>
 #include <dpkg/dpkg-db.h>
+#include <dpkg/string.h>
 
 #include "dselect.h"
 #include "bindings.h"
@@ -57,19 +58,23 @@ const struct helpmenuentry *packagelist::helpmenulist() {
       {  0                        }
     };
   return
-    !readwrite ? ro :
+    modstatdb_get_status() == msdbrw_readonly ? ro :
     !recursive ? rw :
                  recur;
 }
 
-int packagelist::itr_recursive() { return recursive; }
+bool
+packagelist::itr_recursive()
+{
+  return recursive;
+}
 
 const packagelist::infotype packagelist::infoinfos[]= {
-  { &packagelist::itr_recursive,     &packagelist::itd_relations         },
-  { 0,                               &packagelist::itd_description       },
-  { 0,                               &packagelist::itd_statuscontrol     },
-  { 0,                               &packagelist::itd_availablecontrol  },
-  { 0,                 0                     }
+  { &packagelist::itr_recursive, &packagelist::itd_relations         },
+  { nullptr,                     &packagelist::itd_description       },
+  { nullptr,                     &packagelist::itd_statuscontrol     },
+  { nullptr,                     &packagelist::itd_availablecontrol  },
+  { nullptr,                     nullptr                             }
 };
 
 const packagelist::infotype *const packagelist::baseinfo= infoinfos;
@@ -106,17 +111,17 @@ void packagelist::itd_description() {
 
   if (table[cursorline]->pkg->set->name) {
     const char *m= table[cursorline]->pkg->available.description;
-    if (!m || !*m)
+    if (str_is_unset(m))
       m = table[cursorline]->pkg->installed.description;
-    if (!m || !*m)
+    if (str_is_unset(m))
       m = _("No description available.");
     const char *p= strchr(m,'\n');
     int l= p ? (int)(p-m) : strlen(m);
-    wattrset(infopad,info_headattr);
-    waddstr(infopad, pkg_describe(table[cursorline]->pkg, pdo_foreign));
+    wattrset(infopad, part_attr[info_head]);
+    waddstr(infopad, table[cursorline]->pkg->set->name);
     waddstr(infopad," - ");
     waddnstr(infopad,m,l);
-    wattrset(infopad,info_attr);
+    wattrset(infopad, part_attr[info]);
     if (p) {
       waddstr(infopad,"\n\n");
       wordwrapinfo(1,++p);

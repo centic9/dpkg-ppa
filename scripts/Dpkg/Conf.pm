@@ -11,19 +11,19 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 package Dpkg::Conf;
 
 use strict;
 use warnings;
 
-our $VERSION = "1.01";
+our $VERSION = '1.01';
 
 use Dpkg::Gettext;
 use Dpkg::ErrorHandling;
 
-use base qw(Dpkg::Interface::Storable);
+use parent qw(Dpkg::Interface::Storable);
 
 use overload
     '@{}' => sub { return [ $_[0]->get_options() ] },
@@ -49,7 +49,7 @@ file. It can exports an array that can then be parsed exactly like @ARGV.
 Create a new Dpkg::Conf object. Some options can be set through %opts:
 if allow_short evaluates to true (it defaults to false), then short
 options are allowed in the configuration file, they should be prepended
-with a single dash.
+with a single hyphen.
 
 =cut
 
@@ -79,7 +79,7 @@ Returns the list of options that can be parsed like @ARGV.
 
 sub get_options {
     my ($self) = @_;
-    return @{$self->{'options'}};
+    return @{$self->{options}};
 }
 
 =item $conf->load($file)
@@ -101,8 +101,8 @@ sub parse {
 	s/\s+=\s+/=/;         # Remove spaces around the first =
 	s/\s+/=/ unless m/=/; # First spaces becomes = if no =
 	next if /^#/ or /^$/; # Skip empty lines and comments
-	if (/^-[^-]/ and not $self->{'allow_short'}) {
-	    warning(_g("short option not allowed in %s, line %d"), $desc, $.);
+	if (/^-[^-]/ and not $self->{allow_short}) {
+	    warning(_g('short option not allowed in %s, line %d'), $desc, $.);
 	    next;
 	}
 	if (/^([^=]+)(?:=(.*))?$/) {
@@ -110,13 +110,13 @@ sub parse {
 	    $name = "--$name" unless $name =~ /^-/;
 	    if (defined $value) {
 		$value =~ s/^"(.*)"$/$1/ or $value =~ s/^'(.*)'$/$1/;
-		push @{$self->{'options'}}, "$name=$value";
+		push @{$self->{options}}, "$name=$value";
 	    } else {
-		push @{$self->{'options'}}, $name;
+		push @{$self->{options}}, $name;
 	    }
 	    $count++;
 	} else {
-	    warning(_g("invalid syntax for option in %s, line %d"), $desc, $.);
+	    warning(_g('invalid syntax for option in %s, line %d'), $desc, $.);
 	}
     }
     return $count;
@@ -133,13 +133,13 @@ return true when &$rmfunc($option) or &keepfunc($option) is called.
 
 sub filter {
     my ($self, %opts) = @_;
-    if (defined($opts{'remove'})) {
-	@{$self->{'options'}} = grep { not &{$opts{'remove'}}($_) }
-				     @{$self->{'options'}};
+    if (defined($opts{remove})) {
+	@{$self->{options}} = grep { not &{$opts{remove}}($_) }
+				     @{$self->{options}};
     }
-    if (defined($opts{'keep'})) {
-	@{$self->{'options'}} = grep { &{$opts{'keep'}}($_) }
-				     @{$self->{'options'}};
+    if (defined($opts{keep})) {
+	@{$self->{options}} = grep { &{$opts{keep}}($_) }
+				     @{$self->{options}};
     }
 }
 
@@ -160,14 +160,14 @@ Save the options in a file.
 
 sub output {
     my ($self, $fh) = @_;
-    my $ret = "";
+    my $ret = '';
     foreach my $opt ($self->get_options()) {
 	$opt =~ s/^--//;
 	if ($opt =~ s/^([^=]+)=/$1 = "/) {
 	    $opt .= '"';
 	}
 	$opt .= "\n";
-	print $fh $opt if defined $fh;
+	print { $fh } $opt if defined $fh;
 	$ret .= $opt;
     }
     return $ret;

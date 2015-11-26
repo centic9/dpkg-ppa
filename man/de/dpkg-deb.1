@@ -1,14 +1,34 @@
+.\" dpkg manual page - dpkg-deb(1)
+.\"
+.\" Copyright Â© 1995-1996 Ian Jackson <ian@chiark.chu.cam.ac.uk>
+.\" Copyright Â© 1999 Wichert Akkerman <wakkerma@debian.org>
+.\" Copyright Â© 2006 Frank Lichtenheld <djpig@debian.org>
+.\" Copyright Â© 2007-2012 Guillem Jover <guillem@debian.org>
+.\"
+.\" This is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <https://www.gnu.org/licenses/>.
+.
 .\"*******************************************************************
 .\"
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH dpkg\-deb 1 2010\-03\-07 Debian\-Projekt dpkg\-Programmsammlung
+.TH dpkg\-deb 1 2013\-03\-27 Debian\-Projekt dpkg\-Programmsammlung
 .SH NAME
 dpkg\-deb \- Debian\-Paketarchiv (.deb) Manipulationswerkzeug
 .
 .SH ÜBERSICHT
-\fBdpkg\-deb\fP [\fIOptionen\fP] \fIBefehl\fP
+\fBdpkg\-deb\fP [\fIOption\fP ?] \fIBefehl\fP
 .
 .SH BESCHREIBUNG
 \fBdpkg\-deb\fP packt und entpackt Debian\-Archive und stellt Informationen über
@@ -50,7 +70,7 @@ die Option \fB\-\-nocheck\fP nicht verwendet werden (da \fBdpkg\-deb\fP die
 Paketsteuerdatei lesen und parsen muss, um den zu verwendenden Dateinamen zu
 bestimmen).
 .TP 
-\fB\-I\fP, \fB\-\-info\fP \fIArchiv\fP [\fISteuer\-Dateiname\fP ...]
+\fB\-I\fP, \fB\-\-info\fP \fIArchiv\fP [\fISteuer\-Dateiname\fP ?]
 Stellt Informationen über ein Binärpaketarchiv bereit.
 
 Falls keine \fISteuer\-Dateiname\fPn angegeben sind, wird es eine
@@ -67,7 +87,7 @@ Argument \fB\-\-showformat\fP angegeben wurde. Das Standardformat zeigt den
 Paketnamen und die Paketversion in einer Zeile, getrennt durch einen
 Tabulator.
 .TP 
-\fB\-f\fP, \fB\-\-field\fP \fIArchiv\fP [\fISteuer\-Feldname\fP ...]
+\fB\-f\fP, \fB\-\-field\fP \fIArchiv\fP [\fISteuer\-Feldname\fP ?]
 Extrahiert die Informationen der control\-Datei aus einem Binärpaketarchiv.
 
 Falls keine \fBSteuerdatei\-Feld\fPer angegeben sind, gibt es die gesamte
@@ -98,14 +118,22 @@ angelegt. Seine Rechte werden angepasst, um mit dem Inhalt des Pakets
 übereinzustimmen.
 .TP 
 \fB\-X\fP, \fB\-\-vextract\fP \fIArchiv\-Verzeichnis\fP
-Ist wie \fB\-\-extract\fP (\fB\-x\fP), gibt aber beim Arbeiten eine Liste von
-extrahierten Dateien aus.
+Ist wie \fB\-\-extract\fP (\fB\-x\fP) mit \fB\-\-verbose\fP (\fB\-v\fP), das beim Arbeiten
+eine Liste von extrahierten Dateien ausgibt.
+.TP 
+\fB\-R\fP, \fB\-\-raw\-extract\fP \fIArchiv\-Verzeichnis\fP
+Extrahiert den Dateisystembaum aus einem Paketarchiv in ein angegebenes
+Verzeichnis und die Steuerinformationensdateien in das
+DEBIAN\-Unterverzeichnis des angegebenen Verzeichnisses.
+
+Das Zielverzeichnis (aber nicht übergeordnete) wird, falls notwendig,
+angelegt.
 .TP 
 \fB\-\-fsys\-tarfile\fP \fIArchiv\fP
 Extrahiert die Dateisystembaum\-Daten aus einem Binärpaket und schickt sie
 zur Standardausgabe im \fBtar\fP\-Format. Dies kann zusammen mit \fBtar\fP(1)
 verwendet werden, um eine bestimmte Datei aus einem Paketarchiv zu
-extrahieren.
+extrahieren. Das Eingabearchiv wird immer sequenziell verarbeitet.
 .TP 
 \fB\-e\fP, \fB\-\-control\fP \fIArchiv\fP [\fIVerzeichnis\fP]
 Extrahiert die Steuer\-Informationsdateien aus einem Paketarchiv in das
@@ -117,7 +145,7 @@ aktuellen Verzeichnis verwendet.
 Das Zielverzeichnis (aber nicht übergeordnete) wird, falls notwendig,
 angelegt.
 .TP 
-\fB\-h\fP, \fB\-\-help\fP
+\fB\-?\fP, \fB\-\-help\fP
 Zeige den Bedienungshinweis und beende.
 .TP 
 \fB\-\-version\fP
@@ -140,28 +168,48 @@ werden.
 Die Voreinstellung für dieses Feld ist "${Package}\et${Version}\en".
 .TP 
 \fB\-z\fP\fIKomprimierstufe\fP
-Gibt die Komprimierstufe an, die an das Komprimier\-Backendprogramm beim Bau
-eines Pakets übergeben werden soll.
+Gibt die Komprimierstufe an, die im Komprimier\-Backendprogramm beim Bau
+eines Pakets verwendet werden soll. Standardmäßig ist dies 9 für Gzip und
+Bzip2, 6 für Xz und Lzma. Die akzeptierten Werte innerhalb von 0\-9 sind: 0
+wird auf den Komprimierer »none« für Gzip einstellen und für Bzip2 ist 0
+identisch zu 1. Vor Dpkg 1.16.2 war die Stufe 0 äquivalent zu den
+Komprimierer »none« für alle Komprimierer.
 .TP 
-\fB\-Z\fP\fIkomprimier_Art\fP
+\fB\-S\fP\fIKomprimierstrategie\fP
+Gibt die zu verwendende Komprimierstrategie an, die für den
+Komprimierer\-Backend beim Bau eines Pakets verwandt werden soll (seit Dpkg
+1.16.2). Erlaubte Werte sind \fInone\fP (seit Dpkg 1.16.4), \fIfiltered\fP,
+\fIhuffman\fP, \fIrle\fP und \fIfixed\fP für Gzip (seit Dpkg 1.17.0) und \fIextreme\fP
+für Xz.
+.TP 
+\fB\-Z\fP\fIKomprimierart\fP
 Gibt die Art der Komprimierung beim Bau eines Pakets an. Erlaubte Werte sind
-\fIgzip\fP, \fIxz\fP, \fIbzip2\fP, \fIlzma\fP und \fInone\fP (voreingestellt ist \fIgzip\fP).
+\fIgzip\fP, \fIxz\fP, \fIbzip2\fP, \fIlzma\fP und \fInone\fP (voreingestellt ist \fIxz\fP).
 .TP 
-\fB\-\-new\fP
-Stellt sicher, dass \fBdpkg\-deb\fP ein Archiv im »neuen« Format baut. Dies ist
-die Voreinstellung.
-.TP 
-\fB\-\-old\fP
-Zwingt \fBdpkg\-deb\fP dazu, ein Archiv im »alten« Format zu bauen. Dieses alte
-Format wird nicht so leicht von nicht\-Debian\-Werkzeugen eingelesen und ist
-jetzt veraltet; der einzige Zweck ist zum Bau von Paketen, die von
+\fB\-\-deb\-format=\fP\fIFormat\fP
+Setzt das beim Bau verwandte Archivformat (seit Dpkg 1.17.0). Erlaubte Werte
+sind \fI2.0\fP für das neue Format und \fI0.939000\fP für das alte Format (Vorgabe
+ist \fI2.0\fP).
+
+Das alte Format wird nicht so leicht von nicht\-Debian\-Werkzeugen eingelesen
+und ist jetzt veraltet; der einzige Zweck ist zum Bau von Paketen, die von
 Dpkg\-Versionen kleiner 0.93.76 (September 1995) eingelesen werden
 sollen. Diese Dpkg\-Version wurde nur als i386 a.out\-Programm veröffentlicht.
+.TP 
+\fB\-\-new\fP
+Dies ist ein historischer Alias für \fB\-\-deb\-format=2.0\fP.
+.TP 
+\fB\-\-old\fP
+Dies ist ein historischer Alias für \fB\-\-deb\-format=0.939000\fP.
 .TP 
 \fB\-\-nocheck\fP
 Unterdrückt die normalen Überprüfungen von \fBdpkg\-deb \-\-build\fP über die
 vorgeschlagenen Inhalte eines Archivs. Damit können Sie jedes Archiv bauen,
 das Sie möchten, egal wie defekt es ist.
+.TP 
+\fB\-v\fP, \fB\-\-verbose\fP
+Aktiviert ausführliche Ausgabe. Dies betrifft derzeit nur \fB\-\-extract\fP,
+wodurch dieses sich wie \fB\-\-vextract\fP verhält.
 .TP 
 \fB\-D\fP, \fB\-\-debug\fP
 Aktiviert Fehlersuch\-Ausgaben (»debugging«). Dies ist nicht sehr
@@ -173,6 +221,12 @@ interessant.
 Falls gesetzt wird \fBdpkg\-deb\fP es als das Verzeichnis verwenden, in dem
 temporäre Dateien und Verzeichnisse erstellt werden.
 .
+.SH BEMERKUNGEN
+Versuchen Sie nicht, nur mit \fBdpkg\-deb\fP Software zu installieren! Sie
+müssen \fBdpkg\fP selber verwenden, um sicherzustellen, dass alle Dateien an
+den richtigen Ort platziert werden, die Paketskripte ausgeführt werden und
+sein Status und Inhalt aufgezeichnet wird.
+.
 .SH FEHLER
 \fBdpkg\-deb \-I\fP \fIPaket1\fP\fB.deb\fP \fIPaket2\fP\fB.deb\fP macht das Falsche.
 
@@ -183,14 +237,9 @@ geholt wurden und die meisten Pakete stellen heutzutage eine
 md5sum\-Steuerdatei bereit, die mittels debian/rules erstellt
 wurde. Allerdings wird dies von den Werkzeugen auf niedrigerer Ebene nicht
 direkt unterstützt.)
-
-Versuchen Sie nicht, nur mit \fBdpkg\-deb\fP Software zu installieren! Sie
-müssen \fBdpkg\fP selber verwenden, um sicherzustellen, dass alle Dateien an
-den richtigen Ort platziert werden, die Paketskripte ausgeführt werden und
-sein Status und Inhalt aufgezeichnet wird.
 .
 .SH ÜBERSETZUNG
-Die deutsche Übersetzung wurde 2004, 2006-2010 von Helge Kreutzmann
+Die deutsche Übersetzung wurde 2004, 2006-2013 von Helge Kreutzmann
 <debian@helgefjell.de>, 2007 von Florian Rehnisch <eixman@gmx.de> und
 2008 von Sven Joachim <svenjoac@gmx.de>
 angefertigt. Diese Übersetzung ist Freie Dokumentation; lesen Sie die
@@ -198,9 +247,3 @@ GNU General Public License Version 2 oder neuer für die Kopierbedingungen.
 Es gibt KEINE HAFTUNG.
 .SH "SIEHE AUCH"
 \fBdeb\fP(5), \fBdeb\-control\fP(5), \fBdpkg\fP(1), \fBdselect\fP(1).
-.
-.SH AUTOR
-Copyright \(co 1995\-1996 Ian Jackson
-.sp
-Dies ist Freie Software; lesen Sie die GNU General Public License Version 2
-oder neuer für die Kopierbedingungen. Es gibt KEINE Haftung.

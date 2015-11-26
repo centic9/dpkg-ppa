@@ -9,29 +9,29 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 package Dpkg::Source::Functions;
 
 use strict;
 use warnings;
 
-our $VERSION = "0.01";
+our $VERSION = '0.01';
 
-use base qw(Exporter);
+use Exporter qw(import);
 our @EXPORT_OK = qw(erasedir fixperms fs_time is_binary);
 
 use Dpkg::ErrorHandling;
 use Dpkg::Gettext;
 use Dpkg::IPC;
 
-use POSIX;
+use POSIX qw(:errno_h);
 
 sub erasedir {
     my ($dir) = @_;
     if (not lstat($dir)) {
         return if $! == ENOENT;
-        syserr(_g("cannot stat directory %s (before removal)"), $dir);
+        syserr(_g('cannot stat directory %s (before removal)'), $dir);
     }
     system 'rm','-rf','--',$dir;
     subprocerr("rm -rf $dir") if $?;
@@ -44,7 +44,7 @@ sub erasedir {
 
 sub fixperms {
     my ($dir) = @_;
-    my ($mode, $modes_set, $i, $j);
+    my ($mode, $modes_set);
     # Unfortunately tar insists on applying our umask _to the original
     # permissions_ rather than mostly-ignoring the original
     # permissions.  We fix it up with chmod -R (which saves us some
@@ -52,11 +52,11 @@ sub fixperms {
     # of a palaver.  (Numeric doesn't work because we need [ugo]+X
     # and [ugo]=<stuff> doesn't work because that unsets sgid on dirs.)
     $mode = 0777 & ~umask;
-    for ($i = 0; $i < 9; $i += 3) {
+    for my $i (0 .. 2) {
         $modes_set .= ',' if $i;
-        $modes_set .= qw(u g o)[$i/3];
-        for ($j = 0; $j < 3; $j++) {
-            $modes_set .= $mode & (0400 >> ($i+$j)) ? '+' : '-';
+        $modes_set .= qw(u g o)[$i];
+        for my $j (0 .. 2) {
+            $modes_set .= $mode & (0400 >> ($i * 3 + $j)) ? '+' : '-';
             $modes_set .= qw(r w X)[$j];
         }
     }
@@ -75,14 +75,14 @@ sub fs_time($) {
     my ($file) = @_;
     my $is_temp = 0;
     if (not -e $file) {
-	open(TEMP, ">", $file) or syserr(_g("cannot write %s"));
-	close(TEMP);
+	open(my $temp_fh, '>', $file) or syserr(_g('cannot write %s'));
+	close($temp_fh);
 	$is_temp = 1;
     } else {
 	utime(undef, undef, $file) or
-	    syserr(_g("cannot change timestamp for %s"), $file);
+	    syserr(_g('cannot change timestamp for %s'), $file);
     }
-    stat($file) or syserr(_g("cannot read timestamp from %s"), $file);
+    stat($file) or syserr(_g('cannot read timestamp from %s'), $file);
     my $mtime = (stat(_))[9];
     unlink($file) if $is_temp;
     return $mtime;
@@ -97,11 +97,12 @@ sub is_binary($) {
     # Use diff to check if it's a binary file
     my $diffgen;
     my $diff_pid = spawn(
-        'exec' => [ 'diff', '-u', '--', '/dev/null', $file ],
-        'env' => { LC_ALL => 'C', LANG => 'C', TZ => 'UTC0' },
-        'to_pipe' => \$diffgen
+        exec => [ 'diff', '-u', '--', '/dev/null', $file ],
+        env => { LC_ALL => 'C', LANG => 'C', TZ => 'UTC0' },
+        to_pipe => \$diffgen,
     );
     my $result = 0;
+    local $_;
     while (<$diffgen>) {
         if (m/^(?:binary|[^-+\@ ].*\bdiffer\b)/i) {
             $result = 1;
@@ -111,10 +112,9 @@ sub is_binary($) {
             last;
         }
     }
-    close($diffgen) or syserr("close on diff pipe");
+    close($diffgen) or syserr('close on diff pipe');
     wait_child($diff_pid, nocheck => 1, cmdline => "diff -u -- /dev/null $file");
     return $result;
 }
 
-# vim: set et sw=4 ts=8
 1;

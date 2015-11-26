@@ -1,5 +1,5 @@
 /*
- * dpkg - main program for package management
+ * libdpkg - Debian packaging suite library routines
  * pkg-list.h - primitives for pkg linked list handling
  *
  * Copyright © 2009 Guillem Jover <guillem@debian.org>
@@ -15,7 +15,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #ifndef LIBDPKG_PKG_LIST_H
@@ -25,6 +25,12 @@
 
 DPKG_BEGIN_DECLS
 
+/**
+ * @defgroup pkg-list Package linked lists
+ * @ingroup dpkg-public
+ * @{
+ */
+
 struct pkg_list {
 	struct pkg_list *next;
 	struct pkginfo *pkg;
@@ -33,6 +39,8 @@ struct pkg_list {
 struct pkg_list *pkg_list_new(struct pkginfo *pkg, struct pkg_list *next);
 void pkg_list_free(struct pkg_list *head);
 void pkg_list_prepend(struct pkg_list **head, struct pkginfo *pkg);
+
+/** @} */
 
 DPKG_END_DECLS
 

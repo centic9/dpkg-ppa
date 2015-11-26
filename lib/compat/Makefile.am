@@ -12,6 +12,9 @@ libcompat_a_SOURCES = \
 	compat.h \
 	gettext.h
 
+# FIXME: unconditionally include these for now.
+libcompat_a_SOURCES += md5.c md5.h
+
 if !HAVE_GETOPT
 libcompat_a_SOURCES += getopt.c getopt.h
 endif
@@ -26,6 +29,10 @@ endif
 
 if !HAVE_STRNLEN
 libcompat_a_SOURCES += strnlen.c strnlen.h
+endif
+
+if !HAVE_STRNDUP
+libcompat_a_SOURCES += strndup.c
 endif
 
 if !HAVE_STRERROR

@@ -1,5 +1,5 @@
 /*
- * dpkg - main program for package management
+ * libdpkg - Debian packaging suite library routines
  * pkg-array.h - primitives for pkg array handling
  *
  * Copyright © 2009 Guillem Jover <guillem@debian.org>
@@ -15,7 +15,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #ifndef LIBDPKG_PKG_ARRAY_H
@@ -25,6 +25,12 @@
 #include <dpkg/pkg.h>
 
 DPKG_BEGIN_DECLS
+
+/**
+ * @defgroup pkg-array Package array primitives
+ * @ingroup dpkg-public
+ * @{
+ */
 
 /**
  * Holds an array of pointers to package data.
@@ -37,6 +43,8 @@ struct pkg_array {
 void pkg_array_init_from_db(struct pkg_array *a);
 void pkg_array_sort(struct pkg_array *a, pkg_sorter_func *pkg_sort);
 void pkg_array_destroy(struct pkg_array *a);
+
+/** @} */
 
 DPKG_END_DECLS
 

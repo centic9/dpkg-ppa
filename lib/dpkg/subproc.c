@@ -15,7 +15,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
@@ -35,24 +35,25 @@
 #include <dpkg/dpkg.h>
 #include <dpkg/subproc.h>
 
-static int catch_signals[] = { SIGQUIT, SIGINT };
-static struct sigaction uncatch_signals[array_count(catch_signals)];
+static int signo_ignores[] = { SIGQUIT, SIGINT };
+static struct sigaction sa_save[array_count(signo_ignores)];
 
 void
 subproc_signals_setup(const char *name)
 {
+	struct sigaction sa;
 	size_t i;
-	struct sigaction catchsig;
 
 	onerr_abort++;
-	memset(&catchsig, 0, sizeof(catchsig));
-	catchsig.sa_handler = SIG_IGN;
-	sigemptyset(&catchsig.sa_mask);
-	catchsig.sa_flags = 0;
-	for (i = 0; i < array_count(catch_signals); i++)
-		if (sigaction(catch_signals[i], &catchsig, &uncatch_signals[i]))
+	memset(&sa, 0, sizeof(sa));
+	sigemptyset(&sa.sa_mask);
+	sa.sa_handler = SIG_IGN;
+	sa.sa_flags = 0;
+
+	for (i = 0; i < array_count(signo_ignores); i++)
+		if (sigaction(signo_ignores[i], &sa, &sa_save[i]))
 			ohshite(_("unable to ignore signal %s before running %.250s"),
-			        strsignal(catch_signals[i]), name);
+			        strsignal(signo_ignores[i]), name);
 	push_cleanup(subproc_signals_cleanup, ~0, NULL, 0, 0);
 	onerr_abort--;
 }
@@ -62,39 +63,39 @@ subproc_signals_cleanup(int argc, void **argv)
 {
 	size_t i;
 
-	for (i = 0; i < array_count(catch_signals); i++) {
-		if (sigaction(catch_signals[i], &uncatch_signals[i], NULL)) {
+	for (i = 0; i < array_count(signo_ignores); i++) {
+		if (sigaction(signo_ignores[i], &sa_save[i], NULL)) {
 			fprintf(stderr, _("error un-catching signal %s: %s\n"),
-			        strsignal(catch_signals[i]), strerror(errno));
+			        strsignal(signo_ignores[i]), strerror(errno));
 			onerr_abort++;
 		}
 	}
 }
 
 static void
-print_subproc_error(const char *emsg, const char *contextstring)
+print_subproc_error(const char *emsg, const void *data)
 {
-	fprintf(stderr, _("%s (subprocess): %s\n"), thisname, emsg);
+	fprintf(stderr, _("%s (subprocess): %s\n"), dpkg_get_progname(), emsg);
 }
 
 pid_t
 subproc_fork(void)
 {
-	pid_t r;
+	pid_t pid;
 
-	r = fork();
-	if (r == -1) {
+	pid = fork();
+	if (pid == -1) {
 		onerr_abort++;
 		ohshite(_("fork failed"));
 	}
-	if (r > 0)
-		return r;
+	if (pid > 0)
+		return pid;
 
 	/* Push a new error context, so that we don't do the other cleanups,
 	 * because they'll be done by/in the parent process. */
 	push_error_context_func(catch_fatal_error, print_subproc_error, NULL);
 
-	return r;
+	return pid;
 }
 
 int

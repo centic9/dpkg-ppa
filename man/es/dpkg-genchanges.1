@@ -1,14 +1,34 @@
+.\" dpkg manual page - dpkg-genchanges(1)
+.\"
+.\" Copyright Â© 1995-1996 Ian Jackson <ian@chiark.chu.cam.ac.uk>
+.\" Copyright Â© 2000 Wichert Akkerman <wakkerma@debian.org>
+.\" Copyright Â© 2006-2012 Guillem Jover <guillem@debian.org>
+.\" Copyright Â© 2008-2010 RaphaÃ«l Hertzog <hertzog@debian.org>
+.\"
+.\" This is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <https://www.gnu.org/licenses/>.
+.
 .\"*******************************************************************
 .\"
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH dpkg\-genchanges 1 "18 de Agosto de 2008" "Proyecto Debian" "Herramientas de dpkg"
+.TH dpkg\-genchanges 1 "4 de mayo del 2012" "Proyecto Debian" "Herramientas de dpkg"
 .SH NOMBRE
 dpkg\-genchanges \- Generación de ficheros de Debian «.changes»
 .
 .SH SINOPSIS
-\fBdpkg\-genchanges\fP [\fIopciones\fP]
+\fBdpkg\-genchanges\fP [\fIopción\fP...]
 .br
 .
 .SH DESCRIPCIÓN
@@ -52,31 +72,31 @@ Provoca el uso de la información del registro de cambios de todas las
 versiones estrictamente posteriores a \fIversión\fP.
 .TP 
 \fB\-C\fP\fIdescripción\-de\-cambios\fP
-Lee la descripción de los cambios del fichero \fIchangesdescription\fP en vez
-de usar la información contenida en el fichero de cambios del árbol de
-fuentes.
+Lee la descripción de los cambios del fichero \fIchanges\-description\fP en
+lugar de utilizar la información contenida en el fichero de cambios del
+árbol de fuentes.
 .TP 
 \fB\-m\fP\fIdirección\-mantenedor\fP
 Utiliza \fIdirección\-mantenedor\fP como el nombre y dirección de correo del
-responsable de este paquete, en lugar de usar la información del fichero de
-control del árbol de fuentes.
+responsable de este paquete, en lugar de utilizar la información del fichero
+de control del árbol de fuentes.
 .TP 
 \fB\-e\fP\fIdirección\-mantenedor\fP
 Utiliza \fIdirección\-mantenedor\fP como el nombre y dirección de correo del
-responsable de esta subida, en lugar de usar la información del registro de
-cambios del árbol de fuentes.
+responsable de esta subida, en lugar de utilizar la información del registro
+de cambios del árbol de fuentes.
 .TP 
 \fB\-V\fP\fInombre\fP\fB=\fP\fIvalor\fP
 Define una variable de sustitución de la salida. Consulte
 \fBdeb\-substvars\fP(5) para más información acerca de la sustitución de la
 salida.
 .TP 
-\fB\-T\fP\fIfichero\-variables\-sust\fP
-Lee variables de sustitución desde el \fIfichero\-variables\-sust\fP;
+\fB\-T\fP\fIfichero\-variables\-sustitución\fP
+Lee variables de sustitución desde el \fIfichero\-variables\-sustitución\fP;
 \fBdebian/substvars\fP es el valor por omisión. No se realiza ninguna
 sustitución de variables en ninguno de los campos que son parte de la
 salida. Por otra para, la variable especial \fIFormat\fP sobreescribirá el
-campo del mismo nombre. Puede usar esta opción varias veces para leer
+campo del mismo nombre. Puede utilizar esta opción varias veces para leer
 variables de sustitución de varios ficheros.
 
 .TP 
@@ -90,18 +110,17 @@ Elimina un campo del fichero de control de salida.
 Define el fichero de control principal de las fuentes del que leer la
 información. Por omisión es \fBdebian/control\fP.
 .TP 
-\fB\-l\fP\fIfichero\-cambios\fP
+\fB\-l\fP\fIfichero\-de\-cambios\fP
 Define el fichero de registro de cambios del que leer la información. Por
 omisión es \fBdebian/changelog\fP.
 .TP 
-\fB\-f\fP\fIfichero\-lista\-ficheros\fP
-Lee o escribe la lista de ficheros para subir aquí, en lugar de usar
+\fB\-f\fP\fIfichero\-de\-lista\-de\-ficheros\fP
+Lee o escribe la lista de ficheros para subir aquí, en lugar de utilizar
 \fBdebian/files\fP.
 .TP 
-\fB\-F\fP\fIformato\-registro\-cambios\fP
-Define el formato del registro de cambios. Por omisión, el formato se lee de
-una línea especial cerca del final del registro de cambios o, en caso de
-fallo, usa el formato estándar debian.
+\fB\-F\fP\fIformato\-fichero\-de\-cambios\fP
+Define el formato del fichero de cambios. Para información sobre formatos
+alternativos consulte \fBdpkg\-parsechangelog\fP(1).
 .TP 
 \fB\-u\fP\fIdirectorio\-subida\-ficheros\fP
 Busca ficheros a subir en \fIdirectorio\-subida\-ficheros\fP en lugar de \fB..\fP
@@ -113,7 +132,7 @@ Habitualmente, \fBdpkg\-genchanges\fP producirá mensajes informativos por la
 salida de error estándar, por ejemplo acerca de cuántos de los ficheros
 fuente de los paquetes se están subiendo. \fB\-q\fP suprime dichos mensajes.
 .TP 
-\fB\-h\fP, \fB\-\-help\fP
+\fB\-?\fP, \fB\-\-help\fP
 Muestra el modo de uso y termina.
 .TP 
 \fB\-\-version\fP
@@ -125,15 +144,7 @@ Muestra la versión y termina.
 La lista de ficheros generados que forman parte de la subida al servidor en
 preparación. \fBdpkg\-genchanges\fP lee los datos aquí cuando produce un fichero
 \&\fB.changes\fP.
-.
-.SH AUTORES
-Copyright \(co 1995\-1996 Ian Jackson
-.br
-Copyright \(co 2000 Wichert Akkerman
-.sp
-Esto es software libre; vea la versión 2 o posterior de la Licencia Pública
-General GNU para condiciones de copia. NO hay ninguna garantía.
-.SH "TRADUCTOR"
+.SH TRADUCTOR
 Rudy Godoy <rudy@kernel\-panik.org>,
 Rubén Porras <nahoo@inicia.es>,
 Bruno Barrera C. <bruno.barrera@igloo.cl>,

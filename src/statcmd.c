@@ -2,7 +2,7 @@
  * dpkg-statoverride - override ownership and mode of files
  *
  * Copyright © 2000, 2001 Wichert Akkerman <wakkerma@debian.org>
- * Copyright © 2006-2010 Guillem Jover <guillem@debian.org>
+ * Copyright © 2006-2012 Guillem Jover <guillem@debian.org>
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *
  */
 
@@ -43,22 +43,19 @@
 #include <dpkg/path.h>
 #include <dpkg/dir.h>
 #include <dpkg/glob.h>
-#include <dpkg/myopt.h>
+#include <dpkg/options.h>
 
 #include "main.h"
 #include "filesdb.h"
 
-const char thisname[] = "dpkg-statoverride";
-const char printforhelp[] = N_("Use --help for help about querying packages.");
+static const char printforhelp[] = N_(
+"Use --help for help about overriding file stat information.");
 
 static void DPKG_ATTR_NORET
 printversion(const struct cmdinfo *cip, const char *value)
 {
-	printf(_("Debian %s version %s.\n"), thisname, DPKG_VERSION_ARCH);
-
-	printf(_(
-"Copyright (C) 2000, 2001 Wichert Akkerman.\n"
-"Copyright (C) 2006-2009 Guillem Jover.\n"));
+	printf(_("Debian %s version %s.\n"), dpkg_get_progname(),
+	       DPKG_VERSION_ARCH);
 
 	printf(_(
 "This is free software; see the GNU General Public License version 2 or\n"
@@ -74,20 +71,20 @@ usage(const struct cmdinfo *cip, const char *value)
 {
 	printf(_(
 "Usage: %s [<option> ...] <command>\n"
-"\n"), thisname);
+"\n"), dpkg_get_progname());
 
 	printf(_(
 "Commands:\n"
-"  --add <owner> <group> <mode> <file>\n"
-"                           add a new entry into the database.\n"
-"  --remove <file>          remove file from the database.\n"
+"  --add <owner> <group> <mode> <path>\n"
+"                           add a new <path> entry into the database.\n"
+"  --remove <path>          remove <path> from the database.\n"
 "  --list [<glob-pattern>]  list current overrides in the database.\n"
 "\n"));
 
 	printf(_(
 "Options:\n"
 "  --admindir <directory>   set the directory with the statoverride file.\n"
-"  --update                 immediately update file permissions.\n"
+"  --update                 immediately update <path> permissions.\n"
 "  --force                  force an action even if a sanity check fails.\n"
 "  --quiet                  quiet operation, minimal output.\n"
 "  --help                   show this help message.\n"
@@ -192,43 +189,28 @@ statdb_node_print(FILE *out, struct filenamenode *file)
 static void
 statdb_write(void)
 {
-	char *dbname, *dbname_new, *dbname_old;
-	FILE *dbfile;
-	struct fileiterator *i;
+	char *dbname;
+	struct atomic_file *dbfile;
+	struct fileiterator *iter;
 	struct filenamenode *file;
 
 	dbname = dpkg_db_get_path(STATOVERRIDEFILE);
-	m_asprintf(&dbname_new, "%s%s", dbname, NEWDBEXT);
-	m_asprintf(&dbname_old, "%s%s", dbname, OLDDBEXT);
+	dbfile = atomic_file_new(dbname, aff_backup);
+	atomic_file_open(dbfile);
 
-	dbfile = fopen(dbname_new, "w");
-	if (!dbfile)
-		ohshite(_("cannot open new statoverride file"));
+	iter = files_db_iter_new();
+	while ((file = files_db_iter_next(iter)))
+		statdb_node_print(dbfile->fp, file);
+	files_db_iter_free(iter);
 
-	i = iterfilestart();
-	while ((file = iterfilenext(i)))
-		statdb_node_print(dbfile, file);
-	iterfileend(i);
-
-	if (fflush(dbfile))
-		ohshite(_("unable to flush file '%s'"), dbname_new);
-	if (fsync(fileno(dbfile)))
-		ohshite(_("unable to sync file '%s'"), dbname_new);
-	fclose(dbfile);
-
-	chmod(dbname_new, 0644);
-	if (unlink(dbname_old) && errno != ENOENT)
-		ohshite(_("error removing statoverride-old"));
-	if (link(dbname, dbname_old) && errno != ENOENT)
-		ohshite(_("error creating new statoverride-old"));
-	if (rename(dbname_new, dbname))
-		ohshite(_("error installing new statoverride"));
+	atomic_file_sync(dbfile);
+	atomic_file_close(dbfile);
+	atomic_file_commit(dbfile);
+	atomic_file_free(dbfile);
 
 	dir_sync_path(dpkg_db_get_dir());
 
 	free(dbname);
-	free(dbname_new);
-	free(dbname_old);
 }
 
 static int
@@ -242,22 +224,22 @@ statoverride_add(const char *const *argv)
 	struct file_stat **filestat;
 
 	if (!user || !group || !mode || !path || argv[4])
-		badusage(_("--add needs four arguments"));
+		badusage(_("--%s needs four arguments"), cipaction->olong);
 
 	if (strchr(path, '\n'))
-		badusage(_("file may not contain newlines"));
+		badusage(_("path may not contain newlines"));
 
 	filename = path_cleanup(path);
 
 	filestat = statdb_node_find(filename);
 	if (*filestat != NULL) {
 		if (opt_force)
-			warning(_("An override for '%s' already exists, "
-			          "but --force specified so will be ignored."),
+			warning(_("an override for '%s' already exists, "
+			          "but --force specified so will be ignored"),
 			        filename);
 		else
-			ohshit(_("An override for '%s' already exists, "
-			         "aborting."), filename);
+			ohshit(_("an override for '%s' already exists; "
+			         "aborting"), filename);
 	}
 
 	*filestat = statdb_node_new(user, group, mode);
@@ -292,11 +274,11 @@ statoverride_remove(const char *const *argv)
 
 	if (!statdb_node_remove(filename)) {
 		if (opt_verbose)
-			warning(_("No override present."));
+			warning(_("no override present"));
 		if (opt_force)
-			exit(0);
+			return 0;
 		else
-			exit(2);
+			return 2;
 	}
 
 	if (opt_update && opt_verbose)
@@ -312,7 +294,7 @@ statoverride_remove(const char *const *argv)
 static int
 statoverride_list(const char *const *argv)
 {
-	struct fileiterator *i;
+	struct fileiterator *iter;
 	struct filenamenode *file;
 	const char *thisarg;
 	struct glob_node *glob_list = NULL;
@@ -326,8 +308,8 @@ statoverride_list(const char *const *argv)
 	if (glob_list == NULL)
 		glob_list_prepend(&glob_list, m_strdup("*"));
 
-	i = iterfilestart();
-	while ((file = iterfilenext(i))) {
+	iter = files_db_iter_new();
+	while ((file = files_db_iter_next(iter))) {
 		struct glob_node *g;
 
 		for (g = glob_list; g; g = g->next) {
@@ -338,7 +320,7 @@ statoverride_list(const char *const *argv)
 			}
 		}
 	}
-	iterfileend(i);
+	files_db_iter_free(iter);
 
 	glob_list_free(glob_list);
 
@@ -354,7 +336,7 @@ static const struct cmdinfo cmdinfos[] = {
 	{ "quiet",      0,   0,  &opt_verbose, NULL,      NULL, 0       },
 	{ "force",      0,   0,  &opt_force,   NULL,      NULL, 1       },
 	{ "update",     0,   0,  &opt_update,  NULL,      NULL, 1       },
-	{ "help",       'h', 0,  NULL,         NULL,      usage         },
+	{ "help",       '?', 0,  NULL,         NULL,      usage         },
 	{ "version",    0,   0,  NULL,         NULL,      printversion  },
 	{  NULL,        0                                               }
 };
@@ -362,30 +344,23 @@ static const struct cmdinfo cmdinfos[] = {
 int
 main(int argc, const char *const *argv)
 {
-	int (*actionfunction)(const char *const *argv);
 	int ret;
 
-	setlocale(LC_ALL, "");
-	bindtextdomain(PACKAGE, LOCALEDIR);
-	textdomain(PACKAGE);
-
-	standard_startup();
-	myopt(&argv, cmdinfos);
+	dpkg_locales_init(PACKAGE);
+	dpkg_program_init("dpkg-statoverride");
+	dpkg_options_parse(&argv, cmdinfos, printforhelp);
 
 	admindir = dpkg_db_set_dir(admindir);
 
 	if (!cipaction)
 		badusage(_("need an action option"));
 
-	setvbuf(stdout, NULL, _IONBF, 0);
-
 	filesdbinit();
 	ensure_statoverrides();
 
-	actionfunction = (int (*)(const char *const *))cipaction->arg_func;
-	ret = actionfunction(argv);
+	ret = cipaction->action(argv);
 
-	standard_shutdown();
+	dpkg_program_done();
 
 	return ret;
 }

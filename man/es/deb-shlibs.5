@@ -1,6 +1,9 @@
+.\" dpkg manual page - deb-shlibs(5)
+.\"
 .\" Copyright Â© 1996 Michael Shields <shields@crosslink.net>
 .\" Copyright Â© 2008 Zack Weinberg <zackw@panix.com>
-.\" This is free software; you may redistribute it and/or modify
+.\"
+.\" This is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
 .\" the Free Software Foundation; either version 2 of the License, or
 .\" (at your option) any later version.
@@ -11,13 +14,14 @@
 .\" GNU General Public License for more details.
 .\"
 .\" You should have received a copy of the GNU General Public License
-.\" along with this program.  If not, see <http://www.gnu.org/licenses/>.
+.\" along with this program.  If not, see <https://www.gnu.org/licenses/>.
+.
 .\"*******************************************************************
 .\"
 .\" This file was generated with po4a. Translate the source file.
 .\"
 .\"*******************************************************************
-.TH deb\-shlibs 5 "17 de Febrero de 2009" "Proyecto Debian" "Herramientas de dpkg"
+.TH deb\-shlibs 5 "8 de febrero del 2012" "Proyecto Debian" "Herramientas de dpkg"
 .SH NOMBRE
 deb\-shlibs \- Fichero de información de bibliotecas compartidas de Debian
 .
@@ -30,13 +34,15 @@ línea, y las líneas vacías \fBno\fP están permitidas. Las líneas que empiezan
 con un carácter \fB#\fP se consideran comentarios, y se ignorarán. Todas las
 demás líneas deben seguir el formato
 .IP
-[\fItipo:\fP] \fIbiblioteca\fP \fIversión\fP \fIdependencias\fP
+[\fItipo\fP\fB:\fP] \fIbiblioteca\fP \fIversión\fP \fIdependencias\fP
 .PP
 Los campos \fIbiblioteca\fP y \fIversión\fP se delimitan con espacios en blanco,
 pero el campo de las \fIdependencias\fP se extiende hasta el fin de línea. El
 campo \fItipo\fP es opcional, y habitualmente innecesario.
 .PP
-Consulte el Manual de Normas de Debian para más detalles.
+El campo \fIdependencies\fP tiene la misma sintaxis que el campo \fBDepends\fP en
+un fichero de control binario, consulte \fBdeb\-control\fP(5). Para más
+detalles, consulte también el Manual de normas de Debian.
 .
 .SH EJEMPLOS
 .PP
@@ -53,8 +59,8 @@ añadieron símbolos nuevos en la versión 1.2 de \fIlibcrunch\fP. Esta no es la
 vez más, consulte el Manual de Normas de Debian para más detalles.
 .
 .SH "VÉASE TAMBIÉN"
-\fBdpkg\-shlibdeps\fP(1), \fBdeb\-symbols\fP(5).
-.SH "TRADUCTOR"
+\fBdeb\-control\fP(5), \fBdpkg\-shlibdeps\fP(1), \fBdeb\-symbols\fP(5).
+.SH TRADUCTOR
 Rudy Godoy <rudy@kernel\-panik.org>,
 Rubén Porras <nahoo@inicia.es>,
 Bruno Barrera C. <bruno.barrera@igloo.cl>,

@@ -16,7 +16,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #ifndef LIBDPKG_TRIGLIB_H
@@ -26,6 +26,12 @@
 #include <dpkg/dpkg-db.h>
 
 DPKG_BEGIN_DECLS
+
+/**
+ * @defgroup triglib Trigger handling
+ * @ingroup dpkg-internal
+ * @{
+ */
 
 /*
  * Hooks for more sophisticated processing in dpkg proper.
@@ -38,18 +44,27 @@ DPKG_BEGIN_DECLS
 
 const char *trig_name_is_illegal(const char *p);
 
+enum trig_options {
+	trig_await,
+	trig_noawait
+};
+
 struct trigfileint {
 	struct pkginfo *pkg;
+	struct pkgbin *pkgbin;
 	struct filenamenode *fnn;
+	enum trig_options options;
 	struct trigfileint *samefile_next;
 	struct {
 		struct trigfileint *next, *prev;
 	} inoverall;
 };
 
-/* The first two hooks are normally NULL.
+/**
+ * The first two hooks are normally NULL.
  * If non-NULL, we're dpkg proper and we might need to invent trigger
- * activations as the first run of a triggers-supporting dpkg. */
+ * activations as the first run of a triggers-supporting dpkg.
+ */
 struct trig_hooks {
 	void (*enqueue_deferred)(struct pkginfo *pend);
 	void (*transitional_activate)(enum modstatdb_rw cstatus);
@@ -57,7 +72,7 @@ struct trig_hooks {
 	struct filenamenode *(*namenode_find)(const char *filename, bool nonew);
 	struct trigfileint **(*namenode_interested)(struct filenamenode *fnn);
 
-	/* Returns a pointer from nfmalloc. */
+	/** Returns a pointer from nfmalloc. */
 	const char *(*namenode_name)(struct filenamenode *fnn);
 };
 
@@ -71,26 +86,39 @@ void trig_override_hooks(const struct trig_hooks *hooks);
 
 void trig_file_activate_byname(const char *trig, struct pkginfo *aw);
 void trig_file_activate(struct filenamenode *trig, struct pkginfo *aw);
+void trig_path_activate(struct filenamenode *trig, struct pkginfo *aw);
 
 bool trig_note_pend_core(struct pkginfo *pend, const char *trig /*not copied!*/);
 bool trig_note_pend(struct pkginfo *pend, const char *trig /*not copied!*/);
 bool trig_note_aw(struct pkginfo *pend, struct pkginfo *aw);
 void trig_clear_awaiters(struct pkginfo *notpend);
 
-void trig_enqueue_awaited_pend(struct pkginfo *pend);
+typedef void trig_awaited_pend_foreach_func(struct pkginfo *pkg);
+
+void trig_awaited_pend_enqueue(struct pkginfo *pend);
+void trig_awaited_pend_foreach(trig_awaited_pend_foreach_func *func);
+void trig_awaited_pend_free(void);
+
 void trig_fixup_awaiters(enum modstatdb_rw cstatus);
 
 void trig_file_interests_ensure(void);
 void trig_file_interests_save(void);
 
-typedef void trig_parse_cicb(const char *trig, void *user);
-void trig_cicb_interest_delete(const char *trig, void *user);
-void trig_cicb_interest_add(const char *trig, void *user);
-void trig_cicb_statuschange_activate(const char *trig, void *user);
+typedef void trig_parse_cicb(const char *trig, struct pkginfo *pkg,
+                             struct pkgbin *pkgbin, enum trig_options to);
+void trig_cicb_interest_delete(const char *trig, struct pkginfo *pkg,
+                             struct pkgbin *pkgbin, enum trig_options to);
+void trig_cicb_interest_add(const char *trig, struct pkginfo *pkg,
+                             struct pkgbin *pkgbin, enum trig_options to);
+void trig_cicb_statuschange_activate(const char *trig, struct pkginfo *pkg,
+                             struct pkgbin *pkgbin, enum trig_options to);
 void trig_parse_ci(const char *file, trig_parse_cicb *interest,
-                   trig_parse_cicb *activate, void *user);
+                   trig_parse_cicb *activate, struct pkginfo *pkg,
+                   struct pkgbin *pkgbin);
 
 void trig_incorporate(enum modstatdb_rw cstatus);
+
+/** @} */
 
 DPKG_END_DECLS
 

@@ -11,14 +11,16 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 package Dpkg::Interface::Storable;
 
 use strict;
 use warnings;
 
-our $VERSION = "1.00";
+our $VERSION = '1.00';
+
+use Carp;
 
 use Dpkg::Gettext;
 use Dpkg::ErrorHandling;
@@ -75,20 +77,20 @@ standard input is read (no compression is allowed in that case).
 
 sub load {
     my ($self, $file, @options) = @_;
-    unless ($self->can("parse")) {
-	internerr("%s cannot be loaded, it lacks the parse method", ref($self));
+    unless ($self->can('parse')) {
+	croak ref($self) . ' cannot be loaded, it lacks the parse method';
     }
     my ($desc, $fh) = ($file, undef);
-    if ($file eq "-") {
+    if ($file eq '-') {
 	$fh = \*STDIN;
-	$desc = _g("<standard input>");
+	$desc = _g('<standard input>');
     } else {
 	$fh = Dpkg::Compression::FileHandle->new();
-	open($fh, "<", $file) || syserr(_g("cannot read %s"), $file);
+	open($fh, '<', $file) or syserr(_g('cannot read %s'), $file);
     }
     my $res = $self->parse($fh, $desc, @options);
-    if ($file ne "-") {
-	close($fh) || syserr(_g("cannot close %s"), $file);
+    if ($file ne '-') {
+	close($fh) or syserr(_g('cannot close %s'), $file);
     }
     return $res;
 }
@@ -104,19 +106,19 @@ standard output is used (data are written uncompressed in that case).
 
 sub save {
     my ($self, $file, @options) = @_;
-    unless ($self->can("output")) {
-	internerr("%s cannot be saved, it lacks the output method", ref($self));
+    unless ($self->can('output')) {
+	croak ref($self) . ' cannot be saved, it lacks the output method';
     }
     my $fh;
-    if ($file eq "-") {
+    if ($file eq '-') {
 	$fh = \*STDOUT;
     } else {
 	$fh = Dpkg::Compression::FileHandle->new();
-	open($fh, ">", $file) || syserr(_g("cannot write %s"), $file);
+	open($fh, '>', $file) or syserr(_g('cannot write %s'), $file);
     }
     $self->output($fh, @options);
-    if ($file ne "-") {
-	close($fh) || syserr(_g("cannot close %s"), $file);
+    if ($file ne '-') {
+	close($fh) or syserr(_g('cannot close %s'), $file);
     }
 }
 
@@ -128,8 +130,8 @@ Return a string representation of the object.
 
 sub _stringify {
     my ($self) = @_;
-    unless ($self->can("output")) {
-	internerr("%s cannot be stringified, it lacks the output method", ref($self));
+    unless ($self->can('output')) {
+	croak ref($self) . ' cannot be stringified, it lacks the output method';
     }
     return $self->output();
 }

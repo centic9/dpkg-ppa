@@ -37,7 +37,7 @@ Copyright © 1994 Matt Welsh <mdw@sunsite.unc.edu>
 Copyright © 1994 Ian Murdock <imurdock@debian.org>
 
 Includes public domain MD5 code:
-	lib/dpkg/md5.c and lib/dpkg/md5.h originally written by Colin Plumb,
+	lib/compat/md5.c and lib/compat/md5.h originally written by Colin Plumb,
 
 Includes code from ‘getopt’ and ‘gettext’:
 	Copyright © 1984-2002 Free Software Foundation, Inc.
@@ -56,5 +56,5 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 On Debian systems, the complete text of the GNU General Public License
-can be found in ‘/usr/share/common-licenses/GPL’ or in the dpkg source
+can be found in ‘/usr/share/common-licenses/GPL-2’ or in the dpkg source
 as the file ‘COPYING’.

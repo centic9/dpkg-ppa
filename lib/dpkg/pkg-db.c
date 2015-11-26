@@ -1,8 +1,9 @@
 /*
  * libdpkg - Debian packaging suite library routines
- * pkg-db.c - Low level package database routines (hash tables, etc.)
+ * pkg-db.c - low level package database routines (hash tables, etc.)
  *
  * Copyright © 1995 Ian Jackson <ian@chiark.greenend.org.uk>
+ * Copyright © 2008-2012 Guillem Jover <guillem@debian.org>
  * Copyright © 2011 Linaro Limited
  * Copyright © 2011 Raphaël Hertzog <hertzog@debian.org>
  *
@@ -17,7 +18,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
@@ -64,103 +65,175 @@ static unsigned int hash(const char *name) {
  * Return the package set with the given name.
  *
  * If the package already exists in the internal database, then it returns
- * the existing structure. Otherwise it allocates a new one and will
- * return it. The actual name associated to the package set is a lowercase
- * version of the name given in parameter.
+ * the existing structure. Otherwise it allocates a new one and will return
+ * it. The actual name associated to the package set is a lowercase version
+ * of the name given in parameter.
  *
- * A package set (struct pkgset) can be composed of multiple package
- * instances (struct pkginfo) where each instance is distinguished
- * by its architecture (as recorded in pkg.{installed,available}.architecture).
+ * A package set (struct pkgset) can be composed of multiple package instances
+ * (struct pkginfo) where each instance is distinguished by its architecture
+ * (as recorded in pkg.installed.arch and pkg.available.arch).
  *
  * @param inname Name of the package set.
+ *
  * @return The package set.
  */
 struct pkgset *
 pkg_db_find_set(const char *inname)
 {
-  struct pkgset **pointerp, *newpkg;
+  struct pkgset **setp, *new_set;
   char *name = m_strdup(inname), *p;
 
   p= name;
   while(*p) { *p= tolower(*p); p++; }
 
-  pointerp= bins + (hash(name) % (BINS));
-  while (*pointerp && strcasecmp((*pointerp)->name,name))
-    pointerp= &(*pointerp)->next;
-  if (*pointerp) {
+  setp = bins + (hash(name) % (BINS));
+  while (*setp && strcasecmp((*setp)->name, name))
+    setp = &(*setp)->next;
+  if (*setp) {
     free(name);
-    return *pointerp;
+    return *setp;
   }
 
-  newpkg = nfmalloc(sizeof(struct pkgset));
-  pkgset_blank(newpkg);
-  newpkg->name= nfstrsave(name);
-  newpkg->next= NULL;
-  *pointerp= newpkg;
+  new_set = nfmalloc(sizeof(struct pkgset));
+  pkgset_blank(new_set);
+  new_set->name = nfstrsave(name);
+  new_set->next = NULL;
+  *setp = new_set;
   nset++;
   npkg++;
 
   free(name);
-  return newpkg;
+
+  return new_set;
+}
+
+/**
+ * Return the singleton package instance from a package set.
+ *
+ * This means, if none are installed either an instance with native or
+ * all arch or the first if none found, the single installed instance,
+ * or NULL if more than one instance is installed.
+ *
+ * @param set The package set to use.
+ *
+ * @return The singleton package instance.
+ */
+struct pkginfo *
+pkg_db_get_singleton(struct pkgset *set)
+{
+  struct pkginfo *pkg;
+
+  switch (pkgset_installed_instances(set)) {
+  case 0:
+    /* Pick an available candidate. */
+    for (pkg = &set->pkg; pkg; pkg = pkg->arch_next) {
+      const struct dpkg_arch *arch = pkg->available.arch;
+
+      if (arch->type == arch_native || arch->type == arch_all)
+        return pkg;
+    }
+    /* Or failing that, the first entry. */
+    return &set->pkg;
+  case 1:
+    for (pkg = &set->pkg; pkg; pkg = pkg->arch_next) {
+      if (pkg->status > stat_notinstalled)
+        return pkg;
+    }
+    internerr("pkgset '%s' should have one installed instance", set->name);
+  default:
+    return NULL;
+  }
+}
+
+/**
+ * Return the singleton package instance with the given name.
+ *
+ * @param name The package name.
+ *
+ * @return The package instance.
+ */
+struct pkginfo *
+pkg_db_find_singleton(const char *name)
+{
+  struct pkgset *set;
+  struct pkginfo *pkg;
+
+  set = pkg_db_find_set(name);
+  pkg = pkg_db_get_singleton(set);
+  if (pkg == NULL)
+    ohshit(_("ambiguous package name '%s' with more "
+             "than one installed instance"), set->name);
+
+  return pkg;
+}
+
+/**
+ * Return the package instance in a set with the given architecture.
+ *
+ * It traverse the various instances to find out whether there's one
+ * matching the given architecture. If found, it returns it. Otherwise it
+ * allocates a new instance and registers it in the package set before
+ * returning it.
+ *
+ * @param set  The package set to use.
+ * @param arch The requested architecture.
+ *
+ * @return The package instance.
+ */
+struct pkginfo *
+pkg_db_get_pkg(struct pkgset *set, const struct dpkg_arch *arch)
+{
+  struct pkginfo *pkg, **pkgp;
+
+  assert(arch);
+  assert(arch->type != arch_none);
+
+  pkg = &set->pkg;
+
+  /* If there's a single unused slot, let's use that. */
+  if (pkg->installed.arch->type == arch_none && pkg->arch_next == NULL) {
+    pkg->installed.arch = arch;
+    pkg->available.arch = arch;
+    return pkg;
+  }
+
+  /* Match the slot with the most appropriate architecture. The installed
+   * architecture always has preference over the available one, as there's
+   * a small time window on cross-grades, where they might differ. */
+  for (pkgp = &pkg; *pkgp; pkgp = &(*pkgp)->arch_next) {
+    if ((*pkgp)->installed.arch == arch)
+      return *pkgp;
+  }
+
+  /* Need to create a new instance for the wanted architecture. */
+  pkg = nfmalloc(sizeof(struct pkginfo));
+  pkg_blank(pkg);
+  pkg->set = set;
+  pkg->arch_next = NULL;
+  pkg->installed.arch = arch;
+  pkg->available.arch = arch;
+  *pkgp = pkg;
+  npkg++;
+
+  return pkg;
 }
 
 /**
  * Return the package instance with the given name and architecture.
  *
- * It first uses pkg_db_find_set() to retrieve the right package set and
- * then traverse the various instances to find out whether there's one
- * matching the given architecture. If yes, it returns it. Otherwise it
- * allocates an new instance and register it in the package set berfore
- * returning it.
- *
- * If the requested architecture is a NULL pointer, it will be dealt like
- * the native architecture and the special architecture "all": it will
- * always return the first instance in the list (this one always exists
- * since it's part of the pksget structure).
- *
  * @param name The package name.
  * @param arch The requested architecture.
+ *
  * @return The package instance.
  */
 struct pkginfo *
 pkg_db_find_pkg(const char *name, const struct dpkg_arch *arch)
 {
   struct pkgset *set;
-  struct pkginfo *pkg, **pkgp;
+  struct pkginfo *pkg;
 
   set = pkg_db_find_set(name);
-  pkg = &set->pkg;
-  if (!arch || arch->type == arch_native || arch->type == arch_all ||
-      arch->type == arch_none) {
-    /* Must always use the first instance */
-    assert(pkg->installed.arch->type == arch_native ||
-           pkg->installed.arch->type == arch_all ||
-           pkg->installed.arch->type == arch_none);
-    return pkg;
-  }
-
-  /* Look into alternate instances for the wanted architecture */
-  pkgp = &pkg->arch_next;
-  while (*pkgp) {
-    if (!(*pkgp)->installed.arch) {
-      /* pkginfo is not differentiated, use it */
-      (*pkgp)->installed.arch = arch;
-      (*pkgp)->available.arch = arch;
-      return *pkgp;
-    }
-    if ((*pkgp)->installed.arch == arch)
-      return *pkgp;
-    pkgp = &(*pkgp)->arch_next;
-  }
-
-  /* Need to create a new instance for the wanted architecture */
-  pkg = nfmalloc(sizeof(struct pkginfo));
-  pkg_blank(pkg);
-  pkg->set = set;
-  pkg->installed.arch = arch;
-  pkg->available.arch = arch;
-  *pkgp = pkg;
-  npkg++;
+  pkg = pkg_db_get_pkg(set, arch);
 
   return pkg;
 }
@@ -188,7 +261,7 @@ pkg_db_count_pkg(void)
 }
 
 struct pkgiterator {
-  struct pkginfo *pigp;
+  struct pkginfo *pkg;
   int nbinn;
 };
 
@@ -202,11 +275,13 @@ struct pkgiterator {
 struct pkgiterator *
 pkg_db_iter_new(void)
 {
-  struct pkgiterator *i;
-  i= m_malloc(sizeof(struct pkgiterator));
-  i->pigp= NULL;
-  i->nbinn= 0;
-  return i;
+  struct pkgiterator *iter;
+
+  iter = m_malloc(sizeof(struct pkgiterator));
+  iter->pkg = NULL;
+  iter->nbinn = 0;
+
+  return iter;
 }
 
 /**
@@ -214,27 +289,28 @@ pkg_db_iter_new(void)
  *
  * If no further package set is available, it will return NULL.
  *
- * @name it The iterator.
+ * @name iter The iterator.
+ *
  * @return A package set.
  */
 struct pkgset *
-pkg_db_iter_next_set(struct pkgiterator *it)
+pkg_db_iter_next_set(struct pkgiterator *iter)
 {
   struct pkgset *set;
 
-  while (!it->pigp) {
-    if (it->nbinn >= BINS)
+  while (!iter->pkg) {
+    if (iter->nbinn >= BINS)
       return NULL;
-    if (bins[it->nbinn])
-      it->pigp = &bins[it->nbinn]->pkg;
-    it->nbinn++;
+    if (bins[iter->nbinn])
+      iter->pkg = &bins[iter->nbinn]->pkg;
+    iter->nbinn++;
   }
 
-  set = it->pigp->set;
+  set = iter->pkg->set;
   if (set->next)
-    it->pigp = &set->next->pkg;
+    iter->pkg = &set->next->pkg;
   else
-    it->pigp = NULL;
+    iter->pkg = NULL;
 
   return set;
 }
@@ -244,56 +320,59 @@ pkg_db_iter_next_set(struct pkgiterator *it)
  *
  * If no further package instance is available, it will return NULL. Note
  * that it will return all instances of a given package set in sequential
- * order. The first instance for a given package set will always
- * correspond to the native architecture even if that package is not
- * installed or available.
+ * order. The first instance for a given package set will always correspond
+ * to the native architecture even if that package is not installed or
+ * available.
  *
- * @name i The iterator.
+ * @name iter The iterator.
+ *
  * @return A package instance.
  */
 struct pkginfo *
-pkg_db_iter_next_pkg(struct pkgiterator *i)
+pkg_db_iter_next_pkg(struct pkgiterator *iter)
 {
   struct pkginfo *r;
 
-  while (!i->pigp) {
-    if (i->nbinn >= BINS) return NULL;
-    if (bins[i->nbinn])
-      i->pigp = &bins[i->nbinn]->pkg;
-    i->nbinn++;
+  while (!iter->pkg) {
+    if (iter->nbinn >= BINS)
+      return NULL;
+    if (bins[iter->nbinn])
+      iter->pkg = &bins[iter->nbinn]->pkg;
+    iter->nbinn++;
   }
 
-  r = i->pigp;
+  r = iter->pkg;
   if (r->arch_next)
-    i->pigp = r->arch_next;
+    iter->pkg = r->arch_next;
   else if (r->set->next)
-    i->pigp = &r->set->next->pkg;
+    iter->pkg = &r->set->next->pkg;
   else
-    i->pigp = NULL;
+    iter->pkg = NULL;
 
   return r;
 }
 
 /**
- * Free up the resources associated to the package iterator.
+ * Free the package database iterator.
  *
- * @name i The iterator.
+ * @name iter The iterator.
  */
 void
-pkg_db_iter_free(struct pkgiterator *i)
+pkg_db_iter_free(struct pkgiterator *iter)
 {
-  free(i);
+  free(iter);
 }
 
 void
 pkg_db_reset(void)
 {
   int i;
+
+  dpkg_arch_reset_list();
   nffreeall();
   nset = 0;
   npkg = 0;
   for (i=0; i<BINS; i++) bins[i]= NULL;
-  dpkg_arch_reset();
 }
 
 void
@@ -304,7 +383,8 @@ pkg_db_report(FILE *file)
   int *freq;
 
   freq = m_malloc(sizeof(int) * nset + 1);
-  for (i = 0; i <= nset; i++) freq[i]= 0;
+  for (i = 0; i <= nset; i++)
+    freq[i] = 0;
   for (i=0; i<BINS; i++) {
     for (c=0, pkg= bins[i]; pkg; c++, pkg= pkg->next);
     fprintf(file,"bin %5d has %7d\n",i,c);

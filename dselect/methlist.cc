@@ -16,7 +16,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
@@ -30,6 +30,7 @@
 #include <dpkg/i18n.h>
 #include <dpkg/dpkg.h>
 #include <dpkg/dpkg-db.h>
+#include <dpkg/string.h>
 
 #include "dselect.h"
 #include "bindings.h"
@@ -60,14 +61,9 @@ void methodlist::setwidths() {
   debug(dbg_general, "methodlist[%p]::setwidths()", this);
 
   status_width= 1;
-  gap_width= 1;
   name_width= 14;
   name_column= status_width + gap_width;
   description_column= name_column + name_width + gap_width;
-
-  total_width= TOTAL_LIST_WIDTH;
-  if (total_width < COLS)
-    total_width= COLS;
   description_width= total_width - description_column;
 }
 
@@ -93,10 +89,10 @@ void methodlist::redraw1itemsel(int index, int selected) {
   int i;
   const char *p;
 
-  wattrset(listpad, selected ? listsel_attr : list_attr);
+  wattrset(listpad, part_attr[selected ? listsel : list]);
   mvwaddch(listpad,index,0,
            table[index] == coption ? '*' : ' ');
-  wattrset(listpad, selected ? listsel_attr : list_attr);
+  wattrset(listpad, part_attr[selected ? listsel : list]);
   mvwprintw(listpad,index,name_column-1, " %-*.*s ",
             name_width, name_width, table[index]->name);
 
@@ -114,7 +110,7 @@ void methodlist::redraw1itemsel(int index, int selected) {
 
 void methodlist::redrawcolheads() {
   if (colheads_height) {
-    wattrset(colheadspad,colheads_attr);
+    wattrset(colheadspad, part_attr[colheads]);
     mywerase(colheadspad);
     mvwaddstr(colheadspad,0,0, "  ");
     mvwaddnstr(colheadspad,0,name_column, _("Abbrev."), name_width);
@@ -163,11 +159,13 @@ quitaction methodlist::display() {
     if (whatinfo_height) wcursyncup(whatinfowin);
     if (doupdate() == ERR) ohshite(_("doupdate failed"));
     signallist= this;
-    if (sigprocmask(SIG_UNBLOCK,&sigwinchset,0)) ohshite(_("failed to unblock SIGWINCH"));
+    if (sigprocmask(SIG_UNBLOCK, &sigwinchset, nullptr))
+      ohshite(_("failed to unblock SIGWINCH"));
     do
     response= getch();
     while (response == ERR && errno == EINTR);
-    if (sigprocmask(SIG_BLOCK,&sigwinchset,0)) ohshite(_("failed to re-block SIGWINCH"));
+    if (sigprocmask(SIG_BLOCK, &sigwinchset, nullptr))
+      ohshite(_("failed to re-block SIGWINCH"));
     if (response == ERR) ohshite(_("getch failed"));
     interp= (*bindings)(response);
     debug(dbg_general, "methodlist[%p]::display() response=%d interp=%s",
@@ -187,14 +185,15 @@ quitaction methodlist::display() {
 void methodlist::itd_description() {
   whatinfovb(_("Explanation"));
 
-  wattrset(infopad,info_headattr);
+  wattrset(infopad, part_attr[info_head]);
   waddstr(infopad, table[cursorline]->name);
   waddstr(infopad," - ");
   waddstr(infopad, table[cursorline]->summary);
-  wattrset(infopad,info_attr);
+  wattrset(infopad, part_attr[info]);
 
   const char *m= table[cursorline]->description;
-  if (!m || !*m) m= _("No explanation available.");
+  if (str_is_unset(m))
+    m = _("No explanation available.");
   waddstr(infopad,"\n\n");
   wordwrapinfo(0,m);
 }

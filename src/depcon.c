@@ -3,6 +3,7 @@
  * depcon.c - dependency and conflict checking
  *
  * Copyright © 1994,1995 Ian Jackson <ian@chiark.greenend.org.uk>
+ * Copyright © 2006-2011 Guillem Jover <guillem@debian.org>
  * Copyright © 2011 Linaro Limited
  * Copyright © 2011 Raphaël Hertzog <hertzog@debian.org>
  *
@@ -17,7 +18,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
@@ -28,14 +29,74 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <stdlib.h>
 #include <unistd.h>
 
 #include <dpkg/i18n.h>
 #include <dpkg/dpkg.h>
 #include <dpkg/dpkg-db.h>
 
+#include "filesdb.h"
 #include "infodb.h"
 #include "main.h"
+
+struct deppossi_pkg_iterator {
+  struct deppossi *possi;
+  struct pkginfo *pkg_next;
+  enum which_pkgbin which_pkgbin;
+};
+
+struct deppossi_pkg_iterator *
+deppossi_pkg_iter_new(struct deppossi *possi, enum which_pkgbin wpb)
+{
+  struct deppossi_pkg_iterator *iter;
+
+  iter = m_malloc(sizeof(*iter));
+  iter->possi = possi;
+  iter->pkg_next = &possi->ed->pkg;
+  iter->which_pkgbin = wpb;
+
+  return iter;
+}
+
+struct pkginfo *
+deppossi_pkg_iter_next(struct deppossi_pkg_iterator *iter)
+{
+  struct pkginfo *pkg_cur;
+  struct pkgbin *pkgbin;
+
+  while ((pkg_cur = iter->pkg_next)) {
+    iter->pkg_next = pkg_cur->arch_next;
+
+    switch (iter->which_pkgbin) {
+    case wpb_installed:
+      pkgbin = &pkg_cur->installed;
+      break;
+    case wpb_available:
+      pkgbin = &pkg_cur->available;
+      break;
+    case wpb_by_istobe:
+      if (pkg_cur->clientdata->istobe == itb_installnew)
+        pkgbin = &pkg_cur->available;
+      else
+        pkgbin = &pkg_cur->installed;
+      break;
+    default:
+      internerr("unknown which_pkgbin %d", iter->which_pkgbin);
+    }
+
+    if (archsatisfied(pkgbin, iter->possi))
+      return pkg_cur;
+  }
+
+  return NULL;
+}
+
+void
+deppossi_pkg_iter_free(struct deppossi_pkg_iterator *iter)
+{
+  free(iter);
+}
 
 struct cyclesofarlink {
   struct cyclesofarlink *prev;
@@ -85,7 +146,7 @@ foundcyclebroken(struct cyclesofarlink *thislink, struct cyclesofarlink *sofar,
   sol->possi->cyclebreak = true;
 
   debug(dbg_depcon, "cycle broken at %s -> %s",
-        pkg_describe(sol->possi->up->up, pdo_foreign), sol->possi->ed->name);
+        pkg_name(sol->possi->up->up, pnaw_always), sol->possi->ed->name);
 
   return true;
 }
@@ -113,11 +174,11 @@ findbreakcyclerecursive(struct pkginfo *pkg, struct cyclesofarlink *sofar)
 
     for (sol = sofar; sol; sol = sol->prev) {
       varbuf_add_str(&str_pkgs, " <- ");
-      varbuf_pkg(&str_pkgs, sol->pkg, pdo_foreign);
+      varbuf_add_pkgbin_name(&str_pkgs, sol->pkg, &sol->pkg->installed, pnaw_nonambig);
     }
     varbuf_end_str(&str_pkgs);
     debug(dbg_depcondetail, "findbreakcyclerecursive %s %s",
-          pkg_describe(pkg, pdo_foreign), str_pkgs.buf);
+          pkg_name(pkg, pnaw_always), str_pkgs.buf);
     varbuf_destroy(&str_pkgs);
   }
   thislink.pkg= pkg;
@@ -126,13 +187,20 @@ findbreakcyclerecursive(struct pkginfo *pkg, struct cyclesofarlink *sofar)
   for (dep= pkg->installed.depends; dep; dep= dep->next) {
     if (dep->type != dep_depends && dep->type != dep_predepends) continue;
     for (possi= dep->list; possi; possi= possi->next) {
+      struct deppossi_pkg_iterator *possi_iter;
+
       /* Don't find the same cycles again. */
       if (possi->cyclebreak) continue;
       thislink.possi= possi;
-      pkg_pos = NULL;
-      while ((pkg_pos = deppossi_get_pkg(possi, wpb_by_status, pkg_pos)))
-        if (foundcyclebroken(&thislink, sofar, pkg_pos, possi))
+
+      possi_iter = deppossi_pkg_iter_new(possi, wpb_installed);
+      while ((pkg_pos = deppossi_pkg_iter_next(possi_iter)))
+        if (foundcyclebroken(&thislink, sofar, pkg_pos, possi)) {
+          deppossi_pkg_iter_free(possi_iter);
           return true;
+        }
+      deppossi_pkg_iter_free(possi_iter);
+
       /* Right, now we try all the providers ... */
       for (providelink = possi->ed->depended.installed;
            providelink;
@@ -161,6 +229,7 @@ findbreakcycle(struct pkginfo *pkg)
   /* Clear the visited flag of all packages before we traverse them. */
   iter = pkg_db_iter_new();
   while ((tpkg = pkg_db_iter_next_pkg(iter))) {
+    ensure_package_clientdata(tpkg);
     tpkg->clientdata->color = white;
   }
   pkg_db_iter_free(iter);
@@ -201,7 +270,7 @@ void describedepcon(struct varbuf *addto, struct dependency *dep) {
   varbufdependency(&depstr, dep);
   varbuf_end_str(&depstr);
 
-  varbuf_printf(addto, fmt, pkg_describe(dep->up, pdo_foreign), depstr.buf);
+  varbuf_printf(addto, fmt, pkg_name(dep->up, pnaw_nonambig), depstr.buf);
   varbuf_destroy(&depstr);
 }
 
@@ -222,10 +291,16 @@ void describedepcon(struct varbuf *addto, struct dependency *dep) {
  * if removed (dep_conflicts) or deconfigured (dep_breaks) will fix
  * the problem. Caller may pass NULL for canfixbyremove and need not
  * initialize *canfixbyremove.
+ *
+ * On false return (‘not OK’), *canfixbytrigaw refers to a package which
+ * can fix the problem if all the packages listed in Triggers-Awaited have
+ * their triggers processed. Caller may pass NULL for canfixbytrigaw and
+ * need not initialize *canfixbytrigaw.
  */
 bool
 depisok(struct dependency *dep, struct varbuf *whynot,
-        struct pkginfo **canfixbyremove, bool allowunconfigd)
+        struct pkginfo **canfixbyremove, struct pkginfo **canfixbytrigaw,
+        bool allowunconfigd)
 {
   struct deppossi *possi;
   struct deppossi *provider;
@@ -245,6 +320,8 @@ depisok(struct dependency *dep, struct varbuf *whynot,
 
   if (canfixbyremove)
     *canfixbyremove = NULL;
+  if (canfixbytrigaw)
+    *canfixbytrigaw = NULL;
 
   /* The dependency is always OK if we're trying to remove the depend*ing*
    * package. */
@@ -286,33 +363,41 @@ depisok(struct dependency *dep, struct varbuf *whynot,
      * can return ‘false’. */
 
     for (possi= dep->list; possi; possi= possi->next) {
-      pkg_pos = NULL;
-      while ((pkg_pos = deppossi_get_pkg(possi, wpb_by_status, pkg_pos))) {
+      struct deppossi_pkg_iterator *possi_iter;
+
+      possi_iter = deppossi_pkg_iter_new(possi, wpb_by_istobe);
+      while ((pkg_pos = deppossi_pkg_iter_next(possi_iter))) {
         switch (pkg_pos->clientdata->istobe) {
         case itb_remove:
           sprintf(linebuf, _("  %.250s is to be removed.\n"),
-                  pkg_describe(pkg_pos, pdo_foreign));
+                  pkg_name(pkg_pos, pnaw_nonambig));
           break;
         case itb_deconfigure:
           sprintf(linebuf, _("  %.250s is to be deconfigured.\n"),
-                  pkg_describe(pkg_pos, pdo_foreign));
+                  pkg_name(pkg_pos, pnaw_nonambig));
           break;
         case itb_installnew:
-          if (versionsatisfied(&pkg_pos->available, possi))
+          if (versionsatisfied(&pkg_pos->available, possi)) {
+            deppossi_pkg_iter_free(possi_iter);
             return true;
+          }
           sprintf(linebuf, _("  %.250s is to be installed, but is version "
                              "%.250s.\n"),
-                  pkg_describe(pkg_pos, pdo_foreign | pdo_avail),
+                  pkgbin_name(pkg_pos, &pkg_pos->available, pnaw_nonambig),
                   versiondescribe(&pkg_pos->available.version, vdew_nonambig));
           break;
-        case itb_normal: case itb_preinstall:
+        case itb_normal:
+        case itb_preinstall:
           switch (pkg_pos->status) {
           case stat_installed:
           case stat_triggerspending:
-            if (versionsatisfied(&pkg_pos->installed, possi))
+            if (versionsatisfied(&pkg_pos->installed, possi)) {
+              deppossi_pkg_iter_free(possi_iter);
               return true;
+            }
             sprintf(linebuf, _("  %.250s is installed, but is version "
-                               "%.250s.\n"), pkg_describe(pkg_pos, pdo_foreign),
+                               "%.250s.\n"),
+                    pkg_name(pkg_pos, pnaw_nonambig),
                     versiondescribe(&pkg_pos->installed.version, vdew_nonambig));
             break;
           case stat_notinstalled:
@@ -321,37 +406,43 @@ depisok(struct dependency *dep, struct varbuf *whynot,
              * isn't and issue a diagnostic then. */
             *linebuf = '\0';
             break;
+          case stat_triggersawaited:
+              if (canfixbytrigaw && versionsatisfied(&pkg_pos->installed, possi))
+                *canfixbytrigaw = pkg_pos;
+              /* Fall through to have a chance to return OK due to
+               * allowunconfigd and to fill the explanation */
           case stat_unpacked:
           case stat_halfconfigured:
-          case stat_triggersawaited:
             if (allowunconfigd) {
-              if (!informativeversion(&pkg_pos->configversion)) {
+              if (!dpkg_version_is_informative(&pkg_pos->configversion)) {
                 sprintf(linebuf, _("  %.250s is unpacked, but has never been "
                                    "configured.\n"),
-                        pkg_describe(pkg_pos, pdo_foreign));
+                        pkg_name(pkg_pos, pnaw_nonambig));
                 break;
               } else if (!versionsatisfied(&pkg_pos->installed, possi)) {
                 sprintf(linebuf, _("  %.250s is unpacked, but is version "
                                    "%.250s.\n"),
-                        pkg_describe(pkg_pos, pdo_foreign),
-                        versiondescribe(&pkg_pos->available.version,
+                        pkg_name(pkg_pos, pnaw_nonambig),
+                        versiondescribe(&pkg_pos->installed.version,
                                         vdew_nonambig));
                 break;
-              } else if (!versionsatisfied3(&pkg_pos->configversion,
-                                            &possi->version, possi->verrel)) {
+              } else if (!dpkg_version_relate(&pkg_pos->configversion,
+                                              possi->verrel,
+                                              &possi->version)) {
                 sprintf(linebuf, _("  %.250s latest configured version is "
                                    "%.250s.\n"),
-                        pkg_describe(pkg_pos, pdo_foreign),
+                        pkg_name(pkg_pos, pnaw_nonambig),
                         versiondescribe(&pkg_pos->configversion, vdew_nonambig));
                 break;
               } else {
+                deppossi_pkg_iter_free(possi_iter);
                 return true;
               }
             }
             /* Fall through. */
           default:
             sprintf(linebuf, _("  %.250s is %s.\n"),
-                    pkg_describe(pkg_pos, pdo_foreign),
+                    pkg_name(pkg_pos, pnaw_nonambig),
                     gettext(statusstrings[pkg_pos->status]));
             break;
           }
@@ -361,9 +452,10 @@ depisok(struct dependency *dep, struct varbuf *whynot,
         }
         varbuf_add_str(whynot, linebuf);
       }
+      deppossi_pkg_iter_free(possi_iter);
 
       /* If there was no version specified we try looking for Providers. */
-      if (possi->verrel == dvr_none) {
+      if (possi->verrel == dpkg_relation_none) {
         /* See if the package we're about to install Provides it. */
         for (provider = possi->ed->depended.available;
              provider;
@@ -387,22 +479,23 @@ depisok(struct dependency *dep, struct varbuf *whynot,
              * information above. */
             continue;
           case itb_remove:
-            sprintf(linebuf, _("  %.250s provides %.250s but is to be "
-                               "removed.\n"),
-                    pkg_describe(provider->up->up, pdo_foreign),
+            sprintf(linebuf, _("  %.250s provides %.250s but is to be removed.\n"),
+                    pkg_name(provider->up->up, pnaw_nonambig),
                     possi->ed->name);
             break;
           case itb_deconfigure:
-            sprintf(linebuf, _("  %.250s provides %.250s but is to be "
-                               "deconfigured.\n"),
-                    pkg_describe(provider->up->up, pdo_foreign),
+            sprintf(linebuf, _("  %.250s provides %.250s but is to be deconfigured.\n"),
+                    pkg_name(provider->up->up, pnaw_nonambig),
                     possi->ed->name);
             break;
           case itb_normal: case itb_preinstall:
-            if (provider->up->up->status == stat_installed)
+            if (provider->up->up->status == stat_installed ||
+                provider->up->up->status == stat_triggerspending)
               return true;
+            if (provider->up->up->status == stat_triggersawaited)
+              *canfixbytrigaw = provider->up->up;
             sprintf(linebuf, _("  %.250s provides %.250s but is %s.\n"),
-                    pkg_describe(provider->up->up, pdo_foreign),
+                    pkg_name(provider->up->up, pnaw_nonambig),
                     possi->ed->name,
                     gettext(statusstrings[provider->up->up->status]));
             break;
@@ -434,13 +527,15 @@ depisok(struct dependency *dep, struct varbuf *whynot,
     nconflicts= 0;
 
     if (possi->ed != possi->up->up->set) {
+      struct deppossi_pkg_iterator *possi_iter;
+
       /* If the package conflicts with or breaks itself it must mean
        * other packages which provide the same virtual name. We
        * therefore don't look at the real package and go on to the
        * virtual ones. */
 
-      pkg_pos = NULL;
-      while ((pkg_pos = deppossi_get_pkg(possi, wpb_by_status, pkg_pos))) {
+      possi_iter = deppossi_pkg_iter_new(possi, wpb_by_istobe);
+      while ((pkg_pos = deppossi_pkg_iter_next(possi_iter))) {
         switch (pkg_pos->clientdata->istobe) {
         case itb_remove:
           break;
@@ -448,11 +543,13 @@ depisok(struct dependency *dep, struct varbuf *whynot,
           if (!versionsatisfied(&pkg_pos->available, possi))
             break;
           sprintf(linebuf, _("  %.250s (version %.250s) is to be installed.\n"),
-                  pkg_describe(pkg_pos, pdo_foreign | pdo_avail),
+                  pkgbin_name(pkg_pos, &pkg_pos->available, pnaw_nonambig),
                   versiondescribe(&pkg_pos->available.version, vdew_nonambig));
           varbuf_add_str(whynot, linebuf);
-          if (!canfixbyremove)
+          if (!canfixbyremove) {
+            deppossi_pkg_iter_free(possi_iter);
             return false;
+          }
           nconflicts++;
           *canfixbyremove = pkg_pos;
           break;
@@ -477,12 +574,14 @@ depisok(struct dependency *dep, struct varbuf *whynot,
             if (!versionsatisfied(&pkg_pos->installed, possi))
               break;
             sprintf(linebuf, _("  %.250s (version %.250s) is present and %s.\n"),
-                    pkg_describe(pkg_pos, pdo_foreign),
+                    pkg_name(pkg_pos, pnaw_nonambig),
                     versiondescribe(&pkg_pos->installed.version, vdew_nonambig),
                     gettext(statusstrings[pkg_pos->status]));
             varbuf_add_str(whynot, linebuf);
-            if (!canfixbyremove)
+            if (!canfixbyremove) {
+              deppossi_pkg_iter_free(possi_iter);
               return false;
+            }
             nconflicts++;
             *canfixbyremove = pkg_pos;
           }
@@ -491,10 +590,11 @@ depisok(struct dependency *dep, struct varbuf *whynot,
           internerr("unknown istobe conflict '%d'", pkg_pos->clientdata->istobe);
         }
       }
+      deppossi_pkg_iter_free(possi_iter);
     }
 
     /* If there was no version specified we try looking for Providers. */
-    if (possi->verrel == dvr_none) {
+    if (possi->verrel == dpkg_relation_none) {
       /* See if the package we're about to install Provides it. */
       for (provider = possi->ed->depended.available;
            provider;
@@ -504,7 +604,8 @@ depisok(struct dependency *dep, struct varbuf *whynot,
         if (provider->up->up->set == dep->up->set)
           continue; /* Conflicts and provides the same. */
         sprintf(linebuf, _("  %.250s provides %.250s and is to be installed.\n"),
-                pkg_describe(provider->up->up, pdo_foreign), possi->ed->name);
+                pkgbin_name(provider->up->up, &provider->up->up->available,
+                            pnaw_nonambig), possi->ed->name);
         varbuf_add_str(whynot, linebuf);
         /* We can't remove the one we're about to install: */
         if (canfixbyremove)
@@ -546,7 +647,7 @@ depisok(struct dependency *dep, struct varbuf *whynot,
           case stat_triggersawaited:
             sprintf(linebuf,
                     _("  %.250s provides %.250s and is present and %s.\n"),
-                    pkg_describe(provider->up->up, pdo_foreign), possi->ed->name,
+                    pkg_name(provider->up->up, pnaw_nonambig), possi->ed->name,
                     gettext(statusstrings[provider->up->up->status]));
             varbuf_add_str(whynot, linebuf);
             if (!canfixbyremove)
@@ -570,38 +671,4 @@ depisok(struct dependency *dep, struct varbuf *whynot,
     return false;
 
   } /* if (dependency) {...} else {...} */
-}
-
-struct pkginfo *
-deppossi_get_pkg(struct deppossi *possi, enum what_pkgbin wpb,
-                 struct pkginfo *startpkg)
-{
-  struct pkginfo *next;
-  struct pkgbin *pkgbin;
-
-  next = startpkg ? startpkg->arch_next : &possi->ed->pkg;
-
-  while (next) {
-    switch (wpb) {
-    case wpb_installed:
-      pkgbin = &next->installed;
-      break;
-    case wpb_available:
-      pkgbin = &next->available;
-      break;
-    case wpb_by_status:
-      if (next->clientdata->istobe == itb_installnew)
-        pkgbin = &next->available;
-      else
-        pkgbin = &next->installed;
-      break;
-    default:
-      internerr("bad value (%d) for wpb param in deppossi_get_pkg()", wpb);
-    }
-    if (archsatisfied(pkgbin, possi))
-      return next;
-    next = next->arch_next;
-  }
-
-  return NULL;
 }

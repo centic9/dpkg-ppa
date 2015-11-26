@@ -12,7 +12,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 =encoding utf8
 
@@ -36,7 +36,7 @@ package Dpkg::Changelog;
 use strict;
 use warnings;
 
-our $VERSION = "1.00";
+our $VERSION = '1.00';
 
 use Dpkg;
 use Dpkg::Gettext;
@@ -48,7 +48,7 @@ use Dpkg::Index;
 use Dpkg::Version;
 use Dpkg::Vendor qw(run_vendor_hook);
 
-use base qw(Dpkg::Interface::Storable);
+use parent qw(Dpkg::Interface::Storable);
 
 use overload
     '@{}' => sub { return $_[0]->{data} };
@@ -86,7 +86,7 @@ whether parse errors are displayed as warnings by default. "reportfile"
 is a string to use instead of the name of the file parsed, in particular
 in error messages. "range" defines the range of entries that we want to
 parse, the parser will stop as soon as it has parsed enough data to
-satisfy $c->get_range($opts{'range'}).
+satisfy $c->get_range($opts{range}).
 
 =cut
 
@@ -97,7 +97,7 @@ sub set_options {
 
 =item $c->reset_parse_errors()
 
-Can be used to delete all information about errors ocurred during
+Can be used to delete all information about errors occurred during
 previous L<parse> runs.
 
 =cut
@@ -107,10 +107,10 @@ sub reset_parse_errors {
     $self->{parse_errors} = [];
 }
 
-=item $c->parse_error($line_nr, $error, [$line])
+=item $c->parse_error($file, $line_nr, $error, [$line])
 
-Record a new parse error at line $line_nr. The error message is specified
-with $error and a copy of the line can be recorded in $line.
+Record a new parse error in $file at line $line_nr. The error message is
+specified with $error and a copy of the line can be recorded in $line.
 
 =cut
 
@@ -165,12 +165,12 @@ sub get_parse_errors {
     if (wantarray) {
 	return @{$self->{parse_errors}};
     } else {
-	my $res = "";
+	my $res = '';
 	foreach my $e (@{$self->{parse_errors}}) {
 	    if ($e->[3]) {
 		$res .= report(_g('warning'),_g("%s(l%s): %s\nLINE: %s"), @$e );
 	    } else {
-		$res .= report(_g('warning'),_g("%s(l%s): %s"), @$e );
+		$res .= report(_g('warning'), _g('%s(l%s): %s'), @$e);
 	    }
 	}
 	return $res;
@@ -191,12 +191,12 @@ entries. Returns undef if there's no such thing.
 
 sub set_unparsed_tail {
     my ($self, $tail) = @_;
-    $self->{'unparsed_tail'} = $tail;
+    $self->{unparsed_tail} = $tail;
 }
 
 sub get_unparsed_tail {
     my ($self) = @_;
-    return $self->{'unparsed_tail'};
+    return $self->{unparsed_tail};
 }
 
 =item @{$c}
@@ -222,23 +222,24 @@ sub __sanity_check_range {
 	delete $r->{offset};
     }
 
+    ## no critic (ControlStructures::ProhibitUntilBlocks)
     if ((defined($r->{count}) || defined($r->{offset})) &&
         (defined($r->{from}) || defined($r->{since}) ||
-	 defined($r->{to}) || defined($r->{'until'})))
+	 defined($r->{to}) || defined($r->{until})))
     {
 	warning(_g("you can't combine 'count' or 'offset' with any other " .
-		   "range option")) if $self->{verbose};
+		   'range option')) if $self->{verbose};
 	delete $r->{from};
 	delete $r->{since};
 	delete $r->{to};
-	delete $r->{'until'};
+	delete $r->{until};
     }
     if (defined($r->{from}) && defined($r->{since})) {
 	warning(_g("you can only specify one of 'from' and 'since', using " .
 		   "'since'")) if $self->{verbose};
 	delete $r->{from};
     }
-    if (defined($r->{to}) && defined($r->{'until'})) {
+    if (defined($r->{to}) && defined($r->{until})) {
 	warning(_g("you can only specify one of 'to' and 'until', using " .
 		   "'until'")) if $self->{verbose};
 	delete $r->{to};
@@ -251,8 +252,8 @@ sub __sanity_check_range {
         push @versions, $entry->get_version()->as_string();
     }
     if ((defined($r->{since}) and not exists $versions{$r->{since}})) {
-        warning(_g("'%s' option specifies non-existing version"), "since");
-        warning(_g("use newest entry that is earlier than the one specified"));
+        warning(_g("'%s' option specifies non-existing version"), 'since');
+        warning(_g('use newest entry that is earlier than the one specified'));
         foreach my $v (@versions) {
             if (version_compare_relation($v, REL_LT, $r->{since})) {
                 $r->{since} = $v;
@@ -261,14 +262,14 @@ sub __sanity_check_range {
         }
         if (not exists $versions{$r->{since}}) {
             # No version was earlier, include all
-            warning(_g("none found, starting from the oldest entry"));
+            warning(_g('none found, starting from the oldest entry'));
             delete $r->{since};
             $r->{from} = $versions[-1];
         }
     }
     if ((defined($r->{from}) and not exists $versions{$r->{from}})) {
-        warning(_g("'%s' option specifies non-existing version"), "from");
-        warning(_g("use oldest entry that is later than the one specified"));
+        warning(_g("'%s' option specifies non-existing version"), 'from');
+        warning(_g('use oldest entry that is later than the one specified'));
         my $oldest;
         foreach my $v (@versions) {
             if (version_compare_relation($v, REL_GT, $r->{from})) {
@@ -278,29 +279,29 @@ sub __sanity_check_range {
         if (defined($oldest)) {
             $r->{from} = $oldest;
         } else {
-            warning(_g("no such entry found, ignoring '%s' parameter"), "from");
+            warning(_g("no such entry found, ignoring '%s' parameter"), 'from');
             delete $r->{from}; # No version was oldest
         }
     }
-    if (defined($r->{'until'}) and not exists $versions{$r->{'until'}}) {
-        warning(_g("'%s' option specifies non-existing version"), "until");
-        warning(_g("use oldest entry that is later than the one specified"));
+    if (defined($r->{until}) and not exists $versions{$r->{until}}) {
+        warning(_g("'%s' option specifies non-existing version"), 'until');
+        warning(_g('use oldest entry that is later than the one specified'));
         my $oldest;
         foreach my $v (@versions) {
-            if (version_compare_relation($v, REL_GT, $r->{'until'})) {
+            if (version_compare_relation($v, REL_GT, $r->{until})) {
                 $oldest = $v;
             }
         }
         if (defined($oldest)) {
-            $r->{'until'} = $oldest;
+            $r->{until} = $oldest;
         } else {
-            warning(_g("no such entry found, ignoring '%s' parameter"), "until");
-            delete $r->{'until'}; # No version was oldest
+            warning(_g("no such entry found, ignoring '%s' parameter"), 'until');
+            delete $r->{until}; # No version was oldest
         }
     }
     if (defined($r->{to}) and not exists $versions{$r->{to}}) {
-        warning(_g("'%s' option specifies non-existing version"), "to");
-        warning(_g("use newest entry that is earlier than the one specified"));
+        warning(_g("'%s' option specifies non-existing version"), 'to');
+        warning(_g('use newest entry that is earlier than the one specified'));
         foreach my $v (@versions) {
             if (version_compare_relation($v, REL_LT, $r->{to})) {
                 $r->{to} = $v;
@@ -309,7 +310,7 @@ sub __sanity_check_range {
         }
         if (not exists $versions{$r->{to}}) {
             # No version was earlier
-            warning(_g("no such entry found, ignoring '%s' parameter"), "to");
+            warning(_g("no such entry found, ignoring '%s' parameter"), 'to');
             delete $r->{to};
         }
     }
@@ -318,35 +319,44 @@ sub __sanity_check_range {
 	warning(_g("'since' option specifies most recent version, ignoring"));
 	delete $r->{since};
     }
-    if (defined($r->{'until'}) and $data->[-1]->get_version() eq $r->{'until'}) {
+    if (defined($r->{until}) and $data->[-1]->get_version() eq $r->{until}) {
 	warning(_g("'until' option specifies oldest version, ignoring"));
-	delete $r->{'until'};
+	delete $r->{until};
     }
+    ## use critic
 }
 
 sub get_range {
     my ($self, $range) = @_;
-    $range = {} unless defined $range;
+    $range //= {};
     my $res = $self->_data_range($range);
     if (defined $res) {
 	return @$res if wantarray;
 	return $res;
     } else {
-	return () if wantarray;
-	return undef;
+	return;
     }
+}
+
+sub _is_full_range {
+    my ($self, $range) = @_;
+
+    return 1 if $range->{all};
+
+    # If no range delimiter is specified, we want everything.
+    foreach (qw(since until from to count offset)) {
+        return 0 if exists $range->{$_};
+    }
+
+    return 1;
 }
 
 sub _data_range {
     my ($self, $range) = @_;
 
-    my $data = $self->{data} or return undef;
+    my $data = $self->{data} or return;
 
-    return [ @$data ] if $range->{all};
-
-    unless (grep { m/^(since|until|from|to|count|offset)$/ } keys %$range) {
-	return [ @$data ];
-    }
+    return [ @$data ] if $self->_is_full_range($range);
 
     $self->__sanity_check_range($range);
 
@@ -374,9 +384,10 @@ sub _data_range {
 	return [ @{$data}[$start .. $end] ];
     }
 
+    ## no critic (ControlStructures::ProhibitUntilBlocks)
     my @result;
     my $include = 1;
-    $include = 0 if defined($range->{to}) or defined($range->{'until'});
+    $include = 0 if defined($range->{to}) or defined($range->{until});
     foreach (@$data) {
 	my $v = $_->get_version();
 	$include = 1 if defined($range->{to}) and $v eq $range->{to};
@@ -384,12 +395,13 @@ sub _data_range {
 
 	push @result, $_ if $include;
 
-	$include = 1 if defined($range->{'until'}) and $v eq $range->{'until'};
+	$include = 1 if defined($range->{until}) and $v eq $range->{until};
 	last if defined($range->{from}) and $v eq $range->{from};
     }
+    ## use critic
 
     return \@result if scalar(@result);
-    return undef;
+    return;
 }
 
 =item $c->abort_early()
@@ -407,8 +419,7 @@ sub abort_early {
     my $count = $r->{count} || 0;
     my $offset = $r->{offset} || 0;
 
-    return if $r->{all};
-    return unless grep { m/^(since|until|from|to|count|offset)$/ } keys %$r;
+    return if $self->_is_full_range($r);
     return if $offset < 0 or $count < 0;
     if (defined($r->{count})) {
 	if ($offset > 0) {
@@ -448,15 +459,15 @@ Output the changelog to the given filehandle.
 
 sub output {
     my ($self, $fh) = @_;
-    my $str = "";
+    my $str = '';
     foreach my $entry (@{$self}) {
 	my $text = $entry->output();
-	print $fh $text if defined $fh;
+	print { $fh } $text if defined $fh;
 	$str .= $text if defined wantarray;
     }
     my $text = $self->get_unparsed_tail();
     if (defined $text) {
-	print $fh $text if defined $fh;
+	print { $fh } $text if defined $fh;
 	$str .= $text if defined wantarray;
     }
     return $str;
@@ -518,21 +529,20 @@ BEGIN {
 sub dpkg {
     my ($self, $range) = @_;
 
-    my @data = $self->get_range($range) or return undef;
-    my $entry = shift @data;
+    my @data = $self->get_range($range) or return;
+    my $src = shift @data;
 
     my $f = Dpkg::Control::Changelog->new();
-    $f->{Urgency} = $entry->get_urgency() || "unknown";
-    $f->{Source} = $entry->get_source() || "unknown";
-    $f->{Version} = $entry->get_version();
-    $f->{Version} = "unknown" unless defined $f->{Version};
-    $f->{Distribution} = join(" ", $entry->get_distributions());
-    $f->{Maintainer} = $entry->get_maintainer() || '';
-    $f->{Date} = $entry->get_timestamp() || '';
-    $f->{Changes} = $entry->get_dpkg_changes();
+    $f->{Urgency} = $src->get_urgency() || 'unknown';
+    $f->{Source} = $src->get_source() || 'unknown';
+    $f->{Version} = $src->get_version() // 'unknown';
+    $f->{Distribution} = join(' ', $src->get_distributions());
+    $f->{Maintainer} = $src->get_maintainer() || '';
+    $f->{Date} = $src->get_timestamp() || '';
+    $f->{Changes} = $src->get_dpkg_changes();
 
     # handle optional fields
-    my $opts = $entry->get_optional_fields();
+    my $opts = $src->get_optional_fields();
     my %closes;
     foreach (keys %$opts) {
 	if (/^Urgency$/i) { # Already dealt
@@ -543,16 +553,16 @@ sub dpkg {
 	}
     }
 
-    foreach $entry (@data) {
+    foreach my $bin (@data) {
 	my $oldurg = $f->{Urgency} || '';
 	my $oldurgn = $URGENCIES{$f->{Urgency}} || -1;
-	my $newurg = $entry->get_urgency() || '';
+	my $newurg = $bin->get_urgency() || '';
 	my $newurgn = $URGENCIES{$newurg} || -1;
 	$f->{Urgency} = ($newurgn > $oldurgn) ? $newurg : $oldurg;
-	$f->{Changes} .= "\n" . $entry->get_dpkg_changes();
+	$f->{Changes} .= "\n" . $bin->get_dpkg_changes();
 
 	# handle optional fields
-	$opts = $entry->get_optional_fields();
+	$opts = $bin->get_optional_fields();
 	foreach (keys %$opts) {
 	    if (/^Closes$/i) {
 		$closes{$_} = 1 foreach (split(/\s+/, $opts->{Closes}));
@@ -563,9 +573,9 @@ sub dpkg {
     }
 
     if (scalar keys %closes) {
-	$f->{Closes} = join " ", sort { $a <=> $b } keys %closes;
+	$f->{Closes} = join ' ', sort { $a <=> $b } keys %closes;
     }
-    run_vendor_hook("post-process-changelog-entry", $f);
+    run_vendor_hook('post-process-changelog-entry', $f);
 
     return $f;
 }
@@ -583,18 +593,17 @@ the remarks about which values are taken from the first entry).
 sub rfc822 {
     my ($self, $range) = @_;
 
-    my @data = $self->get_range($range) or return undef;
+    my @data = $self->get_range($range) or return;
     my $index = Dpkg::Index->new(type => CTRL_CHANGELOG);
 
     foreach my $entry (@data) {
 	my $f = Dpkg::Control::Changelog->new();
-	$f->{Urgency} = $entry->get_urgency() || "unknown";
-	$f->{Source} = $entry->get_source() || "unknown";
-	$f->{Version} = $entry->get_version();
-	$f->{Version} = "unknown" unless defined $f->{Version};
-	$f->{Distribution} = join(" ", $entry->get_distributions());
-	$f->{Maintainer} = $entry->get_maintainer() || "";
-	$f->{Date} = $entry->get_timestamp() || "";
+	$f->{Urgency} = $entry->get_urgency() || 'unknown';
+	$f->{Source} = $entry->get_source() || 'unknown';
+	$f->{Version} = $entry->get_version() // 'unknown';
+	$f->{Distribution} = join(' ', $entry->get_distributions());
+	$f->{Maintainer} = $entry->get_maintainer() || '';
+	$f->{Date} = $entry->get_timestamp() || '';
 	$f->{Changes} = $entry->get_dpkg_changes();
 
 	# handle optional fields
@@ -603,7 +612,7 @@ sub rfc822 {
 	    field_transfer_single($opts, $f) unless exists $f->{$_};
 	}
 
-        run_vendor_hook("post-process-changelog-entry", $f);
+        run_vendor_hook('post-process-changelog-entry', $f);
 
 	$index->add($f);
     }
