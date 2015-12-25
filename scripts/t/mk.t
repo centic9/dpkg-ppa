@@ -31,7 +31,7 @@ my $datadir = "$srcdir/t/mk";
 $ENV{$_} = rel2abs($ENV{$_}) foreach qw(srcdir DPKG_DATADIR DPKG_ORIGINS_DIR);
 
 # Delete variables that can affect the tests.
-delete $ENV{DEB_VENDOR};
+delete $ENV{$_} foreach grep { m/^DEB_/ } keys %ENV;
 
 sub test_makefile {
     my $makefile = shift;
@@ -41,25 +41,24 @@ sub test_makefile {
     ok($? == 0, "makefile $makefile computes all values correctly");
 }
 
-sub get_arch_vars {
-    my $prefix = shift // '';
-    my %arch;
+sub cmd_get_vars {
+    my (@cmd) = @_;
+    my %var;
 
-    open my $arch_env, '-|', "$srcdir/dpkg-architecture.pl", '-f'
-        or subprocerr('dpkg-architecture');
-    while (<$arch_env>) {
+    open my $cmd_fh, '-|', @cmd or subprocerr($cmd[0]);
+    while (<$cmd_fh>) {
         chomp;
         my ($key, $value) = split /=/, $_, 2;
-        $arch{$key} = $value;
+        $var{$key} = $value;
     }
-    close $arch_env or subprocerr('dpkg-architecture');
+    close $cmd_fh or subprocerr($cmd[0]);
 
-    return %arch;
+    return %var;
 }
 
 # Test makefiles.
 
-my %arch = get_arch_vars();
+my %arch = cmd_get_vars("$srcdir/dpkg-architecture.pl", '-f');
 
 delete $ENV{$_} foreach keys %arch;
 $ENV{"TEST_$_"} = $arch{$_} foreach keys %arch;
@@ -67,6 +66,10 @@ test_makefile('architecture.mk');
 $ENV{$_} = $arch{$_} foreach keys %arch;
 test_makefile('architecture.mk');
 
+my %buildflag = cmd_get_vars("$srcdir/dpkg-buildflags.pl");
+
+delete $ENV{$_} foreach keys %buildflag;
+$ENV{"TEST_$_"} = $buildflag{$_} foreach keys %buildflag;
 test_makefile('buildflags.mk');
 
 test_makefile('pkg-info.mk');

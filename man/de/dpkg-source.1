@@ -1,6 +1,6 @@
 .\" dpkg manual page - dpkg-source(1)
 .\"
-.\" Copyright Â© 1995-1996 Ian Jackson <ian@chiark.chu.cam.ac.uk>
+.\" Copyright Â© 1995-1996 Ian Jackson <ijackson@chiark.greenend.org.uk>
 .\" Copyright Â© 2000 Wichert Akkerman <wakkerma@debian.org>
 .\" Copyright Â© 2006-2007 Frank Lichtenheld <djpig@debian.org>
 .\" Copyright Â© 2006-2015 Guillem Jover <guillem@debian.org>
@@ -78,7 +78,7 @@ Bau verwandten Quellpaketformat könnten zusätzliche Parameter akzeptiert
 werden.
 
 \fBdpkg\-source\fP wird das Quellpaket mit dem ersten gefundenen Format aus der
-folgenden geordneten Liste bauen: dem mit der Kommandozeilenoption(en)
+folgenden geordneten Liste bauen: dem mit der Befehlszeilenoption(en)
 \fI\-\-format\fP angegeben Format, dem in \fBdebian/source/format\fP angegebenen
 Format, \(lq1.0\(rq. Die Rückfalloption \(lq1.0\(rq ist veraltet und wird
 irgendwann in der Zukunft entfernt werden, Sie sollten das gewünschte
@@ -160,10 +160,10 @@ Datei gelesen. Diese Option kann mehrfach verwandt werden, um
 Substitutionsvariablen aus mehreren Dateien einzulesen (seit Dpkg 1.15.6).
 .TP 
 \fB\-D\fP\fIFeld\fP\fB=\fP\fIWert\fP
-Überschreibe oder ergänze ein Ausgabe\-Steuerdatei\-Feld.
+Überschreibe oder ergänze ein Ausgabesteuerdateifeld.
 .TP 
 \fB\-U\fP\fIfield\fP
-Entferne ein Ausgabe\-Steuerdatei\-Feld.
+Entferne ein Ausgabesteuerdateifeld.
 .TP 
 \fB\-Z\fP\fIKomprimierung\fP, \fB\-\-compression\fP=\fIKomprimierung\fP
 Gibt die Komprimierung an, die für die angelegten Tarbälle und Diff\-Dateien

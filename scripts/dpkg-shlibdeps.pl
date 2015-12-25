@@ -672,6 +672,19 @@ sub split_soname {
 
 sub extract_from_shlibs {
     my ($soname, $shlibfile) = @_;
+
+    my $shlibs_re = qr{
+        ^\s*
+        (?:(\S+):\s+)?              # Optional type
+        (\S+)\s+                    # Library
+        (\S+)                       # Version
+        (?:
+          \s+
+          (\S.*\S)                  # Dependencies
+        )?
+        \s*$
+    }x;
+
     # Split soname in name/version
     my ($libname, $libversion) = split_soname($soname);
     unless (defined $libname) {
@@ -686,7 +699,7 @@ sub extract_from_shlibs {
     while (<$shlibs_fh>) {
 	s/\s*\n$//;
 	next if m/^\#/;
-	if (!m/^\s*(?:(\S+):\s+)?(\S+)\s+(\S+)(?:\s+(\S.*\S))?\s*$/) {
+	if (!m/$shlibs_re/) {
 	    warning(g_("shared libs info file '%s' line %d: bad line '%s'"),
 	            $shlibfile, $., $_);
 	    next;

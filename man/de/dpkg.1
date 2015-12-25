@@ -7,7 +7,7 @@
 .\" Copyright Â© 2002 Josip Rodin
 .\" Copyright Â© 2004-2005 Scott James Remnant <keybuk@debian.org>
 .\" Copyright Â© 2006-2015 Guillem Jover <guillem@debian.org>
-.\" Copyright Â© 2007-2008 Ian Jackson <ian@davenant.greenend.org.uk>
+.\" Copyright Â© 2007-2008 Ian Jackson <ijackson@chiark.greenend.org.uk>
 .\" Copyright Â© 2008-2011 RaphaÃ«l Hertzog <hertzog@debian.org>
 .\"
 .\" This is free software; you can redistribute it and/or modify
@@ -36,7 +36,7 @@ dpkg \- Paketverwalter für Debian
 \fBdpkg\fP [\fIOption\fP ?] \fIAktionen\fP
 .
 .SH WARNUNG
-Dieses Handbuch ist für Benutzer gedacht, die die Kommandozeilenoptionen und
+Dieses Handbuch ist für Benutzer gedacht, die die Befehlszeilenoptionen und
 Paketzustände von \fBdpkg\fP detaillierter verstehen wollen, als durch \fBdpkg
 \-\-help\fP beschrieben ist.
 
@@ -48,7 +48,7 @@ besonders unzulänglich.
 .SH BESCHREIBUNG
 \fBdpkg\fP ist ein Werkzeug, um Debian\-Pakete zu installieren, zu bauen und zu
 verwalten. Die primäre und benutzerfreundlichere Oberfläche für \fBdpkg\fP ist
-\fBaptitude\fP(1). \fBdpkg\fP selbst wird komplett über Kommandozeilenoptionen
+\fBaptitude\fP(1). \fBdpkg\fP selbst wird komplett über Befehlszeilenoptionen
 gesteuert, die aus genau einer Aktion und Null oder mehreren Optionen
 bestehen. Der Aktionsparameter teilt \fBdpkg\fP mit, was zu tun ist, und die
 Optionen steuern die Aktionen in irgendeiner Weise.
@@ -126,7 +126,7 @@ ist, muss sich \fIPaketdatei\fP stattdessen auf ein Verzeichnis beziehen.
 Die Installation besteht aus folgenden Schritten:
 .br
 
-\fB1.\fP Extrahiere die Steuerdateien aus dem neuen Paket.
+\fB1.\fP Extrahiere die control\-Dateien aus dem neuen Paket.
 .br
 
 \fB2.\fP Falls eine andere Version des gleichen Pakets vor der der neuen
@@ -183,7 +183,7 @@ dieser Option kann Pakete in die unzulässigen Stati \fBtriggers\-awaited\fP und
 \fBtriggers\-pending\fP bringen. Durch die Ausführung von »\fBdpkg \-\-configure
 \-\-pending\fP« kann dies später behoben werden.
 .TP 
-\fB\-r\fP, \fB\-\-remove\fP \fIPaket\fP\fB?|\-a|\-\-pending\fP
+\fB\-r\fP, \fB\-\-remove\fP \fIPaket\fP \fB?|\-a|\-\-pending\fP
 Entfernt ein installiertes Paket. Dies entfernt alles außer Conffiles, da
 damit eine erneute Konfiguration des Paketes vermieden wird, falls es später
 nochmals installiert wird. Conffiles sind Konfigurationsdateien, die in der
@@ -205,7 +205,7 @@ Entfernung eines Paketes besteht aus den folgenden Schritten:
 .br
 
 .TP 
-\fB\-P\fP, \fB\-\-purge \fP\fIPaket\fP?|\fB\-a\fP|\fB\-\-pending\fP
+\fB\-P\fP, \fB\-\-purge \fP\fIPaket\fP ?|\fB\-a\fP|\fB\-\-pending\fP
 Löscht ein installiertes oder bereits entferntes Paket vollständig. Damit
 wird alles entfernt, auch Conffiles. Falls statt des Paketnamens \fB\-a\fP oder
 \fB\-\-pending\fP angegeben wird, werden alle Pakete, die entpackt oder entfernt,
@@ -240,10 +240,11 @@ Dateimetadateninformationen in der Datenbank ist das Binärpaket
 selbst. Diese Metadaten werden zum Zeitpunkt des Entpackens während des
 Installationsprozesses gesammelt.
 
-Derzeit ist die einzige funktionale Prüfung eine Md5sum\-Überprüfung gegen
-den gespeicherten Wert in der Datei\-Datenbank. Er wird nur geprüft, falls
-die Datenbank die Md5sum der Datei enthält. Um auf fehlende Metadaten in der
-Datenbank zu prüfen, kann der Befehl \fB\-\-audit\fP verwandt werden.
+Derzeit ist die einzige funktionale Prüfung eine Md5sum\-Überprüfung der
+Dateiinhalte mit den gespeicherten Wert in der Datei\-Datenbank. Er wird nur
+geprüft, falls die Datenbank die Md5sum der Datei enthält. Um auf fehlende
+Metadaten in der Datenbank zu prüfen, kann der Befehl \fB\-\-audit\fP verwandt
+werden.
 
 Das Ausgabeformat kann mit der Option \fB\-\-verify\-format\fP ausgewählt
 werden. Standardmäßig wird das Format \fBrpm\fP verwandt. Das kann sich in der
@@ -318,7 +319,7 @@ Liste von \fB\-\-set\-selections\fP vorkommt, zu deinstallieren.
 Sucht nach Paketen, die zur Installation ausgewählt wurden, die aber aus
 irgendeinem Grund noch nicht installiert wurden.
 .TP 
-\fB\-\-predep\-packages\fP
+\fB\-\-predep\-package\fP
 Gibt ein einzelnes Paket aus, das das Ziel einer oder mehrere relevanter
 Vorabhängigkeiten ist und selbst keine unerfüllten Vorabhängigkeiten hat.
 .IP
@@ -405,7 +406,7 @@ Zeige eine kurze Hilfenachricht an.
 Gebe Hilfe über die \fB\-\-force\-\fP\fISache\fP\-Optionen aus.
 .TP 
 \fB\-Dh\fP, \fB\-\-debug=help\fP
-Gebe Hilfe über Debugging\-Optionen aus.
+Gibt Hilfe über Fehlersuchoptionen aus.
 .TP 
 \fB\-\-version\fP
 Zeige \fBdpkg\fP Versionsinformationen an.
@@ -455,7 +456,7 @@ Aktionen.
 .fi
 .
 .SH OPTIONEN
-Alle Optionen können auf der Kommandozeile, in der
+Alle Optionen können auf der Befehlszeile, in der
 \fBdpkg\fP\-Konfigurationsdatei \fI/etc/dpkg/dpkg.cfg\fP oder Fragementdateien (mit
 Namen, die auf das Shell\-Muster \(aq[0\-9a\-zA\-Z_\-]*\(aq passen) in den
 Dateien im Konfigurationsverzeichnis \fI/etc/dpkg/dpkg.cfg.d/\fP angegeben
@@ -475,10 +476,10 @@ Option führt zur automatischen Dekonfiguration des Paketes, das von dem
 entfernten Paket abhängt.
 .TP 
 \fB\-D\fP\fIOktal\fP\fB, \-\-debug=\fP\fIOktal\fP
-Schalte Debugging ein. \fIOktal\fP wird durch bitweise Oder\-Verknüpfung der
+Schalte Fehlersuche ein. \fIOktal\fP wird durch bitweise Oder\-Verknüpfung der
 gewünschten Werte von der nachfolgenden Liste gebildet (beachten Sie, dass
 sich diese Werte in zukünftigen Veröffentlichungen verändern können). \fB\-Dh\fP
-oder \fB\-\-debug=help\fP zeigen diese Debugging\-Werte an.
+oder \fB\-\-debug=help\fP zeigen diese Fehlersuchwerte an.
 
   Nummer  Beschreibung
       1   Allgemein hilfreiche Fortschrittsinformationen
@@ -731,10 +732,11 @@ Zeile für jeden Pfad, der bei der Prüfung fehlschlug. Die Zeilen starten mit
 \(oq\fB?\fP\(cq impliziert, dass die Prüfung nicht durchgeführt werden konnte
 (keine Unterstützung dafür, Dateirechte usw.). \(oq\fB.\fP\(cq impliziert, dass
 die Prüfung erfolgreich durchgeführt wurde und ein alphanumerisches Zeichen
-impliziert, dass eine angegebene Prüfung fehlschlug. Die Md5sum\-Überprüfung
-wird durch ein \(oq\fB5\fP\(cq als drittes Zeichen angezeigt. Der Zeile folgt
-ein Leerzeichen und ein Attributszeichen (derzeit \(oq\fBc\fP\(cq für
-Conffiles), ein weiteres Leerzeichen und der Pfadnmae.
+impliziert, dass eine angegebene Prüfung fehlschlug. Der
+Md5sum\-Überprüfungsfehlschlag (die Dateiinhalte haben sich geändert) wird
+durch ein \(oq\fB5\fP\(cq als drittes Zeichen angezeigt. Der Zeile folgt ein
+Leerzeichen und ein Attributszeichen (derzeit \(oq\fBc\fP\(cq für Conffiles),
+ein weiteres Leerzeichen und der Pfadnmae.
 .TP 
 \fB\-\-status\-fd \fP\fIn\fP
 Schicke maschinenlesbare Paketstatus\- und Fortschrittsinformationen an den
@@ -801,6 +803,7 @@ später behoben werden.
 Annulliert ein vorheriges \fB\-\-no\-triggers\fP (seit Dpkg 1.14.17).
 .
 .SH UMGEBUNG
+.SS "External environment"
 .TP 
 \fBPATH\fP
 Es wird erwartet, dass diese Variable in der Umgebung gesetzt ist und auf
@@ -826,6 +829,7 @@ Shell startet.
 \fBCOLUMNS\fP
 Setzt die Anzahl von Spalten die \fBdpkg\fP verwenden soll, wenn es
 formatierten Text anzeigt. Derzeit nur von \-l verwendet.
+.SS "Internal environment"
 .TP 
 \fBDPKG_SHELL_REASON\fP
 Wird von \fBdpkg\fP auf der Shell, die von der Conffile\-Eingabeaufforderung
@@ -869,6 +873,12 @@ gesetzt, für die das Paket gebaut wurde (seit Dpkg 1.15.4).
 Wird von \fBdpkg\fP für die Betreuer\-Skript\-Umgebung auf den Namen des
 laufenden Skripts, eines von \fBpreinst\fP, \fBpostinst\fP, \fBprerm\fP oder
 \fBpostrm\fP (seit Dpkg 1.15.7).
+.TP 
+\fBDPKG_MAINTSCRIPT_DEBUG\fP
+Wird von \fBdpkg\fP für die Betreuer\-Skript\-Umgebung auf einen Wert
+(\(oq\fB0\fP\(cq oder \(oq\fB1\fP\(cq) gesetzt, der angibt, ob die Fehlersuche
+(mit der Option \fB\-\-debug\fP) für die Betreuerskripte angefordert wurde (seit
+Dpkg 1.18.4).
 .
 .SH DATEIEN
 .TP 
@@ -942,8 +952,8 @@ Um ein installiertes Elvis\-Paket zu entfernen:
 .br
 
 Um ein Paket zu installieren, müssen Sie es erst in einem Archiv oder auf
-einer CD\-ROM finden. Die Datei \fIavailable\fP zeigt, dass das vim\-Paket im
-Bereich \fBeditors\fP ist:
+einer CD\-ROM finden. Die Datei \fIavailable\fP zeigt, dass das vim\-Paket in der
+Sektion \fBeditors\fP ist:
 .br
      \fBcd /media/cdrom/pool/main/v/vim\fP
      \fBdpkg \-i vim_4.5\-3.deb\fP

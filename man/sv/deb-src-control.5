@@ -130,14 +130,16 @@ värden finns i den senaste versionen av paketet \fBdebian\-policy\fP.
 
 .TP 
 \fBBuild\-Depends:\fP\fI paketlista\fP
-En lista över paket som måste installeras och konfigureras för att kunna
-bygga källkodspaketet. Ett beroende som beskrivs i den här listan har samma
-effekt som att inkludera det i både \fBBuild\-Depends\-Arch\fP och
-\fBBuild\-Depends\-Indep\fP, med den ytterligare effekten att den används för
-byggen av endast källkod.
-
+A list of packages that need to be installed and configured to be able to
+build from source package.  These dependencies need to be satisfied when
+building binary architecture dependent or independent packages and source
+packages.  Including a dependency in this field does not have the exact same
+effect as including it in both \fBBuild\-Depends\-Arch\fP and
+\fBBuild\-Depends\-Indep\fP, because the dependency also needs to be satisfied
+when building the source package.
+.
 .TP 
-\fBBuild\-Depends\-Arch:\fP\fI paketlista\fP
+\fBBuild\-Depends\-Arch:\fP\fI package\-list\fP
 Motsvarar \fBBuild\-Depends\fP, men de behövs endast för att bygga de
 arkitekturoberoende paketen. \fBBuild\-Depends\fP installeras också i detta
 fall. Det här fältet stöds sedan dpkg 1.16.4; för att bygga med äldre
@@ -150,7 +152,7 @@ arkitekturoberoende paketen. \fBBuild\-Depends\fP installeras också i detta
 fall.
 
 .TP 
-\fBBuild\-Conflicts:\fP\fI paketlista\fP
+\fBBuild\-Conflicts:\fP\fI package\-list\fP
 En lista över paket som inte bör vara installerade när paketet byggs, till
 exempel på grund av att de stör byggsystemet som används. Ett beroende som
 beskrivs i den här listan har samma effekt som att inkludera det i både
@@ -158,7 +160,7 @@ beskrivs i den här listan har samma effekt som att inkludera det i både
 effekten att den används för byggen av endast källkod.
 
 .TP 
-\fBBuild\-Conflicts\-Arch:\fP\fI paketlista\fP
+\fBBuild\-Conflicts\-Arch:\fP\fI package\-list\fP
 Motsvarar \fBBuild\-Conflicts\fP, men endast när arkitekturoberoende paket
 byggs. Fältet stöds sedan dpkg 1.16.4; för att bygga med äldre versioner av
 dpkg bör \fBBuild\-Conflicts\fP användas istället.
@@ -260,6 +262,8 @@ Dessa fält används av debian\-installer och behövs normalt inte. Se
 
 .TP 
 \fBEssential:\fP \fByes\fP|\fBno\fP
+.TQ
+\fBBuild\-Essential:\fP \fByes\fP|\fBno\fP
 .TQ
 \fBMulti\-Arch:\fP \fBsame\fP|\fBforeign\fP|\fBallowed\fP|\fBno\fP
 .TQ

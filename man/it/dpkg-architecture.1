@@ -105,10 +105,7 @@ Imposta l'architettura host Debian.
 Imposta il tipo di sistema GNU ospite.
 .TP 
 \fB\-A\fP, \fB\-\-target\-arch\fP \fIarchitettura\fP
-Set the target Debian architecture (since dpkg 1.17.14).  This is only
-needed when building a cross\-toolchain, one that will be built on the build
-architecture, to be run on the host architecture, and to build code for the
-target architecture.
+Set the target Debian architecture (since dpkg 1.17.14).
 .TP 
 \fB\-T\fP, \fB\-\-target\-type\fP \fItipo\-sistema\-gnu\fP
 Set the target GNU system type (since dpkg 1.17.14).
@@ -139,7 +136,9 @@ La macchina usata per creare il pacchetto.
 .IP "macchina ospite" 4
 La macchina per cui è compilato il pacchetto.
 .IP "macchina di destinazione" 4
-La macchina per cui compila il compilatore.
+The machine the compiler is building for.  This is only needed when building
+a cross\-toolchain, one that will be built on the build architecture, to be
+run on the host architecture, and to build code for the target architecture.
 .IP "architettura Debian" 4
 La stringa dell'architettura Debian che specifica l'albero binario
 nell'archivio FTP. Esempi: i386, sparc, hurd\-i386.

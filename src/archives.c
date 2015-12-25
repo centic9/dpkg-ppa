@@ -2,7 +2,7 @@
  * dpkg - main program for package management
  * archives.c - actions that process archive files, mainly unpack
  *
- * Copyright © 1994,1995 Ian Jackson <ian@chiark.greenend.org.uk>
+ * Copyright © 1994,1995 Ian Jackson <ijackson@chiark.greenend.org.uk>
  * Copyright © 2000 Wichert Akkerman <wakkerma@debian.org>
  * Copyright © 2007-2015 Guillem Jover <guillem@debian.org>
  * Copyright © 2011 Linaro Limited
@@ -268,7 +268,7 @@ tarobject_skip_entry(struct tarcontext *tc, struct tar_entry *ti)
   }
 }
 
-int fnameidlu;
+struct varbuf_state fname_state;
 struct varbuf fnamevb;
 struct varbuf fnametmpvb;
 struct varbuf fnamenewvb;
@@ -549,16 +549,16 @@ tarobject_matches(struct tarcontext *tc,
 }
 
 void setupfnamevbs(const char *filename) {
-  varbuf_trunc(&fnamevb, fnameidlu);
+  varbuf_rollback(&fnamevb, &fname_state);
   varbuf_add_str(&fnamevb, filename);
   varbuf_end_str(&fnamevb);
 
-  varbuf_trunc(&fnametmpvb, fnameidlu);
+  varbuf_rollback(&fnametmpvb, &fname_state);
   varbuf_add_str(&fnametmpvb, filename);
   varbuf_add_str(&fnametmpvb, DPKGTEMPEXT);
   varbuf_end_str(&fnametmpvb);
 
-  varbuf_trunc(&fnamenewvb, fnameidlu);
+  varbuf_rollback(&fnamenewvb, &fname_state);
   varbuf_add_str(&fnamenewvb, filename);
   varbuf_add_str(&fnamenewvb, DPKGNEWEXT);
   varbuf_end_str(&fnamenewvb);
@@ -1463,10 +1463,7 @@ archivefiles(const char *const *argv)
 
       for (ap = argv; *ap; ap++) {
         if (strchr(FIND_EXPRSTARTCHARS,(*ap)[0])) {
-          char *a;
-
-          m_asprintf(&a, "./%s", *ap);
-          command_add_arg(&cmd, a);
+          command_add_arg(&cmd, str_fmt("./%s", *ap));
         } else {
           command_add_arg(&cmd, (const char *)*ap);
         }
@@ -1519,7 +1516,8 @@ archivefiles(const char *const *argv)
   varbuf_add_str(&fnamevb, instdir);
   varbuf_add_str(&fnametmpvb, instdir);
   varbuf_add_str(&fnamenewvb, instdir);
-  fnameidlu= fnamevb.used;
+
+  varbuf_snapshot(&fnamevb, &fname_state);
 
   ensure_diversions();
   ensure_statoverrides(STATDB_PARSE_NORMAL);

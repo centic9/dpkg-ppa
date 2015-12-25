@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dpkg-man 1.17.0\n"
 "Report-Msgid-Bugs-To: debian-dpkg@lists.debian.org\n"
-"POT-Creation-Date: 2015-08-04 20:59+0200\n"
+"POT-Creation-Date: 2015-12-25 13:29+0100\n"
 "PO-Revision-Date: 2015-04-18 18:11+0200\n"
 "Last-Translator: Sébastien Poher <sbphr@volted.net>\n"
 "Language-Team: French <debian-l10n-french@lists.debian.org>\n"
@@ -397,15 +397,17 @@ msgstr ""
 
 #. type: SH
 #: deb-control.5 deb-origin.5
-#, no-wrap
-msgid "REQUIRED FIELDS"
-msgstr "CHAMPS REQUIS"
+#, fuzzy, no-wrap
+#| msgid "SOURCE FIELDS"
+msgid "FIELDS"
+msgstr "LES CHAMPS SOURCE"
 
 #. type: TP
 #: deb-control.5
-#, no-wrap
-msgid "B<Package:>I< package-name>"
-msgstr "B<Package:>I< nom-du-paquet>"
+#, fuzzy, no-wrap
+#| msgid "B<Package:> I<binary-package-name> (required)"
+msgid "B<Package:> I<package-name> (required)"
+msgstr "B<Package:> I<nom-du-paquet-binaire> (requis)"
 
 #. type: Plain text
 #: deb-control.5
@@ -418,8 +420,9 @@ msgstr ""
 
 #. type: TP
 #: deb-control.5
-#, no-wrap
-msgid "B<Version:>I< version-string>"
+#, fuzzy, no-wrap
+#| msgid "B<Version:>I< version-string>"
+msgid "B<Version:> I<version-string> (required)"
 msgstr "B<Version:>I< chaîne-de-la-version>"
 
 #. type: Plain text
@@ -436,10 +439,10 @@ msgstr ""
 "l'algorithme de tri sont décrits dans B<deb-version>(5)."
 
 #. type: TP
-#: deb-control.5
+#: deb-control.5 deb-src-control.5
 #, no-wrap
-msgid "B<Maintainer:>I< fullname-email>"
-msgstr "B<Maintainer:>I< nom-complet-et-adresse-électronique>"
+msgid "B<Maintainer:> I<fullname-email> (required)"
+msgstr "B<Maintainer:> I<nom complet et adresse électronique> (requis)"
 
 #. type: Plain text
 #: deb-control.5
@@ -457,11 +460,11 @@ msgstr ""
 "c'est bien sûr le créateur du paquet, par opposition à l'auteur du programme "
 "mis en paquet."
 
-#. type: TP
-#: deb-control.5
+#. type: TQ
+#: deb-control.5 deb-src-control.5
 #, no-wrap
-msgid "B<Description:>I< short-description>"
-msgstr "B<Description:>I< description-courte>"
+msgid "B<Description:> I<short-description> (required)"
+msgstr "B<Description:> I<description courte> (requis)"
 
 #. type: TQ
 #: deb-control.5
@@ -490,12 +493,6 @@ msgstr ""
 "à une description plus longue et plus détaillée. Chaque ligne de cette "
 "description longue doit être précédée d'une espace ; quand c'est une ligne "
 "blanche, elle doit contenir un seul « . » après cette espace."
-
-#. type: SH
-#: deb-control.5 deb-origin.5
-#, no-wrap
-msgid "OPTIONAL FIELDS"
-msgstr "CHAMPS OPTIONNELS"
 
 #. type: TP
 #: deb-control.5 deb-src-control.5
@@ -571,6 +568,21 @@ msgstr ""
 "système. Dpkg et les autres outils d'installation interdisent la suppression "
 "d'un paquet B<Essential> (du moins tant qu'une des options de forçage n'est "
 "pas utilisée)."
+
+#. type: TQ
+#: deb-control.5 deb-src-control.5
+#, fuzzy, no-wrap
+#| msgid "B<Essential:> B<yes>|B<no>"
+msgid "B<Build-Essential:> B<yes>|B<no>"
+msgstr "B<Essential:> B<yes>|B<no>"
+
+#. type: Plain text
+#: deb-control.5
+msgid ""
+"This field is usually only needed when the answer is B<yes>, and is commonly "
+"injected by the archive software.  It denotes a package that is required "
+"when building other packages."
+msgstr ""
 
 #. type: TP
 #: deb-control.5
@@ -1250,12 +1262,6 @@ msgstr ""
 "doivent comporter au moins deux caractères et doivent commencer par un "
 "caractère alphanumérique."
 
-#. type: TP
-#: deb-src-control.5
-#, no-wrap
-msgid "B<Maintainer:> I<fullname-email> (required)"
-msgstr "B<Maintainer:> I<nom complet et adresse électronique> (requis)"
-
 #. type: Plain text
 #: deb-src-control.5
 #, fuzzy
@@ -1421,11 +1427,21 @@ msgstr "B<Build-Depends:>I< liste-de-paquets>"
 
 #. type: Plain text
 #: deb-src-control.5
+#, fuzzy
+#| msgid ""
+#| "A list of packages that need to be installed and configured to be able to "
+#| "build the source package. Including a dependency in this list has the "
+#| "same effect as including it in both B<Build-Depends-Arch> and B<Build-"
+#| "Depends-Indep>, with the additional effect of being used for source-only "
+#| "builds."
 msgid ""
 "A list of packages that need to be installed and configured to be able to "
-"build the source package. Including a dependency in this list has the same "
+"build from source package.  These dependencies need to be satisfied when "
+"building binary architecture dependent or independent packages and source "
+"packages.  Including a dependency in this field does not have the exact same "
 "effect as including it in both B<Build-Depends-Arch> and B<Build-Depends-"
-"Indep>, with the additional effect of being used for source-only builds."
+"Indep>, because the dependency also needs to be satisfied when building the "
+"source package."
 msgstr ""
 "Liste de paquets à installer et configurer pour pouvoir construire le paquet "
 "source. Si une dépendance est ajoutée à cette liste, l'effet sera le même "
@@ -1435,8 +1451,9 @@ msgstr ""
 
 #. type: TP
 #: deb-src-control.5
-#, no-wrap
-msgid "B<Build-Depends-Arch:>I< package list>"
+#, fuzzy, no-wrap
+#| msgid "B<Build-Depends-Arch:>I< package list>"
+msgid "B<Build-Depends-Arch:>I< package-list>"
 msgstr "B<Build-Depends-Arch:>I<liste-de-paquets>"
 
 #. type: Plain text
@@ -1473,8 +1490,9 @@ msgstr ""
 
 #. type: TP
 #: deb-src-control.5
-#, no-wrap
-msgid "B<Build-Conflicts:>I< package list>"
+#, fuzzy, no-wrap
+#| msgid "B<Build-Conflicts:>I< package list>"
+msgid "B<Build-Conflicts:>I< package-list>"
 msgstr "B<Build-Conflicts:>I< liste de paquets>"
 
 #. type: Plain text
@@ -1495,8 +1513,9 @@ msgstr ""
 
 #. type: TP
 #: deb-src-control.5
-#, no-wrap
-msgid "B<Build-Conflicts-Arch:>I< package list>"
+#, fuzzy, no-wrap
+#| msgid "B<Build-Conflicts-Arch:>I< package list>"
+msgid "B<Build-Conflicts-Arch:>I< package-list>"
 msgstr "B<Build-Conflicts-Arch:>I< liste de paquets>"
 
 #. type: Plain text
@@ -1737,12 +1756,6 @@ msgstr ""
 "les paquets à taille contrôlée utilisés par l'installateur Debian. La valeur "
 "« deb » est la valeur par défaut qui est utilisée si le champ n'est pas "
 "présent. De nouveaux types pourraient être ajoutés au fil du temps."
-
-#. type: TQ
-#: deb-src-control.5
-#, no-wrap
-msgid "B<Description:> I<short-description> (required)"
-msgstr "B<Description:> I<description courte> (requis)"
 
 #. type: Plain text
 #: deb-src-control.5
@@ -2534,8 +2547,9 @@ msgstr ""
 
 #. type: TP
 #: deb-origin.5
-#, no-wrap
-msgid "B<Vendor:>I< vendor-name>"
+#, fuzzy, no-wrap
+#| msgid "B<Vendor:>I< vendor-name>"
+msgid "B<Vendor:> I<vendor-name> (required)"
 msgstr "B<Vendor:>I< distributeur>"
 
 #. type: Plain text
@@ -4348,11 +4362,17 @@ msgstr ""
 
 #. type: Plain text
 #: dpkg.1
+#, fuzzy
+#| msgid ""
+#| "Currently the only functional check performed is an md5sum verification "
+#| "against the stored value in the files database. It will only get checked "
+#| "if the database contains the file md5sum. To check for any missing "
+#| "metadata in the database, the B<--audit> command can be used."
 msgid ""
-"Currently the only functional check performed is an md5sum verification "
-"against the stored value in the files database. It will only get checked if "
-"the database contains the file md5sum. To check for any missing metadata in "
-"the database, the B<--audit> command can be used."
+"Currently the only functional check performed is an md5sum verification of "
+"the file contents against the stored value in the files database.  It will "
+"only get checked if the database contains the file md5sum. To check for any "
+"missing metadata in the database, the B<--audit> command can be used."
 msgstr ""
 "Actuellement la seule vérification fonctionnelle effectuée est une "
 "comparaison des sommes de contrôle MD5 des fichiers par rapport aux valeurs "
@@ -4597,7 +4617,7 @@ msgstr ""
 #: dpkg.1
 #, fuzzy, no-wrap
 #| msgid "B<-p>I<package>"
-msgid "B<--predep-packages>"
+msgid "B<--predep-package>"
 msgstr "B<-p>I<paquet>"
 
 #. type: Plain text
@@ -5819,10 +5839,10 @@ msgid ""
 "characters to report each specific check result, a \\(oqB<?>\\(cq implies "
 "the check could not be done (lack of support, file permissions, etc), "
 "\\(oqB<.>\\(cq implies the check passed, and an alphanumeric character "
-"implies a specific check failed; the md5sum verification is denoted with a "
-"\\(oqB<5>\\(cq on the third character.  The line is followed by a space and "
-"an attribute character (currently \\(oqB<c>\\(cq for conffiles), another "
-"space and the pathname."
+"implies a specific check failed; the md5sum verification failure (the file "
+"contents have changed) is denoted with a \\(oqB<5>\\(cq on the third "
+"character.  The line is followed by a space and an attribute character "
+"(currently \\(oqB<c>\\(cq for conffiles), another space and the pathname."
 msgstr ""
 "Le seul format de sortie géré actuellement est B<rpm>, qui consiste en une "
 "ligne par chemin dont la vérification a échoué. Les lignes débutent par 9 "
@@ -6043,6 +6063,12 @@ msgstr "Annule un précédent B<--no-triggers>."
 msgid "ENVIRONMENT"
 msgstr "ENVIRONNEMENT"
 
+#. type: SS
+#: dpkg.1
+#, no-wrap
+msgid "External environment"
+msgstr ""
+
 #. type: TP
 #: dpkg.1
 #, fuzzy, no-wrap
@@ -6130,6 +6156,12 @@ msgid ""
 msgstr ""
 "Fixe le nombre de colonnes utilisées par B<dpkg> lorsqu'il affiche un texte "
 "formaté. Seule l'action B<-l> se sert actuellement de cette variable."
+
+#. type: SS
+#: dpkg.1
+#, no-wrap
+msgid "Internal environment"
+msgstr ""
 
 #. type: TP
 #: dpkg.1
@@ -6314,6 +6346,28 @@ msgstr ""
 "Définie par B<dpkg> dans l'environnement du script du responsable, cette "
 "variable contient le nom du script en cours d'exécution (preinst, postinst, "
 "prerm, postrm)."
+
+#. type: TP
+#: dpkg.1
+#, fuzzy, no-wrap
+#| msgid "B<DPKG_MAINTSCRIPT_NAME>"
+msgid "B<DPKG_MAINTSCRIPT_DEBUG>"
+msgstr "B<DPKG_MAINTSCRIPT_NAME>"
+
+#. type: Plain text
+#: dpkg.1
+#, fuzzy
+#| msgid ""
+#| "Defined by B<dpkg> on the maintainer script environment to the version of "
+#| "the currently running B<dpkg> instance."
+msgid ""
+"Defined by B<dpkg> on the maintainer script environment to a value (\\(oqB<0>"
+"\\(cq or \\(oqB<1>\\(cq) noting whether debugging has been requested (with "
+"the B<--debug> option) for the maintainer scripts (since dpkg 1.18.4)."
+msgstr ""
+"Cette variable est définie par B<dpkg> dans l'environnement du script du "
+"responsable. Elle contient la version de l'instance de B<dpkg> en cours "
+"d'exécution."
 
 #. type: Plain text
 #: dpkg.1 dpkg.cfg.5
@@ -6901,21 +6955,9 @@ msgstr "B<-A>, B<--target-arch> I<architecture>"
 #. type: Plain text
 #: dpkg-architecture.1
 #, fuzzy
-#| msgid ""
-#| "Set the target Debian architecture. This is only needed when building a "
-#| "cross-toolchain, one that will be built on the build architecture, to be "
-#| "run on the host architecture, and to build code for the target "
-#| "architecture."
-msgid ""
-"Set the target Debian architecture (since dpkg 1.17.14).  This is only "
-"needed when building a cross-toolchain, one that will be built on the build "
-"architecture, to be run on the host architecture, and to build code for the "
-"target architecture."
-msgstr ""
-"Définit l'architecture Debian cible. Cela est nécessaire uniquement lors de "
-"la construction d'une chaîne d'outils de compilation croisée qui sera "
-"construite sur l'architecture de construction, pour être exécutée sur "
-"l'architecture hôte, afin de construire du code pour l'architecture cible."
+#| msgid "Set the target GNU system type."
+msgid "Set the target Debian architecture (since dpkg 1.17.14)."
+msgstr "Définit le type de système GNU de la cible."
 
 #. type: TP
 #: dpkg-architecture.1
@@ -7042,8 +7084,21 @@ msgstr "Machine cible"
 
 #. type: Plain text
 #: dpkg-architecture.1
-msgid "The machine the compiler is building for."
-msgstr "Machine pour laquelle le compilateur est construit."
+#, fuzzy
+#| msgid ""
+#| "Set the target Debian architecture. This is only needed when building a "
+#| "cross-toolchain, one that will be built on the build architecture, to be "
+#| "run on the host architecture, and to build code for the target "
+#| "architecture."
+msgid ""
+"The machine the compiler is building for.  This is only needed when building "
+"a cross-toolchain, one that will be built on the build architecture, to be "
+"run on the host architecture, and to build code for the target architecture."
+msgstr ""
+"Définit l'architecture Debian cible. Cela est nécessaire uniquement lors de "
+"la construction d'une chaîne d'outils de compilation croisée qui sera "
+"construite sur l'architecture de construction, pour être exécutée sur "
+"l'architecture hôte, afin de construire du code pour l'architecture cible."
 
 #. type: IP
 #: dpkg-architecture.1
@@ -8914,7 +8969,7 @@ msgstr "B<timeless>"
 #| "This will cause warnings when the B<__TIME__>, B<__DATE__> and "
 #| "B<__TIMESTAMP__> macros are used."
 msgid ""
-"This setting (disabled by default) adds B<-Wdate-time> to B<CPPFLAGS>.  This "
+"This setting (enabled by default) adds B<-Wdate-time> to B<CPPFLAGS>.  This "
 "will cause warnings when the B<__TIME__>, B<__DATE__> and B<\\"
 "%__TIMESTAMP__> macros are used."
 msgstr ""
@@ -9940,9 +9995,14 @@ msgstr "B<-nc>"
 
 #. type: Plain text
 #: dpkg-buildpackage.1
+#, fuzzy
+#| msgid ""
+#| "Do not clean the source tree (implies B<-b> if nothing else has been "
+#| "selected among B<-F>, B<-g>, B<-G>, B<-B>, B<-A> or B<-S>)."
 msgid ""
-"Do not clean the source tree (implies B<-b> if nothing else has been "
-"selected among B<-F>, B<-g>, B<-G>, B<-B>, B<-A> or B<-S>)."
+"Do not clean the source tree.  Implies B<-b> if nothing else has been "
+"selected among B<-F>, B<-g>, B<-G>, B<-B>, B<-A> or B<-S>.  Implies B<-d> "
+"with B<-S> (since dpkg 1.18.0)."
 msgstr ""
 "Pas de nettoyage de l'arborescence des sources (implique B<-b> si aucune des "
 "options B<-F>, B<-g>, B<-G>, B<-B>, B<-A> ou B<-S> n'est utilisée)."
@@ -15909,9 +15969,10 @@ msgstr "B<binary:Package>"
 #| "with a value of B<same>. This makes the package name unambiguous."
 msgid ""
 "It contains the binary package name with a possible architecture qualifier "
-"like \\(lqlibc6:amd64\\(rq (since dpkg 1.16.2).  The architecture qualifier "
-"will only be present if the package has a B<Multi-Arch> field with a value "
-"of B<same>.  This makes the package name unambiguous."
+"like \\(lqlibc6:amd64\\(rq (since dpkg 1.16.2).  An architecture qualifier "
+"will be present to make the package name unambiguous, for example if the "
+"package has a B<Multi-Arch> field with a value of B<same> or the package is "
+"of a foreign architecture."
 msgstr ""
 "Contient le nom du paquet binaire avec éventuellement le type d'architecture "
 "tel que « libc6:amd64 » (depuis dpkg 1.16.2). Le type d'architecture sera "
@@ -23232,12 +23293,19 @@ msgstr "B<--display> I<nom>"
 
 #. type: Plain text
 #: update-alternatives.1
+#, fuzzy
+#| msgid ""
+#| "Display information about the link group.  Information displayed includes "
+#| "the group's mode (auto or manual), which alternative the master link "
+#| "currently points to, what other alternatives are available (and their "
+#| "corresponding slave alternatives), and the highest priority alternative "
+#| "currently installed."
 msgid ""
 "Display information about the link group.  Information displayed includes "
-"the group's mode (auto or manual), which alternative the master link "
-"currently points to, what other alternatives are available (and their "
-"corresponding slave alternatives), and the highest priority alternative "
-"currently installed."
+"the group's mode (auto or manual), the master and slave links, which "
+"alternative the master link currently points to, what other alternatives are "
+"available (and their corresponding slave alternatives), and the highest "
+"priority alternative currently installed."
 msgstr ""
 "Affiche des renseignements sur le groupe de liens. L'information affichée "
 "comprend le mode du groupe (auto ou manuel), vers quelle alternative le lien "
@@ -23780,6 +23848,24 @@ msgstr "B<update-alternatives --auto vi>"
 #: update-alternatives.1
 msgid "B<ln>(1), FHS, the Filesystem Hierarchy Standard."
 msgstr "B<ln>(1), FHS, le standard pour l'organisation du système de fichiers."
+
+#~ msgid "The machine the compiler is building for."
+#~ msgstr "Machine pour laquelle le compilateur est construit."
+
+#~ msgid "REQUIRED FIELDS"
+#~ msgstr "CHAMPS REQUIS"
+
+#~ msgid "B<Package:>I< package-name>"
+#~ msgstr "B<Package:>I< nom-du-paquet>"
+
+#~ msgid "B<Maintainer:>I< fullname-email>"
+#~ msgstr "B<Maintainer:>I< nom-complet-et-adresse-électronique>"
+
+#~ msgid "B<Description:>I< short-description>"
+#~ msgstr "B<Description:>I< description-courte>"
+
+#~ msgid "OPTIONAL FIELDS"
+#~ msgstr "CHAMPS OPTIONNELS"
 
 #~ msgid "Quality Assurance (QA)"
 #~ msgstr "Assurance Qualité « AQ »"
@@ -24660,10 +24746,12 @@ msgstr "B<ln>(1), FHS, le standard pour l'organisation du système de fichiers."
 
 #~ msgid ""
 #~ "Marek Michalkiewicz E<lt>marekm@i17linuxb.ists.pwr.wroc.plE<gt> based on "
-#~ "a previous version by Ian Jackson E<lt>ian@chiark.greenend.org.ukE<gt>."
+#~ "a previous version by Ian Jackson E<lt>ijackson@chiark.greenend.org."
+#~ "ukE<gt>."
 #~ msgstr ""
 #~ "Marek Michalkiewicz E<lt>marekm@i17linuxb.ists.pwr.wroc.plE<gt> à partir "
-#~ "d'une version faite par Ian Jackson E<lt>ian@chiark.greenend.org.ukE<gt>."
+#~ "d'une version faite par Ian Jackson E<lt>ijackson@chiark.greenend.org."
+#~ "ukE<gt>."
 
 #~ msgid ""
 #~ "Manual page by Klee Dienes E<lt>klee@mit.eduE<gt>, partially reformatted "

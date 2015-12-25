@@ -250,10 +250,11 @@ für Felder in Steuerdateien benutzen):
 .RS
 .TP 
 \fBbinary:Package\fP
-Es enthält den Binärpaketnamen mit einem möglichen Architektur\-Kennzeichner
-wie \(lqlibc6:amd64\(rq (seit Dpkg 1.16.2). Der Architektur\-Kennzeichner
-wird nur vorhanden sein, falls das Paket ein Feld \fBMulti\-Arch\fP mit dem Wert
-\fBsame\fP trägt. Damit wird der Name eindeutig.
+It contains the binary package name with a possible architecture qualifier
+like \(lqlibc6:amd64\(rq (since dpkg 1.16.2).  An architecture qualifier
+will be present to make the package name unambiguous, for example if the
+package has a \fBMulti\-Arch\fP field with a value of \fBsame\fP or the package is
+of a foreign architecture.
 .TP 
 \fBbinary:Summary\fP
 Es enthält die Kurzbeschreibung des Pakets (seit Dpkg 1.16.2).
@@ -297,7 +298,7 @@ Version zu erhalten, könnten Sie folgendes ausführen:
 Die angeforderte Abfrage wurde erfolgreich ausgeführt.
 .TP 
 \fB1\fP
-Beim Lesen der Kommandozeile oder beim Ausführen der Abfrage traten Probleme
+Beim Lesen der Befehlszeile oder beim Ausführen der Abfrage traten Probleme
 auf. Dazu gehören auch keine Datei oder Paket gefunden (außer für
 \fB\-\-control\-path\fP).
 .

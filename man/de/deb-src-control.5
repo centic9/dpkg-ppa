@@ -116,10 +116,10 @@ Der Name der Distribution, aus der dieses Paket ursprünglich stammt. Dieses
 Feld wird normalerweise nicht benötigt.
 
 .TP 
-\fBSection:\fP\fI Bereich\fP
+\fBSection:\fP\fI Sektion\fP
 Dies ist ein allgemeines Feld, das dem Paket eine Kategorie gibt, basierend
-auf der Software, die es installiert. Einige übliche Bereiche sind \fButils\fP,
-\fBnet\fP, \fBmail\fP, \fBtext\fP, \fBx11\fP usw.
+auf der Software, die es installiert. Einige übliche Sektionen sind
+\fButils\fP, \fBnet\fP, \fBmail\fP, \fBtext\fP, \fBx11\fP usw.
 
 .TP 
 \fBPriority:\fP\fI Priorität\fP
@@ -134,11 +134,13 @@ erhalten werden.
 .TP 
 \fBBuild\-Depends:\fP\fI Paketliste\fP
 Eine Liste der Pakete, die installiert und konfiguriert sein müssen, um das
-Quellpaket zu bauen. Die Aufnahme einer Abhängigkeit in diese Liste hat den
+Paket aus den Quellen zu bauen. Diese Abhängigkeiten müssen erfüllt wein,
+wenn binäre architekturabhängige und unabhängige und Quellpakete gebaut
+werden. Die Aufnahme einer Abhängigkeit in diese Liste hat nicht den
 gleichen Effekt wie die Aufnahme in \fBBuild\-Depends\-Arch\fP und
-\fBBuild\-Depends\-Indep\fP mit dem zusätzlichen Effekt, dass es für reine
-Quellen\-Bauten verwandt wird.
-
+\fBBuild\-Depends\-Indep\fP, da die Abhängigkeit auch beim Bau des Quellpaketes
+erfüllt sein muss.
+.
 .TP 
 \fBBuild\-Depends\-Arch:\fP\fI Paketliste\fP
 Identisch zu \fBBuild\-Depends\fP, wird aber nur zum Bau der
@@ -215,10 +217,10 @@ identisch zu, \(oq\fB<=\fP\(cq für kleiner als oder identisch zu und
 \(oq\fB=\fP\(cq für identisch zu.
 
 Eine Architekturspezifikation besteht aus einer oder mehreren durch
-Leerzeichen getrennten Architekturnamen. Jedem Namen darf ein Ausrufezeichen
-vorangestellt werden, das \(lqNICHT\(rq bedeutet.
+Leerraumzeichen getrennten Architekturnamen. Jedem Namen darf ein
+Ausrufezeichen vorangestellt werden, das \(lqNICHT\(rq bedeutet.
 
-Eine Einschränkungsformel besteht aus einer oder mehrerer durch Leeraum
+Eine Einschränkungsformel besteht aus einer oder mehrerer durch Leerraum
 getrennten Einschränkungslisten. Jede Einschränkungsliste wird in spitze
 Klammern eingeschlossen. Einträge in den Einschränkungslisten sind
 Bauprofilnamen, getrennt durch Leerraum. Diesen Listen kann ein
@@ -275,13 +277,15 @@ aus dem Paket \fBdebian\-installer\fP für weitere Informationen über sie.
 .TP 
 \fBEssential:\fP \fByes\fP|\fBno\fP
 .TQ
+\fBBuild\-Essential:\fP \fByes\fP|\fBno\fP
+.TQ
 \fBMulti\-Arch:\fP \fBsame\fP|\fBforeign\fP|\fBallowed\fP|\fBno\fP
 .TQ
 \fBTag:\fP \fI Liste\-von\-Markierungen\fP
 .TQ
 \fBDescription:\fP \fIKurzbeschreibung\fP (verpflichtend)
 Diese Felder sind in der Handbuchseite \fBdeb\-control\fP(5) beschrieben, da sie
-wörtlich in die Steuerdatei des Binärpakets kopiert werden.
+wörtlich in die control\-Datei des Binärpakets kopiert werden.
 
 .TP 
 \fBDepends:\fP \fI Paketliste\fP
@@ -307,7 +311,7 @@ Diese Felder deklarieren die Beziehungen zwischen Paketen. Sie werden in der
 Handbuchseite \fBdeb\-control\fP(5) und im Paket \fBdebian\-policy\fP beschrieben.
 
 .SH "BENUTZERDEFINIERTE FELDER"
-Es ist erlaubt, zusätzliche benutzerdefinierte Felder zu der Steuerdatei
+Es ist erlaubt, zusätzliche benutzerdefinierte Felder zu der control\-Datei
 hinzuzufügen. Die Werkzeuge werden diese Felder ignorieren. Falls Sie
 möchten, dass die Felder in die Ausgabedateien, wie z.B. die Binärpakete,
 kopiert werden, müssen Sie ein angepasstes Namensschema verwenden: Die

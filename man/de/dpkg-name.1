@@ -57,11 +57,11 @@ Dateien werden in ein Unterverzeichnis verschoben. Falls das als Argument
 existierende Verzeichnis existiert, dann werden die Dateien in das
 Verzeichnis verschoben, andernfalls wird das Zielverzeichnis aus dem
 »section«\-Feld des Steuerteils des Pakets extrahiert. Das Zielverzeichnis
-wird \(Founstable/binary\-\fIArchitektur\fP/\fIBereich\fP\(Fc sein. Falls der
-Bereich nicht in der Steuerdatei gefunden werden kann, dann wird
-\fBno\-section\fP angenommen, und in diesem Fall, wie auch für die Bereiche
+wird \(Founstable/binary\-\fIArchitektur\fP/\fIBereich\fP\(Fc sein. Falls die
+Sektion nicht in der Steuerdatei gefunden werden kann, dann wird
+\fBno\-section\fP angenommen, und in diesem Fall, wie auch für die Sektionen
 \fBnon\-free\fP und \fBcontrib\fP ist das Zielverzeichnis
-\(Fo\fIBereich\fP/binary\-\fIArchitektur\fP\(Fc. Das Bereichsfeld muss nicht
+\(Fo\fIBereich\fP/binary\-\fIArchitektur\fP\(Fc. Das Sektionsfeld muss nicht
 angegeben werden, daher werden viele Pakete ihren Weg in das
 \fBno\-section\fP\-Gebiet finden. Verwenden Sie diese Option mit Vorsicht, sie
 ist unordentlich.
@@ -99,7 +99,7 @@ Architekturinformation umbenannt.
 .TP 
 \fBfind \-name \(aq*.deb\(aq | xargs \-n 1 dpkg\-name \-a \-o \-s \-c\fP
 \fBMachen Sie dies nicht.\fP Ihr Archiv wird eine komplette Schweinerei werden,
-da viele Pakete nicht mit Bereichsinformationen kommen. \fBMachen Sie dies
+da viele Pakete nicht mit Sektionsinformationen kommen. \fBMachen Sie dies
 nicht.\fP
 .TP 
 \fBdpkg\-deb \-\-build debian\-tmp && dpkg\-name \-o \-s .. debian\-tmp.deb\fP

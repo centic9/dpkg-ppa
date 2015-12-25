@@ -133,14 +133,16 @@ elenco di tali valori dalla versione più recente del pacchetto
 
 .TP 
 \fBBuild\-Depends:\fP\fI elenco\-pacchetti\fP
-Un elenco di pacchetti che devono essere installati e configurati per poter
-creare il pacchetto sorgente. Includere una dipendenza in questo elenco ha
-lo stesso effetto di includerla in entrambi \fBBuild\-Depends\-Arch\fP e
-\fBBuild\-Depends\-Indep\fP, con l'effetto aggiuntivo di essere usata per la
-creazione di archivi solo\-sorgenti.
-
+A list of packages that need to be installed and configured to be able to
+build from source package.  These dependencies need to be satisfied when
+building binary architecture dependent or independent packages and source
+packages.  Including a dependency in this field does not have the exact same
+effect as including it in both \fBBuild\-Depends\-Arch\fP and
+\fBBuild\-Depends\-Indep\fP, because the dependency also needs to be satisfied
+when building the source package.
+.
 .TP 
-\fBBuild\-Depends\-Arch:\fP\fI elenco\-pacchetti\fP
+\fBBuild\-Depends\-Arch:\fP\fI package\-list\fP
 Come \fBBuild\-Depends\fP, ma sono necessari solamente quando si compilano i
 pacchetti dipendenti dall'architettura. In questo caso vengono installati
 anche i \fBBuild\-Depends\fP. Questo campo è supportato a partire dalla versione
@@ -154,7 +156,7 @@ pacchetti indipendenti dall'architettura. In questo caso vengono installati
 anche i \fBBuild\-Depends\fP.
 
 .TP 
-\fBBuild\-Conflicts:\fP\fI elenco\-pacchetti\fP
+\fBBuild\-Conflicts:\fP\fI package\-list\fP
 Un elenco di pacchetti che non devono essere installati quando il pacchetto
 è compilato, ad esempio perché interferiscono con il sistema di compilazione
 usato. Includere una dipendenza in questo elenco ha lo stesso effetto di
@@ -162,7 +164,7 @@ includerla sia in \fBBuild\-Conflicts\-Arch\fP sia in \fBBuild\-Conflicts\-Indep
 con l'effetto aggiuntivo di essere usata per le compilazioni solo\-sorgente.
 
 .TP 
-\fBBuild\-Conflicts\-Arch:\fP\fI elenco\-pacchetti\fP
+\fBBuild\-Conflicts\-Arch:\fP\fI package\-list\fP
 Come \fBBuild\-Conflicts\fP, ma solo quando si compilano i pacchetti dipendenti
 dall'architettura. Questo campo è supportato dalla versione 1.16.4 di dpkg;
 per poter compilare con versioni più vecchie di dpkg, deve essere invece
@@ -267,6 +269,8 @@ necessari. Per maggiori dettagli su di essi, guardare il file
 
 .TP 
 \fBEssential:\fP \fByes\fP|\fBno\fP
+.TQ
+\fBBuild\-Essential:\fP \fByes\fP|\fBno\fP
 .TQ
 \fBMulti\-Arch:\fP \fBsame\fP|\fBforeign\fP|\fBallowed\fP|\fBno\fP
 .TQ

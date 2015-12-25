@@ -2,7 +2,7 @@
  * dpkg-deb - construction and deconstruction of *.deb archives
  * build.c - building archives
  *
- * Copyright © 1994,1995 Ian Jackson <ian@chiark.greenend.org.uk>
+ * Copyright © 1994,1995 Ian Jackson <ijackson@chiark.greenend.org.uk>
  * Copyright © 2000,2001 Wichert Akkerman <wakkerma@debian.org>
  * Copyright © 2007-2015 Guillem Jover <guillem@debian.org>
  *
@@ -228,13 +228,13 @@ static const char *const maintainerscripts[] = {
  * Check control directory and file permissions.
  */
 static void
-check_file_perms(const char *dir)
+check_file_perms(const char *ctrldir)
 {
   struct varbuf path = VARBUF_INIT;
   const char *const *mscriptp;
   struct stat mscriptstab;
 
-  varbuf_printf(&path, "%s/%s/", dir, BUILDCONTROLDIR);
+  varbuf_printf(&path, "%s/", ctrldir);
   if (lstat(path.buf, &mscriptstab))
     ohshite(_("unable to stat control directory"));
   if (!S_ISDIR(mscriptstab.st_mode))
@@ -246,7 +246,7 @@ check_file_perms(const char *dir)
 
   for (mscriptp = maintainerscripts; *mscriptp; mscriptp++) {
     varbuf_reset(&path);
-    varbuf_printf(&path, "%s/%s/%s", dir, BUILDCONTROLDIR, *mscriptp);
+    varbuf_printf(&path, "%s/%s", ctrldir, *mscriptp);
     if (!lstat(path.buf, &mscriptstab)) {
       if (S_ISLNK(mscriptstab.st_mode))
         continue;
@@ -269,7 +269,7 @@ check_file_perms(const char *dir)
  * Check if conffiles contains sane information.
  */
 static void
-check_conffiles(const char *dir)
+check_conffiles(const char *ctrldir, const char *rootdir)
 {
   FILE *cf;
   struct varbuf controlfile = VARBUF_INIT;
@@ -277,7 +277,7 @@ check_conffiles(const char *dir)
   struct file_info *conffiles_head = NULL;
   struct file_info *conffiles_tail = NULL;
 
-  varbuf_printf(&controlfile, "%s/%s/%s", dir, BUILDCONTROLDIR, CONFFILESFILE);
+  varbuf_printf(&controlfile, "%s/%s", ctrldir, CONFFILESFILE);
 
   cf = fopen(controlfile.buf, "r");
   if (cf == NULL) {
@@ -301,7 +301,7 @@ check_conffiles(const char *dir)
 
     conffilename[n - 1] = '\0';
     varbuf_reset(&controlfile);
-    varbuf_printf(&controlfile, "%s/%s", dir, conffilename);
+    varbuf_printf(&controlfile, "%s/%s", rootdir, conffilename);
     if (lstat(controlfile.buf, &controlstab)) {
       if (errno == ENOENT) {
         if ((n > 1) && c_isspace(conffilename[n - 2]))
@@ -339,12 +339,12 @@ check_conffiles(const char *dir)
  * @return	The pkginfo struct from the parsed control file.
  */
 static struct pkginfo *
-check_control_file(const char *dir)
+check_control_file(const char *ctrldir)
 {
   struct pkginfo *pkg;
   char *controlfile;
 
-  m_asprintf(&controlfile, "%s/%s/%s", dir, BUILDCONTROLDIR, CONTROLFILE);
+  controlfile = str_fmt("%s/%s", ctrldir, CONTROLFILE);
   parsedb(controlfile, pdb_parse_binary, &pkg);
 
   if (strspn(pkg->set->name, "abcdefghijklmnopqrstuvwxyz0123456789+-.") !=
@@ -366,15 +366,15 @@ check_control_file(const char *dir)
  * @return	The pkginfo struct from the parsed control file.
  */
 static struct pkginfo *
-check_control_area(const char *dir)
+check_control_area(const char *ctrldir, const char *rootdir)
 {
   struct pkginfo *pkg;
   int warns;
 
   /* Start by reading in the control file so we can check its contents. */
-  pkg = check_control_file(dir);
-  check_file_perms(dir);
-  check_conffiles(dir);
+  pkg = check_control_file(ctrldir);
+  check_file_perms(ctrldir);
+  check_conffiles(ctrldir, rootdir);
 
   warns = warning_get_count();
   if (warns)
@@ -431,7 +431,6 @@ static char *
 gen_dest_pathname_from_pkg(const char *dir, struct pkginfo *pkg)
 {
   const char *arch_sep;
-  char *path;
 
   if (pkg->available.arch->type == DPKG_ARCH_NONE ||
       pkg->available.arch->type == DPKG_ARCH_EMPTY)
@@ -439,11 +438,62 @@ gen_dest_pathname_from_pkg(const char *dir, struct pkginfo *pkg)
   else
     arch_sep = "_";
 
-  m_asprintf(&path, "%s/%s_%s%s%s%s", dir, pkg->set->name,
-             versiondescribe(&pkg->available.version, vdew_never),
-             arch_sep, pkg->available.arch->name, DEBEXT);
+  return str_fmt("%s/%s_%s%s%s%s", dir, pkg->set->name,
+                 versiondescribe(&pkg->available.version, vdew_never),
+                 arch_sep, pkg->available.arch->name, DEBEXT);
+}
 
-  return path;
+typedef void filenames_feed_func(const char *dir, int fd_out);
+
+/**
+ * Pack the contents of a directory into a tarball.
+ */
+static void
+tarball_pack(const char *dir, filenames_feed_func *tar_filenames_feeder,
+             struct compress_params *tar_compress_params, int fd_out)
+{
+  int pipe_filenames[2], pipe_tarball[2];
+  pid_t pid_tar, pid_comp;
+
+  /* Fork off a tar. We will feed it a list of filenames on stdin later. */
+  m_pipe(pipe_filenames);
+  m_pipe(pipe_tarball);
+  pid_tar = subproc_fork();
+  if (pid_tar == 0) {
+    m_dup2(pipe_filenames[0], 0);
+    close(pipe_filenames[0]);
+    close(pipe_filenames[1]);
+    m_dup2(pipe_tarball[1], 1);
+    close(pipe_tarball[0]);
+    close(pipe_tarball[1]);
+
+    if (chdir(dir))
+      ohshite(_("failed to chdir to '%.255s'"), dir);
+
+    execlp(TAR, "tar", "-cf", "-", "--format=gnu", "--null", "--no-unquote",
+                       "--no-recursion", "-T", "-", NULL);
+    ohshite(_("unable to execute %s (%s)"), "tar -cf", TAR);
+  }
+  close(pipe_filenames[0]);
+  close(pipe_tarball[1]);
+
+  /* Of course we should not forget to compress the archive as well. */
+  pid_comp = subproc_fork();
+  if (pid_comp == 0) {
+    close(pipe_filenames[1]);
+    compress_filter(tar_compress_params, pipe_tarball[0], fd_out,
+                    _("compressing tar member"));
+    exit(0);
+  }
+  close(pipe_tarball[0]);
+
+  /* All the pipes are set, now lets start feeding filenames to tar. */
+  tar_filenames_feeder(dir, pipe_filenames[1]);
+
+  /* All done, clean up wait for tar and <compress> to finish their job. */
+  close(pipe_filenames[1]);
+  subproc_reap(pid_comp, _("<compress> from tar -cf"), 0);
+  subproc_reap(pid_tar, "tar -cf", 0);
 }
 
 /**
@@ -455,10 +505,11 @@ do_build(const char *const *argv)
   struct compress_params control_compress_params;
   struct dpkg_error err;
   const char *dir, *dest;
+  char *ctrldir;
   char *debar;
   char *tfbuf;
   int arfd;
-  int p1[2], p2[2], gzfd;
+  int p1[2], gzfd;
   pid_t c1, c2;
 
   /* Decode our arguments. */
@@ -471,6 +522,7 @@ do_build(const char *const *argv)
     badusage(_("--%s takes at most two arguments"), cipaction->olong);
 
   debar = gen_dest_pathname(dir, dest);
+  ctrldir = str_fmt("%s/%s", dir, BUILDCONTROLDIR);
 
   /* Perform some sanity checks on the to-be-build package. */
   if (nocheckflag) {
@@ -481,7 +533,7 @@ do_build(const char *const *argv)
   } else {
     struct pkginfo *pkg;
 
-    pkg = check_control_area(dir);
+    pkg = check_control_area(ctrldir, dir);
     if (debar == NULL)
       debar = gen_dest_pathname_from_pkg(dest, pkg);
     printf(_("dpkg-deb: building package '%s' in '%s'.\n"),
@@ -500,14 +552,14 @@ do_build(const char *const *argv)
   c1 = subproc_fork();
   if (!c1) {
     m_dup2(p1[1],1); close(p1[0]); close(p1[1]);
-    if (chdir(dir))
-      ohshite(_("failed to chdir to '%.255s'"), dir);
-    if (chdir(BUILDCONTROLDIR))
-      ohshite(_("failed to chdir to '%.255s'"), ".../DEBIAN");
+    if (chdir(ctrldir))
+      ohshite(_("failed to chdir to '%.255s'"), ctrldir);
     execlp(TAR, "tar", "-cf", "-", "--format=gnu", ".", NULL);
     ohshite(_("unable to execute %s (%s)"), "tar -cf", TAR);
   }
   close(p1[1]);
+  free(ctrldir);
+
   /* Create a temporary file to store the control data in. Immediately
    * unlink our temporary file so others can't mess with it. */
   tfbuf = path_make_temp_template("dpkg-deb");
@@ -595,38 +647,10 @@ do_build(const char *const *argv)
   } else {
     internerr("unknown deb format version %d.%d", deb_format.major, deb_format.minor);
   }
-  /* Fork off a tar. We will feed it a list of filenames on stdin later. */
-  m_pipe(p1);
-  m_pipe(p2);
-  c1 = subproc_fork();
-  if (!c1) {
-    m_dup2(p1[0],0); close(p1[0]); close(p1[1]);
-    m_dup2(p2[1],1); close(p2[0]); close(p2[1]);
-    if (chdir(dir))
-      ohshite(_("failed to chdir to '%.255s'"), dir);
-    execlp(TAR, "tar", "-cf", "-", "--format=gnu", "--null", "--no-unquote",
-                       "--no-recursion", "-T", "-", NULL);
-    ohshite(_("unable to execute %s (%s)"), "tar -cf", TAR);
-  }
-  close(p1[0]);
-  close(p2[1]);
-  /* Of course we should not forget to compress the archive as well. */
-  c2 = subproc_fork();
-  if (!c2) {
-    close(p1[1]);
-    compress_filter(&compress_params, p2[0], gzfd, _("compressing data member"));
-    exit(0);
-  }
-  close(p2[0]);
 
-  /* All the pipes are set, now lets walk the tree, and start feeding
-   * filenames to tar. */
-  file_treewalk_feed(dir, p1[1]);
+  /* Pack the directory into a tarball, feeding files from the callback. */
+  tarball_pack(dir, file_treewalk_feed, &compress_params, gzfd);
 
-  /* All done, clean up wait for tar and <compress> to finish their job. */
-  close(p1[1]);
-  subproc_reap(c2, _("<compress> from tar -cf"), 0);
-  subproc_reap(c1, "tar -cf", 0);
   /* Okay, we have data.tar as well now, add it to the ar wrapper. */
   if (deb_format.major == 2) {
     char datamember[16 + 1];

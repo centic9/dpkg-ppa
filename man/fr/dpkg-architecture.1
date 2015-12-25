@@ -104,10 +104,7 @@ Définit l'architecture Debian en cours.
 Définit le type de système GNU en cours.
 .TP 
 \fB\-A\fP, \fB\-\-target\-arch\fP \fIarchitecture\fP
-Set the target Debian architecture (since dpkg 1.17.14).  This is only
-needed when building a cross\-toolchain, one that will be built on the build
-architecture, to be run on the host architecture, and to build code for the
-target architecture.
+Set the target Debian architecture (since dpkg 1.17.14).
 .TP 
 \fB\-T\fP, \fB\-\-target\-type\fP \fItype\-de\-système\-gnu\fP
 Set the target GNU system type (since dpkg 1.17.14).
@@ -139,7 +136,9 @@ Machine sur laquelle le paquet est construit.
 .IP "Machine hôte" 4
 Machine pour laquelle le paquet est construit.
 .IP "Machine cible" 4
-Machine pour laquelle le compilateur est construit.
+The machine the compiler is building for.  This is only needed when building
+a cross\-toolchain, one that will be built on the build architecture, to be
+run on the host architecture, and to build code for the target architecture.
 .IP "Architecture Debian" 4
 Chaîne de caractères de l'architecture Debian qui spécifie l'emplacement
 dans l'archive FTP. Par exemple\ : i386, sparc, hurd\-i386.

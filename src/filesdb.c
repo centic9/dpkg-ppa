@@ -2,7 +2,7 @@
  * dpkg - main program for package management
  * filesdb.c - management of database of files installed on system
  *
- * Copyright © 1995 Ian Jackson <ian@chiark.greenend.org.uk>
+ * Copyright © 1995 Ian Jackson <ijackson@chiark.greenend.org.uk>
  * Copyright © 2000,2001 Wichert Akkerman <wakkerma@debian.org>
  * Copyright © 2008-2014 Guillem Jover <guillem@debian.org>
  *
@@ -312,8 +312,10 @@ pkg_sorter_by_listfile_phys_offs(const void *a, const void *b)
    * INT_MAX. */
   if (pa->clientdata->listfile_phys_offs < pb->clientdata->listfile_phys_offs)
     return -1;
-  else
+  else if (pa->clientdata->listfile_phys_offs > pb->clientdata->listfile_phys_offs)
     return 1;
+  else
+    return 0;
 }
 
 static void

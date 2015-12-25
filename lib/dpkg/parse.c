@@ -2,7 +2,7 @@
  * libdpkg - Debian packaging suite library routines
  * parse.c - database file parsing, main package/field loop
  *
- * Copyright © 1995 Ian Jackson <ian@chiark.greenend.org.uk>
+ * Copyright © 1995 Ian Jackson <ijackson@chiark.greenend.org.uk>
  * Copyright © 2006, 2008-2015 Guillem Jover <guillem@debian.org>
  *
  * This is free software; you can redistribute it and/or modify
@@ -225,19 +225,24 @@ pkg_parse_verify(struct parsedb_state *ps,
       if (!dop->arch)
         dop->arch = pkgbin->arch;
 
-  /* Check the Config-Version information:
-   * If there is a Config-Version it is definitely to be used, but
-   * there shouldn't be one if the package is ‘installed’ (in which case
-   * the Version and/or Revision will be copied) or if the package is
-   * ‘not-installed’ (in which case there is no Config-Version). */
+  /*
+   * Check the Config-Version information:
+   *
+   * If there is a Config-Version it is definitely to be used, but there
+   * should not be one if the package is ‘installed’ or ‘triggers-pending’
+   * (in which case the Version will be copied) or if the package is
+   * ‘not-installed’ (in which case there is no Config-Version).
+   */
   if (!(ps->flags & pdb_recordavailable)) {
     if (pkg->configversion.version) {
       if (pkg->status == PKG_STAT_INSTALLED ||
-          pkg->status == PKG_STAT_NOTINSTALLED)
+          pkg->status == PKG_STAT_NOTINSTALLED ||
+          pkg->status == PKG_STAT_TRIGGERSPENDING)
         parse_error(ps,
                     _("Config-Version for package with inappropriate Status"));
     } else {
-      if (pkg->status == PKG_STAT_INSTALLED)
+      if (pkg->status == PKG_STAT_INSTALLED ||
+          pkg->status == PKG_STAT_TRIGGERSPENDING)
         pkg->configversion = pkgbin->version;
     }
   }
@@ -313,8 +318,7 @@ parse_count_pkg_instance(struct pkgcount *count,
   if (pkg->status == PKG_STAT_NOTINSTALLED)
      return;
 
-  // mvo: consider stat_configfiles multiarch to prevent LP: #1015567
-  if (pkgbin->multiarch == PKG_MULTIARCH_SAME || pkg->status == PKG_STAT_CONFIGFILES)
+  if (pkgbin->multiarch == PKG_MULTIARCH_SAME)
     count->multi++;
   else
     count->single++;

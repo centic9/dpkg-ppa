@@ -1,6 +1,6 @@
 .\" dpkg manual page - dpkg-deb(1)
 .\"
-.\" Copyright Â© 1995-1996 Ian Jackson <ian@chiark.chu.cam.ac.uk>
+.\" Copyright Â© 1995-1996 Ian Jackson <ijackson@chiark.greenend.org.uk>
 .\" Copyright Â© 2000 Wichert Akkerman <wakkerma@debian.org>
 .\" Copyright Â© 2006 Frank Lichtenheld <djpig@debian.org>
 .\" Copyright Â© 2007-2011 RaphaÃ«l Hertzog <hertzog@debian.org>
@@ -171,7 +171,8 @@ vorgegebenes Paket markiert sind. Falls keine Markierungsinformation
 verfügbar ist, fällt dies auf unmarkierte Informationen zurück. Der
 Standard\-Pakettyp ist \fBdeb\fP. Abhängigkeitsinformationen für
 Laufzeitbibliotheken werden für einen vorgegebenen Typ markiert, indem vor
-sie der Namen des Typs, ein Doppelpunkt und ein Leerzeichen gesetzt wird.
+sie der Namen des Typs, ein Doppelpunkt und ein Leerraumzeichen gesetzt
+wird.
 .TP 
 \fB\-L\fP\fIlokale_shlibs\-Datei\fP
 Lese die Hinwegsetz\-Abhängigkeiten von Laufzeitbibliotheken aus
@@ -297,7 +298,7 @@ hinzugefügte Verzeichnisse, in der Umgebungsvariable \fBLD_LIBRARY_PATH\fP
 aufgeführte Verzeichnisse und standardmäßige öffentliche Verzeichnisse
 (/lib, /usr/lib, /lib32, /usr/lib32, /lib64, /usr/lib64). Dann prüft es
 diese Verzeichnisse im Bau\-Baum des analysierten Pakets, in den mit der
-Kommandozeilenoption \fB\-S\fP angegebenen Paketbauverzeichnisse, in anderen
+Befehlszeilenoption \fB\-S\fP angegebenen Paketbauverzeichnisse, in anderen
 Paketbau\-Bäumen, die eine DEBIAN/shlibs\- oder DEBIAN/symbols\-Datei enthalten
 und schließlich im Wurzelverzeichnis. Falls die Bibliothek nicht in einem
 dieser Verzeichnisse gefunden wird, erhalten Sie diesen Fehler.
@@ -334,7 +335,7 @@ Probleme zu vermeiden.
 
 Viele weitere Informationen darüber, wo nach Abhängigkeitsinformationen
 gesucht wird, können durch einen Aufruf von \fBdpkg\-shlibdeps\fP im
-geschwätzigen Modus (\fB\-v\fP) erhalten werden. Dies kann nützlich sein, falls
+detaillierten Modus (\fB\-v\fP) erhalten werden. Dies kann nützlich sein, falls
 Sie nicht verstehen, warum es Ihnen diesen Fehler meldet.
 .SH ÜBERSETZUNG
 Die deutsche Übersetzung wurde 2004, 2006-2015 von Helge Kreutzmann

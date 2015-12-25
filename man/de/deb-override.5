@@ -29,23 +29,23 @@ deb\-override \- Debian\-Archive override\-Datei
 override
 .
 .SH BESCHREIBUNG
-Während der Großteil der Informationen über ein Paket in der Steuerdatei
+Während der Großteil der Informationen über ein Paket in der control\-Datei
 gefunden werden kann, wird ein Teil von den Distributionszaren zentral statt
 von den Betreuern verwaltet, um eine gewisse globael Konsistenz zu
 bieten. Diese Informationen finden sich in der override\-Datei.
 .PP
-Die override\-Datei hat ein einfaches, durch Leerzeichen getrenntes
+Die override\-Datei hat ein einfaches, durch Leerraumzeichen getrenntes
 Format. Kommentare sind erlaubt (angezeigt durch ein \fB#\fP).
 .PP
 .in +5
-\fIPaket\fP \fIPriorität\fP \fIBereich\fP [\fIBetreuerinformation\fP]
+\fIPaket\fP \fIPriorität\fP \fISektion\fP [\fIBetreuerinformation\fP]
 .in -5
 .PP
 \fIPaket\fP ist der Name des Pakets. Einträge in der override\-Datei für Pakete,
 die nicht im Baum von Binärpaketen gefunden werden können, werden ignoriert.
 .PP
-\fIPriorität\fP und \fIBereich\fP entsprechen den Feldern \fIpriority\fP und
-\fIsection\fP der Steuerdatei in dem .deb. Die erlaubten Werte werden in den
+\fIPriorität\fP und \fISektion\fP entsprechen den Feldern \fIpriority\fP und
+\fIsection\fP der control\-Datei in dem .deb. Die erlaubten Werte werden in den
 Debian\-Richtlinien (\fIDebian policy\fP) aufgeführt.
 .PP
 \fIBetreuerinformation\fP kann, falls vorhanden, entweder der Name des

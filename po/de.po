@@ -9,10 +9,10 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: dpkg 1.18.0\n"
+"Project-Id-Version: dpkg 1.18.3~\n"
 "Report-Msgid-Bugs-To: debian-dpkg@lists.debian.org\n"
-"POT-Creation-Date: 2015-08-04 20:59+0200\n"
-"PO-Revision-Date: 2015-05-18 20:34+0200\n"
+"POT-Creation-Date: 2015-12-25 13:29+0100\n"
+"PO-Revision-Date: 2015-08-09 09:19+0200\n"
 "Last-Translator: Sven Joachim <svenjoac@gmx.de>\n"
 "Language-Team: German <debian-l10n-german@lists.debian.org>\n"
 "Language: de\n"
@@ -1562,10 +1562,9 @@ msgstr ""
 "»%.250s« von Symlink »%.250s« fehlgeschlagen"
 
 #: src/archives.c
-#, fuzzy, c-format
-#| msgid "cannot open archive part file '%.250s'"
+#, c-format
 msgid "newline not allowed in archive object name '%.255s'"
-msgstr "Archiv-Teildatei »%.250s« kann nicht geöffnet werden"
+msgstr "Zeilenvorschub nicht erlaubt in Archiv-Objektname »%.255s«"
 
 #: src/archives.c
 #, c-format
@@ -3096,43 +3095,7 @@ msgid "Debian '%s' package management program version %s.\n"
 msgstr "Debian »%s« Paketmanagement-Programm Version %s.\n"
 
 #: src/main.c
-#, fuzzy, c-format
-#| msgid ""
-#| "Commands:\n"
-#| "  -i|--install       <.deb file name> ... | -R|--recursive "
-#| "<directory> ...\n"
-#| "  --unpack           <.deb file name> ... | -R|--recursive "
-#| "<directory> ...\n"
-#| "  -A|--record-avail  <.deb file name> ... | -R|--recursive "
-#| "<directory> ...\n"
-#| "  --configure        <package> ... | -a|--pending\n"
-#| "  --triggers-only    <package> ... | -a|--pending\n"
-#| "  -r|--remove        <package> ... | -a|--pending\n"
-#| "  -P|--purge         <package> ... | -a|--pending\n"
-#| "  -V|--verify <package> ...        Verify the integrity of package(s).\n"
-#| "  --get-selections [<pattern> ...] Get list of selections to stdout.\n"
-#| "  --set-selections                 Set package selections from stdin.\n"
-#| "  --clear-selections               Deselect every non-essential package.\n"
-#| "  --update-avail [<Packages-file>] Replace available packages info.\n"
-#| "  --merge-avail [<Packages-file>]  Merge with info from file.\n"
-#| "  --clear-avail                    Erase existing available info.\n"
-#| "  --forget-old-unavail             Forget uninstalled unavailable pkgs.\n"
-#| "  -s|--status <package> ...        Display package status details.\n"
-#| "  -p|--print-avail <package> ...   Display available version details.\n"
-#| "  -L|--listfiles <package> ...     List files 'owned' by package(s).\n"
-#| "  -l|--list [<pattern> ...]        List packages concisely.\n"
-#| "  -S|--search <pattern> ...        Find package(s) owning file(s).\n"
-#| "  -C|--audit [<package> ...]       Check for broken package(s).\n"
-#| "  --add-architecture <arch>        Add <arch> to the list of "
-#| "architectures.\n"
-#| "  --remove-architecture <arch>     Remove <arch> from the list of "
-#| "architectures.\n"
-#| "  --print-architecture             Print dpkg architecture.\n"
-#| "  --print-foreign-architectures    Print allowed foreign architectures.\n"
-#| "  --compare-versions <a> <op> <b>  Compare version numbers - see below.\n"
-#| "  --force-help                     Show help on forcing.\n"
-#| "  -Dh|--debug=help                 Show help on debugging.\n"
-#| "\n"
+#, c-format
 msgid ""
 "Commands:\n"
 "  -i|--install       <.deb file name> ... | -R|--recursive <directory> ...\n"
@@ -3158,7 +3121,7 @@ msgid ""
 "  -C|--audit [<package> ...]       Check for broken package(s).\n"
 "  --yet-to-unpack                  Print packages selected for "
 "installation.\n"
-"  --predep-packages                Print pre-dependencies to unpack.\n"
+"  --predep-package                 Print pre-dependencies to unpack.\n"
 "  --add-architecture <arch>        Add <arch> to the list of architectures.\n"
 "  --remove-architecture <arch>     Remove <arch> from the list of "
 "architectures.\n"
@@ -3201,6 +3164,10 @@ msgstr ""
 "  -l|--list [<Muster> ...]         Pakete kurz auflisten.\n"
 "  -S|--search <Muster> ...         Paket(e) suchen, denen Datei(en) "
 "»gehören«.\n"
+"  --yet-to-unpack                  Zur Installation ausgewählte Pakete "
+"ausgeben.\n"
+"  --predep-package                 Zu entpackende Vor-Abhängigkeiten "
+"ausgeben.\n"
 "  -C|--audit [<Paket> ...]         Auf beschädigte(s) Paket(e) prüfen.\n"
 "  --add-architecture <Arch>        <Arch> zur Liste der Architekturen\n"
 "                                     hinzufügen.\n"
@@ -3208,6 +3175,8 @@ msgstr ""
 "                                     entfernen.\n"
 "  --print-architecture             Architektur von dpkg ausgeben.\n"
 "  --print-foreign-architectures    Erlaubte fremde Architekturen ausgeben.\n"
+"  --assert-<Merkmal>               Unterstützung für das angegebene Merkmal\n"
+"                                   zusichern.\n"
 "  --compare-versions <a> <op> <b>  Versionsnummern vergleichen - siehe "
 "unten.\n"
 "  --force-help                     Hilfe zum Erzwingen anzeigen.\n"
@@ -3226,23 +3195,14 @@ msgstr ""
 "\n"
 
 #: src/main.c
-#, fuzzy, c-format
-#| msgid ""
-#| "For internal use: dpkg --assert-support-predepends | --predep-package |\n"
-#| "  --assert-working-epoch | --assert-long-filenames | --assert-multi-"
-#| "conrep |\n"
-#| "  --assert-multi-arch | --assert-versioned-provides.\n"
-#| "\n"
+#, c-format
 msgid ""
 "Assertable features: support-predepends, working-epoch, long-filenames,\n"
 "  multi-conrep, multi-arch, versioned-provides.\n"
 "\n"
 msgstr ""
-"Zur internen Verwendung: dpkg --assert-support-predepends | --predep-package "
-"|\n"
-"  --assert-working-epoch | --assert-long-filenames | --assert-multi-conrep "
-"|\n"
-"  --assert-multi-arch | --assert-versioned-provides.\n"
+"Zusicherbare Merkmale: support-predepends, working-epoch, long-filenames,\n"
+"multi-conrep, multi-arch, versioned-provides.\n"
 "\n"
 
 #: src/main.c
@@ -4869,10 +4829,9 @@ msgid "unable to stat file name '%.250s'"
 msgstr "Dateiname »%.250s« kann nicht mit stat abgefragt werden"
 
 #: dpkg-deb/build.c
-#, fuzzy, c-format
-#| msgid "newline in field name '%.*s'"
+#, c-format
 msgid "newline not allowed in pathname '%s'"
-msgstr "Zeilenvorschub im Feldnamen »%.*s«"
+msgstr "Zeilenvorschub nicht erlaubt in Pfadname »%s«"
 
 #: dpkg-deb/build.c
 #, c-format
@@ -4977,6 +4936,16 @@ msgstr[1] "%d Warnungen wegen der control-Datei(en) werden ignoriert"
 msgid "unable to check for existence of archive '%.250s'"
 msgstr "Existenz des Archivs »%.250s« kann nicht überprüft werden"
 
+#: dpkg-deb/build.c
+#, fuzzy
+#| msgid "compressing data member"
+msgid "compressing tar member"
+msgstr "data-Element wird komprimiert"
+
+#: dpkg-deb/build.c
+msgid "<compress> from tar -cf"
+msgstr "<Kompression> von tar -cf"
+
 #: dpkg-deb/build.c utils/update-alternatives.c
 #, c-format
 msgid "--%s needs a <directory> argument"
@@ -5020,10 +4989,6 @@ msgid "compressing control member"
 msgstr "control-Element wird dekomprimiert"
 
 #: dpkg-deb/build.c
-msgid "<compress> from tar -cf"
-msgstr "<Kompression> von tar -cf"
-
-#: dpkg-deb/build.c
 #, c-format
 msgid "failed to rewind temporary file (%s)"
 msgstr "Zurücksetzen von temporärer Datei fehlgeschlagen (%s)"
@@ -5042,10 +5007,6 @@ msgstr "Fehler beim Schreiben von »%s«"
 #, c-format
 msgid "cannot copy '%s' into archive '%s': %s"
 msgstr "»%s« kann nicht in Archiv »%s« kopiert werden: %s"
-
-#: dpkg-deb/build.c
-msgid "compressing data member"
-msgstr "data-Element wird komprimiert"
 
 #: dpkg-deb/extract.c
 msgid "shell command to move files"
@@ -6204,6 +6165,18 @@ msgid "unable to flush file '%s'"
 msgstr "Datei »%s« kann nicht zurückgeschrieben werden"
 
 #: utils/update-alternatives.c
+#, fuzzy, c-format
+#| msgid "Current 'best' version is '%s'."
+msgid "  link best version is %s"
+msgstr "Gegenwärtig »beste« Version ist »%s«."
+
+#: utils/update-alternatives.c
+#, fuzzy
+#| msgid "No versions available."
+msgid "  link best version not available"
+msgstr "Keine Versionen verfügbar."
+
+#: utils/update-alternatives.c
 #, c-format
 msgid "  link currently points to %s"
 msgstr "  Link verweist zur Zeit auf %s"
@@ -6211,6 +6184,18 @@ msgstr "  Link verweist zur Zeit auf %s"
 #: utils/update-alternatives.c
 msgid "  link currently absent"
 msgstr "  Link zur Zeit nicht vorhanden"
+
+#: utils/update-alternatives.c
+#, fuzzy, c-format
+#| msgid "  %.250s is %s.\n"
+msgid "  link %s is %s"
+msgstr "  %.250s ist %s.\n"
+
+#: utils/update-alternatives.c
+#, fuzzy, c-format
+#| msgid "  slave %s: %s"
+msgid "  slave %s is %s"
+msgstr "  Slave %s: %s"
 
 #: utils/update-alternatives.c
 #, c-format
@@ -6221,15 +6206,6 @@ msgstr "%s - Priorität %d"
 #, c-format
 msgid "  slave %s: %s"
 msgstr "  Slave %s: %s"
-
-#: utils/update-alternatives.c
-#, c-format
-msgid "Current 'best' version is '%s'."
-msgstr "Gegenwärtig »beste« Version ist »%s«."
-
-#: utils/update-alternatives.c
-msgid "No versions available."
-msgstr "Keine Versionen verfügbar."
 
 # CHECKME: bereitstellt oder bereitstellen?
 #: utils/update-alternatives.c
@@ -6268,6 +6244,21 @@ msgstr ""
 
 #: utils/update-alternatives.c
 #, c-format
+msgid "There is no program which provides %s."
+msgstr "Es gibt kein Programm, welches %s bereitstellt."
+
+#: utils/update-alternatives.c
+msgid "Nothing to configure."
+msgstr "Nichts zu konfigurieren."
+
+#: utils/update-alternatives.c
+#, c-format
+msgid "There is only one alternative in link group %s (providing %s): %s"
+msgstr ""
+"Es gibt nur eine Alternative in Link-Gruppe %s (die %s bereitstellt): %s"
+
+#: utils/update-alternatives.c
+#, c-format
 msgid "not replacing %s with a link"
 msgstr "%s wird nicht durch einen Link ersetzt"
 
@@ -6292,28 +6283,20 @@ msgstr "%s wird nicht entfernt, da sie kein Symlink ist"
 
 #: utils/update-alternatives.c
 #, c-format
-msgid "Call %s."
-msgstr "%s wird aufgerufen."
+msgid "alternative %s for %s not registered; not removing"
+msgstr "Alternative %s für %s ist nicht registriert; wird nicht entfernt"
 
 #: utils/update-alternatives.c
 #, c-format
-msgid "Alternative %s unchanged because choice %s is not available."
-msgstr "Alternative %s nicht verändert, weil Auswahl %s nicht verfügbar ist."
+msgid "removing manually selected alternative - switching %s to auto mode"
+msgstr ""
+"Manuell ausgewählte Alternative wird entfernt - Umschaltung von %s in Auto-"
+"Modus"
 
 #: utils/update-alternatives.c
 #, c-format
-msgid "Skip unknown alternative %s."
-msgstr "Unbekannte Alternative %s wird übersprungen."
-
-#: utils/update-alternatives.c
-#, c-format
-msgid "line too long or not terminated while trying to read %s"
-msgstr "Zeile zu lang oder nicht beendet beim Versuch, %s zu lesen"
-
-#: utils/update-alternatives.c
-#, c-format
-msgid "Skip invalid line: %s"
-msgstr "Ungültige Zeile wird übersprungen: %s"
+msgid "alternative %s for %s not registered; not setting"
+msgstr "Alternative %s für %s ist nicht registriert; wird nicht gesetzt"
 
 # CHECKME: it -> »er« oder »sie« (Symlink oder Alternative)?
 #: utils/update-alternatives.c
@@ -6375,6 +6358,26 @@ msgstr ""
 msgid "current alternative %s is unknown, switching to %s for link group %s"
 msgstr ""
 "Aktuelle Alternative %s ist unbekannt, Linkgruppe %s wird zu %s umgeschaltet"
+
+#: utils/update-alternatives.c
+#, c-format
+msgid "Alternative %s unchanged because choice %s is not available."
+msgstr "Alternative %s nicht verändert, weil Auswahl %s nicht verfügbar ist."
+
+#: utils/update-alternatives.c
+#, c-format
+msgid "Skip unknown alternative %s."
+msgstr "Unbekannte Alternative %s wird übersprungen."
+
+#: utils/update-alternatives.c
+#, c-format
+msgid "line too long or not terminated while trying to read %s"
+msgstr "Zeile zu lang oder nicht beendet beim Versuch, %s zu lesen"
+
+#: utils/update-alternatives.c
+#, c-format
+msgid "Skip invalid line: %s"
+msgstr "Ungültige Zeile wird übersprungen: %s"
 
 #: utils/update-alternatives.c
 #, c-format
@@ -6496,38 +6499,6 @@ msgstr "<Standardeingabe>"
 
 #: utils/update-alternatives.c
 #, c-format
-msgid "alternative %s for %s not registered; not setting"
-msgstr "Alternative %s für %s ist nicht registriert; wird nicht gesetzt"
-
-#: utils/update-alternatives.c
-#, c-format
-msgid "There is no program which provides %s."
-msgstr "Es gibt kein Programm, welches %s bereitstellt."
-
-#: utils/update-alternatives.c
-msgid "Nothing to configure."
-msgstr "Nichts zu konfigurieren."
-
-#: utils/update-alternatives.c
-#, c-format
-msgid "There is only one alternative in link group %s (providing %s): %s"
-msgstr ""
-"Es gibt nur eine Alternative in Link-Gruppe %s (die %s bereitstellt): %s"
-
-#: utils/update-alternatives.c
-#, c-format
-msgid "alternative %s for %s not registered; not removing"
-msgstr "Alternative %s für %s ist nicht registriert; wird nicht entfernt"
-
-#: utils/update-alternatives.c
-#, c-format
-msgid "removing manually selected alternative - switching %s to auto mode"
-msgstr ""
-"Manuell ausgewählte Alternative wird entfernt - Umschaltung von %s in Auto-"
-"Modus"
-
-#: utils/update-alternatives.c
-#, c-format
 msgid "automatic updates of %s/%s are disabled; leaving it alone"
 msgstr ""
 "Automatische Aktualisierungen von %s/%s sind deaktiviert; wird nicht "
@@ -6539,6 +6510,9 @@ msgid "to return to automatic updates use '%s --auto %s'"
 msgstr ""
 "Um zu automatischen Aktualisierungen zurückzukehren,\n"
 "verwenden Sie »%s --auto %s«"
+
+#~ msgid "Call %s."
+#~ msgstr "%s wird aufgerufen."
 
 #~ msgid "syntax error: invalid uid in statoverride file"
 #~ msgstr "Syntaxfehler: ungültige UID in statoverride-Datei"

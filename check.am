@@ -12,7 +12,7 @@ TEST_VERBOSE ?= 0
 
 TEST_RUNNER = '\
 	my $$harness = TAP::Harness->new({ \
-	    lib => [ "$(top_srcdir)/scripts" ], \
+	    lib => [ "$(top_srcdir)/scripts", "$(top_srcdir)/dselect/methods"  ], \
 	    color => 1, \
 	    verbosity => $(TEST_VERBOSE), \
 	    failures => 1, \
@@ -25,12 +25,13 @@ check-clean:
 
 check-local: $(test_data) $(test_programs) $(test_scripts)
 	[ -z "$(test_tmpdir)" ] || $(MKDIR_P) $(test_tmpdir)
-	PATH="$(top_builddir)/src:$(top_builddir)/scripts:$(top_builddir)/utils:$(PATH)" \
+	PATH="$(abs_top_builddir)/src:$(abs_top_builddir)/scripts:$(abs_top_builddir)/utils:$(PATH)" \
 	  LC_ALL=C \
 	  $(TEST_ENV_VARS) \
 	  srcdir=$(srcdir) builddir=$(builddir) \
 	  CC=$(CC) \
 	  PERL_DL_NONLAZY=1 \
+	  PERL5LIB=$(abs_top_srcdir)/scripts:$(abs_top_srcdir)/dselect/methods \
 	  PERL5OPT=$(TEST_COVERAGE) \
 	  $(PERL) -MTAP::Harness -e $(TEST_RUNNER) \
 	    $(addprefix $(builddir)/,$(test_programs)) \

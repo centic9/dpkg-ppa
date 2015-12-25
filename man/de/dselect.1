@@ -29,7 +29,7 @@
 dselect \- Debian\-Paketverwaltungsoberfläche
 .
 .SH ÜBERSICHT
-\fBdselect\fP [\fIOption\fP?] [\fIBefehl\fP?]
+\fBdselect\fP [\fIOption\fP ?] [\fIBefehl\fP ?]
 .
 .SH BESCHREIBUNG
 \fBdselect\fP
@@ -54,16 +54,16 @@ Zugriffsmethode ist \fIapt\fP, die vom Paket \fBapt\fP bereitgestellt wird.
 Normalerweise wird \fBdselect\fP ohne Parameter aufgerufen. Es wird ein
 interaktives Menü präsentiert, das dem Benutzer eine Liste von Befehlen
 anbietet. Falls ein Befehl als Argument übergeben wird, wird dieser Befehl
-sofort begonnen. Es sind noch mehrere Kommandozeilenparameter vorhanden, um
+sofort begonnen. Es sind noch mehrere Befehlszeilenparameter vorhanden, um
 das Laufzeitverhalten von \fBdselect\fP zu verändern oder zusätzliche
 Informationen über das Programm anzuzeigen.
 .
 .SH OPTIONEN
-Alle Optionen können sowohl auf der Kommandozeile als auch in der
+Alle Optionen können sowohl auf der Befehlszeile als auch in der
 Konfigurationsdatei \fI/etc/dpkg/dselect.cfg\fP oder in den Dateien im
 Konfigurationsverzeichnis \fI/etc/dpkg/dselect.cfg.d/\fP von \fBdselect\fP
 angegeben werden. Jede Zeile in der Konfigurationsdatei ist entweder eine
-Option (exakt identisch mit der Kommandozeilenoption, nur ohne einleitende
+Option (exakt identisch mit der Befehlszeilenoption, nur ohne einleitende
 Bindestriche) oder ein Kommentar (falls sie mit \(oq\fB#\fP\(cq beginnt).
 .br
 .TP 
@@ -74,7 +74,8 @@ dies \fI/var/lib/dpkg\fP und normalerweise sollte es keinen Grund geben, dieses
 zu ändern.
 .TP 
 \fB\-D\fP\fIDatei\fP, \fB\-\-debug\fP \fIDatei\fP
-Aktiviere Debugging. Debug\-Informationen werden nach \fIDatei\fP gesendet.
+Aktiviert Fehlersuche. Fehlersuchinformationen werden nach \fIDatei\fP
+gesendet.
 .TP 
 \fB\-\-expert\fP
 Aktiviert den Expertenmodus, d.h. zeigt keine möglicherweise nervenden
@@ -147,7 +148,7 @@ Gebe Versionsinformationen aus und beende sich erfolgreich.
 .
 .SH BEFEHLE
 Wenn \fBDselect\fP gestartet wird, kann es die folgenden Befehle ausführen,
-entweder direkt, falls sie auf der Kommandozeile angegeben wurde oder indem
+entweder direkt, falls sie auf der Befehlszeile angegeben wurde oder indem
 dem Benutzer ein Menü der verfügbaren Befehle bei interkativen Betrieb
 angezeigt wird:
 .SS Zugriff
@@ -296,7 +297,7 @@ Debian\-Paketverwaltungssystem bekannt sind. Dies beinhaltet alle auf dem
 System installierten Pakete und Pakete, die aus den verfügbaren
 Paketdatenbanken bekannt sind.
 .sp
-Für jedes Paket zeigt die Liste den Paketstatus, die Priorität, den Bereich,
+Für jedes Paket zeigt die Liste den Paketstatus, die Priorität, die Sektion,
 installierte und verfügbare Architektur, installierte und verfügbare
 Versionen, den Namen und die Kurzbeschreibung des Paketes, alles in einer
 Zeile. Durch Drücken der Taste \(oq\fBA\fP\(cq kann die Anzeige der
@@ -371,7 +372,7 @@ Die List\-Sortierreihenfolge kann durch wiederholtes
 Drücken der Tasten \(oq\fBo\fP\(cq and \(oq\fBO\fP\(cq verändert werden.
 Die folgenden Sortierreihenfolgen können ausgewählt werden:
  alphabetisch      verfügbar           Status
- Priorität+Bereich verfügbar+Priorität Status+Priorität
+ Priorität+Sektion verfügbar+Priorität Status+Priorität
  Bereich+Priorität verfügbar+Bereich   Status+Bereich
 .br
 Wo dies oben nicht explizit aufgeführt ist, wird alphabetische Reihenfolge

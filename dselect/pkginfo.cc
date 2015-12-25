@@ -2,7 +2,7 @@
  * dselect - Debian package maintenance user interface
  * pkginfo.cc - handles (re)draw of package list window infopad
  *
- * Copyright © 1995 Ian Jackson <ian@chiark.greenend.org.uk>
+ * Copyright © 1995 Ian Jackson <ijackson@chiark.greenend.org.uk>
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -139,7 +139,6 @@ void packagelist::itd_statuscontrol() {
   } else {
     varbuf vb;
     varbufrecord(&vb,table[cursorline]->pkg,&table[cursorline]->pkg->installed);
-    vb.terminate();
     debug(dbg_general, "packagelist[%p]::idt_statuscontrol(); '%s'",
           this, vb.string());
     waddstr(infopad,vb.string());
@@ -155,7 +154,6 @@ void packagelist::itd_availablecontrol() {
   } else {
     varbuf vb;
     varbufrecord(&vb,table[cursorline]->pkg,&table[cursorline]->pkg->available);
-    vb.terminate();
     debug(dbg_general, "packagelist[%p]::idt_availablecontrol(); '%s'",
           this, vb.string());
     waddstr(infopad,vb.string());
@@ -177,7 +175,7 @@ void packagelist::redrawinfo() {
         this, (int)(currentinfo - baseinfo));
 
   (this->*currentinfo->display)();
-  whatinfovb.terminate();
+
   int y,x;
   getyx(infopad, y,x);
   if (x) y++;

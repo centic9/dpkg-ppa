@@ -2,7 +2,7 @@
  * dselect - Debian package maintenance user interface
  * baselist.cc - list of somethings
  *
- * Copyright © 1994,1995 Ian Jackson <ian@chiark.greenend.org.uk>
+ * Copyright © 1994,1995 Ian Jackson <ijackson@chiark.greenend.org.uk>
  * Copyright © 2001 Wichert Akkerman <wakkerma@debian.org>
  * Copyright © 2007-2013 Guillem Jover <guillem@debian.org>
  *
@@ -76,12 +76,27 @@ static void cu_sigwinch(int, void **argv) {
   delete oblockedp;
 }
 
-void baselist::setupsigwinch() {
+void
+baselist::sigwinch_mask(int how)
+{
+  sigset_t sigwinchset;
   sigemptyset(&sigwinchset);
   sigaddset(&sigwinchset,SIGWINCH);
 
-  osigactp= new(struct sigaction);
-  oblockedp= new(sigset_t);
+  int rc = sigprocmask(how, &sigwinchset, nullptr);
+  if (rc < 0) {
+    if (how == SIG_UNBLOCK)
+      ohshite(_("failed to unblock SIGWINCH"));
+    else
+      ohshite(_("failed to block SIGWINCH"));
+  }
+}
+
+void
+baselist::setupsigwinch()
+{
+  struct sigaction *osigactp = new(struct sigaction);
+  sigset_t *oblockedp = new(sigset_t);
   if (sigprocmask(0, nullptr, oblockedp))
     ohshite(_("failed to get old signal mask"));
   if (sigaction(SIGWINCH, nullptr, osigactp))
@@ -89,8 +104,9 @@ void baselist::setupsigwinch() {
 
   push_cleanup(cu_sigwinch, ~0, nullptr, 0, 2, osigactp, oblockedp);
 
-  if (sigprocmask(SIG_BLOCK, &sigwinchset, nullptr))
-    ohshite(_("failed to block SIGWINCH"));
+  sigwinch_mask(SIG_BLOCK);
+
+  struct sigaction nsigact;
   memset(&nsigact,0,sizeof(nsigact));
   nsigact.sa_handler= sigwinchhandler;
   sigemptyset(&nsigact.sa_mask);
@@ -285,10 +301,37 @@ baselist::baselist(keybindings *kb) {
   total_width = max(TOTAL_LIST_WIDTH, COLS);
 
   xmax= -1;
-  list_height=0; info_height=0;
-  topofscreen= 0; leftofscreen= 0;
+  ymax = -1;
+
+  list_height = 0;
+  info_height = 0;
+  title_height = 0;
+  whatinfo_height = 0;
+  colheads_height = 0;
+  thisstate_height = 0;
+
+  list_row = 0;
+  info_row = 0;
+  whatinfo_row = 0;
+  colheads_row = 0;
+  thisstate_row = 0;
+
+  topofscreen = 0;
+  leftofscreen = 0;
+  infotopofscreen = 0;
+  infolines = 0;
+
   listpad = nullptr;
+  infopad = nullptr;
+  colheadspad = nullptr;
+  thisstatepad = nullptr;
+  titlewin = nullptr;
+  querywin = nullptr;
+  whatinfowin = nullptr;
+
   cursorline = -1;
+  ldrawnstart = 0;
+  ldrawnend = 0;
   showinfo= 1;
 
   searchstring[0]= 0;

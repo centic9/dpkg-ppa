@@ -3,7 +3,7 @@
  * triglib.c - trigger handling
  *
  * Copyright © 2007 Canonical Ltd
- * Written by Ian Jackson <ian@chiark.greenend.org.uk>
+ * Written by Ian Jackson <ijackson@chiark.greenend.org.uk>
  * Copyright © 2008-2015 Guillem Jover <guillem@debian.org>
  *
  * This is free software; you can redistribute it and/or modify
@@ -49,11 +49,7 @@ static char *triggersdir, *triggersfilefile;
 static char *
 trig_get_filename(const char *dir, const char *filename)
 {
-	char *path;
-
-	m_asprintf(&path, "%s/%s", dir, filename);
-
-	return path;
+	return str_fmt("%s/%s", dir, filename);
 }
 
 static struct trig_hooks trigh;

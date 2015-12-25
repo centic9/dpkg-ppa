@@ -12,6 +12,9 @@
 /* Set this to the canonical dpkg system name. */
 #undef ARCHITECTURE_OS
 
+/* Define to YES if building devel docs. */
+#undef BUILD_DEVEL_DOCS
+
 /* Define to 1 if dselect is compiled. */
 #undef BUILD_DSELECT
 
@@ -132,6 +135,9 @@
 
 /* Define to 1 if you have the `lutimes' function. */
 #undef HAVE_LUTIMES
+
+/* xz multithreaded compression support */
+#undef HAVE_LZMA_MT
 
 /* Define to 1 if 'makedev' is declared in <sys/types.h> */
 #undef HAVE_MAKEDEV

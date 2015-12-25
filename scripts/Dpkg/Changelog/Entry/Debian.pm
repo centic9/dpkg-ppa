@@ -60,14 +60,45 @@ my $name_chars = qr/[-+0-9a-z.]/i;
 
 # The matched content is the source package name ($1), the version ($2),
 # the target distributions ($3) and the options on the rest of the line ($4).
-our $regex_header = qr/^(\w$name_chars*) \(([^\(\) \t]+)\)((?:\s+$name_chars+)+)\;(.*?)\s*$/i;
+our $regex_header = qr{
+    ^
+    (\w$name_chars*)                    # Package name
+    \ \(([^\(\) \t]+)\)                 # Package version
+    ((?:\s+$name_chars+)+)              # Target distribution
+    \;                                  # Separator
+    (.*?)                               # Key=Value options
+    \s*$                                # Trailing space
+}xi;
 
 # The matched content is the maintainer name ($1), its email ($2),
-# some blanks ($3) and the timestamp ($4).
-our $regex_trailer = qr/^ \-\- (.*) <(.*)>(  ?)(((\w+)\,\s*)?((\d{1,2}\s+)(\w+)\s+\d{4}\s+\d{1,2}:\d\d:\d\d\s+[-+]\d{4}))\s*$/o;
+# some blanks ($3) and the timestamp ($4), which is decomposed into
+# day of week ($6), date-time ($7) and this into month name ($8).
+our $regex_trailer = qr<
+    ^
+    \ \-\-                              # Trailer marker
+    \ (.*)                              # Maintainer name
+    \ \<(.*)\>                          # Maintainer email
+    (\ \ ?)                             # Blanks
+    (
+      ((\w+)\,\s*)?                     # Day of week (abbreviated)
+      (
+        \d{1,2}\s+                      # Day of month
+        (\w+)\s+                        # Month name (abbreviated)
+        \d{4}\s+                        # Year
+        \d{1,2}:\d\d:\d\d\s+[-+]\d{4}   # ISO 8601 date
+      )
+    )
+    \s*$                                # Trailing space
+>xo;
 
 my %week_day = map { $_ => 1 } qw(Mon Tue Wed Thu Fri Sat Sun);
-my %month_name = map { $_ => 1 } qw(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec);
+my %month_abbrev = map { $_ => 1 } qw(
+    Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec
+);
+my %month_name = map { $_ => } qw(
+    January February March April May June July
+    August September October November December
+);
 
 ## use critic
 
@@ -162,7 +193,6 @@ sub check_header {
 
 sub check_trailer {
     my $self = shift;
-    my $month_spec = '%b';
     my @errors;
     if (defined($self->{trailer}) and $self->{trailer} =~ $regex_trailer) {
 	if ($3 ne '  ') {
@@ -174,16 +204,23 @@ sub check_trailer {
 	if (defined $5 and not exists $week_day{$6}) {
 	    push @errors, sprintf(g_('ignoring invalid week day \'%s\''), $6);
 	}
-	if (defined $5 and not exists $month_name{$9}) {
-	    push @errors, sprintf(g_('assuming long month name \'%s\''), $9);
-	    $month_spec = '%B';
-	}
 
 	# Ignore the week day ('%a, '), as we have validated it above.
 	local $ENV{LC_ALL} = 'C';
-	unless (defined Time::Piece->strptime($7, "%d $month_spec %Y %T %z")) {
-	    push @errors, sprintf(g_("couldn't parse date %s"), $4);
-	}
+	eval {
+	    Time::Piece->strptime($7, '%d %b %Y %T %z');
+	} or do {
+	    # Validate the month. Date::Parse used to accept both abbreviated
+	    # and full months, but Time::Piece strptime() implementation only
+	    # matches the abbreviated one with %b, which is what we want anyway.
+	    if (exists $month_name{$8}) {
+	        push @errors, sprintf(g_('uses full instead of abbreviated month name \'%s\''),
+	                              $8, $month_name{$8});
+	    } elsif (not exists $month_abbrev{$8}) {
+	        push @errors, sprintf(g_('invalid abbreviated month name \'%s\''), $8);
+	    }
+	    push @errors, sprintf(g_("cannot parse non-comformant date '%s'"), $7);
+	};
     } else {
 	push @errors, g_("the trailer doesn't match the expected regex");
     }
@@ -316,8 +353,11 @@ sub find_closes {
     my $changes = shift;
     my %closes;
 
-    while ($changes &&
-           ($changes =~ /closes:\s*(?:bug)?\#?\s?\d+(?:,\s*(?:bug)?\#?\s?\d+)*/pig)) {
+    while ($changes && ($changes =~ m{
+               closes:\s*
+               (?:bug)?\#?\s?\d+
+               (?:,\s*(?:bug)?\#?\s?\d+)*
+           }pigx)) {
         $closes{$_} = 1 foreach (${^MATCH} =~ /\#?\s?(\d+)/g);
     }
 

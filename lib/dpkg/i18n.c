@@ -26,8 +26,7 @@
 void
 dpkg_locales_init(const char *package)
 {
-	if (getenv("DPKG_UNTRANSLATED_MESSAGES") == NULL)
-		setlocale(LC_ALL, "");
+	setlocale(LC_ALL, "");
 	bindtextdomain(package, LOCALEDIR);
 	textdomain(package);
 

@@ -427,6 +427,7 @@ pkgconfdir = @pkgconfdir@
 prefix = @prefix@
 program_transform_name = @program_transform_name@
 psdir = @psdir@
+runstatedir = @runstatedir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 srcdir = @srcdir@
@@ -532,12 +533,11 @@ test_data = \
 # while changing dir to source dir on out-of-tree builds.
 TEST_ENV_VARS = \
 	DPKG_DATADIR=$(abs_top_srcdir) \
-	PERL5LIB=$(abs_top_srcdir)/scripts:$(abs_top_srcdir)/dselect/methods \
 	$(nil)
 
 TEST_RUNNER = '\
 	my $$harness = TAP::Harness->new({ \
-	    lib => [ "$(top_srcdir)/scripts" ], \
+	    lib => [ "$(top_srcdir)/scripts", "$(top_srcdir)/dselect/methods"  ], \
 	    color => 1, \
 	    verbosity => $(TEST_VERBOSE), \
 	    failures => 1, \
@@ -1106,6 +1106,7 @@ doc-clean:
 @COVERAGE_ENABLED_TRUE@	rm -rf doc/coverage/
 @COVERAGE_ENABLED_TRUE@	find -name '*.gcno' -o -name '*.gcda' -o \
 @COVERAGE_ENABLED_TRUE@	     -name '*.gcov' -o -name '*.lcov' | xargs rm -f
+@COVERAGE_ENABLED_TRUE@	$(MAKE) -C scripts $@
 @COVERAGE_ENABLED_FALSE@coverage:
 @COVERAGE_ENABLED_FALSE@	@echo "Need to reconfigure with --enable-coverage"
 
@@ -1118,12 +1119,13 @@ check-clean:
 
 check-local: $(test_data) $(test_programs) $(test_scripts)
 	[ -z "$(test_tmpdir)" ] || $(MKDIR_P) $(test_tmpdir)
-	PATH="$(top_builddir)/src:$(top_builddir)/scripts:$(top_builddir)/utils:$(PATH)" \
+	PATH="$(abs_top_builddir)/src:$(abs_top_builddir)/scripts:$(abs_top_builddir)/utils:$(PATH)" \
 	  LC_ALL=C \
 	  $(TEST_ENV_VARS) \
 	  srcdir=$(srcdir) builddir=$(builddir) \
 	  CC=$(CC) \
 	  PERL_DL_NONLAZY=1 \
+	  PERL5LIB=$(abs_top_srcdir)/scripts:$(abs_top_srcdir)/dselect/methods \
 	  PERL5OPT=$(TEST_COVERAGE) \
 	  $(PERL) -MTAP::Harness -e $(TEST_RUNNER) \
 	    $(addprefix $(builddir)/,$(test_programs)) \

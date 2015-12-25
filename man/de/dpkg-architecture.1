@@ -36,7 +36,7 @@ dpkg\-architecture \- Architektur zum Paketbau setzen und bestimmen
 für den Paketbau zu bestimmen und zu setzen.
 .PP
 Die Bau\-Architektur wird immer über einen externen Aufruf an \fBdpkg\fP(1)
-bestimmt und kann nicht auf der Kommandozeile gesetzt werden.
+bestimmt und kann nicht auf der Befehlszeile gesetzt werden.
 .PP
 Sie können die Host\-Architektur (Wirt\-Architektur) spezifizieren, indem Sie
 eine oder beide der Optionen \fB\-\-host\-arch\fP oder \fB\-\-host\-type\fP
@@ -104,10 +104,7 @@ Setzt die Debian\-Host\-Architektur.
 Setzt den Host\-GNU\-Systemtyp.
 .TP 
 \fB\-A\fP, \fB\-\-target\-arch\fP \fIArchitektur\fP
-Setzt die Ziel\-Debian\-Architektur (seit Dpkg 1.17.14). Dies wird nur beim
-Bau einer Cross\-Toolchain und zum Bau von Code für die Ziel\-Architektur
-benötigt. Die Cross\-Toolchain wird auf der Bauarchitektur gebaut und läuft
-dann auf der Host\-Architektur.
+Setzt die Ziel\-Debian\-Architektur (seit Dpkg 1.17.14).
 .TP 
 \fB\-T\fP, \fB\-\-target\-type\fP \fIGNU\-Systemtyp\fP
 Setzt den Ziel\-GNU\-Systemtyp (seit Dpkg 1.17.14).
@@ -139,7 +136,10 @@ Die Maschine, auf der das Paket gebaut wird.
 .IP Host\-Maschine 4
 Die Maschine, für die das Paket gebaut ist.
 .IP Ziel\-Maschine 4
-Die Maschine, für die der Compiler baut.
+Die Maschine, für die der Compiler baut. Dies wird nur beim Bau einer
+Cross\-Toolchain und zum Bau von Code für die Ziel\-Architektur benötigt. Die
+Cross\-Toolchain wird auf der Bauarchitektur gebaut und läuft dann auf der
+Host\-Architektur.
 .IP Debian\-Architektur 4
 Die Debian\-Architektur\-Zeichenkette, die den binären Baum im FTP\-Archiv
 spezifiziert. Beispiele: i386, sparc, hurd\-i386.

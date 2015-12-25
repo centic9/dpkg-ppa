@@ -1,14 +1,14 @@
 # SOME DESCRIPTIVE TITLE.
 # Copyright (C) YEAR Dpkg Developers
-# This file is distributed under the same license as the PACKAGE package.
+# This file is distributed under the same license as the dpkg package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: dpkg 1.18.2\n"
+"Project-Id-Version: dpkg 1.18.4\n"
 "Report-Msgid-Bugs-To: debian-dpkg@lists.debian.org\n"
-"POT-Creation-Date: 2015-08-04 20:59+0200\n"
+"POT-Creation-Date: 2015-12-25 13:28+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -122,8 +122,8 @@ msgstr ""
 #: scripts/dpkg-architecture.pl
 #, perl-format
 msgid ""
-"specified GNU system type %s does not match gcc system type %s, try setting "
-"a correct CC environment variable"
+"specified GNU system type %s does not match CC system type %s, try setting a "
+"correct CC environment variable"
 msgstr ""
 
 #: scripts/dpkg-buildflags.pl
@@ -465,12 +465,12 @@ msgstr ""
 
 #: scripts/dpkg-checkbuilddeps.pl
 #, perl-format
-msgid "%s: Unmet build dependencies: "
+msgid "Unmet build dependencies: %s"
 msgstr ""
 
 #: scripts/dpkg-checkbuilddeps.pl
 #, perl-format
-msgid "%s: Build conflicts: "
+msgid "Build conflicts: %s"
 msgstr ""
 
 #: scripts/dpkg-distaddfile.pl
@@ -1027,9 +1027,9 @@ msgstr ""
 msgid "unconditional maintainer override for %s"
 msgstr ""
 
-#: scripts/dpkg-scanpackages.pl scripts/dpkg-scansources.pl
-#: scripts/dpkg-shlibdeps.pl scripts/Dpkg/Changelog/Parse.pm
-#: scripts/Dpkg/IPC.pm scripts/Dpkg/Shlibs/Objdump.pm
+#: scripts/dpkg-scanpackages.pl scripts/dpkg-shlibdeps.pl
+#: scripts/Dpkg/Changelog/Parse.pm scripts/Dpkg/IPC.pm
+#: scripts/Dpkg/Shlibs/Objdump.pm
 #, perl-format
 msgid "cannot fork for %s"
 msgstr ""
@@ -1084,11 +1084,6 @@ msgstr ""
 #: scripts/dpkg-scanpackages.pl
 #, perl-format
 msgid "override file %s not found"
-msgstr ""
-
-#: scripts/dpkg-scanpackages.pl
-#, perl-format
-msgid "couldn't open %s for reading"
 msgstr ""
 
 #: scripts/dpkg-scanpackages.pl
@@ -1169,11 +1164,6 @@ msgstr ""
 #: scripts/dpkg-scansources.pl
 #, perl-format
 msgid "no binary packages specified in %s"
-msgstr ""
-
-#: scripts/dpkg-scansources.pl
-#, perl-format
-msgid "error closing %s (%s)"
 msgstr ""
 
 #: scripts/dpkg-shlibdeps.pl
@@ -1626,14 +1616,12 @@ msgstr ""
 
 #: scripts/Dpkg/Arch.pm
 msgid ""
-"couldn't determine gcc system type, falling back to default (native "
-"compilation)"
+"cannot determine CC system type, falling back to default (native compilation)"
 msgstr ""
 
 #: scripts/Dpkg/Arch.pm
 #, perl-format
-msgid ""
-"unknown gcc system type %s, falling back to default (native compilation)"
+msgid "unknown CC system type %s, falling back to default (native compilation)"
 msgstr ""
 
 #: scripts/Dpkg/BuildFlags.pm
@@ -1802,7 +1790,22 @@ msgstr ""
 
 #: scripts/Dpkg/Changelog/Entry/Debian.pm
 #, perl-format
-msgid "couldn't parse date %s"
+msgid "ignoring invalid week day '%s'"
+msgstr ""
+
+#: scripts/Dpkg/Changelog/Entry/Debian.pm
+#, perl-format
+msgid "uses full instead of abbreviated month name '%s'"
+msgstr ""
+
+#: scripts/Dpkg/Changelog/Entry/Debian.pm
+#, perl-format
+msgid "invalid abbreviated month name '%s'"
+msgstr ""
+
+#: scripts/Dpkg/Changelog/Entry/Debian.pm
+#, perl-format
+msgid "cannot parse non-comformant date '%s'"
 msgstr ""
 
 #: scripts/Dpkg/Changelog/Entry/Debian.pm
@@ -2462,9 +2465,8 @@ msgstr ""
 msgid "aborting due to --abort-on-upstream-changes"
 msgstr ""
 
-#: scripts/Dpkg/Source/Package/V1.pm
-#, perl-format
-msgid "%s: unrepresentable changes to source"
+#: scripts/Dpkg/Source/Package/V1.pm scripts/Dpkg/Source/Package/V2.pm
+msgid "unrepresentable changes to source"
 msgstr ""
 
 #: scripts/Dpkg/Source/Package/V2.pm
@@ -2517,10 +2519,6 @@ msgstr ""
 
 #: scripts/Dpkg/Source/Package/V2.pm
 msgid "copy of the debian directory"
-msgstr ""
-
-#: scripts/Dpkg/Source/Package/V2.pm
-msgid "unrepresentable changes to source"
 msgstr ""
 
 #: scripts/Dpkg/Source/Package/V2.pm

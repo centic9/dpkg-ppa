@@ -86,7 +86,7 @@ Es führt den Hook \fBdone\fP aus.
 .TP 
 \fB\-g\fP
 Spezifiziert einen auf die Quellen und architekturunabhängige Pakete
-beschränkten Bau (seit Dpkg 17.17.11). Wird an \fBdpkg\-genchanges\fP
+beschränkten Bau (seit Dpkg 1.17.11). Wird an \fBdpkg\-genchanges\fP
 weitergegeben.
 .TP 
 \fB\-G\fP
@@ -221,8 +221,9 @@ Abhängigkeiten, die normalerweise in der Bauumgebung benötigt werden, die
 sogenannte »Build\-Essential«\-Paketgruppe.
 .TP 
 \fB\-nc\fP
-Bereinige den Quellbaum nicht (impliziert \fB\-b\fP, falls ansonsten nichts aus
-\fB\-F\fP, \fB\-g\fP, \fB\-G\fP, \fB\-B\fP, \fB\-A\fP oder \fB\-S\fP gewählt wurde).
+Bereinige den Quellbaum nicht. Impliziert \fB\-b\fP, falls ansonsten nichts aus
+\fB\-F\fP, \fB\-g\fP, \fB\-G\fP, \fB\-B\fP, \fB\-A\fP oder \fB\-S\fP gewählt wurde. Impliziert \fB\-d\fP
+mit \fB\-S\fP (seit Dpkg 1.18.0).
 .TP 
 \fB\-tc\fP
 Den Quellbaum säubern (verwendet \fIroot\-werde\-Befehl\fP \fBdebian/rules clean\fP)
@@ -322,7 +323,7 @@ Die \fB.changes\fP\-Datei nicht signieren.
 Das Unterschreiben der entstehenden Dateien erzwingen (seit Dpkg 1.17.0),
 unabhängig von \fB\-us\fP oder \fB\-uc\fP oder anderen internen Heuristiken.
 .TP 
-\fB\-i\fP[\fIRegex\fP]
+\fB\-i\fP[\fIRegAus\fP]
 .TQ
 \fB\-I\fP[\fIMuster\fP]
 .TQ

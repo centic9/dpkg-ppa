@@ -1,6 +1,6 @@
 .\" dpkg manual page - deb-substvars(5)
 .\"
-.\" Copyright Â© 1995-1996 Ian Jackson <ian@chiark.chu.cam.ac.uk>
+.\" Copyright Â© 1995-1996 Ian Jackson <ijackson@chiark.greenend.org.uk>
 .\" Copyright Â© 2000 Wichert Akkerman <wakkerma@debian.org>
 .\" Copyright Â© 2006-2009,2012-2015 Guillem Jover <guillem@debian.org>
 .\" Copyright Â© 2009-2010 RaphaÃ«l Hertzog <hertzog@debian.org>
@@ -32,8 +32,8 @@ substvars
 .
 .SH BESCHREIBUNG
 Bevor \fBdpkg\-source\fP, \fBdpkg\-gencontrol\fP und \fBdpkg\-genchanges\fP ihre
-Steuerinformationen (zu der Quellsteuer\-Datei \fB.dsc\fP für \fBdpkg\-source\fP und
-zu der Standardausgabe für \fBdpkg\-gencontrol\fP und \fBdpkg\-genchanges\fP)
+Steuerinformationen (zu der Quell\-control\-Datei \fB.dsc\fP für \fBdpkg\-source\fP
+und zu der Standardausgabe für \fBdpkg\-gencontrol\fP und \fBdpkg\-genchanges\fP)
 schreiben, führen sie einige Variablensubstitutionen in der Ausgabedatei
 durch.
 
@@ -48,7 +48,7 @@ Nachdem alle Substitutionen erfolgt sind, wird jedes Auftreten der
 Zeichenkette \fB${}\fP (die keine erlaubte Substitution ist) durch das
 \fB$\fP\-Zeichen ersetzt.
 
-Obwohl die Variablensubstitution bei allen Feldern der Steuerdatei
+Obwohl die Variablensubstitution bei allen Feldern der control\-Datei
 vorgenommen wird, werden einige dieser Felder während des Bauens benötigt
 und verwendet, wenn die Substitution noch nicht erfolgt ist. Daher können
 Sie Variablen nicht in den Feldern \fBPackage\fP, \fBSource\fP und \fBArchitecture\fP
@@ -77,8 +77,8 @@ Dann wird dies zu Folgenden führen:
 Variablen können über die allgemeine \fB\-V\fP\-Option gesetzt werden. Sie können
 auch in der \fBdebian/substvars\fP (bzw. in der über die Option \fB\-T\fP gesetzten
 Datei) angegeben werden. Diese Datei besteht auch Zeilen der Form
-\fIName\fP\fB=\fP\fIWert\fP. Leerzeichen am Zeilenende, leere Zeilen und Zeilen, die
-mit dem \fB#\fP\-Symbol starten (Kommentare) werden ignoriert.
+\fIName\fP\fB=\fP\fIWert\fP. Leerraumzeichen am Zeilenende, leere Zeilen und Zeilen,
+die mit dem \fB#\fP\-Symbol starten (Kommentare) werden ignoriert.
 
 Zusätzlich sind die folgenden Standardvariablen verfügbar:
 .TP 

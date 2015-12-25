@@ -283,7 +283,11 @@ install_diversions('');
 
 system("touch $testdir/foo");
 call_divert(['--rename', '--add', "$testdir/foo"],
-            expect_stdout_like => qr{Adding.*local.*diversion.*\Q$testdir\E/foo.*\Q$testdir\E/foo.distrib},
+            expect_stdout_like => qr{
+                Adding.*local.*diversion.*
+                \Q$testdir\E/foo.*
+                \Q$testdir\E/foo.distrib
+            }x,
             expect_stderr => '');
 ok(-e "$testdir/foo.distrib", 'foo diverted');
 ok(!-e "$testdir/foo", 'foo diverted');
@@ -297,7 +301,11 @@ install_diversions('');
 
 system("touch $testdir/foo");
 call_divert(['--add', "$testdir/foo"],
-            expect_stdout_like => qr{Adding.*local.*diversion.*\Q$testdir\E/foo.*\Q$testdir\E/foo.distrib},
+            expect_stdout_like => qr{
+                Adding.*local.*diversion.*
+                \Q$testdir\E/foo.*
+                \Q$testdir\E/foo.distrib
+            }x,
             expect_stderr => '');
 ok(!-e "$testdir/foo.distrib", 'foo diverted');
 ok(-e "$testdir/foo", 'foo diverted');
@@ -470,7 +478,7 @@ call_divert(['--divert', "$testdir/foo.my", '--remove', "$testdir/foo"],
 call_divert(['--package', 'baz', '--remove', "$testdir/foo"],
             expect_failure => 1, expect_stderr_like => qr/mismatch on package/);
 call_divert(['--package', 'baz', '--divert', "$testdir/foo.my", '--remove', "$testdir/foo"],
-            expect_failure => 1, expect_stderr_like =>qr/mismatch on (package|divert-to)/);
+            expect_failure => 1, expect_stderr_like => qr/mismatch on (package|divert-to)/);
 
 call_divert(['--divert', "$testdir/foo.distrib", '--remove', "$testdir/foo"],
             expect_stdout_like => qr{Removing.*\Q$testdir\E/foo});

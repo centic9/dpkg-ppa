@@ -2,7 +2,7 @@
  * libdpkg - Debian packaging suite library routines
  * pkg-show.c - primitives for pkg information display
  *
- * Copyright © 1995,1996 Ian Jackson <ian@chiark.greenend.org.uk>
+ * Copyright © 1995,1996 Ian Jackson <ijackson@chiark.greenend.org.uk>
  * Copyright © 2008-2014 Guillem Jover <guillem@debian.org>
  *
  * This is free software; you can redistribute it and/or modify
@@ -115,7 +115,7 @@ pkgbin_name(struct pkginfo *pkg, struct pkgbin *pkgbin,
 }
 
 /**
- * Return a string representation of the package name.
+ * Return a string representation of the installed package name.
  *
  * This is equivalent to pkgbin_name() but just for its installed pkgbin.
  *
@@ -130,37 +130,68 @@ pkg_name(struct pkginfo *pkg, enum pkg_name_arch_when pnaw)
 	return pkgbin_name(pkg, &pkg->installed, pnaw);
 }
 
+/**
+ * Return a string representation of the package summary.
+ *
+ * The returned string must not be freed, and it's permanently allocated so
+ * can be used as long as the non-freeing memory pool has not been freed.
+ *
+ * The package summary is the short description, but it is not NUL terminated,
+ * so the output len argument should be used to limit the string length.
+ *
+ * @param pkg      The package to consider.
+ * @param pkgbin   The binary package instance to consider.
+ * @param[out] len The length of the summary string within the description.
+ *
+ * @return The string representation.
+ */
 const char *
-pkg_summary(const struct pkginfo *pkg, const struct pkgbin *pkgbin, int *len_ret)
+pkgbin_summary(const struct pkginfo *pkg, const struct pkgbin *pkgbin, int *len)
 {
 	const char *pdesc;
-	size_t len;
 
 	pdesc = pkgbin->description;
 	if (!pdesc)
 		pdesc = _("(no description available)");
 
-	len = strcspn(pdesc, "\n");
-	if (len == 0)
-		len = strlen(pdesc);
-
-	*len_ret = len;
+	*len = strcspn(pdesc, "\n");
 
 	return pdesc;
 }
 
+/**
+ * Return a character abbreviated representation of the package want status.
+ *
+ * @param pkg The package to consider.
+ *
+ * @return The character abbreviated representation.
+ */
 int
 pkg_abbrev_want(const struct pkginfo *pkg)
 {
 	return "uihrp"[pkg->want];
 }
 
+/**
+ * Return a character abbreviated representation of the package current status.
+ *
+ * @param pkg The package to consider.
+ *
+ * @return The character abbreviated representation.
+ */
 int
 pkg_abbrev_status(const struct pkginfo *pkg)
 {
 	return "ncHUFWti"[pkg->status];
 }
 
+/**
+ * Return a character abbreviated representation of the package eflag status.
+ *
+ * @param pkg The package to consider.
+ *
+ * @return The character abbreviated representation.
+ */
 int
 pkg_abbrev_eflag(const struct pkginfo *pkg)
 {

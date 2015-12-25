@@ -1,6 +1,6 @@
 .\" dpkg manual page - dpkg-gencontrol(1)
 .\"
-.\" Copyright Â© 1995-1996 Ian Jackson <ian@chiark.chu.cam.ac.uk>
+.\" Copyright Â© 1995-1996 Ian Jackson <ijackson@chiark.greenend.org.uk>
 .\" Copyright Â© 2000 Wichert Akkerman <wakkerma@debian.org>
 .\" Copyright Â© 2006, 2012-2013, 2015 Guillem Jover <guillem@debian.org>
 .\" Copyright Â© 2007-2008 RaphaÃ«l Hertzog <hertzog@debian.org>
@@ -32,9 +32,9 @@ dpkg\-gencontrol \- erstelle Debian control\-Dateien
 .
 .SH BESCHREIBUNG
 \fBdpkg\-gencontrol\fP liest Informationen aus einem entpackten
-Debian\-Quellcodebaum und erzeugt eine binäre Paketsteuerdatei (standardmäßig
-debian/tmp/DEBIAN/control); dabei vereinfacht es die Felder mit
-Paketbeziehungen.
+Debian\-Quellcodebaum und erzeugt eine binäre Paket\-control\-Datei
+(standardmäßig debian/tmp/DEBIAN/control); dabei vereinfacht es die Felder
+mit Paketbeziehungen.
 .sp
 Daher werden \fBPre\-Depends\fP, \fBDepends\fP, \fBRecommends\fP und \fBSuggests\fP in
 dieser Reihenfolge vereinfacht, indem Abhängigkeiten, die aufgrund der
@@ -71,13 +71,13 @@ Lese die Substitutionsvariablen aus \fISubstvars\-Datei\fP; standardmäßig
 Substitutionsvariablen aus mehreren Dateien einzulesen (seit Dpkg 1.15.6).
 .TP 
 \fB\-D\fP\fIFeld\fP\fB=\fP\fIWert\fP
-Überschreibe oder ergänze ein Ausgabe\-Steuerdatei\-Feld.
+Überschreibe oder ergänze ein Ausgabesteuerdateifeld.
 .TP 
 \fB\-U\fP\fIfield\fP
-Entferne ein Ausgabe\-Steuerdatei\-Feld.
+Entferne ein Ausgabesteuerdateifeld.
 .TP 
 \fB\-c\fP\fISteuerdatei\fP
-Gibt die Haupt\-Steuerdatei an, aus der Informationen gelesen werden
+Gibt die Haupt\-control\-Datei an, aus der Informationen gelesen werden
 sollen. Standardmäßig \fBdebian/control\fP.
 .TP 
 \fB\-l\fP\fIChangelog\-Datei\fP
@@ -118,7 +118,7 @@ der Substitutionsvariablen \fBInstalled\-Size\fP und des Feldes der Steuerdatei
 Ausgabedatei.
 .TP 
 \fB\-O\fP[\fIDateiname\fP]
-Die Steuerdatei in die Standardausgabe (oder \fIDateiname\fP falls angegeben,
+Die control\-Datei in die Standardausgabe (oder \fIDateiname\fP falls angegeben,
 seit Dpkg 1.17.2) statt nach \fBdebian/tmp/DEBIAN/control\fP (oder
 \fIPaketbauverzeichnis\fP\fB/DEBIAN/control\fP falls \fB\-P\fP verwendet worden ist)
 ausgeben.
@@ -132,7 +132,7 @@ Gebe die Version aus und beende sich.
 .SH DATEIEN
 .TP 
 \fBdebian/control\fP
-Die Haupt\-Steuer\-Informationsdatei für die Quellen. Sie gibt
+Die Hauptsteuerinformationsdatei für die Quellen. Sie gibt
 versionsunabhängige Informationen über das Quellpaket und die Binärpakete,
 die sie erstellen kann, an.
 .TP 

@@ -14,6 +14,14 @@ AC_USE_SYSTEM_EXTENSIONS
 AM_INIT_AUTOMAKE([1.11 -Wall foreign nostdinc no-dist-gzip dist-xz])
 AM_SILENT_RULES([yes])
 
+# Do not unconditionally use the following macro, as Debian jessie does not
+# have a recent enough gettext.
+m4_ifdef([AM_GNU_GETTEXT_REQUIRE_VERSION],
+         [AM_GNU_GETTEXT_REQUIRE_VERSION([0.19])])
+# We cannot remove the following macro due to backwards compatibility reasons.
+# In the future when the gettext version is bumped, we have to set the above
+# macro unconditionally to the minimal version, and set the below to 0.19.6,
+# the first version introducing the AM_GNU_GETTEXT_REQUIRE_VERSION macro.
 AM_GNU_GETTEXT_VERSION([0.19])
 AM_GNU_GETTEXT([external])
 DPKG_DIST_CHECK([test "$GMSGFMT" = ":" && test "$USE_NLS" = "yes"],
@@ -31,6 +39,8 @@ DPKG_LINKER_VERSION_SCRIPT
 DPKG_BUILD_PROG([dselect])
 DPKG_BUILD_PROG([start-stop-daemon])
 DPKG_BUILD_PROG([update-alternatives])
+
+DPKG_BUILD_DEVEL_DOCS
 
 # Allow alternate directories
 DPKG_WITH_DIR([devlibdir], [${libdir}],

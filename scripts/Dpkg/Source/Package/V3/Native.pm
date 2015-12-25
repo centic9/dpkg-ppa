@@ -68,7 +68,7 @@ sub can_build {
     my ($self, $dir) = @_;
 
     my $v = Dpkg::Version->new($self->{fields}->{'Version'});
-    warning (g_('native package version may not have a revision'))
+    return (0, g_('native package version may not have a revision'))
         unless $v->is_native();
 
     return 1;

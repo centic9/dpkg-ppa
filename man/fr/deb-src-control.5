@@ -132,14 +132,16 @@ une liste dans la version la plus récente du paquet \fBdebian\-policy\fP.
 
 .TP 
 \fBBuild\-Depends:\fP\fI liste\-de\-paquets\fP
-Liste de paquets à installer et configurer pour pouvoir construire le paquet
-source. Si une dépendance est ajoutée à cette liste, l'effet sera le même
-que si elle était ajoutée à la fois dans  \fBBuild\-Depends\-Arch\fP et
-\fBBuild\-Depends\-Indep\fP, en ayant de plus l'effet d'être prise en compte pour
-les constructions de paquets source uniquement (« source\-only builds »).
-
+A list of packages that need to be installed and configured to be able to
+build from source package.  These dependencies need to be satisfied when
+building binary architecture dependent or independent packages and source
+packages.  Including a dependency in this field does not have the exact same
+effect as including it in both \fBBuild\-Depends\-Arch\fP and
+\fBBuild\-Depends\-Indep\fP, because the dependency also needs to be satisfied
+when building the source package.
+.
 .TP 
-\fBBuild\-Depends\-Arch:\fP\fIliste\-de\-paquets\fP
+\fBBuild\-Depends\-Arch:\fP\fI package\-list\fP
 Liste analogue à \fBBuild\-Depends\fP, mais restreinte aux paquets nécessaires
 pour construire les paquets dépendants de l'architecture. Les paquets
 indiqués dans \fBBuild\-Depends\fP sont alors également installés. Ce champ est
@@ -154,7 +156,7 @@ pour construire les paquets indépendants de l'architecture. Les paquets
 indiqués dans \fBBuild\-Depends\fP sont alors aussi installés.
 
 .TP 
-\fBBuild\-Conflicts:\fP\fI liste de paquets\fP
+\fBBuild\-Conflicts:\fP\fI package\-list\fP
 Liste de paquets qui ne doivent pas être installés lors de la construction
 du paquet, par exemple s'ils interfèrent avec le système de construction
 utilisé. Si une dépendance est ajoutée à cette liste, l'effet sera le même
@@ -164,7 +166,7 @@ pour les constructions de paquets source uniquement («\ source\-only
 builds\ »).
 
 .TP 
-\fBBuild\-Conflicts\-Arch:\fP\fI liste de paquets\fP
+\fBBuild\-Conflicts\-Arch:\fP\fI package\-list\fP
 Identique à \fBBuild\-Conflicts\fP, mais n'est prise en compte que pour les
 paquets dépendants de l'architecture. Ce champ est géré depuis la version
 1.16.4 de dpkg\ ; pour pouvoir construire des paquets avec des versions plus
@@ -271,6 +273,8 @@ nécessaires. Veuillez consulter
 
 .TP 
 \fBEssential:\fP \fByes\fP|\fBno\fP
+.TQ
+\fBBuild\-Essential:\fP \fByes\fP|\fBno\fP
 .TQ
 \fBMulti\-Arch:\fP \fBsame\fP|\fBforeign\fP|\fBallowed\fP|\fBno\fP
 .TQ

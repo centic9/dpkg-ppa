@@ -2,7 +2,7 @@
  * libdpkg - Debian packaging suite library routines
  * cleanup.c - cleanup functions, used when we need to unwind
  *
- * Copyright © 1995 Ian Jackson <ian@chiark.greenend.org.uk>
+ * Copyright © 1995 Ian Jackson <ijackson@chiark.greenend.org.uk>
  *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -65,5 +65,5 @@ cu_filename(int argc, void **argv)
 {
 	const char *filename = argv[0];
 
-	unlink(filename);
+	(void)unlink(filename);
 }

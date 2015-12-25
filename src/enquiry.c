@@ -2,7 +2,7 @@
  * dpkg - main program for package management
  * enquiry.c - status enquiry and listing options
  *
- * Copyright © 1995,1996 Ian Jackson <ian@chiark.greenend.org.uk>
+ * Copyright © 1995,1996 Ian Jackson <ijackson@chiark.greenend.org.uk>
  * Copyright © 2006, 2008-2015 Guillem Jover <guillem@debian.org>
  * Copyright © 2011 Linaro Limited
  * Copyright © 2011 Raphaël Hertzog <hertzog@debian.org>
@@ -169,7 +169,7 @@ static void describebriefly(struct pkginfo *pkg) {
   l= strlen(pkg->set->name);
   if (l>20) maxl -= (l-20);
 
-  pdesc = pkg_summary(pkg, &pkg->installed, &l);
+  pdesc = pkgbin_summary(pkg, &pkg->installed, &l);
   l = min(l, maxl);
 
   printf(" %-20s %.*s\n", pkg_name(pkg, pnaw_nonambig), l, pdesc);

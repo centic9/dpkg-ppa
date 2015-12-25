@@ -2,7 +2,7 @@
  * dpkg-deb - construction and deconstruction of *.deb archives
  * info.c - providing information
  *
- * Copyright © 1994,1995 Ian Jackson <ian@chiark.greenend.org.uk>
+ * Copyright © 1994,1995 Ian Jackson <ijackson@chiark.greenend.org.uk>
  * Copyright © 2001 Wichert Akkerman
  * Copyright © 2007-2015 Guillem Jover <guillem@debian.org>
  *
@@ -205,7 +205,7 @@ info_field(const char *debar, const char *dir, const char *const *fields,
   struct pkginfo *pkg;
   int i;
 
-  m_asprintf(&controlfile, "%s/%s", dir, CONTROLFILE);
+  controlfile = str_fmt("%s/%s", dir, CONTROLFILE);
   parsedb(controlfile, pdb_parse_binary | pdb_ignorefiles, &pkg);
   free(controlfile);
 
@@ -250,7 +250,7 @@ do_showinfo(const char *const *argv)
 
   info_prepare(&argv, &debar, &dir, 1);
 
-  m_asprintf(&controlfile, "%s/%s", dir, CONTROLFILE);
+  controlfile  = str_fmt("%s/%s", dir, CONTROLFILE);
   parsedb(controlfile, pdb_parse_binary | pdb_ignorefiles, &pkg);
   pkg_format_show(fmt, pkg, &pkg->available);
   pkg_format_free(fmt);

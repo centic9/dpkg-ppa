@@ -28,19 +28,19 @@ deb\-shlibs \- Debians Informationsdatei für Laufzeitbibliotheken
 .SH BESCHREIBUNG
 .PP
 \fBshlibs\fP\-Dateien bilden Laufzeitbibliotheknamen und \-versionen (\fIsonames\fP)
-auf Abhängigkeiten ab, die für eine Paketsteuerdatei geeignet sind. Es gibt
-einen Eintrag pro Zeile. Leerzeilen sind \fBnicht\fP erlaubt. Zeilen, die mit
-\fB#\fP beginnen, werden als Kommentarzeilen betrachtet und ignoriert. Alle
+auf Abhängigkeiten ab, die für eine Paket\-control\-Datei geeignet sind. Es
+gibt einen Eintrag pro Zeile. Leerzeilen sind \fBnicht\fP erlaubt. Zeilen, die
+mit \fB#\fP beginnen, werden als Kommentarzeilen betrachtet und ignoriert. Alle
 anderen Zeilen müssen dem nachfolgenden Format folgen:
 .IP
 [\fITyp\fP\fB:\fP] \fIBibliothek\fP \fIVersion\fP \fIAbhängigkeiten\fP
 .PP
-Die Felder \fIBibliothek\fP und \fIVersion\fP werden durch Leerzeichen begrenzt,
-das Feld \fIAbhängigkeiten\fP geht aber bis zum Ende der Zeile. Das Feld \fITyp\fP
-ist optional und wird normalerweise nicht benötigt.
+Die Felder \fIBibliothek\fP und \fIVersion\fP werden durch Leerraumzeichen
+begrenzt, das Feld \fIAbhängigkeiten\fP geht aber bis zum Ende der Zeile. Das
+Feld \fITyp\fP ist optional und wird normalerweise nicht benötigt.
 .PP
 Das Feld \fIdependencies\fP hat die gleiche Syntax wie das Feld \fBDepends\fP in
-einer binären Steuerdatei, siehe \fBdeb\-control\fP(5). Lesen Sie auch die
+einer binären control\-Datei, siehe \fBdeb\-control\fP(5). Lesen Sie auch die
 Debian\-Richtlinien für weitere Details.
 .
 .SH BEISPIELE

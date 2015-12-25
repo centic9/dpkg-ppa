@@ -159,13 +159,13 @@ check_writable_dir(struct file *f)
 	char *tmpname;
 	int tmpfd;
 
-	m_asprintf(&tmpname, "%s%s", f->name, ".dpkg-divert.tmp");
+	tmpname = str_fmt("%s%s", f->name, ".dpkg-divert.tmp");
 
 	tmpfd = creat(tmpname, 0600);
 	if (tmpfd < 0)
 		ohshite(_("error checking '%s'"), f->name);
 	close(tmpfd);
-	unlink(tmpname);
+	(void)unlink(tmpname);
 
 	free(tmpname);
 }
@@ -216,7 +216,7 @@ file_copy(const char *src, const char *dst)
 	if (srcfd < 0)
 		ohshite(_("unable to open file '%s'"), src);
 
-	m_asprintf(&tmp, "%s%s", dst, ".dpkg-divert.tmp");
+	tmp = str_fmt("%s%s", dst, ".dpkg-divert.tmp");
 	dstfd = creat(tmp, 0600);
 	if (dstfd < 0)
 		ohshite(_("unable to create file '%s'"), tmp);
@@ -438,12 +438,8 @@ diversion_add(const char *const *argv)
 	fnn_from = findnamenode(filename, 0);
 
 	/* Handle divertto. */
-	if (opt_divertto == NULL) {
-		char *str;
-
-		m_asprintf(&str, "%s.distrib", filename);
-		opt_divertto = str;
-	}
+	if (opt_divertto == NULL)
+		opt_divertto = str_fmt("%s.distrib", filename);
 
 	if (strcmp(filename, opt_divertto) == 0)
 		badusage(_("cannot divert file '%s' to itself"), filename);
@@ -468,7 +464,7 @@ diversion_add(const char *const *argv)
 			if (opt_verbose > 0)
 				printf(_("Leaving '%s'\n"),
 				       diversion_describe(fnn_from->divert));
-			exit(0);
+			return 0;
 		}
 
 		ohshit(_("'%s' clashes with '%s'"),
@@ -599,7 +595,7 @@ diversion_remove(const char *const *argv)
 		if (opt_verbose > 0)
 			printf(_("Ignoring request to remove shared diversion '%s'.\n"),
 			       diversion_describe(contest));
-		exit(0);
+		return 0;
 	}
 
 	if (opt_verbose > 0)

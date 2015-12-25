@@ -2,7 +2,7 @@
  * dselect - Debian package maintenance user interface
  * methlist.cc - list of access methods and options
  *
- * Copyright © 1995 Ian Jackson <ian@chiark.greenend.org.uk>
+ * Copyright © 1995 Ian Jackson <ijackson@chiark.greenend.org.uk>
  * Copyright © 2001 Wichert Akkerman <wakkerma@debian.org>
  *
  * This is free software; you can redistribute it and/or modify
@@ -160,13 +160,11 @@ quitaction methodlist::display() {
     if (whatinfo_height) wcursyncup(whatinfowin);
     if (doupdate() == ERR) ohshite(_("doupdate failed"));
     signallist= this;
-    if (sigprocmask(SIG_UNBLOCK, &sigwinchset, nullptr))
-      ohshite(_("failed to unblock SIGWINCH"));
+    sigwinch_mask(SIG_UNBLOCK);
     do
     response= getch();
     while (response == ERR && errno == EINTR);
-    if (sigprocmask(SIG_BLOCK, &sigwinchset, nullptr))
-      ohshite(_("failed to re-block SIGWINCH"));
+    sigwinch_mask(SIG_BLOCK);
     if (response == ERR) ohshite(_("getch failed"));
     interp= (*bindings)(response);
     debug(dbg_general, "methodlist[%p]::display() response=%d interp=%s",
@@ -208,7 +206,6 @@ void methodlist::redrawinfo() {
 
   itd_description();
 
-  whatinfovb.terminate();
   int y,x;
   getyx(infopad, y,x);
   if (x) y++;

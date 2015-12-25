@@ -135,6 +135,7 @@ coverage-clean:
 	rm -rf doc/coverage/
 	find -name '*.gcno' -o -name '*.gcda' -o \
 	     -name '*.gcov' -o -name '*.lcov' | xargs rm -f
+	$(MAKE) -C scripts $@
 else
 coverage:
 	@echo "Need to reconfigure with --enable-coverage"
@@ -156,7 +157,6 @@ test_data = \
 # while changing dir to source dir on out-of-tree builds.
 TEST_ENV_VARS = \
 	DPKG_DATADIR=$(abs_top_srcdir) \
-	PERL5LIB=$(abs_top_srcdir)/scripts:$(abs_top_srcdir)/dselect/methods \
 	$(nil)
 
 include $(top_srcdir)/check.am

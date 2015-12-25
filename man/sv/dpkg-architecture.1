@@ -103,10 +103,7 @@ Sätter värd\-Debianarkitekturen.
 Sätter värd\-GNU\-systemtypen.
 .TP 
 \fB\-A\fP, \fB\-\-target\-arch\fP \fIarkitektur\fP
-Set the target Debian architecture (since dpkg 1.17.14).  This is only
-needed when building a cross\-toolchain, one that will be built on the build
-architecture, to be run on the host architecture, and to build code for the
-target architecture.
+Set the target Debian architecture (since dpkg 1.17.14).
 .TP 
 \fB\-T\fP, \fB\-\-target\-type\fP \fIgnu\-system\-typ\fP
 Set the target GNU system type (since dpkg 1.17.14).
@@ -137,7 +134,9 @@ Maskinen paketet byggs på.
 .IP värdmaskin 4
 Maskinen paketet byggs för.
 .IP målmaskin 4
-Maskinen kompilatorn bygger för.
+The machine the compiler is building for.  This is only needed when building
+a cross\-toolchain, one that will be built on the build architecture, to be
+run on the host architecture, and to build code for the target architecture.
 .IP Debianarkitektur 4
 Debianarkitektursträngen, vilken anger binärträdet i FTP\-arkivet. Exempel:
 i386, sparc, hurd\-i386.

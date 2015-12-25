@@ -2,7 +2,7 @@
  * libdpkg - Debian packaging suite library routines
  * path.c - path handling functions
  *
- * Copyright © 1995 Ian Jackson <ian@chiark.greenend.org.uk>
+ * Copyright © 1995 Ian Jackson <ijackson@chiark.greenend.org.uk>
  * Copyright © 2008-2012 Guillem Jover <guillem@debian.org>
  *
  * This is free software; you can redistribute it and/or modify
@@ -103,15 +103,12 @@ char *
 path_make_temp_template(const char *suffix)
 {
 	const char *tmpdir;
-	char *template;
 
 	tmpdir = getenv("TMPDIR");
 	if (!tmpdir)
 		tmpdir = P_tmpdir;
 
-	m_asprintf(&template, "%s/%s.XXXXXX", tmpdir, suffix);
-
-	return template;
+	return str_fmt("%s/%s.XXXXXX", tmpdir, suffix);
 }
 
 /**

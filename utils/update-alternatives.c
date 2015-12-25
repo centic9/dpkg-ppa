@@ -1,7 +1,7 @@
 /*
  * update-alternatives
  *
- * Copyright © 1995 Ian Jackson <ian@davenant.greenend.org.uk>
+ * Copyright © 1995 Ian Jackson <ijackson@chiark.greenend.org.uk>
  * Copyright © 2000-2002 Wichert Akkerman <wakkerma@debian.org>
  * Copyright © 2006-2015 Guillem Jover <guillem@debian.org>
  * Copyright © 2008 Pierre Habouzit <madcoder@debian.org>
@@ -62,11 +62,6 @@ static const char *log_file = LOGDIR "/alternatives.log";
 static int opt_skip_auto = 0;
 static int opt_verbose = 0;
 static int opt_force = 0;
-
-#define MAX_OPTS 128
-#define PUSH_OPT(a) if (nb_opts < MAX_OPTS) pass_opts[nb_opts++] = a;
-static char *pass_opts[MAX_OPTS];
-static int nb_opts = 0;
 
 #define ALT_TMP_EXT ".dpkg-tmp"
 
@@ -321,29 +316,28 @@ xreadlink(const char *linkname)
 	return buf;
 }
 
-static int DPKG_ATTR_VPRINTF(2)
-xvasprintf(char **strp, const char *fmt, va_list args)
+static char * DPKG_ATTR_VPRINTF(1)
+xvasprintf(const char *fmt, va_list args)
 {
-	int ret;
+	char *str;
 
-	ret = vasprintf(strp, fmt, args);
-	if (ret < 0)
+	if (vasprintf(&str, fmt, args) < 0)
 		error(_("failed to allocate memory"));
 
-	return ret;
+	return str;
 }
 
-static int DPKG_ATTR_PRINTF(2)
-xasprintf(char **strp, const char *fmt, ...)
+static char * DPKG_ATTR_PRINTF(1)
+xasprintf(const char *fmt, ...)
 {
 	va_list args;
-	int ret;
+	char *str;
 
 	va_start(args, fmt);
-	ret = xvasprintf(strp, fmt, args);
+	str = xvasprintf(fmt, args);
 	va_end(args);
 
-	return ret;
+	return str;
 }
 
 static void
@@ -359,7 +353,6 @@ static const char *
 admindir_init(void)
 {
 	const char *basedir, *dpkg_basedir;
-	char *admindir;
 
 	dpkg_basedir = getenv("DPKG_ADMINDIR");
 	if (dpkg_basedir)
@@ -367,9 +360,7 @@ admindir_init(void)
 	else
 		basedir = ADMINDIR;
 
-	xasprintf(&admindir, "%s/%s", basedir, "alternatives");
-
-	return admindir;
+	return xasprintf("%s/%s", basedir, "alternatives");
 }
 
 static FILE *fh_log = NULL;
@@ -418,42 +409,6 @@ spawn(const char *prog, const char *args[])
 		error(_("wait for subprocess %s failed"), prog);
 
 	return status;
-}
-
-static void DPKG_ATTR_SENTINEL
-subcall(const char *prog, ...)
-{
-	va_list args;
-	const char **cmd;
-	int res, i, j, count;
-
-	/* Count the arguments */
-	va_start(args, prog);
-	count = 0;
-	while (va_arg(args, char *))
-		count++;
-	va_end(args);
-
-	/* Prepare table for all parameters */
-	cmd = xmalloc(sizeof(*cmd) * (nb_opts + count + 2));
-	i = 0;
-	cmd[i++] = prog;
-	for (j = 0; j < nb_opts; j++)
-		cmd[i++] = pass_opts[j];
-	va_start(args, prog);
-	for (j = 0; j < count; j++)
-		cmd[i++] = va_arg(args, char *);
-	va_end(args);
-	cmd[i++] = NULL;
-
-	/* Run the command */
-	res = spawn(prog, cmd);
-	free(cmd);
-	if (WIFEXITED(res) && WEXITSTATUS(res) == 0)
-		return;
-	if (WIFEXITED(res))
-		exit(WEXITSTATUS(res));
-	exit(128);
 }
 
 static bool
@@ -505,7 +460,7 @@ checked_rm_args(const char *fmt, ...)
 	char *path;
 
 	va_start(args, fmt);
-	xvasprintf(&path, fmt, args);
+	path = xvasprintf(fmt, args);
 	va_end(args);
 
 	checked_rm(path);
@@ -1146,7 +1101,7 @@ altdb_parse_error(struct altdb_context *ctx, const char *format, ...)
 	va_list args;
 
 	va_start(args, format);
-	xvasprintf(&msg, format, args);
+	msg = xvasprintf(format, args);
 	va_end(args);
 
 	error(_("%s corrupt: %s"), ctx->filename, msg);
@@ -1277,7 +1232,7 @@ alternative_load(struct alternative *a, enum altdb_flags flags)
 {
 	struct altdb_context ctx;
 	struct stat st;
-	char *fn, *status;
+	char *status;
 
 	/* Initialize parse context */
 	if (setjmp(ctx.on_error)) {
@@ -1293,8 +1248,7 @@ alternative_load(struct alternative *a, enum altdb_flags flags)
 		ctx.bad_format = altdb_parse_stop;
 	else
 		ctx.bad_format = altdb_parse_error;
-	xasprintf(&fn, "%s/%s", admdir, a->master_name);
-	ctx.filename = fn;
+	ctx.filename = xasprintf("%s/%s", admdir, a->master_name);
 
 	/* Open the alternative file. */
 	ctx.fh = fopen(ctx.filename, "r");
@@ -1383,8 +1337,8 @@ alternative_save(struct alternative *a)
 	alternative_sort_choices(a);
 
 	/* Write admin file. */
-	xasprintf(&file, "%s/%s", admdir, a->master_name);
-	xasprintf(&filenew, "%s" ALT_TMP_EXT, file);
+	file = xasprintf("%s/%s", admdir, a->master_name);
+	filenew = xasprintf("%s" ALT_TMP_EXT, file);
 
 	ctx.filename = filenew;
 	ctx.fh = fopen(ctx.filename, "w");
@@ -1404,7 +1358,7 @@ alternative_save(struct alternative *a)
 
 		altdb_print_line(&ctx, fs->master_file);
 
-		xasprintf(&prio, "%d", fs->priority);
+		prio = xasprintf("%d", fs->priority);
 		altdb_print_line(&ctx, prio);
 		free(prio);
 
@@ -1452,7 +1406,7 @@ alternative_get_current(struct alternative *a)
 	if (a->known_current)
 		return a->current;
 
-	xasprintf(&curlink, "%s/%s", altdir, a->master_name);
+	curlink = xasprintf("%s/%s", altdir, a->master_name);
 	if (lstat(curlink, &st)) {
 		if (errno == ENOENT) {
 			free(curlink);
@@ -1533,12 +1487,20 @@ alternative_display_user(struct alternative *a)
 	struct slave_link *sl;
 
 	pr("%s - %s", a->master_name, alternative_status_describe(a->status));
+	fs = alternative_get_best(a);
+	if (fs)
+		pr(_("  link best version is %s"), fs->master_file);
+	else
+		pr(_("  link best version not available"));
 	current = alternative_get_current(a);
 	if (current) {
 		pr(_("  link currently points to %s"), current);
 	} else {
 		pr(_("  link currently absent"));
 	}
+	pr(_("  link %s is %s"), a->master_name, a->master_link);
+	for (sl = a->slaves; sl; sl = sl->next)
+		pr(_("  slave %s is %s"), sl->name, sl->link);
 
 	for (fs = a->choices; fs; fs = fs->next) {
 		pr(_("%s - priority %d"), fs->master_file, fs->priority);
@@ -1548,12 +1510,6 @@ alternative_display_user(struct alternative *a)
 				   fileset_get_slave(fs, sl->name));
 		}
 	}
-
-	fs = alternative_get_best(a);
-	if (fs)
-		pr(_("Current 'best' version is '%s'."), fs->master_file);
-	else
-		pr(_("No versions available."));
 }
 
 static void
@@ -1582,7 +1538,7 @@ alternative_print_choice(struct alternative *a, enum alternative_status status,
 	   fs->master_file, fs->priority, alternative_status_describe(status));
 }
 
-static const char *
+static char *
 alternative_select_choice(struct alternative *a)
 {
 	const char *current;
@@ -1622,7 +1578,7 @@ alternative_select_choice(struct alternative *a)
 		}
 		selection[strlen(selection) - 1] = '\0';
 		if (strlen(selection) == 0)
-			return current;
+			return xstrdup(current);
 		errno = 0;
 		idx = strtol(selection, &ret, 10);
 		if (idx < 0 || errno != 0)
@@ -1651,18 +1607,28 @@ alternative_select_choice(struct alternative *a)
 	}
 }
 
-static void
-alternative_config_all(void)
+static char *
+alternative_config(struct alternative *a, const char *current_choice)
 {
-	struct dirent **table;
-	int i, count;
+	char *new_choice = NULL;
 
-	count = altdb_get_namelist(&table);
-	for (i = 0; i < count; i++) {
-		subcall(prog_path, "--config", table[i]->d_name, NULL);
-		printf("\n");
+	if (alternative_choices_count(a) == 0) {
+		pr(_("There is no program which provides %s."),
+		   a->master_name);
+		pr(_("Nothing to configure."));
+	} else if (opt_skip_auto && a->status == ALT_ST_AUTO) {
+		alternative_display_user(a);
+	} else if (alternative_choices_count(a) == 1 &&
+	           a->status == ALT_ST_AUTO &&
+	           current_choice != NULL) {
+		pr(_("There is only one alternative in link group %s (providing %s): %s"),
+		   a->master_name, a->master_link, current_choice);
+		pr(_("Nothing to configure."));
+	} else {
+		new_choice = alternative_select_choice(a);
 	}
-	altdb_free_namelist(table, count);
+
+	return new_choice;
 }
 
 static void
@@ -1778,8 +1744,8 @@ alternative_prepare_install_single(struct alternative *a, const char *name,
 	char *fntmp, *fn;
 
 	/* Create link in /etc/alternatives. */
-	xasprintf(&fntmp, "%s/%s" ALT_TMP_EXT, altdir, name);
-	xasprintf(&fn, "%s/%s", altdir, name);
+	fntmp = xasprintf("%s/%s" ALT_TMP_EXT, altdir, name);
+	fn = xasprintf("%s/%s", altdir, name);
 	checked_rm(fntmp);
 	checked_symlink(file, fntmp);
 	alternative_add_commit_op(a, OPCODE_MV, fntmp, fn);
@@ -1787,7 +1753,7 @@ alternative_prepare_install_single(struct alternative *a, const char *name,
 
 	if (alternative_path_needs_update(linkname, fn)) {
 		/* Create alternative link. */
-		xasprintf(&fntmp, "%s" ALT_TMP_EXT, linkname);
+		fntmp = xasprintf("%s" ALT_TMP_EXT, linkname);
 		checked_rm(fntmp);
 		checked_symlink(fn, fntmp);
 		alternative_add_commit_op(a, OPCODE_MV, fntmp, linkname);
@@ -1828,7 +1794,7 @@ alternative_prepare_install(struct alternative *a, const char *choice)
 			        a->master_name);
 
 		/* Drop unused slave. */
-		xasprintf(&fn, "%s/%s", altdir, sl->name);
+		fn = xasprintf("%s/%s", altdir, sl->name);
 		if (alternative_path_can_remove(sl->link))
 			alternative_add_commit_op(a, OPCODE_RM, sl->link, NULL);
 		else
@@ -1840,7 +1806,7 @@ alternative_prepare_install(struct alternative *a, const char *choice)
 }
 
 static void
-alternative_remove(struct alternative *a)
+alternative_remove_files(struct alternative *a)
 {
 	struct slave_link *sl;
 
@@ -1863,6 +1829,37 @@ alternative_remove(struct alternative *a)
 	checked_rm_args("%s/%s", admdir, a->master_name);
 }
 
+static const char *
+alternative_remove(struct alternative *a, const char *current_choice,
+                   const char *path)
+{
+	const char *new_choice = NULL;
+
+	if (alternative_has_choice(a, path))
+		alternative_remove_choice(a, path);
+	else
+		verbose(_("alternative %s for %s not registered; not removing"),
+		        path, a->master_name);
+
+	if (current_choice && strcmp(current_choice, path) == 0) {
+		struct fileset *best;
+
+		/* Current choice is removed. */
+		if (a->status == ALT_ST_MANUAL) {
+			/* And it was manual, switch to auto. */
+			info(_("removing manually selected alternative "
+			       "- switching %s to auto mode"),
+			     a->master_name);
+			alternative_set_status(a, ALT_ST_AUTO);
+		}
+		best = alternative_get_best(a);
+		if (best)
+			new_choice = best->master_file;
+	}
+
+	return new_choice;
+}
+
 static bool
 alternative_has_broken_slave(struct slave_link *sl, struct fileset *fs)
 {
@@ -1874,7 +1871,7 @@ alternative_has_broken_slave(struct slave_link *sl, struct fileset *fs)
 		sl_altlnk = areadlink(sl->link);
 		if (!sl_altlnk)
 			return true;
-		xasprintf(&wanted, "%s/%s", altdir, sl->name);
+		wanted = xasprintf("%s/%s", altdir, sl->name);
 		if (strcmp(sl_altlnk, wanted) != 0) {
 			free(wanted);
 			free(sl_altlnk);
@@ -1897,7 +1894,7 @@ alternative_has_broken_slave(struct slave_link *sl, struct fileset *fs)
 		/* Slave link must not exist. */
 		if (alternative_path_classify(sl->link) != ALT_PATH_MISSING)
 			return true;
-		xasprintf(&sl_altlnk, "%s/%s", altdir, sl->name);
+		sl_altlnk = xasprintf("%s/%s", altdir, sl->name);
 		if (alternative_path_classify(sl_altlnk) != ALT_PATH_MISSING) {
 			free(sl_altlnk);
 			return true;
@@ -1921,7 +1918,7 @@ alternative_needs_update(struct alternative *a)
 	altlnk = areadlink(a->master_link);
 	if (!altlnk)
 		return ALT_UPDATE_LINK_BROKEN;
-	xasprintf(&wanted, "%s/%s", altdir, a->master_name);
+	wanted = xasprintf("%s/%s", altdir, a->master_name);
 	if (strcmp(altlnk, wanted) != 0) {
 		free(wanted);
 		free(altlnk);
@@ -2063,6 +2060,36 @@ alternative_map_free(struct alternative_map *am)
 }
 
 static const char *
+alternative_set_manual(struct alternative *a, const char *path)
+{
+	const char *new_choice = NULL;
+
+	if (alternative_has_choice(a, path))
+		new_choice = path;
+	else
+		error(_("alternative %s for %s not registered; "
+		        "not setting"), path, a->master_name);
+	alternative_set_status(a, ALT_ST_MANUAL);
+
+	return new_choice;
+}
+
+static const char *
+alternative_set_auto(struct alternative *a)
+{
+	const char *new_choice = NULL;
+
+	alternative_set_status(a, ALT_ST_AUTO);
+	if (alternative_choices_count(a) == 0)
+		pr(_("There is no program which provides %s."),
+		   a->master_name);
+	else
+		new_choice = alternative_get_best(a)->master_file;
+
+	return new_choice;
+}
+
+static const char *
 get_argv_string(int argc, char **argv)
 {
 	static char string[2048];
@@ -2085,6 +2112,200 @@ get_argv_string(int argc, char **argv)
 	}
 
 	return string;
+}
+
+static void
+alternative_select_mode(struct alternative *a, const char *current_choice)
+{
+	if (current_choice) {
+		/* Detect manually modified alternative, switch to manual. */
+		if (!alternative_has_choice(a, current_choice)) {
+			struct stat st;
+
+			errno = 0;
+			if (stat(current_choice, &st) == -1 && errno != ENOENT)
+				syserr(_("cannot stat file '%s'"), current_choice);
+
+			if (errno == ENOENT) {
+				warning(_("%s/%s is dangling; it will be updated "
+				          "with best choice"), altdir, a->master_name);
+				alternative_set_status(a, ALT_ST_AUTO);
+			} else if (a->status != ALT_ST_MANUAL) {
+				warning(_("%s/%s has been changed (manually or by "
+				          "a script); switching to manual "
+				          "updates only"), altdir, a->master_name);
+				alternative_set_status(a, ALT_ST_MANUAL);
+			}
+		}
+	} else {
+		/* Lack of alternative link => automatic mode. */
+		verbose(_("setting up automatic selection of %s"),
+		        a->master_name);
+		alternative_set_status(a, ALT_ST_AUTO);
+	}
+}
+
+static void
+alternative_evolve_slave(struct alternative *a, const char *cur_choice,
+                         struct slave_link *sl, struct fileset *fs)
+{
+	struct stat st;
+	char *new_file = NULL;
+	const char *old, *new;
+
+	old = alternative_get_slave(a, sl->name)->link;
+	new = sl->link;
+
+	if (cur_choice && strcmp(cur_choice, fs->master_file) == 0) {
+		new_file = xstrdup(fileset_get_slave(fs, sl->name));
+	} else {
+		char *lnk;
+
+		lnk = xasprintf("%s/%s", altdir, sl->name);
+		new_file = areadlink(lnk);
+		free(lnk);
+	}
+	if (strcmp(old, new) != 0 &&
+	    alternative_path_classify(old) == ALT_PATH_SYMLINK) {
+		bool rename_link = false;
+
+		if (new_file) {
+			errno = 0;
+			if (stat(new_file, &st) == -1 && errno != ENOENT)
+				syserr(_("cannot stat file '%s'"),
+				       new_file);
+			rename_link = (errno == 0);
+		}
+
+		if (rename_link) {
+			info(_("renaming %s slave link from %s to %s"),
+			     sl->name, old, new);
+			checked_mv(old, new);
+		} else {
+			checked_rm(old);
+		}
+
+		sl->updated = true;
+	}
+	free(new_file);
+}
+
+static void
+alternative_evolve(struct alternative *a, struct alternative *b,
+                   const char *cur_choice, struct fileset *fs)
+{
+	struct slave_link *sl;
+	bool is_link;
+
+	is_link = alternative_path_classify(a->master_link) == ALT_PATH_SYMLINK;
+	if (is_link && strcmp(a->master_link, b->master_link) != 0) {
+		info(_("renaming %s link from %s to %s"), b->master_name,
+		     a->master_link, b->master_link);
+		checked_mv(a->master_link, b->master_link);
+	}
+	alternative_set_link(a, xstrdup(b->master_link));
+
+	/* Check if new slaves have been added, or existing
+	 * ones renamed. */
+	for (sl = b->slaves; sl; sl = sl->next) {
+		if (alternative_has_slave(a, sl->name))
+			alternative_evolve_slave(a, cur_choice, sl, fs);
+		else
+			sl->updated = true;
+
+		alternative_copy_slave(a, sl);
+	}
+}
+
+static void
+alternative_update(struct alternative *a,
+                   const char *current_choice, const char *new_choice)
+{
+	enum alternative_update_reason reason;
+
+	/* No choice left, remove everything. */
+	if (!alternative_choices_count(a)) {
+		log_msg("link group %s fully removed", a->master_name);
+		alternative_remove_files(a);
+		return;
+	}
+
+	/* New choice wanted. */
+	if (new_choice &&
+	    (!current_choice || strcmp(new_choice, current_choice) != 0)) {
+		log_msg("link group %s updated to point to %s", a->master_name,
+		        new_choice);
+		if (a->status == ALT_ST_AUTO)
+			info(_("using %s to provide %s (%s) in auto mode"),
+			     new_choice, a->master_link, a->master_name);
+		else
+			info(_("using %s to provide %s (%s) in manual mode"),
+			     new_choice, a->master_link, a->master_name);
+		debug("prepare_install(%s)", new_choice);
+		alternative_prepare_install(a, new_choice);
+	} else if ((reason = alternative_needs_update(a))) {
+		if (reason == ALT_UPDATE_SLAVE_CHANGED) {
+			log_msg("link group %s updated with changed slaves",
+			        a->master_name);
+			info(_("updating alternative %s "
+			       "because link group %s has changed slave links"),
+			     current_choice, a->master_name);
+		} else {
+			log_msg("auto-repair link group %s", a->master_name);
+			warning(_("forcing reinstallation of alternative %s "
+			          "because link group %s is broken"),
+			        current_choice, a->master_name);
+		}
+
+		if (current_choice && !alternative_has_choice(a, current_choice)) {
+			struct fileset *best = alternative_get_best(a);
+
+			warning(_("current alternative %s is unknown, "
+			          "switching to %s for link group %s"),
+			        current_choice, best->master_file,
+			        a->master_name);
+			current_choice = best->master_file;
+			alternative_set_status(a, ALT_ST_AUTO);
+		}
+
+		if (current_choice)
+			alternative_prepare_install(a, current_choice);
+	}
+
+	/* Save administrative file if needed. */
+	if (a->modified) {
+		debug("%s is modified and will be saved", a->master_name);
+		alternative_save(a);
+	}
+
+	/* Replace all symlinks in one pass. */
+	alternative_commit(a);
+}
+
+static void
+alternative_config_all(void)
+{
+	struct alternative_map *alt_map_obj;
+	struct alternative_map *am;
+
+	alt_map_obj = alternative_map_new(NULL, NULL);
+	alternative_map_load_names(alt_map_obj);
+
+	for (am = alt_map_obj; am && am->item; am = am->next) {
+		const char *current_choice;
+		char *new_choice;
+
+		current_choice = alternative_get_current(am->item);
+		alternative_select_mode(am->item, current_choice);
+
+		new_choice = alternative_config(am->item, current_choice);
+
+		alternative_update(am->item, current_choice, new_choice);
+
+		free(new_choice);
+	}
+
+	alternative_map_free(alt_map_obj);
 }
 
 static void
@@ -2117,22 +2338,24 @@ alternative_set_selection(struct alternative_map *all, const char *name,
 	debug("set_selection(%s, %s, %s)", name, status, choice);
 	a = alternative_map_find(all, name);
 	if (a) {
-		char *cmd;
+		const char *new_choice = NULL;
 
 		if (strcmp(status, "auto") == 0) {
-			xasprintf(&cmd, "%s --auto %s", PROGNAME, name);
-			pr(_("Call %s."), cmd);
-			free(cmd);
-			subcall(prog_path, "--auto", name, NULL);
+			new_choice = alternative_set_auto(a);
 		} else if (alternative_has_choice(a, choice)) {
-			xasprintf(&cmd, "%s --set %s %s", PROGNAME,
-			          name, choice);
-			pr(_("Call %s."), cmd);
-			free(cmd);
-			subcall(prog_path, "--set", name, choice, NULL);
+			new_choice = alternative_set_manual(a, choice);
 		} else {
 			pr(_("Alternative %s unchanged because choice "
 			     "%s is not available."), name, choice);
+		}
+
+		if (new_choice) {
+			const char *current_choice;
+
+			current_choice = alternative_get_current(a);
+			alternative_select_mode(a, current_choice);
+
+			alternative_update(a, current_choice, new_choice);
 		}
 	} else {
 		pr(_("Skip unknown alternative %s."), name);
@@ -2208,174 +2431,6 @@ alternative_set_selections(FILE *input, const char *desc)
 	}
 
 	alternative_map_free(alt_map_obj);
-}
-
-static void
-alternative_select_mode(struct alternative *a, const char *current_choice)
-{
-	if (current_choice) {
-		/* Detect manually modified alternative, switch to manual. */
-		if (!alternative_has_choice(a, current_choice)) {
-			struct stat st;
-
-			errno = 0;
-			if (stat(current_choice, &st) == -1 && errno != ENOENT)
-				syserr(_("cannot stat file '%s'"), current_choice);
-
-			if (errno == ENOENT) {
-				warning(_("%s/%s is dangling; it will be updated "
-				          "with best choice"), altdir, a->master_name);
-				alternative_set_status(a, ALT_ST_AUTO);
-			} else if (a->status != ALT_ST_MANUAL) {
-				warning(_("%s/%s has been changed (manually or by "
-				          "a script); switching to manual "
-				          "updates only"), altdir, a->master_name);
-				alternative_set_status(a, ALT_ST_MANUAL);
-			}
-		}
-	} else {
-		/* Lack of alternative link => automatic mode. */
-		verbose(_("setting up automatic selection of %s"),
-		        a->master_name);
-		alternative_set_status(a, ALT_ST_AUTO);
-	}
-}
-
-static void
-alternative_evolve_slave(struct alternative *a, const char *cur_choice,
-                         struct slave_link *sl, struct fileset *fs)
-{
-	struct stat st;
-	char *new_file = NULL;
-	const char *old, *new;
-
-	old = alternative_get_slave(a, sl->name)->link;
-	new = sl->link;
-
-	if (cur_choice && strcmp(cur_choice, fs->master_file) == 0) {
-		new_file = xstrdup(fileset_get_slave(fs, sl->name));
-	} else {
-		char *lnk;
-
-		xasprintf(&lnk, "%s/%s", altdir, sl->name);
-		new_file = areadlink(lnk);
-		free(lnk);
-	}
-	if (strcmp(old, new) != 0 &&
-	    alternative_path_classify(old) == ALT_PATH_SYMLINK) {
-		bool rename_link = false;
-
-		if (new_file) {
-			errno = 0;
-			if (stat(new_file, &st) == -1 && errno != ENOENT)
-				syserr(_("cannot stat file '%s'"),
-				       new_file);
-			rename_link = (errno == 0);
-		}
-
-		if (rename_link) {
-			info(_("renaming %s slave link from %s to %s"),
-			     sl->name, old, new);
-			checked_mv(old, new);
-		} else {
-			checked_rm(old);
-		}
-
-		sl->updated = true;
-	}
-	free(new_file);
-}
-
-static void
-alternative_evolve(struct alternative *a, struct alternative *b,
-                   const char *cur_choice, struct fileset *fs)
-{
-	struct slave_link *sl;
-	bool is_link;
-
-	is_link = alternative_path_classify(a->master_link) == ALT_PATH_SYMLINK;
-	if (is_link && strcmp(a->master_link, b->master_link) != 0) {
-		info(_("renaming %s link from %s to %s"), b->master_name,
-		     a->master_link, b->master_link);
-		checked_mv(a->master_link, b->master_link);
-	}
-	alternative_set_link(a, xstrdup(b->master_link));
-
-	/* Check if new slaves have been added, or existing
-	 * ones renamed. */
-	for (sl = b->slaves; sl; sl = sl->next) {
-		if (alternative_has_slave(a, sl->name))
-			alternative_evolve_slave(a, cur_choice, sl, fs);
-		else
-			sl->updated = true;
-
-		alternative_copy_slave(a, sl);
-	}
-}
-
-static void
-alternative_update(struct alternative *a,
-                   const char *current_choice, const char *new_choice)
-{
-	enum alternative_update_reason reason;
-
-	/* No choice left, remove everything. */
-	if (!alternative_choices_count(a)) {
-		log_msg("link group %s fully removed", a->master_name);
-		alternative_remove(a);
-		return;
-	}
-
-	/* New choice wanted. */
-	if (new_choice &&
-	    (!current_choice || strcmp(new_choice, current_choice) != 0)) {
-		log_msg("link group %s updated to point to %s", a->master_name,
-		        new_choice);
-		if (a->status == ALT_ST_AUTO)
-			info(_("using %s to provide %s (%s) in auto mode"),
-			     new_choice, a->master_link, a->master_name);
-		else
-			info(_("using %s to provide %s (%s) in manual mode"),
-			     new_choice, a->master_link, a->master_name);
-		debug("prepare_install(%s)", new_choice);
-		alternative_prepare_install(a, new_choice);
-	} else if ((reason = alternative_needs_update(a))) {
-		if (reason == ALT_UPDATE_SLAVE_CHANGED) {
-			log_msg("link group %s updated with changed slaves",
-			        a->master_name);
-			info(_("updating alternative %s "
-			       "because link group %s has changed slave links"),
-			     current_choice, a->master_name);
-		} else {
-			log_msg("auto-repair link group %s", a->master_name);
-			warning(_("forcing reinstallation of alternative %s "
-			          "because link group %s is broken"),
-			        current_choice, a->master_name);
-		}
-
-		if (current_choice && !alternative_has_choice(a, current_choice)) {
-			struct fileset *best = alternative_get_best(a);
-
-			warning(_("current alternative %s is unknown, "
-			          "switching to %s for link group %s"),
-			        current_choice, best->master_file,
-			        a->master_name);
-			current_choice = best->master_file;
-			alternative_set_status(a, ALT_ST_AUTO);
-		}
-
-		if (current_choice)
-			alternative_prepare_install(a, current_choice);
-	}
-
-	/* Save administrative file if needed. */
-	if (a->modified) {
-		debug("%s is modified and will be saved", a->master_name);
-		alternative_save(a);
-	}
-
-	/* Replace all symlinks in one pass. */
-	alternative_commit(a);
 }
 
 static void
@@ -2514,10 +2569,11 @@ main(int argc, char **argv)
 	char *path = NULL;
 	const char *current_choice = NULL;
 	const char *new_choice = NULL;
+	bool modifies_alt = false;
+	bool modifies_sys = false;
 	int i = 0;
 
-	if (getenv("DPKG_UNTRANSLATED_MESSAGES") == NULL)
-		setlocale(LC_ALL, "");
+	setlocale(LC_ALL, "");
 	bindtextdomain(PACKAGE, LOCALEDIR);
 	textdomain(PACKAGE);
 
@@ -2539,10 +2595,8 @@ main(int argc, char **argv)
 			exit(0);
 		} else if (strcmp("--verbose", argv[i]) == 0) {
 			opt_verbose++;
-			PUSH_OPT(argv[i]);
 		} else if (strcmp("--quiet", argv[i]) == 0) {
 			opt_verbose--;
-			PUSH_OPT(argv[i]);
 		} else if (strcmp("--install", argv[i]) == 0) {
 			char *prio_str, *prio_end;
 			long prio;
@@ -2642,30 +2696,22 @@ main(int argc, char **argv)
 		} else if (strcmp("--log", argv[i]) == 0) {
 			if (MISSING_ARGS(1))
 				badusage(_("--%s needs a <file> argument"), "log");
-			PUSH_OPT(argv[i]);
-			PUSH_OPT(argv[i + 1]);
 			log_file = argv[i + 1];
 			i++;
 		} else if (strcmp("--altdir", argv[i]) == 0) {
 			if (MISSING_ARGS(1))
 				badusage(_("--%s needs a <directory> argument"), "log");
-			PUSH_OPT(argv[i]);
-			PUSH_OPT(argv[i + 1]);
 			altdir = argv[i + 1];
 			i++;
 		} else if (strcmp("--admindir", argv[i]) == 0) {
 			if (MISSING_ARGS(1))
 				badusage(_("--%s needs a <directory> argument"), "log");
-			PUSH_OPT(argv[i]);
-			PUSH_OPT(argv[i + 1]);
 			admdir = argv[i + 1];
 			i++;
 		} else if (strcmp("--skip-auto", argv[i]) == 0) {
 			opt_skip_auto = 1;
-			PUSH_OPT(argv[i]);
 		} else if (strcmp("--force", argv[i]) == 0) {
 			opt_force = 1;
-			PUSH_OPT(argv[i]);
 		} else {
 			badusage(_("unknown option '%s'"), argv[i]);
 		}
@@ -2675,6 +2721,21 @@ main(int argc, char **argv)
 		badusage(_("need --display, --query, --list, --get-selections, "
 		           "--config, --set, --set-selections, --install, "
 		           "--remove, --all, --remove-all or --auto"));
+
+	/* The following actions might modify the current alternative. */
+	if (strcmp(action, "set") == 0 ||
+	    strcmp(action, "auto") == 0 ||
+	    strcmp(action, "config") == 0 ||
+	    strcmp(action, "remove") == 0 ||
+	    strcmp(action, "remove-all") == 0 ||
+	    strcmp(action, "install") == 0)
+		modifies_alt = true;
+
+	/* The following actions might modify the system somehow. */
+	if (modifies_alt ||
+	    strcmp(action, "all") == 0 ||
+	    strcmp(action, "set-selections") == 0)
+		modifies_sys = true;
 
 	if (strcmp(action, "install") == 0)
 		alternative_check_install_args(inst_alt, fileset);
@@ -2702,84 +2763,35 @@ main(int argc, char **argv)
 		alternative_load(a, ALTDB_WARN_PARSER);
 	}
 
+	if (modifies_sys)
+		log_msg("run with %s", get_argv_string(argc, argv));
+
+	if (modifies_alt) {
+		current_choice = alternative_get_current(a);
+		alternative_select_mode(a, current_choice);
+	}
+
 	/* Handle actions. */
 	if (strcmp(action, "all") == 0) {
 		alternative_config_all();
-		exit(0);
 	} else if (strcmp(action, "get-selections") == 0) {
 		alternative_get_selections();
-		exit(0);
 	} else if (strcmp(action, "set-selections") == 0) {
-		log_msg("run with %s", get_argv_string(argc, argv));
 		alternative_set_selections(stdin, _("<standard input>"));
-		exit(0);
 	} else if (strcmp(action, "display") == 0) {
 		alternative_display_user(a);
-		exit(0);
 	} else if (strcmp(action, "query") == 0) {
 		alternative_display_query(a);
-		exit(0);
 	} else if (strcmp(action, "list") == 0) {
 		alternative_display_list(a);
-		exit(0);
-	}
-
-	/* Actions below might modify the system. */
-	log_msg("run with %s", get_argv_string(argc, argv));
-	current_choice = alternative_get_current(a);
-	alternative_select_mode(a, current_choice);
-
-	if (strcmp(action, "set") == 0) {
-		if (alternative_has_choice(a, path))
-			new_choice = path;
-		else
-			error(_("alternative %s for %s not registered; "
-			        "not setting"), path, a->master_name);
-		alternative_set_status(a, ALT_ST_MANUAL);
+	} else if (strcmp(action, "set") == 0) {
+		new_choice = alternative_set_manual(a, path);
 	} else if (strcmp(action, "auto") == 0) {
-		alternative_set_status(a, ALT_ST_AUTO);
-		if (alternative_choices_count(a) == 0)
-			pr(_("There is no program which provides %s."),
-			   a->master_name);
-		else
-			new_choice = alternative_get_best(a)->master_file;
+		new_choice = alternative_set_auto(a);
 	} else if (strcmp(action, "config") == 0) {
-		if (alternative_choices_count(a) == 0) {
-			pr(_("There is no program which provides %s."),
-			   a->master_name);
-			pr(_("Nothing to configure."));
-		} else if (opt_skip_auto && a->status == ALT_ST_AUTO) {
-			alternative_display_user(a);
-		} else if (alternative_choices_count(a) == 1 &&
-		           a->status == ALT_ST_AUTO &&
-		           current_choice != NULL) {
-			pr(_("There is only one alternative in link group %s (providing %s): %s"),
-			   a->master_name, a->master_link, current_choice);
-			pr(_("Nothing to configure."));
-		} else {
-			new_choice = alternative_select_choice(a);
-		}
+		new_choice = alternative_config(a, current_choice);
 	} else if (strcmp(action, "remove") == 0) {
-		if (alternative_has_choice(a, path))
-			alternative_remove_choice(a, path);
-		else
-			verbose(_("alternative %s for %s not registered; not "
-			          "removing"), path, a->master_name);
-		if (current_choice && strcmp(current_choice, path) == 0) {
-			struct fileset *best;
-
-			/* Current choice is removed. */
-			if (a->status == ALT_ST_MANUAL) {
-				/* And it was manual, switch to auto. */
-				info(_("removing manually selected alternative "
-				       "- switching %s to auto mode"),
-				     a->master_name);
-				alternative_set_status(a, ALT_ST_AUTO);
-			}
-			best = alternative_get_best(a);
-			if (best)
-				new_choice = best->master_file;
-		}
+		new_choice = alternative_remove(a, current_choice, path);
 	} else if (strcmp(action, "remove-all") == 0) {
 		alternative_choices_free(a);
 	} else if (strcmp(action, "install") == 0) {
@@ -2803,7 +2815,8 @@ main(int argc, char **argv)
 		}
 	}
 
-	alternative_update(a, current_choice, new_choice);
+	if (modifies_alt)
+		alternative_update(a, current_choice, new_choice);
 
 	return 0;
 }
