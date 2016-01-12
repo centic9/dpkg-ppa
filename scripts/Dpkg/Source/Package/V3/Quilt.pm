@@ -73,7 +73,7 @@ sub can_build {
     return ($code, $msg) if $code == 0;
 
     my $v = Dpkg::Version->new($self->{fields}->{'Version'});
-    return (0, g_('non-native package version does not contain a revision'))
+    warning (g_('non-native package version does not contain a revision'))
         if $v->is_native();
 
     my $quilt = $self->build_quilt_object($dir);

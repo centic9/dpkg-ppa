@@ -83,6 +83,52 @@ sub has_object {
     return exists $self->{objects}{$objid};
 }
 
+sub is_armhf {
+    my ($file) = @_;
+    my ($output, %opts, $pid, $res);
+    my $hf = 0;
+    my $sf = 0;
+    $pid = spawn(exec => [ "readelf", "-h", "--", $file ],
+		 env => { "LC_ALL" => "C" },
+		 to_pipe => \$output, %opts);
+    while (<$output>) {
+	chomp;
+	if (/0x5000402/) {
+	    $hf = 1;
+	    last;
+	}
+	if (/0x5000202/) {
+	    $sf = 1;
+	    last;
+	}
+    }
+    close($output);
+    wait_child($pid, nocheck => 1);
+    if ($?) {
+	subprocerr("readelf");
+    }
+    if(($hf) || ($sf)) {
+	return $hf;
+    }
+    undef $output;
+    $pid = spawn(exec => [ "readelf", "-A", "--", $file ],
+		 env => { "LC_ALL" => "C" },
+		 to_pipe => \$output, %opts);
+    while (<$output>) {
+	chomp;
+	if (/Tag_ABI_VFP_args: VFP registers/) {
+	    $hf = 1;
+	    last;
+	}
+    }
+    close($output);
+    wait_child($pid, nocheck => 1);
+    if ($?) {
+	subprocerr("readelf");
+    }
+    return $hf;
+}
+
 sub get_format {
     my ($file, $objdump) = @_;
     state %format;
@@ -114,6 +160,14 @@ sub get_format {
         if ($?) {
             subprocerr('objdump') if $objdump eq 'objdump';
             $res = get_format($file, 'objdump');
+        }
+        if ($res eq "elf32-littlearm") {
+            if (is_armhf($file)) {
+                $res = "elf32-littlearm-hfabi";
+            } else {
+                $res = "elf32-littlearm-sfabi";
+            }
+            $format{$file} = $res;
         }
         return $res;
     }
@@ -250,6 +304,13 @@ sub parse_objdump_output {
 	} elsif ($section eq 'none') {
 	    if (/^\s*.+:\s*file\s+format\s+(\S+)$/) {
 		$self->{format} = $1;
+		if (($self->{format} eq "elf32-littlearm") && $self->{file}) {
+		    if (Dpkg::Shlibs::Objdump::is_armhf($self->{file})) {
+			$self->{format} = "elf32-littlearm-hfabi";
+		    } else {
+			$self->{format} = "elf32-littlearm-sfabi";
+		    }
+		}
 	    } elsif (/^architecture:\s*\S+,\s*flags\s*\S+:$/) {
 		# Parse 2 lines of "-f"
 		# architecture: i386, flags 0x00000112:

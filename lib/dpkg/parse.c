@@ -318,7 +318,8 @@ parse_count_pkg_instance(struct pkgcount *count,
   if (pkg->status == PKG_STAT_NOTINSTALLED)
      return;
 
-  if (pkgbin->multiarch == PKG_MULTIARCH_SAME)
+  // mvo: consider stat_configfiles multiarch to prevent LP: #1015567
+  if (pkgbin->multiarch == PKG_MULTIARCH_SAME || pkg->status == PKG_STAT_CONFIGFILES)
     count->multi++;
   else
     count->single++;

@@ -102,10 +102,7 @@ pkg_spec_is_illegal(struct pkg_spec *ps)
 		/* Single instancing only applies with no architecture. */
 		if (ps->arch->type == DPKG_ARCH_NONE &&
 		    pkgset_installed_instances(set) > 1) {
-			snprintf(msg, sizeof(msg),
-			         _("ambiguous package name '%s' with more "
-			           "than one installed instance"), ps->name);
-			return msg;
+			ps->arch = dpkg_arch_get(DPKG_ARCH_NATIVE);
 		}
 	}
 

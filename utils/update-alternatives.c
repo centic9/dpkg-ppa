@@ -2573,7 +2573,8 @@ main(int argc, char **argv)
 	bool modifies_sys = false;
 	int i = 0;
 
-	setlocale(LC_ALL, "");
+	if (getenv("DPKG_UNTRANSLATED_MESSAGES") == NULL)
+		setlocale(LC_ALL, "");
 	bindtextdomain(PACKAGE, LOCALEDIR);
 	textdomain(PACKAGE);
 
